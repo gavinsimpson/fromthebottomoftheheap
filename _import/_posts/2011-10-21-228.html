@@ -1,0 +1,136 @@
+--- 
+title: Generating sets of permutations
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  email_notification: "1319191615"
+  jabber_published: "1319191611"
+type: post
+tags: 
+- ecology
+- environmetrics
+- Golden Jackal
+- ordination
+- Permutation
+- permutation tests
+- permute
+- R
+- restricted permutations
+- time series
+---
+<div class="zemanta-img">
+
+[caption id="" align="alignleft" width="300" caption="Image via Wikipedia"]<a href="http://commons.wikipedia.org/wiki/File:Golden_Jackal_sa02.jpg"><img class="zemanta-img-configured" title="Golden Jackal" src="http://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Golden_Jackal_sa02.jpg/300px-Golden_Jackal_sa02.jpg" alt="Golden Jackal" width="300" height="200" /></a>[/caption]
+
+</div>
+In <a title="permute: a package for generating restricted&nbsp;permutations" href="http://ucfagls.wordpress.com/2011/10/04/permute-a-package-for-generating-restricted-permutations/">previous</a> <a title="Generating restricted permutations with&nbsp;permute" href="http://ucfagls.wordpress.com/2011/10/18/generating-restricted-permutations-with-permute/">posts</a>&nbsp;I discussed how to generate a single permutation from a fully-randomised or restricted permutation design using <code>shuffle()</code>. Here I want to&nbsp;briefly&nbsp;mention the <code>shuffleSet()</code> function and illustrate it's usage.
+<!--more-->
+Every time you call <code>shuffle()</code> it has to interpret the <code>control</code> list to identify the type of permutation required. Whilst the overhead of this interpretation is not too high, there is no reason that it need be incurred just to generate a set of permutations. This is where <code>shuffleSet()</code> comes in. It works exactly like <code>shuffle()</code> taking the number of observations and a <code>control</code> object but in addition it takes an extra argument <code>nset</code> which is the number of permutations required for the set.
+
+[sourcecode language="r" light="true"]
+&gt; require(permute) ## load the package
+&gt; args(shuffleSet)
+function (n, nset = 1, control = permControl())
+NULL
+[/sourcecode]
+
+To generate 10 random permutations of ten observations you would use
+
+[sourcecode language="r" light="true"]
+&gt; set.seed(2)
+&gt; shuffleSet(10, 10)
+      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+ [1,]    2    7    5   10    6    8    1    3    4     9
+ [2,]    6    3    7    2    9    5    4    1   10     8
+ [3,]    7    4   10    2    3    6    1    8    5     9
+ [4,]    1    2    7    8    4    6    5   10    9     3
+ [5,]   10    3    1    2    6    4    5    7    9     8
+ [6,]    1   10    6    7    2    5    4    3    8     9
+ [7,]    8   10    6    2    9    3    7    4    1     5
+ [8,]    3   10    1    2    7    4    6    9    8     5
+ [9,]    4    7    1    3    2    5   10    8    6     9
+[10,]   10    4    9    8    3    1    2    5    6     7
+[/sourcecode]
+
+If those 10 observations were collected as a time series and we wanted 10 restricted permutations you would use
+
+[sourcecode language="r" light="true"]
+&gt; set.seed(2)
+&gt; shuffleSet(10, 10, control = permControl(within = Within(type = &quot;series&quot;)))
+      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
+ [1,]    3    4    5    6    7    8    9   10    1     2
+ [2,]    9   10    1    2    3    4    5    6    7     8
+ [3,]    7    8    9   10    1    2    3    4    5     6
+ [4,]    3    4    5    6    7    8    9   10    1     2
+ [5,]    1    2    3    4    5    6    7    8    9    10
+ [6,]    1    2    3    4    5    6    7    8    9    10
+ [7,]    3    4    5    6    7    8    9   10    1     2
+ [8,]   10    1    2    3    4    5    6    7    8     9
+ [9,]    6    7    8    9   10    1    2    3    4     5
+[10,]    7    8    9   10    1    2    3    4    5     6
+[/sourcecode]
+
+From the above set of permutations, the cyclic shifts employed in the <code>"series"</code> permutation type are clear. One problem with the set we just produced is that the same permutation was returned more than once. In fact, there were only six unique permutations in the set requested. This is due to there only being 10 possible permutations of the numbers 1, 2, ..., 10 if we allow cyclic shifts in a single direction
+
+[sourcecode language="r" light="true"]
+&gt; numPerms(10, control = permControl(within = Within(type = &quot;series&quot;)))
+[1] 10
+[/sourcecode]
+
+<code>shuffle()</code> and <code>shuffleSet()</code> know nothing of these limits, but there are functions in the <strong>permute</strong> package that can tell you the number of possible permutations (<code>numPerms()</code>) and generate the entire set of permutations for a stated design (<code>allPerms()</code>). I'll take a look at <code>allPerms()</code> in a future posting.
+
+I return now to the Golden Jackal mandible length example I used in an <a title="permute: a package for generating restricted&nbsp;permutations" href="http://ucfagls.wordpress.com/2011/10/04/permute-a-package-for-generating-restricted-permutations/">earlier post</a> but update the example to make use of <code>shuffleSet()</code> instead of <code>shuffle()</code>. I will just show the code and output for the permutation test, refer to the <a title="permute: a package for generating restricted&nbsp;permutations" href="http://ucfagls.wordpress.com/2011/10/04/permute-a-package-for-generating-restricted-permutations/">previous post</a> for details:
+
+[sourcecode language="r" light="true"]
+&gt; data(jackal) ## load the data
+&gt; ## function to compute the difference of means
+&gt; meanDif &lt;- function(x, grp) {
++     mean(x[grp == &quot;Male&quot;]) - mean(x[grp == &quot;Female&quot;])
++ }
+&gt; N &lt;- nrow(jackal)
+&gt; ## make this reproducible and like previous post
+&gt; set.seed(42)
+&gt; ## generate the set of 4999 random permutations
+&gt; pSet  &lt;- shuffleSet(N, 4999)
+&gt; ## iterate over the set
+&gt; Djackal &lt;- apply(pSet, 1, function(i, data) with(data, meanDif(Length, Sex[i])),
++                  data = jackal)
+&gt; ## add the observed difference of mean mandible length
+&gt; Djackal &lt;- c(Djackal, with(jackal, meanDif(Length, Sex)))
+## No. obs equal to or greater than observed
+&gt; (Dbig &lt;- sum(Djackal &gt;= Djackal[5000]))
+[1] 12
+&gt; ## permutational p-value
+&gt; Dbig/length(Djackal)
+[1] 0.0024
+[/sourcecode]
+
+The last two lines of R code compute the number of observations in the Null distribution with differences in mean mandible length as great or greater than the observed difference, and the resulting permutation <em>p</em>-value. These are the same as those computed in the previous post.
+
+Generating entire sets of permutations is useful for several reasons. One recent example that we came across is with the new parallel processing capabilities in the forthcoming version of R. We are able to generate a set of permutations and then distribute the process of the permutation test over a number of CPUs or worker threads, each dealing with a subset of the permutations we generated. This can greatly reduce the compute time needed for the permutation test, especially where the objective function is computationally complex, but allows us to not worry about controlling the random number generator in each separate process — this is all done within the main function and only the relevant subset of permutations is passed to each worker process. An additional reason for generating a set of permutation to work with rather than individual permutations is that it is easy to switch between using a set of randomly generated permutations or the set of all possible permutations where that set is not overly large. <code>allPerms()</code> returns the set of permutations in the same way that <code>shuffleSet()</code> does, so we can simplify our code if we write the test to iterate over a set of permutations.
+
+The full script for the Golden Jackal permutation test is shown below:
+
+[sourcecode language="r" light="true"]
+data(jackal) ## load the data
+## function to compute the difference of means
+meanDif &lt;- function(x, grp) {
+    mean(x[grp == &quot;Male&quot;]) - mean(x[grp == &quot;Female&quot;])
+}
+N &lt;- nrow(jackal)
+## make this reproducible and like previous post
+set.seed(42)
+## generate the set of 4999 random permutations
+pSet  &lt;- shuffleSet(N, 4999)
+## iterate over the set
+Djackal &lt;- apply(pSet, 1, function(i, data) with(data, meanDif(Length, Sex[i])),
+                 data = jackal)
+## add the observed difference of mean mandible length
+Djackal &lt;- c(Djackal, with(jackal, meanDif(Length, Sex)))
+## No. obs equal to or greater than observed
+(Dbig &lt;- sum(Djackal &gt;= Djackal[5000]))
+## permutational p-value
+Dbig/length(Djackal)
+[/sourcecode]

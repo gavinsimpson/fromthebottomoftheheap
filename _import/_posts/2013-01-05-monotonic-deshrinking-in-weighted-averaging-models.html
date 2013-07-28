@@ -1,0 +1,139 @@
+--- 
+title: Monotonic deshrinking in weighted averaging models
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  email_notification: "1357405419"
+  jabber_published: "1357405414"
+  _publicize_pending: "1"
+type: post
+tags: 
+- analogue
+- deshrinking
+- Palaeoecology
+- Palaeolimnology
+- R
+- Statistics
+- transfer function
+- weighted averaging
+---
+Weighted averaging regression and calibration is the most widely used method for developing a palaeolimnological transfer function. Such models are used to reconstruct properties of the past lake environment such as pH, total phosphorus, and water temperature with, it has to be said, varying degrees of success and usefulness.
+
+In simple weighted averaging (<acronym title="Weighted Averaging">WA</acronym>) there is little to specify other than the predictors (the species or other proxy data) and the response (the thing you wish to build a model for and predict). The one user-specified option in a simple WA is the type of deshrinking to use.
+
+Why deshrinking?<!--more--> Well, in a WA model, averages of the response are effectively taken twice; i) first when the WA optima of the response variable for each taxon is computed, and ii) a second time when a weighted average of the optima for the species in each sample is computed to give the raw WA estimate of the response for each sample. Note that the weights here are the values in the predictor data matrix; usually these are species or taxon abundances (often the in the form of proportions or percentages).
+
+The effect of taking averages twice is to shrink the range of possible estimates from a WA model. This can be illustrated using some of the tools from <a href="http://bit.ly/VFk6Le">analogue</a>. First load the package and the SWAP example data set
+[sourcecode lang="r" toolbar="false"]
+## load analogue...
+require(analogue)
+## ...and some example data
+data(swapdiat)
+data(swappH)
+[/sourcecode]
+Next, compute the WA pH optima for each diatom taxon
+[sourcecode lang="r" toolbar="false"]
+opt &lt;- optima(swapdiat, swappH) ## compute WA optima
+[/sourcecode]
+The final step is to use some simple matrix algebra to give the raw WA estimates of the pH for each SWAP sample (site) [note that the <code>swapdiat</code> object needs to be cast as a matrix for the matrix algebra step, which we do using <code>data.matrix()</code>]
+[sourcecode lang="r" toolbar="false"]
+diat &lt;- data.matrix(swapdiat)  ## convert to a matrix
+pred &lt;- ((diat %*% opt) / rowSums(diat))[, 1] ## compute raw WA estimates
+[/sourcecode]
+I won't go into the details of the last step; it is a reasonably optimised bit of R code to compute a weighted average of the pH optima for each species in a given sample. [The first part of the code involving the matrix multiplication operator <code>%*%</code> forms a weighted sum of the pH optima, with weights given by the abundances of the diatom taxa.]
+
+From the above we can see that there are three types of pH value:
+<ul>
+  <li>the observed pH in <code>swappH</code></li>
+  <li>the pH optima for each taxon in <code>opt</code>, and</li>
+  <li>the WA estimate of pH for each site in <code>pred</code>.</li>
+</li>
+A quick look at the range of the pH values for each stage shows the shrinkage problem resulting from averaging
+[sourcecode lang="r" toolbar="false"]
+r.obs &lt;- range(swappH)
+r.opt &lt;- range(opt)
+r.wa &lt;- range(pred)
+
+&gt; rbind(r.obs, r.opt, r.wa)
+          [,1]    [,2]
+r.obs 4.330000 7.25000
+r.opt 4.500000 7.25000
+r.wa  4.875662 6.62395
+[/sourcecode]
+About a whole pH unit has been lost due to the repeated taking of averages.
+
+Clearly, this is a problem for WA models, one that is addressed through the using a deshrinking step.
+
+Traditionally there were two approaches to deshrinking; <em>inverse</em> and <em>classical</em> deshrinking. In the inverse approach, a model of the form
+
+$latex \mathrm{observed} = \beta_0 + \beta_1\mathrm{wa_{est}} + \varepsilon&amp;s=1$,
+
+which is a simple linear regression with the observed values as the response and the raw WA estimates as the predictor. The classical deshrinking approach flips the role of the response and the predictor such the model is
+
+$latex \mathrm{wa_{est}} = \beta_0 + \beta_1\mathrm{observed} + \varepsilon&amp;s=1$.
+
+Expanded WA estimates are achieved by taking the usual predicted values from the inverse model or by inverting the classical model equation.
+
+Both the inverse and classical deshrinking approaches are linear. The idea of using a non-linear deshrinking step has long been proposed in the literature, all the way back to ter Braak and Juggins (1993) and Marchetto (1994), but in practice the idea has not caught on, presumably because of a lack of widely-available and user-friendly software that implement the technique.
+
+In the non-linear deshrinking approach the following model is use, which very similar to that of the inverse approach
+
+$latex \mathrm{observed} \sim \beta_0 + f_1(\mathrm{wa_{est}}) + \varepsilon&amp;s=1$
+
+where $latex f_1()$ is a smooth, monotonic function. The monotonicity constraint is important; as the raw WA estimate increases in value the expanded estimate should also increase. In other words we don't allow for the expanded estimate to get smaller (bigger) as the raw WA estimate gets bigger (smaller).
+
+New code in <strong>analogue</strong> implements this monotonic deshrinking idea. The seed of the actual implementation used here is murky.<sup><a href="#footnote1">1</a></sup> Briefly, both <strong>analogue</strong> and <strong>rioja</strong> fit a cubic regression spline via <code>s(wa.est, bs = "cr")</code>, but as the standard <code>gam()</code> function won't constrain the smooth to be monotonic some additional steps have to be performed, and we end up fitting a penalised regression with monotonicity constraints invoked. The code to show how to do this in <strong>mgcv</strong> was sitting there in one of Simon's man pages!
+
+So what does this look like? The figure below shows the raw WA pH estimates and the observed pH values for the SWAP diatom data we looked at earlier. The thick green line fitted through the points is the monotonic cubic regression spline fitted via <strong>mgcv</strong>.
+[caption id="attachment_584" align="aligncenter" width="600"]<a href="http://ucfagls.files.wordpress.com/2013/01/monotonic_deshrinking_figure_1.png"><img src="http://ucfagls.files.wordpress.com/2013/01/monotonic_deshrinking_figure_1.png" alt="Monotonic deshrinking spline for the SWAP diatom pH data set" width="600" height="600" class="size-full wp-image-584" /></a> Figure 1: Monotonic deshrinking spline for the SWAP diatom pH data set[/caption]
+The monotonic deshrinking and the plot were produced using
+[sourcecode lang="r" toolbar="false"]
+## do the monotonic deshrinking
+mono &lt;- deshrink(swappH, pred, type = &quot;monotonic&quot;)$env
+
+## need to get things in increasing order for plotting
+ord &lt;- order(pred)
+
+## draw the data and the fitted monotonic cubic regression spline
+plot(pred, swappH, asp = 1, ylim = r.obs, xlim = r.obs,
+     panel.first = abline(0, 1, col = &quot;darkgrey&quot;, lwd = 2),
+     ylab = &quot;Observed pH&quot;, xlab = &quot;Raw WA pH&quot;)
+lines(mono[ord] ~ pred[ord], type = &quot;l&quot;, col = &quot;forestgreen&quot;, lwd = 2)
+[/sourcecode]
+
+In this example, there appears to be two relationships between the raw WA estimates and the observed pH; a steeper one up to pH 6.0 and a somewhat less strong one thereafter.
+
+Figure 2 shows a comparison of the three deshrinking methods discussed above.
+[caption id="attachment_586" align="aligncenter" width="600"]<a href="http://ucfagls.files.wordpress.com/2013/01/monotonic_deshrinking_figure_2.png"><img src="http://ucfagls.files.wordpress.com/2013/01/monotonic_deshrinking_figure_2.png" alt="Comparison of inverse, classical and monotonic deshrinking for the SWAP diatom pH data set" width="600" height="600" class="size-full wp-image-586" /></a> Figure 2: Comparison of inverse, classical and monotonic deshrinking for the SWAP diatom pH data set[/caption]
+The inverse and classicial deshrinking values were computed using
+[sourcecode lang="r" toolbar="false"]
+inv &lt;- deshrink(swappH, pred, type = &quot;inverse&quot;)$env
+cla &lt;- deshrink(swappH, pred, type = &quot;classical&quot;)$env
+[/sourcecode]
+The figure was produced using
+[sourcecode lang="r" toolbar="false"]
+ylim &lt;- range(r.obs, r.wa, mono, inv, cla)
+plot(pred, swappH, asp = 1, ylim = ylim, xlim = ylim,
+     panel.first = abline(0, 1, col = &quot;darkgrey&quot;, lwd = 2),
+     ylab = &quot;Observed pH&quot;, xlab = &quot;Raw WA pH&quot;)
+ord &lt;- order(pred)
+lines(inv[ord] ~ pred[ord], type = &quot;l&quot;, col = &quot;darkorange&quot;, lwd = 2)
+lines(cla[ord] ~ pred[ord], type = &quot;l&quot;, col = &quot;navyblue&quot;, lwd = 2)
+lines(mono[ord] ~ pred[ord], type = &quot;l&quot;, col = &quot;forestgreen&quot;, lwd = 2)
+legend(&quot;topleft&quot;, legend = c(&quot;Monotonic&quot;, &quot;Inverse&quot;, &quot;Classical&quot;),
+       col = c(&quot;forestgreen&quot;,&quot;darkorange&quot;,&quot;navyblue&quot;),
+       lwd = 3, bty = &quot;n&quot;)
+[/sourcecode]
+
+The monotonic deshrinking curve is quite similar to the inverse deshrinking one; this is not surprising as monotonic deshrinking is a local version of the inverse deshrinking model. The two curves only deviate from one another above pH 5.5.
+
+There does seem to be a slight improvement in WA model performance when using monotonic deshrinking over the other deshrinking techniques, for the SWAP data set at least. Well, that was the conclusion of the paper John and I have been working on for a special issue of JoPL. But you'll have to wait for the paper (and accompanying blog post) for the full details when it is accepted and in press.
+
+<strong>Notes</strong>
+<sup id="footnote1">1</sup>Steve Juggins discussed the idea briefly in a presentation he gave at UCL a number of years ago and I had at the back of my mind been mulling how to do this in R without having code the entire thing(!) myself. John Birks recently suggested that I use monotonic deshrinking in a comparison of transfer function methods we were doing for a special issue of the Journal of Paleolimnology (JoPL). It turns out that Richard Telford, a colleague of John's, had discussed this with both John and Steve too including the implementation used in <strong>analogue</strong> and, as it turned out, also in Steve's <strong>rioja</strong> R package. It seems Steve and I implemented almost the same idea, independently; me after I'd been scouring Simon Wood's exceedingly useful man pages for his <strong>mgcv</strong> package trying to find out how to do something with <code>gam()</code> to analyse time series data.
+
+<strong>References</strong>
+Marchetto (1994; <em>Journal of Paleolimnology</em> <strong>12</strong>, 155&ndash;162)
+ter Braak &amp; Juggins (1993; <em>Hydrobiologia</em>, 269/270, 485&ndash;502)

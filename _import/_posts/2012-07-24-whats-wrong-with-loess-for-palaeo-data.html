@@ -1,0 +1,139 @@
+--- 
+title: What's wrong with LOESS for palaeo data?
+status: publish
+layout: post
+published: true
+meta: 
+  tagazine-media: a:7:{s:7:"primary";s:67:"http://ucfagls.files.wordpress.com/2012/07/loess_span_examples3.png";s:6:"images";a:2:{s:67:"http://ucfagls.files.wordpress.com/2012/07/loess_span_examples3.png";a:6:{s:8:"file_url";s:67:"http://ucfagls.files.wordpress.com/2012/07/loess_span_examples3.png";s:5:"width";i:600;s:6:"height";i:600;s:4:"type";s:5:"image";s:4:"area";i:360000;s:9:"file_path";b:0;}s:60:"http://ucfagls.files.wordpress.com/2012/07/loess_gcv_fit.png";a:6:{s:8:"file_url";s:60:"http://ucfagls.files.wordpress.com/2012/07/loess_gcv_fit.png";s:5:"width";i:600;s:6:"height";i:600;s:4:"type";s:5:"image";s:4:"area";i:360000;s:9:"file_path";b:0;}}s:6:"videos";a:0:{}s:11:"image_count";i:2;s:6:"author";s:8:"15232487";s:7:"blog_id";s:8:"14744973";s:9:"mod_stamp";s:19:"2012-07-24 08:58:23";}
+  _edit_last: "15232487"
+  email_notification: "1343124081"
+  jabber_published: "1343124080"
+type: post
+tags: 
+- autocorrelation
+- cross-validation
+- GCV
+- LOESS
+- overfitting
+- Palaeoecology
+- Palaeolimnology
+- R
+- Science
+- Time series
+---
+<a href="http://en.wikipedia.org/wiki/Local_regression">Locally weighted scatterplot smoothing</a> (LOWESS) or local regression (LOESS) is widely used to highlight "signal" in variables from stratigraphic sequences. It is a user-friendly way of fitting a local model that derives its&nbsp;form from the data themselves rather than having to be specified <em>a priori</em> by the user. There are generally two things that a user has to specify when using LOESS; $latex \lambda&amp;s=1$ the span or bandwidth of the local window and $latex \alpha&amp;s=1$ the degree of polynomial used in the local regression. Both control the smoothness of the fitted model, with smaller spans and higher degree polynomials giving less-smooth (more-rough) models. Usually it is just the span value that is changed, for expedience.
+
+What can I have possibly against this? What <em>is</em> wrong with using LOESS for palaeo data?
+<!--more-->
+The problem as I see it stems from the way palaeolimnologists choose the LOESS parameters when fitting stratigraphic data. Quite often the default is chosen in whatever software is used. Some people will play around with the span testing out some values until they get a fit that they are happy with. The more statistically savvy palaeoecologist might use a cross-validation (CV) to choose the value of span that provides the best out-of-sample predictions of the observed data. For the latter, generalised cross-validation (GCV) would normally be applied to avoid repeated fitting to each CV fold or subset.
+
+Using the default or the value that gives you a fit that appeals to you is simply not justifiable science. The default may be totally inappropriate for the data to hand and the signal one is expecting. Furthermore, the human brain is great at seeing pattern even where non exists. The smoothness of the fitted LOESS model needs to be chosen to avoid overfitting the observed data. You can't do that by eye!
+
+CV or GCV should help avoid overfitting the data but importantly can only do this for <em>independent</em> observations in their normal incarnations. Palaeo data are far from independent observations. I've blogged <a title="Smoothing temporally correlated&nbsp;data" href="http://ucfagls.wordpress.com/2011/07/21/smoothing-temporally-correlated-data/">before</a> about the problems of smoothing temporally correlated data. Those problems apply just as well to LOESS though they are harder to solve.
+
+Why is this an issue? Well, the reason for fitting LOESS (or any smoother/model) to the stratigraphic data is to show any pattern or trend. With LOESS, what pattern or trend you get is determined by the data <em>and crucially</em> by the parameters chosen for the fit. Once you have the LOESS fit you <em>are</em> going to look at it, ponder what it means, interpret it in light of some other factors, posit a plausible mechanism for its generation. But what if the pattern or trend you've lovingly produced isn't real? What if the features being pondered are statistically indistinguishable from no trend or pattern? LOESS makes it really easy to extract a pattern or trend and because it is a <q>proper</q> stats method it is often taken for granted that the pattern so derived is meaningful.
+
+Consider the example data from the <a title="Smoothing temporally correlated&nbsp;data" href="http://ucfagls.wordpress.com/2011/07/21/smoothing-temporally-correlated-data/">earlier blog post</a>&nbsp;from Kohn et al (2000), where the aim is to uncover the known model from observations drawn from this model with moderate AR(1) noise. The data sample is generated using the following code:
+
+[sourcecode lang="r" toolbar="false"]
+set.seed(321)
+n &lt;- 100
+time &lt;- 1:n
+xt &lt;- time/n
+Y &lt;- (1280 * xt^4) * (1- xt)^4
+y &lt;- as.numeric(Y + arima.sim(list(ar = 0.3713), n = n))
+[/sourcecode]
+
+Several R functions can fit LOESS-like models (e.g. <code>lowess()</code> and <code>loess()</code>in base R but note these two are not the same type of LOESS model). The code chunk and figure below show three fits using different values for the span parameter.
+
+[sourcecode lang="r" toolbar="false"]
+## fit LOESS models
+lo1 &lt;- loess(y ~ xt) ## span = 0.75
+lo2 &lt;- update(lo1, span = 0.25)
+lo3 &lt;- update(lo1, span = 0.5)
+[/sourcecode]
+
+[caption id="attachment_531" align="aligncenter" width="600"]<a href="http://ucfagls.files.wordpress.com/2012/07/loess_span_examples3.png"><img class="size-full wp-image-531" title="loess_span_examples" src="http://ucfagls.files.wordpress.com/2012/07/loess_span_examples3.png" alt="Three LOESS fits to the example data using span = 0.75, 0.25 and 0.5" width="600" height="600" /></a> Three LOESS fits to the example data using span = 0.75, 0.25 and 0.5[/caption]
+
+The plot was produced using
+
+[sourcecode lang="r" toolbar="false"]
+COL &lt;- &quot;darkorange1&quot;
+layout(matrix(1:4, nrow = 2))
+plot(y ~ xt, xlab = expression(x[t]), ylab = expression(y[t]),
+     main = expression(lambda == 0.75))
+lines(Y ~ xt, lty = &quot;dashed&quot;, lwd = 1)
+lines(fitted(lo1) ~ xt, col = COL, lwd = 2)
+plot(y ~ xt, xlab = expression(x[t]), ylab = expression(y[t]),
+     main = expression(lambda == 0.25))
+lines(Y ~ xt, lty = &quot;dashed&quot;, lwd = 1)
+lines(fitted(lo2) ~ xt, col = COL, lwd = 2)
+plot(y ~ xt, xlab = expression(x[t]), ylab = expression(y[t]),
+     main = expression(lambda == 0.5))
+lines(Y ~ xt, lty = &quot;dashed&quot;, lwd = 1)
+lines(fitted(lo3) ~ xt, col = COL, lwd = 2)
+layout(1)
+[/sourcecode]
+
+There is little to choose between $latex \lambda$ = 0.75 and $latex \lambda$ = 0.5 if we are comparing them with the known model (the dashed line), but suppose we don't know the true model?
+
+The optimal $latex \lambda$ according to GCV can be determined using a function modified from a posting to R-Help by Michael Friendly (the original function did more than compute GCV)
+
+[sourcecode lang="r" toolbar="false"]
+loessGCV &lt;- function (x) {
+    ## Modified from code by Michael Friendly
+    ## http://tolstoy.newcastle.edu.au/R/help/05/11/15899.html
+    if (!(inherits(x,&quot;loess&quot;))) stop(&quot;Error: argument must be a loess object&quot;)
+    ## extract values from loess object
+    span &lt;- x$pars$span
+    n &lt;- x$n
+    traceL &lt;- x$trace.hat
+    sigma2 &lt;- sum(resid(x)^2) / (n-1)
+    gcv  &lt;- n*sigma2 / (n-traceL)^2
+    result &lt;- list(span=span, gcv=gcv)
+    result
+}
+[/sourcecode]
+
+The <code>optimize()</code> function can be used to find the value of $latex \lambda$ that achieves minimal GCV. A small wrapper function is required to link <code>optimize()</code> with <code>loessGCV()</code>
+
+[sourcecode lang="r" toolbar="false"]
+bestLoess &lt;- function(model, spans = c(.05, .95)) {
+    f &lt;- function(span) {
+        mod &lt;- update(model, span = span)
+        loessGCV(mod)[[&quot;gcv&quot;]]
+    }
+    result &lt;- optimize(f, spans)
+    result
+}
+[/sourcecode]
+
+The optimal $latex \lambda$ is chosen using <code>bestLoess()</code>. The optimal $latex \lambda$ is about 0.18 with a GCV of around 0.009
+
+[sourcecode lang="r" toolbar="false"]
+&gt; best
+$minimum
+[1] 0.1813552
+
+$objective
+[1] 0.009433405
+[/sourcecode]
+
+Our original LOESS model can be updated to use this $latex \lambda$
+
+[sourcecode lang="r" toolbar="false"]
+lo.gcv &lt;- update(lo1, span = best$minimum)
+[/sourcecode]
+
+The fit this gives is shown in the figure below
+
+[caption id="attachment_538" align="aligncenter" width="600"]<a href="http://ucfagls.files.wordpress.com/2012/07/loess_gcv_fit.png"><img class="size-full wp-image-538" title="loess_gcv_fit" src="http://ucfagls.files.wordpress.com/2012/07/loess_gcv_fit.png" alt="Optimal LOESS fit as determined  by GCV" width="600" height="600" /></a> Optimal LOESS fit as determined by GCV[/caption]
+
+This model clearly overfits; the result of the GCV criterion not knowing that the data are temporally autocorrelated. The whole process assumes that the data are independent and clearly palaeo data often violate this critical assumption. If you didn't know the real underlying model the average palaeo type would already be penning their next paper on remarkable variation in [INSERT TIME PERIOD]  climate from [INSERT SITE]. Yet all that wiggliness, the signal, just isn't real. Take another sample of data and you would get about the same level of wiggliness but in different places; the signal is just a figment of the sample of data you happen to have collected.
+
+There are solutions to this problem of course; <em>h</em>-block CV has been suggested as a more appropriate means of CV for time series where <em>h</em> observations either side of the target observation are left out from the data used to fit the model to predict the target. There are variations on approach too, as <em>h</em>-block CV tends to over-fit in some situations. I'll go into this in a bit more detail in a later posting.
+
+Be very careful using LOESS for palaeo data!
+
+<h2>References</h2>
+Kohn R., Schimek M.G., Smith M. (2000) Spline and kernel regression for dependent data. In Schimekk M.G. (Ed) (2000) <em>Smoothing and Regression: approaches, computation and application</em>. John Wiley &amp; Sons, Inc.

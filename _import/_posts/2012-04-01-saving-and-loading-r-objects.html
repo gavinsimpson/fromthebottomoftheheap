@@ -1,0 +1,68 @@
+--- 
+title: A better way of saving and loading objects in R
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  email_notification: "1333293167"
+  jabber_published: "1333293165"
+type: post
+tags: 
+- R
+---
+Hadley Wickham (@hadleywickham) this week mentioned on Twitter his preference for <code>saveRDS()</code> over the more familiar <code>save()</code>. Being a new function to me, I thought I'd take a look...
+
+<!--more-->
+
+<code>save()</code> and <code>load()</code> will be familiar to many R users. They allow you to save a named R object to a file or other connection and restore that object again. When loaded the named object is restored to the current environment (in general use this is the global environment — the workspace) with the same name it had when saved. This is annoying for example when you have a saved model object resulting from a previous fit and you want to compare it with the model object returned when the R code is rerun. Unless you change the name of the model fit object in your script you can't have both the saved object and the newly created one available in the same environment at the same time.
+
+Here's an example of what I mean.
+
+[sourcecode language="r"]
+&gt; require(mgcv)
+Loading required package: mgcv
+This is mgcv 1.7-13. For overview type 'help(&quot;mgcv-package&quot;)'.
+&gt; mod &lt;- gam(Ozone ~ s(Wind), data = airquality, method = &quot;REML&quot;)
+&gt; mod
+
+Family: gaussian
+Link function: identity
+
+Formula:
+Ozone ~ s(Wind)
+
+Estimated degrees of freedom:
+3.529  total = 4.529002
+
+REML score: 529.4881
+&gt; save(mod, file = &quot;mymodel.rda&quot;)
+&gt; ls()
+[1] &quot;mod&quot;
+&gt; load(file = &quot;mymodel.rda&quot;)
+&gt; ls()
+[1] &quot;mod&quot;
+[/sourcecode]
+
+<code>saveRDS()</code> provides a far better solution to this problem and to the general one of saving and loading objects created with R. <code>saveRDS()</code> <a href="http://en.wikipedia.org/wiki/Serialization">serializes</a> an R object into a format that can be saved. <a class="zem_slink" title="Wikipedia" href="http://www.wikipedia.org" rel="homepage" target="_blank">Wikipedia</a> describes this <a href="http://en.wikipedia.org/wiki/Serialization">thus</a> <q>...serialization is the process of converting a data structure or object state into a format that can be stored (for example, in a file or memory buffer, or transmitted across a network connection link) and "resurrected" later in the same or another computer environment.</q> <code>save()</code> does the same thing, but with one important difference; <code>saveRDS()</code> doesn't save the both the object and its name it just saves a representation of the object. As a result, the saved object can be loaded into a named object within R that is different from the name it had when originally serialized.
+
+We can illustrate this using the model fitted earlier
+
+[sourcecode language="r"]
+&gt; ls()
+[1] &quot;mod&quot;
+&gt; saveRDS(mod, &quot;mymodel.rds&quot;)
+&gt; mod2 &lt;- readRDS(&quot;mymodel.rds&quot;)
+&gt; ls()
+[1] &quot;mod&quot;  &quot;mod2&quot;
+&gt; identical(mod, mod2, ignore.environment = TRUE)
+[1] TRUE
+[/sourcecode]
+
+(Note that the two model objects have different environments within their representations so we have to ignore this when testing their identity.)
+
+You'll notice that in the call to <code>saveRDS()</code> I named the file with the extension <code>.rds</code>. This appears to be the convention used for serialized object of this sort; R uses this representation often, for example package meta-data and the databases used by <code>help.search()</code>. In contrast the extension <code>.rda</code> is often used for objects serialized via <code>save()</code>.
+
+So there you have it; <code>saveRDS()</code> and <code>readRDS()</code> are the newest additions to my day-to-day workflow.
+
+<strong>Update:</strong> As Gabor points out in the comments <code>saveRDS()</code> isn't a drop-in replacement for <code>save()</code>. The main difference is that <code>save()</code> can save many objects to a file in a single call, whilst <code>saveRDS()</code>, being a lower-level function, works with a single object at a time. This is a feature for me given the above use-case, but if you find yourself saving any more than a couple of objects at a time <code>saveRDS()</code> may not be ideal for you. The second significant difference is that <code>saveRDS()</code> forgets the original name of the object; in the use-case above this is also seen as an advantage. If maintaining the original name is important to you then there is no reason to switch from using <code>save()</code> to <code>saveRDS()</code>.

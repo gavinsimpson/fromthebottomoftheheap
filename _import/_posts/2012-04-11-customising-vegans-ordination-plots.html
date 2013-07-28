@@ -1,0 +1,212 @@
+--- 
+title: Customising vegan's ordination plots
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  email_notification: "1334150153"
+  jabber_published: "1334150151"
+type: post
+tags: 
+- Biplot
+- ordination
+- PCA
+- Principal component analysis
+- R
+- vegan
+---
+As a developer on the <a href="vegan.r-forge.r-project.org">vegan</a> package for R, one of the most FAQs is how to customise <a class="zem_slink" title="Ordination" href="http://en.wikipedia.org/wiki/Ordination_(statistics)" rel="wikipedia" target="_blank">ordination</a> diagrams, usually to colour the sample points according to an external grouping variable. Now, just because we get asked how to do this a lot is not really a reflection on the quality of the <code>plot()</code> methods available in vegan.
+
+Ordination diagrams are difficult beasts to handle with plotting code without having an unwieldy number of arguments etc. There are potentially five sets of scores that need to be plotted so the number of arguments could quickly get out of hand if we allowed the user to pass all the relevant graphical parameters to the various sets of scores. We've provided a basic <code>plot()</code> method that is set up with useful defaults that works for all the ordination methods in vegan. This method is really there to allow the quick visualisation of the fitted ordination; I use vegan on almost a daily basis and none of my presentation or publication figures use the default plot method at all. However, we have provided all the tools needed to draw custom ordination plots within vegan. How you use them also provides a useful guide to building up base graphics plots from lower-level plotting functions. In this post I intend to show two examples of building up a simple <a class="zem_slink" title="Principal component analysis" href="http://en.wikipedia.org/wiki/Principal_component_analysis" rel="wikipedia" target="_blank">PCA</a> <a class="zem_slink" title="Biplot" href="http://en.wikipedia.org/wiki/Biplot" rel="wikipedia" target="_blank">biplot</a> from the basic building blocks available in vegan and R's base graphics.
+
+<!--more-->
+
+To get going, start R and load the vegan package. For this example I will use the classic Dutch Dune Meadow data set which I also load. A simple PCA of the species data is then fitted and stored in <code>mod</code>. To finish the basic example, I use the basic <code>plot()</code> method to plot the PCA biplot. Note that I'm using symmetric scaling here; I tend to prefer this scaling for general diagrams as it preserves many of the features of biplots without focusing on one or other sets of scores. (Here I'm also using it to illustrate how to select a scaling when you are building the plot from scratch.)
+
+[sourcecode language="r" light="true"]
+## load vegan
+require(&quot;vegan&quot;)
+
+## load the Dune data
+data(dune, dune.env)
+
+## PCA of the Dune data
+mod &lt;- rda(dune, scale = TRUE)
+
+## plot the PCA
+plot(mod, scaling = 3)
+[/sourcecode]
+
+The resulting PCA biplot is shown below
+
+[caption id="attachment_443" align="aligncenter" width="480" caption="The result of a call to the plot.cca() method results in a simple biplot of the Dune Meadows PCA but is not very customisable."]<a href="https://ucfagls.files.wordpress.com/2012/04/custom_ordination_basic_plot_method.png"><img class="size-full wp-image-443" title="custom_ordination_basic_plot_method" src="https://ucfagls.files.wordpress.com/2012/04/custom_ordination_basic_plot_method.png" alt="Basic plot() method for ordinations in vegan" width="480" height="480" /></a>[/caption]
+<h2>Building a biplot using vegan methods</h2>
+The first example of a customised biplot I will show uses low-level plotting methods provided by vegan. These include <code>points()</code> and <code>text()</code> methods for objects of class <code>"cca"</code>. (The <code>"cca"</code> object is one of the base ordination classes in vegan; its name is a bit unfortunate as it is the base representation for PCA, CA, RDA etc... objects — read more about this object via <code>?cca.object</code>.) I am going to plot the basic PCA biplot, but colour the sites according to the land-use variable <code>dune.env$Use</code>, which has three levels
+
+[sourcecode language="r" light="true"]
+&gt; with(dune.env, levels(Use))
+[1] &quot;Hayfield&quot; &quot;Haypastu&quot; &quot;Pasture&quot;
+[/sourcecode]
+
+Start by defining an object holding the desired ordination scaling and a vector of colours with which to do the plotting
+
+[sourcecode language="r" light="true"]
+scl &lt;- 3 ## scaling = 3
+colvec &lt;- c(&quot;red2&quot;, &quot;green4&quot;, &quot;mediumblue&quot;)
+[/sourcecode]
+
+The basic <code>plot()</code> method can be coerced into setting up the basic plot axes, limits etc for us by using <code>type = "n"</code>, so we use that short cut and pass along our desired scaling
+
+[sourcecode language="r" light="true"]
+plot(mod, type = &quot;n&quot;, scaling = scl)
+[/sourcecode]
+
+The next step is to add the site scores. Here I use the <code>points()</code> method rather than draw the site scores using their sample ID (as is the default in the <code>plot()</code> method).
+
+[sourcecode language="r" light="true"]
+with(dune.env, points(mod, display = &quot;sites&quot;, col = colvec[Use],
+                      scaling = scl, pch = 21, bg = colvec[Use]))
+[/sourcecode]
+
+The key point to note in the code chunk above is how I colour each site according to its land-use. I index into the vector of colours created earlier using the factor <code>Use</code>. <code>Use</code> is essentially a vector of 1s, 2s, and 3s (there are three levels remember). The <code>colvec[Use]</code> evaluates to a vector the same length as the number of sites, where each element is one of the pre-specified colours
+
+[sourcecode language="r" light="true"]
+ &gt; head(with(dune.env, colvec[Use]))
+[1] &quot;green4&quot;     &quot;green4&quot;     &quot;green4&quot;     &quot;mediumblue&quot;
+[5] &quot;green4&quot;     &quot;green4&quot;
+[/sourcecode]
+
+The <code>display</code> argument selects the type of scores to plot. The remainder of the arguments are the scaling for the scores (so they match the base plot) and arguments to style the plotted points.
+
+Next I add the species scores, but this time I want to label them with (abbreviated) species names. For this I use the <code>text()</code> method with argument <code>display = "species"</code>
+
+[sourcecode language="r" light="true"]
+text(mod, display = &quot;species&quot;, scaling = scl, cex = 0.8, col = &quot;darkcyan&quot;)
+[/sourcecode]
+
+To finish the plot I add a legend. It is important to get the ordering and labelling of the colours correct here. When I drew the site scores I used the <code>Use</code> factor to index the vector of plotting colours. To ensure we get the correct ordering in the legend, it is best to extract the levels as the lables, which is what I do below
+
+[sourcecode language="r" light="true"]
+with(dune.env, legend(&quot;topright&quot;, legend = levels(Use), bty = &quot;n&quot;,
+                      col = colvec, pch = 21, pt.bg = colvec))
+[/sourcecode]
+
+If you want to provide custom labels, look at the levels of the factor and provide them to <code>legend()</code> in the correct order.
+
+The biplot should now look like the one below
+
+[caption id="attachment_445" align="aligncenter" width="480" caption="A customised ordination built from vegan lower-level plot methods"]<a href="https://ucfagls.files.wordpress.com/2012/04/custom_ordination_vegan_version.png"><img class="size-full wp-image-445" title="custom_ordination_vegan_version" src="https://ucfagls.files.wordpress.com/2012/04/custom_ordination_vegan_version.png" alt="Customised ordination built from vegan lower-level plot methods" width="480" height="480" /></a>[/caption]
+<h2>Building a biplot using base graphics directly</h2>
+If you want the ultimate level of control over the plots then you will want to build the plot up from scratch using lower-level plotting functions provided by base graphics. In this second example I'll recreate the plot I made above but from the ground up using basic plotting functions.
+
+First, start by extracting the scores needed from the ordination object. Here the scaling required for the plot needs to be provided and the sets of scores specified
+
+[sourcecode language="r" light="true"]
+scrs &lt;- scores(mod, display = c(&quot;sites&quot;, &quot;species&quot;), scaling = scl)
+[/sourcecode]
+
+This results in a list with two components; <code>sites</code> and <code>species</code>
+
+[sourcecode language="r" light="true"]
+str(scrs, max = 1)
+[/sourcecode]
+
+Each component is a matrix with two columns containing the scores on the first and second principal components respectively. If you want to extract scores on different axes provide the <code>choices</code> argument to the <code>scores()</code> function with a numeric vector of the axes you wish to extract. Do note that the code below assumes only two axes are extracted.
+
+Next compute the axis limits, which need to cover the range of the site and species scores on the first (x-axis) and second (y-axis) principal components
+
+[sourcecode language="r" light="true"]
+xlim &lt;- with(scrs, range(species[,1], sites[,1]))
+ylim &lt;- with(scrs, range(species[,2], sites[,2]))
+[/sourcecode]
+
+Now everything is ready to do some actual plotting. Start preparing the plot device be starting a new plot with <code>plot.new()</code> and then set up the coordination system via a call to <code>plot.window()</code> supplying the axis limits created above. A crucial aspect of the call to <code>plot.window()</code> is the graphical parameter <code>asp</code> which controls the aspect ratio of the plot. Here we set the aspect ratio equal to 1 to preserve the relationships between scores on the different axes and the distance interpretation of the biplot
+[sourcecode language="r" light="true"]
+plot.new()
+plot.window(xlim = xlim, ylim = ylim, asp = 1)
+[/sourcecode]
+
+The reference guides (dotted lines going through the point (0,0) are added first so as to not lie on top of any of the site or species scores. Two calls to the <code>abline()</code> function are used
+[sourcecode language="r" light="true"]
+abline(h = 0, lty = &quot;dotted&quot;)
+abline(v = 0, lty = &quot;dotted&quot;)
+[/sourcecode]
+
+The next two lines of code use the default methods for <code>points()</code> and <code>text()</code> rather than the <code>"cca"</code> methods used above
+
+[sourcecode language="r" light="true"]
+with(dune.env, points(scrs$sites, col = colvec[Use],
+                      pch = 21, bg = colvec[Use]))
+with(scrs, text(species, labels = rownames(species),
+                col = &quot;darkcyan&quot;, cex = 0.8))
+[/sourcecode]
+
+The legend is added in same way as before
+
+[sourcecode language="r" light="true"]
+with(dune.env, legend(&quot;topright&quot;, legend = levels(Use), bty = &quot;n&quot;,
+                      col = colvec, pch = 21, pt.bg = colvec))
+[/sourcecode]
+
+All that remains is to add the plot furniture; the axes, axis labels and the plot frame
+
+[sourcecode language="r" light="true"]
+axis(side = 1)
+axis(side = 2)
+title(xlab = &quot;PC 1&quot;, ylab = &quot;PC 2&quot;)
+box()
+[/sourcecode]
+
+The fruits of our labours are shown below
+[caption id="attachment_456" align="aligncenter" width="480" caption="The customised ordination built directly from base graphics elements"]<a href="https://ucfagls.files.wordpress.com/2012/04/custom_ordination_base_graphics_version1.png"><img src="https://ucfagls.files.wordpress.com/2012/04/custom_ordination_base_graphics_version1.png" alt="PCA ordination built up directly from base graphics elements" title="custom_ordination_base_graphics_version" width="480" height="480" class="size-full wp-image-456" /></a>[/caption]
+
+I don't claim these are perfect; many of the labels lie on top of one another for example. Vegan has some functions to help with this but I'll leave exemplifying those for another post.
+
+The full code for the two examples is shown below
+
+[sourcecode language="r" light="true"]
+## load vegan
+require(&quot;vegan&quot;)
+
+## load the Dune data
+data(dune, dune.env)
+
+## PCA of the Dune data
+mod &lt;- rda(dune, scale = TRUE)
+
+## plot the PCA
+plot(mod, scaling = 3)
+
+## build the plot up via vegan methods
+scl &lt;- 3 ## scaling == 3
+colvec &lt;- c(&quot;red2&quot;, &quot;green4&quot;, &quot;mediumblue&quot;)
+plot(mod, type = &quot;n&quot;, scaling = scl)
+with(dune.env, points(mod, display = &quot;sites&quot;, col = colvec[Use],
+                      scaling = scl, pch = 21, bg = colvec[Use]))
+text(mod, display = &quot;species&quot;, scaling = scl, cex = 0.8, col = &quot;darkcyan&quot;)
+with(dune.env, legend(&quot;topright&quot;, legend = levels(Use), bty = &quot;n&quot;,
+                      col = colvec, pch = 21, pt.bg = colvec))
+
+## or via base graphics methods
+scrs &lt;- scores(mod, display = c(&quot;sites&quot;, &quot;species&quot;), scaling = scl)
+str(scrs, max = 1)
+
+xlim &lt;- with(scrs, range(species[,1], sites[,1]))
+ylim &lt;- with(scrs, range(species[,2], sites[,2]))
+
+plot.new()
+plot.window(xlim = xlim, ylim = ylim, asp = 1)
+abline(h = 0, lty = &quot;dotted&quot;)
+abline(v = 0, lty = &quot;dotted&quot;)
+with(dune.env, points(scrs$sites, col = colvec[Use],
+                      pch = 21, bg = colvec[Use]))
+with(scrs, text(species, labels = rownames(species),
+                col = &quot;darkcyan&quot;, cex = 0.8))
+axis(1)
+axis(2)
+title(xlab = &quot;PC 1&quot;, ylab = &quot;PC 2&quot;)
+with(dune.env, legend(&quot;topright&quot;, legend = levels(Use), bty = &quot;n&quot;,
+                      col = colvec, pch = 21, pt.bg = colvec))
+box()
+[/sourcecode]

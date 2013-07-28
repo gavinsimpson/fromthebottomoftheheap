@@ -1,0 +1,164 @@
+--- 
+title: Generating restricted permutations with permute
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  email_notification: "1318973089"
+  jabber_published: "1318973085"
+type: post
+tags: 
+- permutation tests
+- permute
+- R
+- randomisation
+- restricted permutations
+- spatial grids
+- time series
+---
+In a <a href="http://ucfagls.wordpress.com/2011/10/04/permute-a-package-for-generating-restricted-permutations/" title="permute: a package for generating restricted&nbsp;permutations">previous post</a> I introduced the <strong>permute</strong> package and the function <code>shuffle()</code>. In that post I got as far as replicating R's base function <code>sample()</code>. Here I'll briefly outline how <code>shuffle()</code> can be used to generate restricted permutations.
+
+<!--more-->
+
+<code>shuffle()</code> has two arguments: i) <code>n</code>, the number of observations in the data set to be permuted, and ii) <code>control</code>, a list that defines the permutation design describing how the samples are permuted.
+
+[sourcecode language="r" light="true"]
+R&gt; args(shuffle)
+function (n, control = permControl())
+NULL
+[/sourcecode]
+
+<code>control</code> is a list, and for complex permutation designs. As a result, several convenience functions are provided that make it easier to specify the design you want. The main convenience function is <code>permControl()</code> which if passed no arguments populates an appropriate <code>control</code> object with defaults that result in free permutation of observations.
+
+[sourcecode language="r" light="true"]
+&gt; str(permControl())
+List of 10
+ $ strata     : NULL
+ $ nperm      : num 199
+ $ complete   : logi FALSE
+ $ within     :List of 5
+  ..$ type    : chr &quot;free&quot;
+  ..$ constant: logi FALSE
+  ..$ mirror  : logi FALSE
+  ..$ ncol    : NULL
+  ..$ nrow    : NULL
+ $ blocks     :List of 4
+  ..$ type  : chr &quot;none&quot;
+  ..$ mirror: logi FALSE
+  ..$ ncol  : NULL
+  ..$ nrow  : NULL
+ $ maxperm    : num 9999
+ $ minperm    : num 99
+ $ all.perms  : NULL
+ $ observed   : logi FALSE
+ $ name.strata: chr &quot;NULL&quot;
+ - attr(*, &quot;class&quot;)= chr &quot;permControl&quot;
+[/sourcecode]
+
+Several types of permutation can be produced by functions in <strong>permute</strong>:
+<ul>
+<li>Free permutation of objects, which we saw in the earlier post</li>
+<li>Time series or line transect designs, where the temporal or spatial ordering is preserved</li>
+<li>Spatial grid designs, where the spatial ordering is preserved in both coordinate directions</li>
+<li>Permutation of blocks or groups of samples</li>
+</ul>
+
+The first three of these can be nested within the levels of a factor or to the levels of that factor, or to both. Such flexibility allows the analysis of split-plot designs using permutation tests. <code>permControl()</code> is used to set up the design from which <code>shuffle()</code> will draw a permutation. <code>permControl()</code> has two main arguments that specify how samples are permuted within blocks of samples or at the block level itself. These are within and blocks. Two convenience functions, <code>Within()</code> and <code>Blocks()</code> can be used to set the various options for permutation. For example, to permute the observations 1:10 assuming a time series design for the entire set of observations, the following control object would be used
+[sourcecode language="r" light="true"]
+&gt; set.seed(4)
+&gt; x &lt;- 1:10
+&gt; CTRL &lt;- permControl(within = Within(type = &quot;series&quot;))
+&gt; perm &lt;- shuffle(10, control = CTRL)
+&gt; perm
+ [1]  7  8  9 10  1  2  3  4  5  6
+&gt; x[perm]
+ [1]  7  8  9 10  1  2  3  4  5  6
+[/sourcecode]
+It is assumed that the observations are in temporal or transect order. We only specified the type of permutation within blocks, the remaining options are set to their defaults via <code>Within()</code>.
+
+A more complex design, with three blocks, and a 3 by 3 spatial grid arrangement within each block can be created as follows
+[sourcecode language="r" light="true"]
+&gt; set.seed(4)
+&gt; block &lt;- gl(3, 9)
+&gt; CTRL &lt;- permControl(strata = block,
++                     within = Within(type = &quot;grid&quot;, ncol = 3, nrow = 3))
+&gt; perm &lt;- shuffle(length(block), control = CTRL)
+&gt; perm
+ [1]  6  4  5  9  7  8  3  1  2 14 15 13 17 18 16 11 12 10 22 23
+[21] 24 25 26 27 19 20 21
+[/sourcecode]
+Visualising the permutation as the 3 matrices may help illustrate how the data have been shuffled
+[sourcecode language="r" light="true"]
+&gt; ## Original
+&gt; lapply(split(1:27, block), matrix, ncol = 3)
+$`1`
+     [,1] [,2] [,3]
+[1,]    1    4    7
+[2,]    2    5    8
+[3,]    3    6    9
+
+$`2`
+     [,1] [,2] [,3]
+[1,]   10   13   16
+[2,]   11   14   17
+[3,]   12   15   18
+
+$`3`
+     [,1] [,2] [,3]
+[1,]   19   22   25
+[2,]   20   23   26
+[3,]   21   24   27
+
+&gt; ## Shuffled
+&gt; lapply(split(perm, block), matrix, ncol = 3)
+$`1`
+     [,1] [,2] [,3]
+[1,]    6    9    3
+[2,]    4    7    1
+[3,]    5    8    2
+
+$`2`
+     [,1] [,2] [,3]
+[1,]   14   17   11
+[2,]   15   18   12
+[3,]   13   16   10
+
+$`3`
+     [,1] [,2] [,3]
+[1,]   22   25   19
+[2,]   23   26   20
+[3,]   24   27   21
+[/sourcecode]
+In the first grid, the lower-left corner of the grid was set to row 2 and column 2 of the original, to row 1 and column 2 in the second grid, and to row 3 column 2 in the third grid.
+
+To have the same permutation within each level of block, use the constant argument of the <code>Within()</code> function, setting it to <code>TRUE</code>
+[sourcecode language="r" light="true"]
+&gt; set.seed(4)
+&gt; CTRL &lt;- permControl(strata = block,
++                     within = Within(type = &quot;grid&quot;, ncol = 3, nrow = 3,
++                                     constant = TRUE))
+&gt; perm2 &lt;- shuffle(length(block), control = CTRL)
+&gt; lapply(split(perm2, block), matrix, ncol = 3)
+$`1`
+     [,1] [,2] [,3]
+[1,]    6    9    3
+[2,]    4    7    1
+[3,]    5    8    2
+
+$`2`
+     [,1] [,2] [,3]
+[1,]   15   18   12
+[2,]   13   16   10
+[3,]   14   17   11
+
+$`3`
+     [,1] [,2] [,3]
+[1,]   24   27   21
+[2,]   22   25   19
+[3,]   23   26   20
+[/sourcecode]
+
+As you can see, at the moment, I make some assumptions about the ordering of samples within each spatial/temporal structure. The samples do not have the be arranged in <code>strata</code> order, but within the levels of the grouping variable the observations must be in the right order. For spatial grids, this means in column-major order&mdash;just as in the way R fills matrices by columns. In a future release, I hope to relax some of these assumptions to make it easier to apply permutations to the data to hand.
+
+In the next post in this series, I'll take a look at generating sets of permutations using the <code>shuffleSet()</code> function.

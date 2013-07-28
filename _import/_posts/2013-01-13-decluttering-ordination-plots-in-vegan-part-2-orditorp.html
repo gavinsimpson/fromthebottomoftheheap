@@ -1,0 +1,83 @@
+--- 
+title: "Decluttering ordination plots in vegan part 2: orditorp()"
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  email_notification: "1358082828"
+  jabber_published: "1358082824"
+  _publicize_pending: "1"
+type: post
+tags: 
+- graphics
+- ordination
+- PCA
+- Plotting
+- R
+- Statistics
+- vegan
+---
+In the <a href="http://ucfagls.wordpress.com/2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/" title="Decluttering ordination plots in vegan part 1:&nbsp;ordilabel()">earlier post in this series</a> I looked at the <code>ordilabel()</code> function to help tidy up ordination biplots in <a href="http://cran.r-project.org/package=vegan">vegan</a>. An alternative function vegan provides is <code>orditorp()</code>, the last four letters abbreviating the words <em><strong>t</strong>ext <strong>or</strong> <strong>p</strong>oints</em>. That is a pretty good description of what <code>orditorp()</code> does; it draws sample or species labels using text where there is room and where there isn't a plotting character is drawn instead. Essentially it boils down to being a one stop shop for calls to <code>text()</code> or <code>points()</code> as needed. Let's see how it works...<!--more-->
+
+As with last time out, I'll illustrate how <code>orditorp()</code> works via a <acronym title="Principal Components Analysis">PCA</acronym> biplot for the Dutch dune meadow data.
+
+[sourcecode toolbar="false" language="r"]
+## load vegan and the data
+require(vegan)
+data(dune)
+ord &lt;- rda(dune) ## PCA of Dune data
+
+## species priority; which species drawn last, i.e. on top
+priSpp &lt;- diversity(dune, index = &quot;invsimpson&quot;, MARGIN = 2)
+## sample priority
+priSite &lt;- diversity(dune, index = &quot;invsimpson&quot;, MARGIN = 1)
+
+## scaling to use
+scl &lt;- 3
+[/sourcecode]
+
+I won't explain any of the code above; it is the same as that used in the <a href="http://ucfagls.wordpress.com/2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/" title="Decluttering ordination plots in vegan part 1:&nbsp;ordilabel()">earlier post</a> where an explanation was also provided.
+
+<code>orditorp()</code> takes an ordination object as the first argument and in addition the <code>display</code> argument controls which set of scores is displayed. Note that <code>orditorp()</code> can only plot one set of scores at a time, which as we'll see in a minute is not exactly ideal nor foolproof. Like <code>ordilabel()</code>, you are free to specify the importance of each sample or species via argument <code>priority</code>. In <code>ordilable()</code> the <code>priority</code> controlled the plotting order such that those samples or species with high priority were plotted last (uppermost). Instead, <code>orditorp()</code> draws labels for samples or species (if it can) for those with the highest priority first.
+
+So we have something to talk to, recreate the basic samples and species biplot as used in the previous post but updated to use <code>orditorp()</code>
+[sourcecode toolbar="false" language="r"]
+plot(ord, type = &quot;n&quot;, scaling = 3)
+orditorp(ord, display = &quot;sites&quot;, priority = priSite, scaling = scl,
+         col = &quot;blue&quot;, cex = 1, pch = 19)
+## You may prefer separate plots, but here species as well
+orditorp(ord, display = &quot;species&quot;, priority = priSpp, scaling = scl,
+         col = &quot;forestgreen&quot;, pch = 2, cex = 1)
+[/sourcecode]
+
+[caption id="attachment_646" align="aligncenter" width="500"]<a href="http://ucfagls.files.wordpress.com/2013/01/orditorp_figure_combined.png"><img src="http://ucfagls.files.wordpress.com/2013/01/orditorp_figure_combined.png" alt="PCA biplot of the Dutch dune meadow data produced using &lt;code&gt;orditorp()&lt;/code&gt;" width="500" height="500" class="size-full wp-image-646" /></a> PCA biplot of the Dutch dune meadow data produced using <code>orditorp()</code>[/caption]
+
+The behaviour or <code>orditorp()</code> should now be reasonably clear; labels are drawn for sample or species only if there is room to do so, with a point being used instead. <code>orditorp()</code> isn't perfect by any means. Because it can only drawn one set of scores at a time, there is no easy way to stop the species labels plotting over the sample labels and vice versa.
+
+How it works is, first <code>orditorp()</code> calculates the heights and widths of the labels, adds a bit of space to this (more on this later) and then works out if the box given by the current sample or species label width/height, centred on the axis score coordinate, will obscure the label boxes of any labels previously drawn. If the label box doesn't obscure any previous label boxes the label is drawn at the sample or species score coordinates. If it does obscure an existing label then a point is drawn instead. <code>orditorp()</code> draws the labels in order of <code>priority</code> and as it draws each subsequent label it checks to see if previous labels are not obscured.
+
+This process isn't infallible of course; for example the second highest priority sample or species could lie very close to the highest priority one in ordination space and if so <code>orditorp()</code> would not draw a label for this second highest priority sample or species because it would obscure the label of the highest priority one.
+
+The amount of spacing or padding <em>around</em> each label is specified via the <code>air</code> argument which has a default of <code>1</code>. <code>air</code> is interpreted as the proportion of half the label width or height that the label occupies. The default of <code>1</code> therefore means that in fact there is no additional spacing beyond the confines of the box that encloses the label. If <code>air</code> is greater than 1 proportionally more padding is added whilst values less than 1 indicate that labels can overlap. The figure below shows the species scores only with two values for <code>air</code>. In the left hand panel <code>air = 2</code> is used and the labels are padded either side of the label by the <em>entire</em> string width or height. The right hand panel uses <code>air = 0.5</code> which allows labels to overlap by up to a quarter of the string width or height in any direction from the plotting coordinate (in other words, the box that cannot be obscured when plotting subsequent labels is half the string width wide and half the string height high, centred on the plotting coordinates for the label).
+
+[sourcecode toolbar="false" language="r"]
+layout(matrix(1:2, ncol = 2))
+op &lt;- par(mar = c(5,4,4,1) + 0.1)
+## site/sample scores
+plot(ord, type = &quot;n&quot;, scaling = 3, main = expression(air == 2), cex = 1)
+orditorp(ord, display = &quot;species&quot;, priority = priSite, scaling = scl,
+         col = &quot;forestgreen&quot;, cex = 1, pch = 2, air = 2)
+## Species scores
+plot(ord, type = &quot;n&quot;, scaling = 3, main = expression(air == 0.5), cex = 1)
+orditorp(ord, display = &quot;species&quot;, priority = priSpp, scaling = scl,
+         col = &quot;forestgreen&quot;, pch = 2, cex = 1, air = 0.5)
+par(op)
+layout(1)
+[/sourcecode]
+[caption id="attachment_645" align="aligncenter" width="640"]<a href="http://ucfagls.files.wordpress.com/2013/01/orditorp_figure_air.png"><img src="http://ucfagls.files.wordpress.com/2013/01/orditorp_figure_air.png?w=640" alt="PCA species plot of the Dutch dune meadow data produced using &lt;code&gt;orditorp()&lt;/code&gt; showing the effect of changing argument &lt;code&gt;air&lt;/code&gt;." width="640" height="320" class="size-large wp-image-645" /></a> PCA species plot of the Dutch dune meadow data produced using <code>orditorp()</code> showing the effect of changing argument <code>air</code>.[/caption]
+One point that should be noted is that <code>orditorp()</code> doesn't stop labels and points from overlaying one another, though as the labels are drawn after the points they shouldn't get obscured too much. We could improve the situation a bit by drawing an opaque box around the label, or even make it partially transparent, so that the label always stood out from the plotting points. Although we'd run the risk of hiding points under labels and thus hiding information from the person looking at the figure.
+
+One additional point to make is that <code>orditorp()</code> returns a logical vector indicating which sample or species scores were drawn with labels (<code>TRUE</code>) or points (<code>FALSE</code>), which might be useful for further plotting or adding to the diagram.
+
+So there were have <code>orditorp()</code>. Next time I'll take a look at <code>ordipointlabel()</code> which tackles the problem of producing a tidy ordination diagram in a far more complex way than either <code>ordilabel()</code> or <code>orditorp()</code>.

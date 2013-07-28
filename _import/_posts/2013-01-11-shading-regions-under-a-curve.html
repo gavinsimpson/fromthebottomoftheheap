@@ -1,0 +1,240 @@
+--- 
+title: Shading regions under a curve
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  email_notification: "1357918719"
+  jabber_published: "1357918715"
+  _publicize_pending: "1"
+type: post
+tags: 
+- area under a curve
+- graphics
+- Plotting
+- plotting
+- polygon
+- R
+---
+Over on the <a href="http://wp.me/p6FnH-13u">Clastic Detritus blog</a>, Brian Romans posted a nice introduction to plotting in R. At the end of his post, Brian mentioned he would like to colour in areas under the data curve corresponding to particular ranges of grain sizes. The comment area on a blog isn't really amenable to giving a full answer to the problem posed so I gave a few pointers. Other commenters also suggested solutions.
+
+The problem is how to shade or colour in areas under a curve. The more general problem is how to do this when you don't have any data that fall on the margins of the regions you wish to shade. Here is more solution to that more general problem. <!--more-->
+
+As I don't have Brian's data lets generate some similar data with the help of the <strong>mgcv</strong> package
+
+[sourcecode lang="r" toolbar="false"]
+library(mgcv)
+set.seed(2) ## simulate some data... 
+dat &lt;- gamSim(1, n = 400, dist = &quot;normal&quot;, scale = 2)
+b &lt;- gam(y ~ s(x2), data = dat)
+set.seed(42)
+newX &lt;- with(dat, data.frame(x2 = sort(runif(100, min = min(x2), max = max(x2)))))
+pred &lt;- predict(b, newdata = newX)
+
+bed &lt;- data.frame(Volume = pred, Diameter = newX[,1])
+[/sourcecode]
+
+I'm not going to explain that as it is but a means to an end. The resulting data can be nicely, plotted via
+
+[sourcecode lang="r" toolbar="false"]
+plot(Volume ~ Diameter, data = bed, type = &quot;o&quot;, pch = 19)
+[/sourcecode]
+
+with the resulting plot shown in Figure 1, below.
+
+[caption id="attachment_604" align="aligncenter" width="400"]<a href="http://ucfagls.files.wordpress.com/2013/01/polygon_under_curve_data_figure_1.png"><img src="http://ucfagls.files.wordpress.com/2013/01/polygon_under_curve_data_figure_1.png" alt="Example data used to illustrate shading areas under a curve" width="400" height="400" class="size-full wp-image-604" /></a>Figure 1: Example data used to illustrate shading areas under a curve[/caption]
+
+To illustrate, let's assume we want to shade the regions under the curve as defined by the following start and end points of four regions
+
+[sourcecode lang="r" toolbar="false"]
+from &lt;- c(0.1, 0.25, 0.37, 0.78)
+to &lt;- c(0.25, 0.37, 0.63, 0.84)
+[/sourcecode]
+
+To cut to the chase, here is my solution to the problem:
+
+[sourcecode lang="r" toolbar="false"]
+polyCurve &lt;- function(x, y, from, to, n = 50, miny,
+                      col = &quot;red&quot;, border = col) {
+    drawPoly &lt;- function(fun, from, to, n = 50, miny, col, border) {
+        Sq &lt;- seq(from = from, to = to, length = n)
+        polygon(x = c(Sq[1], Sq, Sq[n]),
+                y = c(miny, fun(Sq), miny),
+                col = col, border = border)
+    }
+    lf &lt;- length(from)
+    stopifnot(identical(lf, length(to)))
+    if(length(col) != lf)
+        col &lt;- rep(col, length.out = lf)
+    if(length(border) != lf)
+        border &lt;- rep(border, length.out = lf)
+    if(missing(miny))
+        miny &lt;- min(y)
+    interp &lt;- approxfun(x = x, y = y)
+    mapply(drawPoly, from = from, to = to, col = col, border = border,
+           MoreArgs = list(fun = interp, n = n, miny = miny))
+    invisible()
+}
+[/sourcecode]
+
+Don't worry, I'll explain all of that in a minute; first let's see <code>polyCurve()</code> in use
+
+[sourcecode lang="r" toolbar="false"]
+cols &lt;- c(&quot;red&quot;, &quot;forestgreen&quot;, &quot;navyblue&quot;, &quot;orange&quot;)
+with(bed, plot(Diameter, Volume, type = &quot;o&quot;, pch = 19,
+               panel.first =
+               polyCurve(Diameter, Volume, from = from, to = to,
+                         col = cols, border = &quot;black&quot;)))
+[/sourcecode]
+
+The resulting plot should look like the one in Figure 2 below.
+
+[caption id="attachment_605" align="aligncenter" width="400"]<a href="http://ucfagls.files.wordpress.com/2013/01/final_plot_polygon_under_the_curve.png"><img src="http://ucfagls.files.wordpress.com/2013/01/final_plot_polygon_under_the_curve.png" alt="Final plot showing the example data and four regions under the curve shaded" width="400" height="400" class="size-full wp-image-605" /></a> Figure 2: Final plot showing the example data and four regions under the curve shaded[/caption]
+
+Now the nitty gritty. <code>polyCurve()</code> takes the x and y data points, the start and end points of the areas to be shaded in (arguments <code>from</code> and <code>to</code>), an option to override the minimum value on the y axis to which the shading will extend (can be missing), plus vectors of colours for the fill and border of each polygon drawn.
+
+Lines 3&ndash;8 define an internal function <code>drawPoly()</code>, which will actually draw a single polygon over the region under the curve defined by its arguments <code>from</code> and <code>to</code>. The first argument to <code>drawPoly()</code> is <code>fun</code>, which is a function that returns values on the curve for a vector of locations in the x variable/axis. We'll see how this function is derived later. Notice that we pass in here some of the arguments previously described that control the look of the polygons and how far down on the y-axis the polygon will be drawn (<code>miny</code>).
+
+The first line of <code>drawPoly()</code> generates an equally-spaced sequence of <code>n</code> values over the range of the polygon on the x-axis. <code>n</code> defaults to 50 values but this can be changed if needed especially if the data in that region are very wiggly or the region quite wide. The next part of <code>drawPoly()</code> uses the <code>polygon()</code> function to actually draw the polygon. We pass it the x coordinate as the sequence of values just created, with the first and last points in the sequence repeated. The y coordinates are supplied as the output from <code>fun()</code> for the sequence of points, augmented at the start and end by the value of <code>miny</code>. And that's it.
+
+Lines 9&ndash;16 of <code>polyCurve()</code> do some sanity checking and house keeping
+
+<ul>
+  <li>First the lengths of <code>from</code> and <code>to</code> are checked to see if they are equal</li>
+  <li>Then we check the lengths of the vectors of fill and border colours, <code>col</code> and <code>border</code> to see if these match up with the number of polygons to be drawn. If the lengths don't match, we extend each vector to match the number of polygons to be drawn. This is a nice little feature that allows for a single colour to be supplied and have <code>polyCurve()</code> still work.</li>
+  <li>Finally, we check to see if argument <code>miny</code> was set by the user and if not we assign to it the minimum value taken by <code>y</code>.
+</ul>
+
+The next line is where some R magic happens. Recall that <code>drawPoly()</code> takes a function as its first argument, which returns interpolated values along the data curve at specified x variable locations. This is where that function is created. <code>approxfun()</code> is one of those great little R functions that really saves a lot of time and coding. Essentially, <code>approxfun()</code> linearly (by default) interpolates a set of x and y coordinates. But crucially, and here is the kicker, it returns a <em>function</em> that, if given new locations for the x coordinate, will return interpolated values for the y coordinate.
+
+Rather than interpolating the data curve for each region for which we want to draw a polygon, we interpolate the entire data curve with <code>approxfun()</code> and then reuse that function to generate the interpolated values we need when drawing each region's polygon.
+
+The last major piece of <code>polyCurve()</code> code is where we repeatedly call <code>drawPoly()</code>, once per region to be covered by a polygon. I could have done this part with a <code>for()</code> loop, iterating over the regions and calling <code>drawPoly()</code> with the appropriate <code>from</code>, <code>to</code>, <code>col</code> and <code>border</code>, etc. That would be relatively easy to do, but it is not really R-like. R provides a family of functions, known as the <code>apply</code> functions, which in many cases allow one to do away with an explicit <code>for()</code>. [Note that the loop is still there, it is just hidden away from view and in some cases done in compiled code rather than interpretted R code.]
+
+We want to call <code>drawPoly()</code> for each combination of <code>from</code>, <code>to</code>, <code>col</code> and <code>border</code>. For this we need a the <em>multivariate</em> <code>apply</code> function <code>mapply()</code>. We pass <code>mapply()</code> the function we wish to repeatedly call. After this we give the arguments we wish to call our function with. <code>mapply()</code> will call our function once for each combination of these arguments. I.e. it will call <code>drawPoly()</code> with <code>from[i]</code>, <code>to[i]</code>, <code>col[i]</code> and <code>border[i]</code>, where <code>i</code> takes the value 1, 2, 3, ... in turn. The final part of our <code>mapply()</code> call is to pass some extra arguments needed for <code>drawPoly()</code>; these arguments don't change with each polygon so they are supplied as a list object to the <code>MoreArgs</code> argument. Notice that I name the elements of this list using the name of the <code>drawPoly()</code> argument I want each element passed on to.
+
+The final line is last bit of house keeping; <code>polyCurve()</code> returns nothing and does so invisibly.
+
+Let's return to the code we used to actually draw Figure 2 above
+
+[sourcecode lang="r" toolbar="false"]
+cols &lt;- c(&quot;red&quot;, &quot;forestgreen&quot;, &quot;navyblue&quot;, &quot;orange&quot;)
+with(bed, plot(Diameter, Volume, type = &quot;o&quot;, pch = 19,
+               panel.first =
+               polyCurve(Diameter, Volume, from = from, to = to,
+                         col = cols, border = &quot;black&quot;)))
+[/sourcecode]
+
+This is a fairly standard call to <code>plot()</code>. The none-standard part is the use of the <code>panel.first</code> argument. This is actually an argument of <code>plot.default()</code>, the default <code>plot</code> method. It takes an R expression, a bit of R code, that will be run after the plotting region has been defined and axes drawn, but crucially <em>before</em> the data for the plot are actually drawn. This is where we want <code>polyCurve()</code> to be run, so the coloured polygons end up being drawn <em>underneath</em> the actual data. This produces a nicer looking plot than having the polygons drawn over the top of the data.
+
+It is worth noting that there is a corresponding <code>panel.last</code> argument which works the same way but is only run once all the other plotting is complete. A further point to note is that these two arguments work nicely when the default <code>plot</code> is called, but they can break when other <code>plot</code> methods are called first. Things break because the expression supplied to <code>panel.first</code> might end up getting evaluated (run) <em>before</em> any plotting has even taken place, because the argument is being evaluated in the wrong place (at the wrong time). At the very least, <code>panel.first</code> will have no effect, but it might raise an error in some situations.
+
+So there we have it. Interpolating the data allows for a relatively concise solution to the problem of shading areas under a curve. It is a general solution not requiring one to have data at the boundaries of the regions to be shaded and as such doesn't require any selection of data points within the region to draw the polygon through.
+
+If you are still with me, it might be useful to visualise how <code>drawPoly()</code> and <code>polyCurve()</code> work, to see what each part of the process is doing.
+
+First, set up a base plot onto which we can draw; this shows the data as before, but with the data points draw in a smaller size.
+
+[sourcecode lang="r" toolbar="false"]
+plot(Volume ~ Diameter, data = bed, type = &quot;o&quot;, pch = 19, col = &quot;black&quot;,
+     cex = 0.5, main = &quot;Interpolated points on the\ndata curve&quot;)
+[/sourcecode]
+
+Next, use <code>approxfun()</code> to produce an interpolation function for the data
+
+[sourcecode lang="r" toolbar="false"]
+FUN &lt;- with(bed, approxfun(Diameter, Volume))
+[/sourcecode]
+
+<code>FUN()</code> takes a single argument, the locations on the x variable for which interpolated y coordinates are to be returned, e.g.
+
+[sourcecode lang="r" toolbar="false"]
+&gt; FUN((1:10) * 0.1) 
+ [1]  8.394756 12.740232 12.004102  8.834530  7.239627  8.145023
+ [7]  7.831734  5.340844  4.948277        NA
+[/sourcecode]
+
+Notice that <code>NA</code> is returned for values outside the range of the data; This is the default behaviour of <code>approxfun()</code>, which can be changed via argument <code>rule</code>, but we can't get it to extrapolate beyond the range of the data.
+
+Now, generate a set of x coordinates for the region of the curve we want to interpolate. Here I use the bit of the curve between the two peaks in the data.
+
+[sourcecode lang="r" toolbar="false"]
+Sq &lt;- seq(from[3], to[3], length = 20)
+[/sourcecode]
+
+We use 20 values here, so the plot we will produce in a minute isn't overly crowded, but the more values you draw over the region, the smoother the fit to the data curve itself.
+
+The interpolated values for this sequence of coordinates is given by <code>FUN()</code>
+
+[sourcecode lang="r" toolbar="false"]
+&gt; FUN(Sq)
+ [1] 9.724055 9.300774 8.907145 8.565961 8.233448 7.924078
+ [7] 7.675439 7.471385 7.315091 7.263203 7.216052 7.210351
+[13] 7.339273 7.468195 7.600860 7.801945 7.996272 8.180440
+[19] 8.347901 8.429620
+[/sourcecode]
+
+and we can draw these locations on the plot via a call to <code>points()</code>, giving it the x coordinates, <code>Sq</code>, and the output from <code>FUN(Sq)</code>
+
+[sourcecode lang="r" toolbar="false"]
+points(Sq, FUN(Sq), col = &quot;#FF000088&quot;, pch = 19, type = &quot;o&quot;)
+[/sourcecode]
+
+The points were drawn in red, with some alpha transparency so that the data and curve show through from underneath. The resulting plot should look like the one in the left hand panel of Figure 3 below.
+
+[caption id="attachment_608" align="aligncenter" width="600"]<a href="http://ucfagls.files.wordpress.com/2013/01/working_polygon_under_curve1.png"><img src="http://ucfagls.files.wordpress.com/2013/01/working_polygon_under_curve1.png" alt="Illustrating the steps involved in interpolating the data curve and drawing a polygon under the curve" width="600" height="400" class="size-full wp-image-608" /></a> Figure 3: Illustrating the steps involved in interpolating the data curve and drawing a polygon under the curve[/caption]
+
+Now that we have a good handle on what <code>approxfun()</code> is doing, we can move on to the drawing of the polygon that will shade in the area under the curve defined by our region. Start a new plot as before
+
+[sourcecode lang="r" toolbar="false"]
+plot(Volume ~ Diameter, data = bed, type = &quot;o&quot;, pch = 19, col = &quot;black&quot;,
+     cex = 0.5, main = &quot;The final polygon&quot;)
+FUN &lt;- with(bed, approxfun(Diameter, Volume))
+Sq &lt;- seq(from[3], to[3], length = 20)
+[/sourcecode]
+
+We now need to do a few housekeeping steps that will make the subsequent plotting much easier.
+[sourcecode lang="r" toolbar="false"]
+miny &lt;- with(bed, min(Volume))
+xvals &lt;- c(Sq[1], Sq, Sq[20])
+yvals &lt;- c(miny, FUN(Sq), miny)
+col &lt;- &quot;#FF000088&quot;
+[/sourcecode]
+
+First we looked-up the minimum value of the y coordinate, <code>Volume</code>. Then we created a set of x and y coordinates for which we want the polygon drawing. For the x coordinates, notice how we extend the sequence by prepending the first element of <code>Sq</code> and appending the last element on to the vector of x coordinates <code>Sq</code>. We do this because we have two points with the same x coordinate at the edges of the region we want to cover in a polygon; one on the curve and one at the bottom of the plot. The y coordinates were generated by calling our interpolation function <code>FUN()</code>, and as with the x coordinates, we pad this vector of coordinates at both ends with the minimum value of <code>Volume</code>. This takes care of the vertices of the polygon that fall to the bottom of the plot. We also store the plotting colour so we don't have to keep repeating it in the steps to follow.
+
+Having done that bit of housekeeping, we can draw the polygon. In the code below I draw the actual polygon and overlay on it the vertices of the polygon through which R actually draws the line of the polygon
+
+[sourcecode lang="r" toolbar="false"]
+polygon(xvals, yvals, border = col)
+points(xvals, yvals, col = col, pch = 19, type = &quot;o&quot;)
+[/sourcecode]
+
+(Note that the behaviour of <code>polygon()</code> is to join the first and last vertices, hence we didn't need to do that bit ourselves.)
+
+At this point the plot should look like the right hand panel of Figure 3, above.
+
+The entirety of Figure 3 can be reproduced via the following code
+
+[sourcecode lang="r" toolbar="false"]
+layout(matrix(1:2, ncol = 2))
+op &lt;- par(mar = c(5,4,4,2) + 0.1)
+## plot1
+plot(Volume ~ Diameter, data = bed, type = &quot;o&quot;, pch = 19, col = &quot;black&quot;,
+     cex = 0.5, main = &quot;Interpolated points on the\ndata curve&quot;)
+FUN &lt;- with(bed, approxfun(Diameter, Volume))
+Sq &lt;- seq(from[3], to[3], length = 20)
+points(Sq, FUN(Sq), col = &quot;#FF000088&quot;, pch = 19, type = &quot;o&quot;)
+## plot2
+plot(Volume ~ Diameter, data = bed, type = &quot;o&quot;, pch = 19, col = &quot;black&quot;,
+     cex = 0.5, main = &quot;The final polygon&quot;)
+miny &lt;- with(bed, min(Volume))
+xvals &lt;- c(Sq[1], Sq, Sq[20])
+yvals &lt;- c(miny, FUN(Sq), miny)
+col &lt;- &quot;#FF000088&quot;
+polygon(xvals, yvals, border = col)
+points(xvals, yvals, col = col, pch = 19, type = &quot;o&quot;)
+par(op)
+layout(1)
+[/sourcecode]

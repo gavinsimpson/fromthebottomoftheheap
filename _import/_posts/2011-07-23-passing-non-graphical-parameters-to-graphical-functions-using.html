@@ -1,0 +1,115 @@
+--- 
+title: Passing non-graphical parameters to graphical functions using ...
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  jabber_published: "1311430285"
+type: post
+tags: 
+- R
+---
+Argument passing via <code>...</code> is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. <code>...</code> is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When writing you own plot methods, using <code>...</code> allows the user of your function to pass arguments like <code>cex</code>, <code>col</code>, <code>lty</code>, etc. on to the plotting function inside your method. You do, however, need to be careful in where you use <code>...</code> and which functions you pass <code>...</code> on to.
+<!--more-->
+Consider the following object <code>FOO</code> that is a data frame with our own class <code>"foo"</code>
+
+[sourcecode language="r" gutter="false"]
+FOO &lt;- data.frame(x = 1:10, y = 1:10)
+rownames(FOO) &lt;- LETTERS[1:10]
+class(FOO) &lt;- &quot;foo&quot;
+[/sourcecode]
+
+A simplified <code>plot()</code> method to plot the <code>x</code> and <code>y</code> components of our object, displaying the data as points or text labels might be:
+
+[sourcecode language="r" gutter="false"]
+plot.foo &lt;- function(X, type = c(&quot;points&quot;,&quot;text&quot;), ...) {
+    x &lt;- X$x
+    y &lt;- X$y
+    type &lt;- match.arg(type)
+    plot(x, type = &quot;n&quot;, ...)
+    if(type == &quot;points&quot;) {
+        points(x, y, ...)
+    } else {
+        text(x, y, labels = rownames(x), ...)
+    }
+    invisible(x)
+}
+[/sourcecode]
+
+Note that we are passing <code>...</code> on to each of <code>plot()</code>, <code>points()</code>, and <code>text()</code> so our method is very simple. However, if we try to suppress the drawing of axes using the <code>axes</code> argument of <code>plot.default()</code>, our method will generate errors
+
+[sourcecode language="r" gutter="false"]
+&gt; plot(FOO, axes = FALSE)
+Warning message:
+In plot.xy(xy.coords(x, y), type = type, ...) :
+  &quot;axes&quot; is not a graphical parameter
+[/sourcecode]
+
+Turning warnings into errors, we see that the call to <code>points()</code> is where the warning originates (actually in <code>plot.xy()</code>, frame 5, but <code>points()</code> is the offending code in our method)
+[sourcecode language="r" gutter="false"]
+&gt; options(warn = 2) ## turn warnings to errors
+&gt; 
+&gt; plot(FOO, axes = FALSE)
+Error in plot.xy(xy.coords(x, y), type = type, ...) : 
+  (converted from warning) &quot;axes&quot; is not a graphical parameter
+&gt; ## look at the call stack
+&gt; traceback()
+9: doWithOneRestart(return(expr), restart)
+8: withOneRestart(expr, restarts[[1L]])
+7: withRestarts({
+       .Internal(.signalCondition(simpleWarning(msg, call), msg, 
+           call))
+       .Internal(.dfltWarn(msg, call))
+   }, muffleWarning = function() NULL)
+6: .signalSimpleWarning(&quot;\&quot;axes\&quot; is not a graphical parameter&quot;, 
+       quote(plot.xy(xy.coords(x, y), type = type, ...)))
+5: plot.xy(xy.coords(x, y), type = type, ...)
+4: points.default(x, y, ...)
+3: points(x, y, ...)
+2: plot.foo(FOO, axes = FALSE)
+1: plot(FOO, axes = FALSE)
+[/sourcecode]
+
+The warning results from our function passing <code>axes = FALSE</code> on to the lower-level plotting functions.
+
+An obvious solution is to process <code>...</code> and strip out any offending non-graphical parameters and then arrange for the calls to use the stripped out <code>...</code>. Doing this is possible, but is very complicated. There is an alternative, simpler solution that is used in several base R functions and suggested to me by Brian Ripley (when I asked about doing this on R-Help for a function in the vegan package). The trick is to have a local, in-line wrapper around <code>points()</code> of the following form:
+
+[sourcecode language="r" gutter="false"]
+lPoints &lt;- function(..., log, axes, frame.plot, panel.first, panel.last) { 
+    points(...)
+}
+[/sourcecode]
+
+Here we list all the arguments of <code>plot.default()</code> we <em>don't</em> want passed on to the low-level plotting calls, but importantly, they are listed <em>after</em> <code>...</code>. The only code in the body of the local function is a call to the low-level graphics function we want to use. Importantly, of the arguments taken by <code>lPoints()</code> only <code>...</code> is passed on to the graphics function it wraps. Because the arguments from <code>plot.default()</code> are named and come after <code>...</code> in the definition of <code>lPoints()</code>, any arguments passed to <code>lPoints()</code> that fully match the named arguments are automatically stripped from the <code>...</code> that is passed on to the wrapped function.
+
+Using this trick, we can now write our <code>plot.foo()</code> method like this:
+[sourcecode gutter="false" language="r"]
+plot.foo &lt;- function(X, type = c(&quot;points&quot;,&quot;text&quot;), ...) {
+    lPoints &lt;- function(..., log, axes, frame.plot,
+                        panel.first, panel.last) points(...)
+    lText &lt;- function(..., log, axes, frame.plot,
+                      panel.first, panel.last) text(...)
+    x &lt;- X$x
+    y &lt;- X$y
+    type &lt;- match.arg(type)
+    plot(x, type = &quot;n&quot;, ...)
+    if(type == &quot;points&quot;) {
+        lPoints(x, y, ...)
+    } else {
+        lText(x, y, labels = rownames(x), ...)
+    }
+    invisible(x)
+}
+[/sourcecode]
+
+Now we can pass arguments to both <code>plot.default()</code> and <code>points()</code> and <code>text()</code>, and the call that raised the warning earlier, now works without complaint:
+[sourcecode gutter="false" language="r"]
+&gt; plot(FOO, axes = FALSE)
+&gt;
+[/sourcecode]
+
+Remember to reset the warning level if you followed the code above
+[sourcecode gutter="false" language="r"]
+options(warn = 0)
+[/sourcecode]

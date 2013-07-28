@@ -1,0 +1,113 @@
+--- 
+title: "Embedding a time series with time delay in R \xE2\x80\x94 Part II"
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  jabber_published: "1308085347"
+type: post
+tags: 
+- embed
+- R
+- time delay
+- Time series
+---
+Some months ago, I <a href="http://ucfagls.wordpress.com/2011/01/21/embedding-a-time-series-with-time-delay-in-r/" title="Embedding a time series with time delay in&nbsp;R">posted</a> a function that extended the base <a href="http://www.r-project.org" title="R Website">R</a> function <code>embed()</code> to allow for time delay embedding. Today, David Gonzales <a href="http://ucfagls.wordpress.com/2011/01/21/embedding-a-time-series-with-time-delay-in-r/comment-page-1/#comment-24" title="Link to David's comment">alerted</a> me to an inconsistency between <code>embed()</code> and <code>Embed()</code>. The example David used was
+
+[sourcecode language="r" gutter="false"]
+R&gt; (x &lt;- seq(1,20,3))
+[1]  1  4  7 10 13 16 19
+R&gt; embed(x, 4)
+     [,1] [,2] [,3] [,4]
+[1,]   10    7    4    1
+[2,]   13   10    7    4
+[3,]   16   13   10    7
+[4,]   19   16   13   10
+R&gt; Embed(x, 4)
+     [,1] [,2] [,3] [,4]
+[1,]    4    3    2    1
+[2,]    7    6    5    4
+[3,]   10    9    8    7
+[4,]   13   12   11   10
+[/sourcecode]
+
+where <code>Embed()</code> clearly returns an incorrect result.
+
+In this post, I present an explanation of the problem and address the shortcomings in the original code with an updated version of <code>Embed()</code>.
+
+<!--more-->
+
+The reason the original version of <code>Embed()</code> doesn't work with David's example is that when I wrote it, I had in mind that it would work on the <em>indices</em> of the time series, not the values of the time series. I had overlooked that <code>embed()</code> returned the embedded time series, not the indices &mdash; the problem of testing with vectors like <code>1:10</code>!
+
+Updating <code>Embed()</code> to output the same result as <code>embed()</code> is a trivial matter; we just get the function to work with <code>seq_along(x)</code> and not <code>x</code> itself and then use the old <code>Embed()</code> behaviour to index <code>x</code> to return the embedded time series. As an added extra, as we are generating the indices anyway, we can optionally have the function return those instead of the embedded series.
+
+Here is the updated version of <code>Embed()</code>
+
+[sourcecode language="r" gutter="false"]
+Embed &lt;- function(x, m, d = 1, indices = FALSE, as.embed = TRUE) {
+    n &lt;- length(x) - (m-1)*d
+    X &lt;- seq_along(x)
+    if(n &lt;= 0)
+        stop(&quot;Insufficient observations for the requested embedding&quot;)
+    out &lt;- matrix(rep(X[seq_len(n)], m), ncol = m)
+    out[,-1] &lt;- out[,-1, drop = FALSE] +
+        rep(seq_len(m - 1) * d, each = nrow(out))
+    if(as.embed)
+        out &lt;- out[, rev(seq_len(ncol(out)))]
+    if(!indices)
+        out &lt;- matrix(x[out], ncol = m)
+    out
+}
+[/sourcecode]
+
+The main difference is that we create <code>X &lt;- seq_along(x)</code> and create <code>out</code> using that rather than the time series (<code>x</code>). I've also added a new argument, <code>indices</code>, that defaults to <code>FALSE</code>. If we want <code>Embed()</code> to return the indices of the embedded time series, call the function with <code>indices = FALSE</code>.
+
+The new version of <code>Embed()</code> gives the same results as before and is consistent with <code>embed()</code> when we pass it a time series that is identical to its indices
+
+[sourcecode language="r" gutter="false"]
+R&gt; embed(1:5, 2)
+     [,1] [,2]
+[1,]    2    1
+[2,]    3    2
+[3,]    4    3
+[4,]    5    4
+R&gt; Embed(1:5, 2)
+     [,1] [,2]
+[1,]    2    1
+[2,]    3    2
+[3,]    4    3
+[4,]    5    4
+[/sourcecode]
+
+but it also works for time series like those in David's example:
+
+[sourcecode language="r" gutter="false"]
+R&gt; (x &lt;- seq(1,20,3))
+[1]  1  4  7 10 13 16 19
+R&gt; embed(x, 4)
+     [,1] [,2] [,3] [,4]
+[1,]   10    7    4    1
+[2,]   13   10    7    4
+[3,]   16   13   10    7
+[4,]   19   16   13   10
+R&gt; Embed(x, 4)
+     [,1] [,2] [,3] [,4]
+[1,]   10    7    4    1
+[2,]   13   10    7    4
+[3,]   16   13   10    7
+[4,]   19   16   13   10
+[/sourcecode]
+
+and we have the added benefit of being able to return the indices of the embedded time series
+
+[sourcecode language="r" gutter="false"]
+R&gt; Embed(x, 4, indices = TRUE)
+     [,1] [,2] [,3] [,4]
+[1,]    4    3    2    1
+[2,]    5    4    3    2
+[3,]    6    5    4    3
+[4,]    7    6    5    4
+[/sourcecode]
+
+Now I just need to do something on the recurrence plot that I originally wrote <code>Embed()</code> for!

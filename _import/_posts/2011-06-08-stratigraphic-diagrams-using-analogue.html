@@ -1,0 +1,77 @@
+--- 
+title: Stratigraphic diagrams using analogue
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  jabber_published: "1307525723"
+type: post
+tags: 
+- analogue
+- R
+---
+One of the routine tasks palaeoecologists do is plot data on species composition or geochemical proxies say along a sediment core or stratigraphic sequence. These diagrams are the canonical way of displaying stratigraphic data in this field. An example of a stratigraphic diagram is shown below.
+
+[caption id="attachment_73" align="aligncenter" width="300" caption="Example of a stratigraphic diagram showing data from the classic Abernethy Forest late glacial pollen sequence"]<a href="http://ucfagls.files.wordpress.com/2011/06/stratigraphic_plot2.png"><img src="http://ucfagls.files.wordpress.com/2011/06/stratigraphic_plot2.png?w=300" alt="Example of a stratigraphic diagram showing data from the classic Abernethy Forest late glacial pollen sequence" title="Stratigraphic plot example" width="300" height="225" class="aligncenter size-medium wp-image-76" /></a>[/caption]
+
+These plots are also a bit of a pain to produce, for various reasons. We want to cram as much information into a single diagram as possible, so when plotting species abundance type data, we use larger panels for abundant taxa and smaller panels for the less abundant taxa. Quite often we want to mix relative data types (e.g. relative abundances or compositional data) with absolute data types (e.g. geochemical proxies, palaeoenvironmental reconstructions, ordination summaries) and therefore only want to scale the sizes of the panels for the relative data types. We might want to display the data in the panels in different ways and add extra information to the diagram such as stratigraphic zones or an additional y-axis scale (dates as well as depths for example).
+
+Because of these special plotting requirements, the task of drawing stratigraphic diagrams has often been performed in specialist software; e.g. Eric Grimm's <a href="http://intra.museum.state.il.us/pub/grimm/tilia/" title="Link to Eric Grimm's Tilia ftp site">Tilia and Tiliagraph</a> are an old example I used during my undergraduate dissertation, now updated for modern computers, or Steve Juggin's <a href="http://www.staff.ncl.ac.uk/staff/stephen.juggins/software/C2Home.htm" title="C2 website">C<sup>2</sup></a> programme. Having produced the figure in the specialist software, a lengthy post-processing process in Illustrator often ensued, to get the diagram looking just right and ready for publication.
+
+Being a Linux user for over a decade now, none of these applications would run on my computers without dropping back out to Windows, and because I use R all the time for my data analysis, it would be great if we could produce these plots using R. So I started writing some code that resulted in the <code>Stratiplot()</code> function in my <a href="http://analogue.r-forge.r-project.org/" title="Analogue package website">analogue</a> package. <code>Stratiplot()</code> uses the power of the Lattice graphics package and the odd bit of grid code to achieve pretty reasonable-looking diagrams (IMHO).
+
+<!--more-->
+The example above was produced with the following code:
+
+[sourcecode language="r" gutter="false"]
+require(analogue)
+data(abernethy)
+Stratiplot(Age ~ . - Depth, data = chooseTaxa(abernethy, n.occ = 5, max.abun = 10),
+           type = c(&quot;h&quot;,&quot;l&quot;,&quot;g&quot;))
+[/sourcecode]
+
+As you can see, <code>Stratiplot()</code> has a formula interface (the <code>abernethy</code> data frame contains both an <code>Age</code> and a <code>Depth</code> variable, but we only want to use <code>Age</code> in the plot so we must remove <code>Depth</code> from the RHS of the formula), so works like many other R functions, but there is a standard interface if you are prepared to get the data in the correct format &amp;mdash which isn't too difficult! The <code>type = c("h","l","g")</code> is an extension of the <code>xyplot()</code> argument of the same name, and exists to define what types of sub-plots are drawn on each of the panels. The available types are:
+
+<ul>
+	<li><code>"l"</code> &mdash; draws the data as lines,</li> 
+	<li><code>"p"</code> &mdash; draws the data as points,</li>
+	<li><code>"o"</code> &mdash; draws the data as both lines and points <em>overplotted</em>,</li>
+	<li><code>"b"</code> &mdash; draws the data as both lines and points,</li>
+	<li><code>"g"</code> &mdash; draws a grid at the tick marks,</li>
+	<li><code>"h"</code> &mdash; draws the data as histogram-like bars, but extending from the y-axis, not the usual x-axis, margin,</li>
+	<li><code>"smooth"</code> &mdash; draws a LOESS smoother through the data,</li>
+	<li><code>"poly"</code> &mdash; draws the data as a filled polygon, which is like <code>type = "l"</code>, but the area between 0 and the line, on the x-axis, is filled,</li>
+</ul>
+
+The first five have their usual meaning from the <code>xyplot()</code> function, whilst the last three are either unique to <code>Stratiplot()</code> (type <code>"poly"</code>) or have been implemented differently because the data in a stratigraphic diagram move up the diagram and not from left to right (types <code>"h"</code> and <code>smooth</code>). These can be combined in whatever way you wish, as the underlying panel function <code>panel.Stratiplot()</code> tries to plot them in a sensible order so one graphical element doesn't obscure another element.
+
+In the example we limited the number of taxa that are used in the diagram via the <code>chooseTaxa()</code> function to select only those taxa that were present in at least 5 samples <strong>and</strong> were at least as abundant as 10% in any one sample. The criteria could have been made "either or" by using <code>type = "OR"</code> in the <code>chooseTaxa()</code> call.
+
+The stratigraphic diagram can be augmented in several ways. One of which is to order the variables by another variable. A usual ploy is to sort the taxa in order of their weighted average "optima" for the y-axis variable, which emphasises the change in species composition over time. This can be done in <code>Stratiplot()</code> using <code>sort = "wa"</code>, e.g. this snippet of R code
+
+[sourcecode language="r" gutter="false"]
+Stratiplot(Age ~ . - Depth, data = chooseTaxa(abernethy, n.occ = 5, max.abun = 10),
+           type = c(&quot;h&quot;,&quot;l&quot;,&quot;g&quot;), sort = &quot;wa&quot;)
+[/sourcecode]
+
+produces this version of the figure
+
+[caption id="attachment_85" align="aligncenter" width="300" caption="Stratigraphic diagram of the Abernethy Forest pollen sequence with taxa sorted by WA of the Age variable"]<a href="http://ucfagls.files.wordpress.com/2011/06/stratigraphic_plot_wa_sort.png"><img src="http://ucfagls.files.wordpress.com/2011/06/stratigraphic_plot_wa_sort.png?w=300" alt="Stratigraphic diagram of the Abernethy Forest pollen sequence with taxa sorted by WA of the Age variable" title="Stratigraphic diagram with taxa sorted by WA of the Age variable" width="300" height="225" class="size-medium wp-image-85" /></a>[/caption]
+
+Stratigraphic zones can also be added to the diagram using the <code>zones</code> argument. By default the zones are illustrated by a legend on the right of the figure and labelled using argument <code>zoneNames</code>. In the code below, we add in the six significant zones in this sequence using five boundaries, <code>Zones</code>, and label the zones "A" to "E"
+
+[sourcecode language="r" gutter="false"]
+Zones &lt;- c(7226,9540,9826,11180,11700)
+Stratiplot(Age ~ . - Depth, data = chooseTaxa(abernethy, n.occ = 5, max.abun = 10),
+           type = c(&quot;h&quot;,&quot;l&quot;,&quot;g&quot;), sort = &quot;wa&quot;, zones = Zones,
+           zoneNames = c(LETTERS[1:6]))
+[/sourcecode]
+
+to produce this diagram
+
+[caption id="attachment_87" align="aligncenter" width="300" caption="Stratigraphic diagram of the Abernethy Forest pollen sequence with taxa sorted by WA and six zones superimposed"]<a href="http://ucfagls.files.wordpress.com/2011/06/stratigraphic_plot_zones.png"><img src="http://ucfagls.files.wordpress.com/2011/06/stratigraphic_plot_zones.png?w=300" alt="Stratigraphic diagram of the Abernethy Forest pollen sequence with taxa sorted by WA and six zones superimposed" title="Stratigraphic plot with zones" width="300" height="225" class="size-medium wp-image-87" /></a>[/caption]
+
+One of the draw backs of using Lattice to do the heavy-lifting of drawing the panels, is that customisation of the plot <em>after</em> it has been drawn is more tricky than if a solution using base graphics had been used.
+
+<code>Stratiplot()</code> can handle mixtures of relative and absolute data types but this code is very experimental at the moment. I'll illustrate how to use this feature in a future blog post. This functionality will no doubt be updated in future versions of analogue. I also want to add the option to use a dendrogram representation of the zones (if applicable) instead of the box-like legend now used.

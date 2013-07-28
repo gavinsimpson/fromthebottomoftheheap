@@ -1,0 +1,91 @@
+--- 
+title: "Decluttering ordination plots in vegan part 1: ordilabel()"
+status: publish
+layout: post
+published: true
+meta: 
+  _edit_last: "15232487"
+  email_notification: "1358014607"
+  jabber_published: "1358014605"
+  _publicize_pending: "1"
+type: post
+tags: 
+- Biplot
+- graphics
+- ordination
+- PCA
+- Plotting
+- principal components
+- R
+- vegan
+---
+In an <a href="http://ucfagls.wordpress.com/2012/04/11/customising-vegans-ordination-plots/" title="Customising vegan’s ordination&nbsp;plots">earlier post</a> I showed how to customise ordination diagrams produced by our <a href="http://cran.r-project.org/web/packages/vegan/index.html">vegan</a> package for <a href="http://www.r-project.org">R</a> through use of colours and plotting symbols. In a series of short posts I want to cover some of the options available in vegan that can be used to help in producing better, clearer, less cluttered ordination diagrams.
+
+First up we have <code>ordilabel()</code>. <!--more-->
+
+One of the problems that ordination results pose is that there is a lot is a lot information that we want to convey using a relatively small number of pixels. What we often end up with is a jumbled mess and because of the way the sample or species scores are plotted, the important observations could very well end up covered in all the rare species or odd samples just by virtue of their ordering in the data set.
+
+The simplest tool that vegan provides to help in this regard is <code>ordilabel()</code>; it won't produce a publication-ready, uncluttered ordination diagram but it will help you focus on the "important"<sup><a href="#note1">1</a></sup> things.
+
+<code>ordilabel()</code> draws sample or species scores with their label (site ID or species name/code) taken from the <code>dimnames</code> of the data used to fit the ordination. To help their display, however, <code>ordilabel()</code> draws the labels in a box with an opaque background so that the labels plotted later (i.e. above) cover earlier labels whilst remain visible because of the opaque background. <code>ordilabel()</code> also allows you to specify the importance of the samples or species via the <code>priority</code> argument, which in effect controls which labels get drawn first or beneath all the others.
+
+Here I'll use a <acronym title="Principal Components Analysis">PCA</acronym> of the famous Dune Meadow data<sup><a href="#note2">2</a></sup>. First, we load vegan and the data and perform the ordination
+[sourcecode toolbar="false" language="r"]
+require(vegan)
+data(dune)
+ord &lt;- rda(dune) ## PCA of Dune data
+[/sourcecode]
+
+In this example, I want to give plotting priority to those species or samples that are most abundant or most diverse, respectively. For this I will use Hill's N<sub>2</sub> for both the species and the samples, both of which can be computed via the <code>diversity()</code> function
+[sourcecode toolbar="false" language="r"]
+## species priority; which species drawn last, i.e. on top
+priSpp &lt;- diversity(dune, index = &quot;invsimpson&quot;, MARGIN = 2)
+## sample priority
+priSite &lt;- diversity(dune, index = &quot;invsimpson&quot;, MARGIN = 1)
+[/sourcecode]
+The <code>MARGIN</code> argument refers to which dimension or margin of the data is used; <code>1</code> means rows, <code>2</code> means columns. Hill's N<sub>2</sub> is equal to the inverse (or reciprocal) of the <a href="http://en.wikipedia.org/wiki/Diversity_index#Simpson_index">Simpson diversity</a> measure.
+
+Throughout I'm going to use symmetric scaling of the two sets of scores for use in the biplot. As it is important to make sure the same scaling is used at each stage it is handy to store the scaling in an object and then refer to that object throughout. That way you can easily change the scaling used by altering the value in the object. Here I use <code>scl</code> and symmetric scaling is indicated by the number <code>3</code>
+[sourcecode toolbar="false" language="r"]
+## scaling to use
+scl &lt;- 3
+[/sourcecode]
+
+<code>ordilabel()</code> adds labels to an existing plot, so first set up the plotting region for the PCA biplot using the <code>plot()</code> method with <code>type = "n"</code> to not plot any of the data
+[sourcecode toolbar="false" language="r"]
+plot(ord, type = &quot;n&quot;, scaling = 3)
+[/sourcecode]
+Now we are ready to add labels to the plot. <code>ordilabel()</code> takes the ordination object as the first argument and extracts the scores indicated by the <code>display</code> argument from the fitted object. There are a number of standard plotting arguments to control the look and feel of the labels, but the important argument is <code>priority</code> to control the plotting order. Here we set it to the Hill's N<sub>2</sub> values we computed earlier. The code chunk below adds both to the base plot we just generated
+[sourcecode toolbar="false" language="r"]
+ordilabel(ord, display = &quot;sites&quot;, font = 3, fill = &quot;hotpink&quot;,
+          col = &quot;blue&quot;, priority = priSite, scaling = scl)
+## You may prefer separate plots, but here add species as well
+ordilabel(ord, display = &quot;species&quot;, font = 2,
+          priority = priSpp, scaling = scl)
+[/sourcecode]
+The resulting biplot should look similar to the one below
+[caption id="attachment_624" align="aligncenter" width="500"]<a href="http://ucfagls.files.wordpress.com/2013/01/ordilabel_figure_combined.png"><img src="http://ucfagls.files.wordpress.com/2013/01/ordilabel_figure_combined.png" alt="PCA biplot of the dune meadow data with labels added by  ordilabel()" width="500" height="500" class="size-full wp-image-624" /></a> PCA biplot of the dune meadow data with labels added by  <code>ordilabel()</code>[/caption]
+
+Not perfect, but better than the standard <code>plot()</code> method in vegan.
+
+Alternatively, one might wish to draw side by side biplots of the sample and species scores. This can be done simply with a call to <code>layout()</code> to split the current plot device into two plot regions, which we fill using very similar plotting commands as described above
+[sourcecode toolbar="false" language="r"]
+layout(matrix(1:2, ncol = 2))
+plot(ord, type = &quot;n&quot;, scaling = scl)
+ordilabel(ord, display = &quot;sites&quot;, font = 3, fill = &quot;hotpink&quot;,
+          col = &quot;blue&quot;, priority = priSite, scaling = scl)
+plot(ord, type = &quot;n&quot;, scaling = scl)
+ordilabel(ord, display = &quot;species&quot;, font = 2,
+          priority = priSpp, scaling = scl)
+layout(1)
+[/sourcecode]
+
+[caption id="attachment_625" align="aligncenter" width="640"]<a href="http://ucfagls.files.wordpress.com/2013/01/ordilabel_figure_side_by_side.png"><img src="http://ucfagls.files.wordpress.com/2013/01/ordilabel_figure_side_by_side.png?w=640" alt="Side-by-side PCA biplots of the dune meadow data with labels added by ordilabel()" width="640" height="320" class="size-large wp-image-625" /></a> Side-by-side PCA biplots of the dune meadow data with labels added by <code>ordilabel()</code>[/caption]
+
+You may notice some warnings about <code>scaling</code> not being a graphical parameter. These are harmful and arise because we pass <code>scaling</code> along as part of the <code>...</code> argument which we also pass on to the plotting functions used to build the plot. We've tried hard to stop these warnings in vegan <a href="http://ucfagls.wordpress.com/2011/07/23/passing-non-graphical-parameters-to-graphical-functions-using/" title="Passing non-graphical parameters to graphical functions using&nbsp;...">using a technique</a> I blogged about a while back, but it looks like we missed a few of these. It will be fixed in a later version of vegan and the warnings will go away.
+
+Next time we'll look at <code>orditorp()</code>.
+
+<strong>Notes:</strong>
+<sup id="note1">1</sup>Whatever "important" means...
+<sup id="note2">2</sup>Not that I think this is the best way to analyse these data, it is just for show!
