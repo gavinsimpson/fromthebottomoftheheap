@@ -18,7 +18,7 @@ active: code
  * **Analysis of species richness**: species accumulation curves, extrapolated richness.
  * **Ordination**: support and meta functions for NMDS, redundancy analysis, constrained correspondence analysis, constrained analysis of proximities (all three 
    with partial analysis),
- * **Support functions for ordination: dissimilarity indices, extended dissimilarities, Procrustes analysis, ordination diagnostics, permutation tests.
+ * **Support functions for ordinatio**n: dissimilarity indices, extended dissimilarities, Procrustes analysis, ordination diagnostics, permutation tests.
  * **Ordination and environment**: vector fitting, centroid fitting and smooth surface fitting, adding species scores as weighted averages, adding convex
    hull, SD ellipses, arrows etc. to ordination.
  * **Dissimilarity analyses**: ANOVA using dissimilarities, ANOSIM, MRPP, BIOENV, Mantel and partial Mantel tests.
