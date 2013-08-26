@@ -20,7 +20,7 @@ Somehow I'm on Elsevier's author mail-out listing and as such I received the fir
 I [blogged about](http://{{ site.url }}/2012/03/28/elsevier-on-open-access-part-1/) recently), it is worth taking a few moments to consider how Elsevier presents Open Access to a largely uninformed audience; us academics."
 ---
 
-[![Open Access promomaterial](http://farm4.static.flickr.com/3513/3992172265_184a03d3b4_m.jpg 'Open Access promomaterial')](http://www.flickr.com/photos/7546281@N04/3992172265)
+[![Open Access promo-material](http://farm4.static.flickr.com/3513/3992172265_184a03d3b4_m.jpg 'Open Access promomaterial')](http://www.flickr.com/photos/7546281@N04/3992172265)
 
 Somehow I'm on Elsevier's author mail-out listing and as such I received the first edition of their ['Author's Update' newsletter](http://www.elsevier.com/wps/find/authorsview.authors/issue1). Whilst nowhere near as misrepresentative of Open Access as their [recent Editor's Update issue](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/) (that I [blogged about](http://{{ site.url }}/2012/03/28/elsevier-on-open-access-part-1/) recently), it is worth taking a few moments to consider how Elsevier presents Open Access to a largely uninformed audience; us academics.
 
