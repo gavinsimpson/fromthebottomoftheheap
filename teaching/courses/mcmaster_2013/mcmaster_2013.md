@@ -35,7 +35,7 @@ Copies of the lecture slides as PDFs
  * Day 2: [Regression]({{ site.url }}/assets/materials/courses/2013/mcmaster/regression-prac.pdf) ([Data files]({{ site.url }}/assets/materials/courses/2013/mcmaster/regression-prac.zip))
  * Day 3: [Ordination]({{ site.url }}/assets/materials/courses/2013/mcmaster/ordination-prac.pdf) ([Data files]({{ site.url }}/assets/materials/courses/2013/mcmaster/ordination-files.zip))
  * Day 4: [Palaeoenviromental & Stratigraphic data]({{ site.url }}/assets/materials/courses/2013/mcmaster/stratigraphic-prac.pdf)
- * Extra: [Time Series]({{ site.url }}/time-series-prac.pdf) ([Data files]({{ site.url }}/assets/materials/courses/2013/mcmaster/time-series-files.zip))
+ * Extra: [Time Series]({{ site.url }}/assets/materials/courses/2013/mcmaster/time-series-prac.pdf) ([Data files]({{ site.url }}/assets/materials/courses/2013/mcmaster/time-series-files.zip))
 
 ## Reprints
 

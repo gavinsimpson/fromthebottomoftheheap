@@ -10,10 +10,9 @@ tags:
 - Time series
 active: blog
 category: R
-excerpt: "Some months ago, I [posted]({{ site.url }}/2011/01/21/embedding-a-time-series-with-time-delay-in-r/ 'Embedding a time series with time delay in R') a function that extended the base [R](http://www.r-project.org 'R Website') function `embed()` to allow for time delay embedding. Today, David Gonzales [alerted]({{ site.url }}/2011/01/21/embedding-a-time-series-with-time-delay-in-r/#comment-870452698 'Link to David's comment') me to an inconsistency between `embed()` and `Embed()`."
 ---
 
-{{ page.excerpt | markdownify  }}
+Some months ago, I [posted]({{ site.url }}/2011/01/21/embedding-a-time-series-with-time-delay-in-r/ 'Embedding a time series with time delay in R') a function that extended the base [R](http://www.r-project.org 'R Website') function `embed()` to allow for time delay embedding. Today, David Gonzales [alerted]({{ site.url }}/2011/01/21/embedding-a-time-series-with-time-delay-in-r/#comment-870452698 'Link to David's comment') me to an inconsistency between `embed()` and `Embed()`.
 
 The example David used was
 
