@@ -14,15 +14,10 @@ tags:
 - Science
 active: blog
 category: Science
-excerpt: "[![Open Access promomaterial](http://farm4.static.flickr.com/3513/3992172265_184a03d3b4_m.jpg 'Open Access promomaterial')](http://www.flickr.com/photos/7546281@N04/3992172265)
-\n\n
-Somehow I'm on Elsevier's author mail-out listing and as such I received the first edition of their ['Author's Update' newsletter](http://www.elsevier.com/wps/find/authorsview.authors/issue1). Whilst nowhere near as misrepresentative of Open Access as their [recent Editor's Update issue](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/) (that
-I [blogged about](http://{{ site.url }}/2012/03/28/elsevier-on-open-access-part-1/) recently), it is worth taking a few moments to consider how Elsevier presents Open Access to a largely uninformed audience; us academics."
 ---
+Somehow I'm on Elsevier's author mail-out listing and as such I received the first edition of their ['Author's Update' newsletter](http://www.elsevier.com/wps/find/authorsview.authors/issue1). Whilst nowhere near as misrepresentative of Open Access as their [recent Editor's Update issue](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/) (that I [blogged about](http://{{ site.url }}/2012/03/28/elsevier-on-open-access-part-1/) recently), it is worth taking a few moments to consider how Elsevier presents Open Access to a largely uninformed audience; us academics.
 
 [![Open Access promo-material](http://farm4.static.flickr.com/3513/3992172265_184a03d3b4_m.jpg 'Open Access promomaterial')](http://www.flickr.com/photos/7546281@N04/3992172265)
-
-Somehow I'm on Elsevier's author mail-out listing and as such I received the first edition of their ['Author's Update' newsletter](http://www.elsevier.com/wps/find/authorsview.authors/issue1). Whilst nowhere near as misrepresentative of Open Access as their [recent Editor's Update issue](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/) (that I [blogged about](http://{{ site.url }}/2012/03/28/elsevier-on-open-access-part-1/) recently), it is worth taking a few moments to consider how Elsevier presents Open Access to a largely uninformed audience; us academics.
 
 Elsevier's Alice Wise (Director of Universal Access) contributed a piece to the newsletter titled ["The choice is yours"](http://www.elsevier.com/wps/find/authorsview.authors/issue1_a), where she sets out the various options available to authors wanting to publish Open Access papers or in one of Elsevier's Open Access journals. Wise outlines the options available to authors and provides links to various pages on the Elsevier website that set out author rights under Elsevier's open access provisions. She even mentions Elsevier's policy on self-posting of author manuscripts. To the uninitiated this all sounds great; Elsevier are being "open" and providing the academic with a range of tools that allow them to choose open access for their articles within their current subscription-based business model. That's great isn't it? What is there to complain about? Well, a lot actually, and here's why...
 

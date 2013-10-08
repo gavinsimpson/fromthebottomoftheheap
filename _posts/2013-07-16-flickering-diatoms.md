@@ -236,7 +236,7 @@ The linear interpolation used here assumes that between observations, the system
 ## A more realistic simulation
 As I said, the simulations above were simplistic. Now I will do a more complex simulation which illustrates the effect of interpolation and the aggregating effect of time in older samples. For this I will still make some simplifying assumptions, namely that in a series of 200 observations, the aggregation in the samples changes abruptly, with approximately the first 50 samples being averaged in 5-sample intervals, the next 50 samples in 4-sample intervals, and so on such that the final 50 observations being an average over 2-sample intervals. In a real system the accumulation rate may well be varying all the time and compaction of the sediments may not act so linearly as this example, but it is a reasonable simulation.
 
-I being by simulating the true series for this example, 200 observations from an AR(1) with \\( \\rho \\) = 0.4 and plot the series. The upper panel in Figure 5 shows the true series.
+I begin by simulating the true series for this example, 200 observations from an AR(1) with \\( \\rho \\) = 0.4 and plot the series. The upper panel in Figure 5 shows the true series.
 
 {% highlight r %}
 N <- 200
@@ -296,7 +296,7 @@ intFun <- with(core, approxfun(xt, yt))
 corei <- data.frame(xt = 4:199, yt = intFun(4:199))
 {% endhighlight %}
 
-`corei` now contains a new series interpolated to an annual time step based on the aggregated data from `core`. The interpolated series is show in the lowermost panel of Figure 5, which was produced using
+`corei` now contains a new series interpolated to an annual time step based on the aggregated data from `core`. The interpolated series is shown in the lowermost panel of Figure 5, which was produced using
 
 {% highlight r %}
 eg3 <- eg2 +
@@ -452,7 +452,7 @@ There are several other issues that @carstensen_diatom_2013 identify, several of
 
 The resulting reply from @wang_flickering_2012 to the critique of @carstensen_diatom_2013 was somewhat disappointing, with little of real substance offered by way of mitigation of the holes poked in their results. But that is the way so much these days with many journals. I do wish a real debate could be entered into on these topics; perhaps, as was suggested by a follower on Twitter, blog posts such as this and Richard's serve that purpose.
 
-So where do we stand with regards to early warning indicators and diatoms? At best there is weak evidence of some indicators in the Erhai Lake data. The main outcome of this work is probably to have stimulated some interest in actually trying to confront an interesting theoretical question with paaleo data. Our science could do a lot worse than have more of these studies being conducted, and not just testing the theoretical models underpinning critical transitions.
+So where do we stand with regards to early warning indicators and diatoms? At best there is weak evidence of some indicators in the Erhai Lake data. The main outcome of this work is probably to have stimulated some interest in actually trying to confront an interesting theoretical question with palaeo data. Our science could do a lot worse than have more of these studies being conducted, and not just testing the theoretical models underpinning critical transitions.
 
 Another clear outcome is that we really do need to develop better ways to handle sediment core data in statistical analyses. Oh yes, and we probably shoudln't be interpolating such data.
 
