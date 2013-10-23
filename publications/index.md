@@ -11,6 +11,7 @@ impactstory: true
 
 Below is a list of my research publications covering papers in peer-reviewed journals and book chapters. See my institution [web site](http://www.ucl.ac.uk/~ucfagls/) for details of project reports and other publications, and if you are interested, see my [Google Scholar](http://scholar.google.com) [profile](http://scholar.google.co.uk/citations?user=BFuK-JEAAAAJ).
 
+1. Seddon, A., Mackay, A., Baker, A., and 66 others (submitted) Looking forward through the past. Identification of fifty priority research questions in palaeoecology. *Journal of Ecology*.
 1. Birks, H.J.B., & **Simpson, G.L.** (2013) ['Diatoms and pH reconstruction' (1990) revisited](http://dx.doi.org/10.1007/s10933-013-9697-7). *Journal of Paleolimnology* **49**(3), 361&ndash;371.
 1. Battarbee, R.W., **Simpson, G.L.**, Shilland, E.M., Flower, R.J., Kreiser, A., Yang, H., & Clarke, G. (in press) [Recovery of UK lakes from acidification: An assessment using combined palaeoecological and contemporary diatom assemblage data](http://dx.doi.org/10.1016/j.ecolind.2012.10.024). *Ecological Indicators*.
 2.  Battarbee, R.W., Anderson, N.J., Bennion, H., & **Simpson, G.L.** (2012) [Combining limnological and palaeolimnological data to disentangle the effects of nutrient pollution and climate change on lake ecosystems: problems and potential](http://dx.doi.org/10.1111/j.1365-2427.2012.02860.x). *Freshwater Biology* **57**(10), 2091&ndash;2106.
@@ -74,6 +75,7 @@ Below is a list of my research publications covering papers in peer-reviewed jou
     with particular reference to Scotland,
     UK](http://dx.doi.org/10.1016/j.gca.2010.12.026). *Geochimica et
     Cosmochimica Acta* **82**, 113&ndash;135.
+15. Orr, H.G., des Clers, S., Simpson, G.L. Hughes, M.J., Battarbee, R.W., Cooper, L., Dunbar, M.J., Evans, R., Hannaford, J., Hannah, D.M., Laize, C., Richards, K.S., Watts, G., Wilby, R.L. (2012) Changing water temperatures: a surface water archive for England and Wales. *Proceedings of the British Hydrological Society Third International Conference*. British Hydrological Society. [pdf]({{ site.url }}/assets/reprints/orr_et_al_third_bhs_international_conference.pdf)
 15. Davidson, T.A., Bennion, H., Sayer, C.D., Jeppesen, E., Clarke,
     G.H., Morley, D., Odgaard, B., Rasmussen, P., Rawcliffe, R.,
     **Simpson, G.L.** & Amsinck S.L. (2011) [The role of cladocerans in
@@ -156,7 +158,7 @@ Below is a list of my research publications covering papers in peer-reviewed jou
     A meta-database for recent paleolimnological studies. *PAGES News*
     **15**, 23&ndash;24.
 31. Sayer, C.D., Jackson, M.J., Hoare, D., **Simpson, G.L.**, Henderson, A.C.G., Liptrott, E.R., Appleby, P.G., Boyle, J.F., Jones, I.J. & Waldock, M.J. (2006) [TBT causes regime shift in shallow lakes?](http://dx.doi.org/10.1021/es060161o) *Environmental Science and Technology* **40(17)**, 5269&ndash;5275.
-32. **Simpson, G.L.**, Shilland, E.M., Winterbottom, J.M., & Keay, J. (2005) Defining reference conditions for acidified waters using a modern analogue approach. *Environmental Pollution* **137**, 119&ndash;133.
+32. **Simpson, G.L.**, Shilland, E.M., Winterbottom, J.M., & Keay, J. (2005) [Defining reference conditions for acidified waters using a modern analogue approach](http://dx.doi.org/10.1016/j.envpol.2004.12.025). *Environmental Pollution* **137**, 119&ndash;133.
 33. Battarbee, R.W., Monteith, D.T., Juggins, S., Evans, C. D., Jenkins, A. and **Simpson, G.L.** (2005) Reconstructing pre-acidification pH for an acidified Scottish loch: a comparison of palaeolimnological and modelling approaches. *Environmental Pollution* **137**, 135&ndash;149.
 34. Bennion, H., Fluin, J., & **Simpson, G.L.** (2004) [Assessing eutrophication and defining ecological reference conditions for a set of Scottish freshwater lochs using sub-fossil diatom assemblages](http://dx.doi.org/10.1111/j.1365-2664.2004.00874.x). *Journal of Applied Ecology* **41**, 124&ndash;138. [pdf](http://onlinelibrary.wiley.com/doi/10.1111/j.1365-2664.2004.00874.x/pdf)
 35. Bennion, H., **Simpson, G.**, Battarbee, R.W., Cameron, N.G., Curtis, C., Flower, R.J. Hughes, M., Jones, V.J., Kernan, M., Monteith, D.T., Patrick, S.T., Rose, N.L., Sayer, C.D. & Yang, H. (2002) Environmental change in Scottish fresh waters. In M.B. Usher, E.C. Mackey & J.C. Curran (Eds) *The State of Scotland’s Environment and Natural Heritage*. The Stationery Office, Edinburgh. pp. 145&ndash;152.
