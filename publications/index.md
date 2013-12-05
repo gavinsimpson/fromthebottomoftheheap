@@ -11,32 +11,31 @@ impactstory: true
 
 Below is a list of my research publications covering papers in peer-reviewed journals and book chapters. See my institution [web site](http://www.ucl.ac.uk/~ucfagls/) for details of project reports and other publications, and if you are interested, see my [Google Scholar](http://scholar.google.com) [profile](http://scholar.google.co.uk/citations?user=BFuK-JEAAAAJ).
 
-1. Seddon, A., Mackay, A., Baker, A., and 66 others (submitted) Looking forward through the past. Identification of fifty priority research questions in palaeoecology. *Journal of Ecology*.
+1.  Orr, H.G., **Simpson, G.L.**, des Clers, S., Watts, G., Hughes, M.,
+    Hannaford, J., Dunbar, M.J., Laize, C., Wilby, R.L., Battarbee,
+    R.W., Evans, R. & Phillips, H. (in revision) Evidence of widespread
+    and rapid warming of rivers. *Hydrological Processes*.
+1. Seddon, A., Mackay, A., Baker, A., and 66 others (in press) [Looking forward through the past. Identification of fifty priority research questions in palaeoecology](http://doi.org/10.1111/1365-2745.12195). *Journal of Ecology*.
 1. Birks, H.J.B., & **Simpson, G.L.** (2013) ['Diatoms and pH reconstruction' (1990) revisited](http://dx.doi.org/10.1007/s10933-013-9697-7). *Journal of Paleolimnology* **49**(3), 361&ndash;371.
-1. Battarbee, R.W., **Simpson, G.L.**, Shilland, E.M., Flower, R.J., Kreiser, A., Yang, H., & Clarke, G. (in press) [Recovery of UK lakes from acidification: An assessment using combined palaeoecological and contemporary diatom assemblage data](http://dx.doi.org/10.1016/j.ecolind.2012.10.024). *Ecological Indicators*.
-2.  Battarbee, R.W., Anderson, N.J., Bennion, H., & **Simpson, G.L.** (2012) [Combining limnological and palaeolimnological data to disentangle the effects of nutrient pollution and climate change on lake ecosystems: problems and potential](http://dx.doi.org/10.1111/j.1365-2427.2012.02860.x). *Freshwater Biology* **57**(10), 2091&ndash;2106.
-    [pre-print](http://www.ucl.ac.uk/~ucfagls/papers/battarbee_et_al_freshwater_biology_synthesis.pdf)
+1. Battarbee, R.W., **Simpson, G.L.**, Shilland, E.M., Flower, R.J., Kreiser, A., Yang, H., & Clarke, G. (2014) [Recovery of UK lakes from acidification: An assessment using combined palaeoecological and contemporary diatom assemblage data](http://dx.doi.org/10.1016/j.ecolind.2012.10.024). *Ecological Indicators* **37**(B), 365--380.
 3.  Murphy, J.F., Winterbottom, J.H., Ortona, S., **Simpson, G.L.**,
-    Shilland, E.M., & Hildrew, A.G. (in press) [Evidence of recovery
+    Shilland, E.M., & Hildrew, A.G. (2014) [Evidence of recovery
     from acidification in the macroinvertebrate assemblages of UK fresh
     waters: a 20&ndash;year time
     series](http://dx.doi.org/10.1016/j.ecolind.2012.07.009).
-    *Ecological Indicators*.
+    *Ecological Indicators* **37**(B), 330--340.
     [pre-print](http://www.ucl.ac.uk/~ucfagls/papers/murphy_et_al_ecological_indicators_revised_green.pdf)
-4.  Reuss, N.S., Anderson, N.J., Fritz, S.C., & **Simpson, G.L.** (2013) [Responses of microbial phototrophs to late-Holocene environmental forcing of lakes in south-west Greenland](http://dx.doi.org/10.1111/fwb.12073). *Freshwater Biology* **58**(4), 690&ndash;704.
 5.  Monteith, D.T., Evans, C.D., Henrys, P., **Simpson, G.L.**, &
-    Malcolm, I.A. (in press) [Trends in the hydro-chemistry of
+    Malcolm, I.A. (2014) [Trends in the hydro-chemistry of
     acid-sensitive surface waters in the UK
     1988&ndash;2008](http://dx.doi.org/10.1016/j.ecolind.2012.08.013).
-    *Ecological Indicators*.
-6.  Curtis, C.J. & **Simpson, G.L.** (in press) [Trends in bulk
+    *Ecological Indicators* **37**(B), 287--303.
+6.  Curtis, C.J. & **Simpson, G.L.** (2014) [Trends in bulk
     deposition of acidity in the UK, 1988&ndash;2007, assessed using additive
     models](http://dx.doi.org/10.1016/j.ecolind.2012.10.023).
-    *Ecological Indicators*.
-7.  Orr, H.G., **Simpson, G.L.**, des Clers, S., Watts, G., Hughes, M.,
-    Hannaford, J., Dunbar, M.J., Laize, C., Wilby, R.L., Battarbee,
-    R.W., Evans, R. & Phillips, H. (in revision) Evidence of widspread
-    and rapid warming of rivers. *Hydrological Processes*.
+    *Ecological Indicators* **37**(B), 274--286.
+4.  Reuss, N.S., Anderson, N.J., Fritz, S.C., & **Simpson, G.L.** (2013) [Responses of microbial phototrophs to late-Holocene environmental forcing of lakes in south-west Greenland](http://dx.doi.org/10.1111/fwb.12073). *Freshwater Biology* **58**(4), 690&ndash;704.
+2.  Battarbee, R.W., Anderson, N.J., Bennion, H., & **Simpson, G.L.** (2012) [Combining limnological and palaeolimnological data to disentangle the effects of nutrient pollution and climate change on lake ecosystems: problems and potential](http://dx.doi.org/10.1111/j.1365-2427.2012.02860.x). *Freshwater Biology* **57**(10), 2091&ndash;2106. [pre-print](http://www.ucl.ac.uk/~ucfagls/papers/battarbee_et_al_freshwater_biology_synthesis.pdf)
 8.  **Simpson, G.L.** & Birks H.J.B. (2012) [Statistical Learning in
     Palaeolimnology](http://dx.doi.org/10.1007/978-94-007-2745-8_9). In
     Birks, H.J.B, Lotter, A.F. Juggins S., and Smol, J.P. (Eds)
