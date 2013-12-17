@@ -13,6 +13,7 @@ tags:
 - Spatial grids
 - Time series
 category: R
+alert: "A new version of <b>permute</b> has been released and some of the functionality described in this post is out of date."
 ---
 In a [previous post](http://www.fromthebottomoftheheap.net/2011/10/04/permute-a-package-for-generating-restricted-permutations/ 'permute: a package for generating restricted permutations') I introduced the **permute** package and the function `shuffle()`. In that post I got as far as replicating R's base function `sample()`. Here I'll briefly outline how `shuffle()` can be used to generate restricted permutations.
 

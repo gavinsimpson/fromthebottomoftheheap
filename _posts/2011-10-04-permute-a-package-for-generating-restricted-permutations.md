@@ -14,10 +14,11 @@ tags:
 - vegan
 active: blog
 category: R
+alert: "A new version of <b>permute</b> has been released and some of the functionality described in this post is out of date."
 excerpt: "Multivariate ordination methods are commonly used in ecology to investigate patterns in species composition in space or time. Constrained ordination methods such as redundancy analysis (RDA) and canonical correspondence analysis (CCA) are effectively just multiple regressions, but we lack the parametric theory to adequately test the statistical significance of terms in the model. Other techniques likewise lack the appropriate theory, such as the Mantel test, vector fitting into ordination space, among many others."
 ---
 
-{{ page.excerpt | markdownify  }}
+{{ page.excerpt | markdownify }}
 
 Instead, permutation tests are used to form an appropriate Null distribution for a test statistic against which we can evaluate the observed value of that statistic. In constrained ordination the test statistic is usually in the form of a pseudo *F* statistic, although one advantage of the permutation approach is that any suitable statistic can be used in the test. If the observed value of the test statistic is unusual in the context of the Null distribution derived by permuting the data, say in the top 5 or 1 percent, we conclude that the observed relationship is unlikely to have arisen by chance and is therefore significant.
 
@@ -104,7 +105,7 @@ In future posts I'll talk more about `shuffle()` and some of the other key funct
 
 The resulting figure looks like the one shown below
 
-[Permutation Null distribution for difference of mean mandible length]({{ site.url }}/assets/img/posts/jackal_null_distr.png "Permutation Null distribution for difference of mean mandible length")
+![Permutation Null distribution for difference of mean mandible length]({{ site.url }}/assets/img/posts/jackal_null_distr.png "Permutation Null distribution for difference of mean mandible length")
 
 The observed difference of mean mandible length is located in the extreme right tail of the Null distribution. The number of permuted difference of mean lengths that are equal to or greater than the observed difference is 12, yielding a permutational *p* value of 0.0024
 
