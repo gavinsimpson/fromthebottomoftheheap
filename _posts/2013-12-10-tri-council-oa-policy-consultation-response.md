@@ -30,7 +30,7 @@ publishers with a 12-month embargo period allowed on the
 self-archiving option, and fails to address other important aspects 
 of the scientific record, namely research data, software and data 
 analysis scripts. My response to the consultation is appended below. 
-I've [also produced a PDF]({{ site.url }}/assets/materials/misc/simpson-tri-agency-open-access-policy-response.pdf) should you prefer to read in that medium.
+I've [also produced a PDF](http://www.fromthebottomoftheheap.net/assets/materials/misc/simpson-tri-agency-open-access-policy-response.pdf) should you prefer to read in that medium.
 
 The PDF was created in LibreOffice and I have embedded the source 
 `.odt` file as part of the final PDF. Hence if you wish to reuse 
