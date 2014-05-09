@@ -1,0 +1,358 @@
+--- 
+title: "Modelling seasonal data with GAMs"
+status: publish
+layout: post
+published: true
+type: post
+tags:
+- GAM
+- "Time series"
+- modelling
+- "Central England Temperature"
+active: blog
+category: R
+---
+
+```{r, echo = FALSE, include = FALSE, cache = FALSE}
+render_jekyll()
+opts_knit$set(progress = TRUE, base.url = "{{ site.url }}/assets/img/posts/", base.dir = "/home/gavin/work/web/jekyll/blog/assets/img/posts/")
+opts_chunk$set(results = "hold", fig.path = "modelling-seasonal-data-with-gam-", comment = NA, prompt = TRUE, cache = TRUE,
+               cache.path = "../_knitr-cache/modelling-seasonal-data-with-gam-", 
+               fig.show = "hold", dev = "png", dpi = 85, tidy = FALSE, fig.height = 7, fig.width = 7,
+               dev.args = list(pointsize = 10))
+```
+In previous posts ([here]({% post_url 2011-06-12-additive-modelling-and-the-hadcrut3v-global-mean-temperature-series %}) and [here]({% post_url 2011-07-21-smoothing-temporally-correlated-data %})) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.
+
+First an equation. If we think about a time series where observations were made on a number of occasions within any given year over a number of years, we may want to model the following features of the data
+
+ 1. any trend or long term change in the level of the time series, and
+ 2. any seasonal or within-year variation, and
+ 3. any variation or interaction in the trend and seasonal features of the data,
+
+I'm not going to cover point 3 in this post, but it is a relatively simple extension to what I will discuss here. So, considering points 1 and 2 only, we need an equation that describes this model
+
+\\[ y = \\beta_0 + f_{\\mathrm{seasonal}}(x_1) + f_{\\mathrm{trend}}(x_2) + \\varepsilon, \\quad \\varepsilon \\sim N(0, \\sigma^2\\mathbf{\\Lambda}) \\]
+
+where \\(\\beta_0\\) is the intercept, \\(f_{\\mathrm{seasonal}}\\) and \\(f_{\\mathrm{trend}}\\) are smooth functions for the seasonal and trend features we're interested in, and \\(x_1\\) and \\(x_2\\) are to covariate data providing some form of time indicators for the within-year and between year times. We can knock off the distributional assumptions and the intercept and this would be very close to the formula we need to stick into a call to `gam()` from the **mgcv** package. In pseudo code we'd have something like
+
+```{r pseudo-gam-code, eval = FALSE}
+mod <- gam(y ~ s(x1) + s(x2), data = foo)
+```
+
+Before we can begin modelling though, we need to identify the data we'll use for \\(x_1\\) and \\(x_2\\). I tend to use the date of observation converted to a numeric variable for my between year data, \\(x_2\\), *if* the observation dates can easily be represented in R's `Date` class. This class counts the number of days from an *epoch*, Jan 1st, 1970, with negative values indicating days before this date. Seeing as we'll probably need a nicely formatted axis for any plots we do and it is easy to convert the `Date` object into a numeric (integer), this will do nicely. One thing to point out is that the numeric representation can get into some large values which might affect the stability of the model fitting; in such cases you can just divide this number by 100 or 1000 or some such value as this time value is only used to indicate relative position in time of the observations.
+
+For the within-year or seasonal time variable you could use the month of observation as a decimal value, which is particularly useful if you only have monthly or less frequent data. For more frequent observations I use the day of the year as my time variable. This information is also easily derived from a `Date` variable using the `"%j"` date format.
+
+## Data preparation
+
+Having identified what data we'll use, we can get to some analysis. In this post I'm going to use data from the [Central England Temperature](http://www.metoffice.gov.uk/hadobs/hadcet/) (CET) time series, one of the longest such records available. The CET data are available for daily observations, and the methods I describe here will certainly handle such data, but to save computing time and memory (you'll need quite a big chunk of RAM to fit a `gamm()` to the daily series) I'm just going to use the monthly data series.
+
+The CET data are available from the [UK Met Office](http://www.metoffice.gov.uk/) website and do require a little massaging to get them into a format appropriate for our use
+
+```{r cet-url-readlines}
+CET <- url("http://www.metoffice.gov.uk/hadobs/hadcet/cetml1659on.dat")
+writeLines(readLines(CET, n = 10))
+```
+
+There are 6 lines of header info and then the data are in a matrix with rows representing the year and the columns the months, with one extra column containing the derived annual mean temperature. Missing values are also indicated by either a `-99.99` or `-99.9`, which we'll need to take account of. To read the data in and partly process it I use
+
+```{r load-cet}
+cet <- read.table(CET, sep = "", skip = 6, header = TRUE,
+                  fill = TRUE, na.string = c(-99.99, -99.9))
+names(cet) <- c(month.abb, "Annual")
+## remove last row of incomplete data
+cet <- cet[-nrow(cet), ]
+## get rid of the annual too - store for plotting
+rn <- as.numeric(rownames(cet))
+Years <- rn[1]:rn[length(rn)]
+annCET <- data.frame(Temperature = cet[, ncol(cet)],
+                     Year = Years)
+cet <- cet[, -ncol(cet)]
+```
+
+I used `fill = TRUE` because the final row of the file contains values for the current year, which may be incomplete. I throw this year of data away as it makes the processing easier later but that's me just being lazy! What I end up with at this point is a data frame looking like this
+
+```{r, echo=FALSE}
+head(cet)
+```
+
+For use in `gam()` we need the data in long format, with variables for the temperature, and the two time variables. We also need to create some dates. As these are monthly data, I fake a day by setting it to the 15th of the month.
+
+```{r second-processing-step}
+## stack the data
+cet <- stack(cet)[,2:1]
+names(cet) <- c("Month","Temperature")
+## add in Year and nMonth for numeric month and a proper Date class
+cet <- transform(cet, Year = (Year <- rep(Years, times = 12)),
+                 nMonth = rep(1:12, each = length(Years)),
+                 Date = as.Date(paste(Year, Month, "15", sep = "-"),
+                 format = "%Y-%b-%d"))
+## sort into temporal order
+cet <- cet[with(cet, order(Date)), ]
+
+## Add in a Time variable
+cet <- transform(cet, Time = as.numeric(Date) / 1000)
+```
+
+The first line stacks the columns of the data frame creating a 2-column data frame containing the month identifier and the temperature data respectively. After adding some names to the data frame, I add
+
+ * a `Year` variable by repeating the rownames of the `cet` data frame 12 times, once per month,
+ * a numeric month variable `nMonth` by repeating the values `1:12` as many times as there are years in the data set, which will be used for the within-year or seasonal variable, and
+ * a `Date` variable concocted from the `Year` and `Month` data.
+
+The code is a bit tricky as I create a local `Year` variable whilst assigning the `Year` variable of the transformed `cet` data frame (spot the assignment in the first line of the call to `transform()`).
+
+Next I make sure the data are in the correct temporal order; this is useful for plotting only. Finally, a `Time` variable is created which we'll use for the trend or between-year variable; I scale by 1000 as discussed above. Once this is done, the data look like this
+
+```{r final-cet-data}
+head(cet)
+str(cet)
+```
+
+and we are good to go. First though, the obligatory time series plot (of the annual data only)
+
+```{r plot-cet, fig.height = 5, fig.cap = "CET annual average temperature time series"}
+ylab <- expression(Temperature ~ (degree*C))
+plot(Temperature ~ Year, data = annCET, type = "l",
+     ylab = ylab, main = "CET")
+```
+
+If you plot the full data, you get a mess[^1] --- try it if you want
+
+[^1]: It's not a mess really; the problem is that there are so many years of data that the years are all squished up tight and, coupled with the magnitude of the seasonal variation, this leads to an irregular black band obscuring everything unless you have a very wide graphics device.
+
+```{r full-cet-plot, fig.keep = "none"}
+plot(Temperature ~ Date, data = cet, type = "l",
+     ylab = ylab)
+```
+
+There looks to be some trend in the data and we expect seasonal variation in temperature, as despite plenty of evidence to the contrary, the UK does have a summer and it can snow there from time to time.
+
+## A model with uncorrelated errors
+
+To start our trip down the modelling rabbit hole, I fit an obviously wrong model where I assume the observations are all independent. This serves two purposes;
+
+ 1. We get to run the data through the modelling function `gamm()` so we see how this goes and can spot errors before we set the thing off with estimating the smooths *and* the correlation matrix (which can take a lot of time with big data sets), and
+ 2. It is worth hammering home the point that you can easily fit noise in the data if you forget to tell the software that the data aren't independent observations!
+
+Load **mgcv** and fit the naive model
+
+```{r naive-model}
+require("mgcv")
+m <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time),
+          data = cet)
+```
+
+which takes about a second on my 2013 Intel Xeon.
+
+The important thing to note there is the extra arguments passed to the first `s()` term in the model. `k` specifies the dimensions of the basis used for the spline. Here I set it to the maximum possible for `nMonth`, which is 12,the number of unique values. `bs` allows you to specify the basis type for the smooth term; `"cc"` indicates a *cyclic* cubic spline, which we want for the seasonal term as there should be no discontinuity between January and December.
+
+```{r setup-cubic-spline-basis, echo = FALSE, results = "hide"}
+## cubic spline of x on (0,1) with 5 knots + 2 ends
+dat <- data.frame(x = seq(0, 1, length = 100))
+knots <- data.frame(x = seq(0, 1, length = 7))
+spl <- smoothCon(s(x, bs = "cr", k = 7), data = dat, knots = knots)
+set.seed(1)
+coefs <- c(0.6, 0.8, 0.4, 0.5, 0.35, 0.45, 0)
+fx <- spl[[1]]$X %*% coefs
+bs <- sweep(spl[[1]]$X, 2, coefs, "*")
+```
+
+### Cyclic cubic spline basis
+So what's a cyclic cubic spline? Well, first let's look at the standard cubic spline basis
+
+```{r plot-cubic-spline-example, echo = FALSE, fig.height = 3.75, fig.cap = "Cubic spline basis functions"}
+layout(matrix(1:2, ncol = 2))
+op <- par(mar = c(5,4,1,2) + 0.1)
+plot(spl[[1]]$X[, 4] ~ x, data = dat, type = "n", ylab = "")
+abline(h = 0, col = "lightgrey", lty = "dashed")
+abline(v = knots$x, lty = "dotted")
+lines(spl[[1]]$X[, 4] ~ x, data = dat, lwd = 3)
+title(ylab = expression(f(x)), line = 2.75)
+ylim <- range(fx, bs)
+plot(fx ~ x, data = dat, type = "n", ylim = ylim, ylab = "")
+abline(v = knots$x, lty = "dotted")
+matlines(dat$x, bs, lwd = 2)
+lines(fx ~ x, data = dat, lwd = 4)
+title(ylab = expression(f(x)), line = 2.75)
+par(op)
+layout(1)
+```
+The left-hand plot shows a single basis function centred on a knot at 0.5. The x-axis here is arbitrary, but it would represent the observed covariate data, \\(x_2\\) say. The vertical dashed lines show the locations of the 5 interior knots plus the two boundary knots. The more knots we have the more complex the fitted spline can be. A cubic spline basis function for a given knot takes a value 1 at its knot location and a value of 0 at all other knots. The figure shows only a single basis function, but there are equivalent functions positioned at each of the other 6 knots.
+
+When we fit the model, **mgcv** is estimating a coefficient for each of these basis functions. The final spline is given by a weighted sum of the basis functions with the estimated coefficients used as the weights. This is illustrated in the right-hand figure, where I have arbitrarily chosen some coefficient values, and which scale each basis function. The "fitted" spline is shown by the thick black line. The values of this spline are determined by adding up the values of all the basis functions under each point on spline.
+
+A key point to note here is that there is a large discontinuity in the value taken by the spline (the thick black line) at the ends of the data, at each end of the x-axis on the plot. If `x` represented something like day of year, or month, that discontinuity would be a bad thing if, as is the case here, the variable of interest (temperature) behaved cyclically.
+
+This is where the cyclic cubic spline basis comes in. This basis has an additional constraint, which states that there should be no discontinuity at the end points of the spline. In other words, we force the ends of the cyclic spline to join up. This is illustrated below
+
+```{r setup-cyclic-cubic-spline-basis, echo = FALSE, results = "hide"}
+dat <- data.frame(x = seq(0, 1, length = 100))
+knots <- data.frame(x = seq(0, 1, length = 7))
+spl <- smoothCon(s(x, bs = "cc", k = 7), data = dat, knots = knots)
+set.seed(1)
+coefs <- c(0.6, 0.8, 0.4, 0.5, 0.35, 0.45)#, 0) #rev(runif(7))
+fx <- spl[[1]]$X %*% coefs
+bs <- sweep(spl[[1]]$X, 2, coefs, "*")
+```
+```{r plot-cyclic-cubic-spline-example, echo = FALSE, fig.height = 3.75, fig.cap = "Cyclic cubic spline basis functions"}
+ylim <- range(fx, bs)
+layout(matrix(1:2, ncol = 2))
+op <- par(mar = c(5,4,1,2) + 0.1)
+want <- 2
+plot(spl[[1]]$X[, want] ~ x, data = dat, type = "n", ylab = "")
+abline(h = 0, col = "lightgrey", lty = "dashed")
+abline(v = knots$x, lty = "dotted")
+lines(spl[[1]]$X[, want] ~ x, data = dat, lwd = 3)
+title(ylab = expression(f(x)), line = 2.75)
+fx <- spl[[1]]$X %*% coefs
+bs <- sweep(spl[[1]]$X, 2, coefs, "*")
+ylim <- range(fx, bs)
+plot(fx ~ x, data = dat, type = "n", ylim = ylim,
+     ylab = "")
+abline(v = knots$x, lty = "dotted")
+matlines(dat$x, bs, lwd = 2)
+lines(fx ~ x, data = dat, lwd = 4)
+title(ylab = expression(f(x)), line = 2.75)
+par(op)
+layout(1)
+```
+
+This time, to make it clearer, the left hand panel shows a cubic cyclic spline basis function located at a `x` = `r round(knots[2, ], 3)`. If you were to wrap the x-axis into a loop by joining the end points the basis function would meet nicely and smoothly at the join. The basis function still takes a value of 1 at its knot and 0 at the other knots, just as before, and there are matching basis functions for each of the knots, they're just not shown in this panel.
+
+The right hand panel shows how the "fitted" spline is derived as a weighted sum of the basis functions underneath any point on the spline. Because the basis functions all smoothly join at the end points of `x`, so does the fitted cyclic cubic spline.
+
+Similar constraints can be put on other spline types. **mgcv** has cyclic *p* splines as well as the cyclic cubic splines I showed here for example.
+
+### Back to our model
+With that out of the way we can look at our model fit
+
+```{r}
+summary(m$gam)
+```
+
+which looks fine but is totally spurious because we didn't account for the dependence in the data. Plotting the model terms is illustrative of what can go wrong if you forget to do this
+
+```{r plot-naive-model, fig.height = 3.75, fig.cap = "Smooth terms for the naive model assuming uncorrelated errors"}
+layout(matrix(1:2, ncol = 2))
+plot(m$gam, scale = 0)
+layout(1)
+```
+
+The figure shows the two splines; the one on the left is the seasonal term, the cyclic cubic spline (note how the ends join nicely!), and the one on the right is the trend term (note how ridiculously wiggly this is!) The splines are on very different scales (`scale = 0`) which illustrates the relative degrees of variation in the seasonal and trend term; there is about 1-1.5 degree rise in temperature over the period, but within a given year there is about 12 degrees variation in temperature, *on average*. Obviously, the actual data vary around these values and that is the unexplained variance.
+
+We should look at the residuals of this model too, here using the (partial) autocorrelation function
+
+```{r plot-naive-model-residuals, fig.height = 3.75, fig.cap = "ACF and pACF of the residuals from the naive model"}
+layout(matrix(1:2, ncol = 2))
+acf(resid(m$lme), lag.max = 36, main = "ACF")
+pacf(resid(m$lme), lag.max = 36, main = "pACF")
+layout(1)
+```
+
+As expected, the is substantial residual autocorrelation in the data that even the wiggly trend term couldn't account for. The shapes of the ACF and the *p*ACF suggest an AR(*p*) model might be needed... 
+
+## Models with correlated errors
+It looks like some low-order AR model is needed, so I fit three models; and AR(1), an AR(2), and an AR(3). I turn on verbose output and so have to reset some other things too in the `ctrl` object. Note that these take about 5--6 seconds each to converge on my Xeon workstation. 
+
+```{r fit-amms-with-correlated-errors, results="hide"}
+ctrl <- list(niterEM = 0, msVerbose = TRUE, optimMethod="L-BFGS-B")
+
+## AR(1)
+m1 <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time, k = 20),
+           data = cet, correlation = corARMA(form = ~ 1|Year, p = 1),
+           control = ctrl)
+
+## AR(2)
+m2 <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time, k = 20),
+           data = cet, correlation = corARMA(form = ~ 1|Year, p = 2),
+           control = ctrl)
+
+## AR(3)
+m3 <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time, k = 20),
+           data = cet, correlation = corARMA(form = ~ 1|Year, p = 3),
+           control = ctrl)
+```
+
+It is important to note what the `correlation` argument is doing here: `corARMA(form = ~ 1|Year, p = x)` means fit an ARMA process to the residuals, where `p` indicates the order for the AR part of the ARMA model, and `form = ~ 1|Year` means that the ARMA is nested *within* each year. This speeds up fitting no end, but is potentially risky as we don't consider residual variation from year to year.
+
+We should probably do a lot more model checking, but for now, I cut to the chase and see which of the candidate models fits the data best. This is done via a generalized likelihood ratio test via the `anova()` method for `"lme"` objects. This is a valid comparison because the models are nested; we can go from the AR(3) to the AR(1) by setting some of the AR coefficients to 0. Technically, the models are also varying in terms of the coefficient estimates for the splines terms; we probably ought to fix those at some values whilst we choose the AR structure, but I ignore that here.
+
+```{r, anova}
+anova(m$lme, m1$lme, m2$lme, m3$lme)
+```
+
+The AR(1) provides a substantial increase in *fit* over the naive model, and the AR(2) provides a further significant increase in the fit. There is very little improvement in moving to the AR(3) however.
+
+Plotting the AR(2) model terms shows how over-fitted the naive model with uncorrelated errors was in terms of the trend term, which is now much smoother and more in keeping with our expectations
+
+```{r, plot-ar2-model-terms, fig.height = 3.75, fig.cap = "Smooth terms for the best fitting GAM model with AR(2)"}
+layout(matrix(1:2, ncol = 2))
+plot(m2$gam, scale = 0)
+layout(1)
+```
+
+Looking now at the normalized residuals (which take into account the covariance matrix of the residuals), we see no important or significant residual autocorrelation suggesting that the AR(2) model is sufficient and we can, to some degree, draw inference from this model.
+
+```{r acf-residuals-ar2-model, fig.height = 3.75, fig.cap = "ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix"}
+layout(matrix(1:2, ncol = 2))
+res <- resid(m2$lme, type = "normalized")
+acf(res, lag.max = 36, main = "ACF - AR(2) errors")
+pacf(res, lag.max = 36, main = "pACF- AR(2) errors")
+layout(1)
+```
+
+## Extracting individual model terms
+The fitted GAM model object contains a lot of information that can be used to interrogate the model. For the purposes of this post I'm interested in the trend terms, so I can extract information about the contributions to the fitted values of our chosen model by getting **mgcv** to spit out this information using `predict()` and `type = "terms"`. In the code below, I do this for each of the four models we've fitted, predicting for 200 evenly-spaced values over the range of the date. Note `want` picks out the 200 values from the observed data as these are evenly spaced. For more complex data you may need to be a bit more clever about how you choose these values.
+
+```{r predict-terms}
+want <- seq(1, nrow(cet), length.out = 200)
+pdat <- with(cet,
+             data.frame(Time = Time[want], Date = Date[want],
+                        nMonth = nMonth[want]))
+
+## predict trend contributions
+p  <- predict(m$gam,  newdata = pdat, type = "terms", se.fit = TRUE)
+p1 <- predict(m1$gam, newdata = pdat, type = "terms", se.fit = TRUE)
+p2 <- predict(m2$gam, newdata = pdat, type = "terms", se.fit = TRUE)
+p3 <- predict(m3$gam, newdata = pdat, type = "terms", se.fit = TRUE)
+
+## combine with the predictions data, including fitted and SEs
+pdat <- transform(pdat,
+                  p  = p$fit[,2],  se  = p$se.fit[,2],
+                  p1 = p1$fit[,2], se1 = p1$se.fit[,2],
+                  p2 = p2$fit[,2], se1 = p2$se.fit[,2],
+                  p3 = p3$fit[,2], se1 = p3$se.fit[,2])
+```
+
+Note that it doesn't matter what months get select in the 200 values as the month effect is handle by the other spline term; here we get the contribution for the trend which is based on the `Time` variable only. This would need to done be differently if you allowed the seasonal and trend splines to *interact*; I'll look at this is a future post at some point.
+
+Now I am ready to plot the estimated trends for the four models fitted
+
+```{r plot-model-trends, fig.height = 5, fig.cap = "Comparison of the fitted trend components for the four models considered"}
+op <- par(mar = c(5,4,2,2) + 0.1)
+ylim <- with(pdat, range(p, p1, p2, p3))
+ylim[1] <- floor(ylim[1])
+ylim[2] <- ceiling(ylim[2])
+ylab <- expression(Temperature ~ (degree*C ~ centred))
+plot(Temperature - mean(Temperature) ~ Date, data = cet, type = "n",
+     ylab = ylab, ylim = ylim)
+lines(p  ~ Date, data = pdat, col = "black")
+lines(p1 ~ Date, data = pdat, col = "red")
+lines(p2 ~ Date, data = pdat, col = "blue")
+lines(p3 ~ Date, data = pdat, col = "forestgreen", lwd = 1)
+legend("topleft",
+       legend = c("Uncorrelated Errors", paste0("AR(", 1:3, ") Errors")),
+       bty = "n", col = c("black","red","blue","forestgreen"),
+       lty = 1, lwd = c(1,1,1))
+par(op)
+```
+
+This plot nicely illustrates the reduction in wiggliness of the estimated trend in the AR(2) and AR(3) models, and how similar the two higher-order AR models are in terms of their trend estimates.
+
+I'll leave things at this point; in the next post I'll look at how we can look at where the estimated trend is changing in a statistically significant fashion by interrogating the fitted GAM in deeper and more devious ways.
+
+## Disclaimer
+Don't over interpret the model fits here; they were done to illustrate how to get **mgcv** to fit models to seasonal data. If you were doing this in anger for a real analysis then we'd want to look in a lot more detail at unmodelled features such as changes in the seasonal temperature with the trend and do a lot more in terms of model diagnostics. Such things are beyond the scope of this particular post, but I will pick some of these issues up in later postings as time permits.
+
+Note also that the precision with which the data are reported early on in the series is less than that for more recent decades. This potentially might affect the variance of the series; the data might seem less variable earlier on because they are not recorded to the same level of precision as later values. We could investigate this and also other peculiarities of this particular data set and how it was collated by going back to the references cited in the raw data file and adjusting the model to account for any idiosyncrasies.
