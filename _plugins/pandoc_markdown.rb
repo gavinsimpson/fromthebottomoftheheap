@@ -5,6 +5,8 @@ module Jekyll
 
       pygments_prefix "\n"
       pygments_suffix "\n"
+      #highlighter_suffix "\n"
+      #highlighter_prefix "\n"
 
       def setup
         return if @setup
