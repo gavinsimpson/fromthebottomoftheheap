@@ -15,7 +15,7 @@ category: R
 
 
 
-In previous posts ([here]({% post_url 2011-06-12-additive-modelling-and-the-hadcrut3v-global-mean-temperature-series %}) and [here]({% post_url 2011-07-21-smoothing-temporally-correlated-data %})) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.
+In previous posts ([here](/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/) and [here](/2011/07/21/smoothing-temporally-correlated-data/ )) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.
 
 First an equation. If we think about a time series where observations were made on a number of occasions within any given year over a number of years, we may want to model the following features of the data
 
@@ -197,6 +197,19 @@ Load **mgcv** and fit the naive model
 
 {% highlight r %}
 > require("mgcv")
+{% endhighlight %}
+
+
+
+{% highlight text %}
+Loading required package: mgcv
+Loading required package: nlme
+This is mgcv 1.7-29. For overview type 'help("mgcv-package")'.
+{% endhighlight %}
+
+
+
+{% highlight r %}
 > m <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time),
 +           data = cet)
 {% endhighlight %}
@@ -227,7 +240,15 @@ This is where the cyclic cubic spline basis comes in. This basis has an addition
 ![Cyclic cubic spline basis functions]({{ site.url }}/assets/img/posts/modelling-seasonal-data-with-gam-plot-cyclic-cubic-spline-example.png) 
 
 
-This time, to make it clearer, the left hand panel shows a cubic cyclic spline basis function located at a `x` = 0.167. If you were to wrap the x-axis into a loop by joining the end points the basis function would meet nicely and smoothly at the join. The basis function still takes a value of 1 at its knot and 0 at the other knots, just as before, and there are matching basis functions for each of the knots, they're just not shown in this panel.
+This time, to make it clearer, the left hand panel shows a cubic cyclic spline basis function located at a `x` = 
+
+{% highlight text %}
+
+Error in eval(expr, envir, enclos) : lazy-load database 'P' is corrupt
+
+{% endhighlight %}
+
+. If you were to wrap the x-axis into a loop by joining the end points the basis function would meet nicely and smoothly at the join. The basis function still takes a value of 1 at its knot and 0 at the other knots, just as before, and there are matching basis functions for each of the knots, they're just not shown in this panel.
 
 The right hand panel shows how the "fitted" spline is derived as a weighted sum of the basis functions underneath any point on the spline. Because the basis functions all smoothly join at the end points of `x`, so does the fitted cyclic cubic spline.
 
@@ -389,8 +410,8 @@ The fitted GAM model object contains a lot of information that can be used to in
 > pdat <- transform(pdat,
 +                   p  = p$fit[,2],  se  = p$se.fit[,2],
 +                   p1 = p1$fit[,2], se1 = p1$se.fit[,2],
-+                   p2 = p2$fit[,2], se1 = p2$se.fit[,2],
-+                   p3 = p3$fit[,2], se1 = p3$se.fit[,2])
++                   p2 = p2$fit[,2], se2 = p2$se.fit[,2],
++                   p3 = p3$fit[,2], se3 = p3$se.fit[,2])
 {% endhighlight %}
 
 
