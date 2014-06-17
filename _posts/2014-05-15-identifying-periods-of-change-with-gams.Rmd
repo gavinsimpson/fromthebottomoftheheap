@@ -31,7 +31,7 @@ OK, now that you've read the previous post we can begin&hellip;
 
 To bring you up to speed, I put the bits of code from the previous post that we need here in a [gist](https://gist.github.com/gavinsimpson/b52f6d375f57d539818b) on Github. To run this code you can simply do the following
 
-```{r run-gist}
+```{r run-gist, prompt = FALSE}
 ## Load the CET data and process as per other blog post
 tmpf <- tempfile()
 download.file("https://gist.github.com/gavinsimpson/b52f6d375f57d539818b/raw/2978362d97ee5cc9e7696d2f36f94762554eefdf/load-process-cet-monthly.R",
@@ -41,7 +41,7 @@ ls()
 ```
 The gist contains code to download and process the monthly Central England Temperature (CET) time series so that it is ready for analysis via `gamm()`. Next we fit an additive model with seasonal and trend smooth and an AR(2) process for the residuals; the code predicts from the model at 200 locations over the entire time series and generates a pointwise, approximate 95% confidence interval on the trend spline.
 
-```{r fit-ar2-model, results="hide"}
+```{r fit-ar2-model, results="hide", prompt=FALSE}
 ctrl <- list(niterEM = 0, msVerbose = TRUE, optimMethod="L-BFGS-B")
 m2 <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time, k = 20),
            data = cet, correlation = corARMA(form = ~ 1|Year, p = 2),
@@ -102,7 +102,7 @@ Thankfully, with a little bit of magic from **mgcv** we can compute the uncertai
 
 To load the functions into R from Github use
 
-```{r load-derivatives-gist}
+```{r load-derivatives-gist, prompt = FALSE}
 ## download the derivatives gist
 tmpf <- tempfile()
 download.file("https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R",
@@ -115,7 +115,7 @@ I don't intend to explain all the code behind those functions, but the salient p
 
 ```{r deriv-code-part-1, eval = FALSE, prompt = FALSE}
 X0 <- predict(mod, newDF, type = "lpmatrix")
-newD <- newD + eps
+newDF <- newDF + eps
 X1 <- predict(mod, newDF, type = "lpmatrix")
 Xp <- (X1 - X0) / eps
 ```
@@ -174,7 +174,7 @@ From the plot it is clear that there are two periods of (statistically) signific
 
 That [post]({% post_url 2013-10-23-time-series-plots-with-lattice-and-ggplot %}) used the **lattice** and **ggplot2** packages to draw the plots. I still find it easier to just bash out a base graphics plot for such things unless I need the faceting features offered by those packages. Below I take such an approach and build a base graphics plot up from a series of plotting calls that successively augment the plot, starting with the estimated trend spline and pointwise confidence interval, then two calls to superimpose the periods of significant increase and decrease (although the latter doesn't actually draw anything in this plot)
 
-```{r plot-trend-with-sizer, fig="hold", echo=FALSE, results="hide", fig.cap="Fitted trend showing periods of significant increase in temperature in blue.", fig.height = 4.5}
+```{r plot-trend-with-sizer, fig="hold", echo=TRUE, results="hide", fig.cap="Fitted trend showing periods of significant increase in temperature in blue.", fig.height = 4.5}
 ylim <- with(pdat, range(upper, lower, p2))
 ylab <- expression(Temperature ~ (degree*C * ":" ~ centred))
 
@@ -187,7 +187,7 @@ lines(unlist(m2.dsig$decr) ~ Date, data = pdat, col = "red", lwd = 3)
 ```
 When looking at a plot like this, it is always important to have in the back of your mind a picture of the original data and how variance is decomposed between the seasonal, trend and residual terms, as well as the *effect size* associated with the trend and seasonal splines. You get a very different impression of the magnitude of the trend from the plot shown below, which contains the original data as well as the fitted trend spline.
 
-```{r plot-trend-with-sizer-and-data, fig="hold", echo=FALSE, results="hide", fig.cap="Fitted trend showing periods of significant increase in temperature in blue. The original data are shown as grey points. Note the low precision of the data early in the CET series.", fig.height = 4.5}
+```{r plot-trend-with-sizer-and-data, fig="hold", echo=TRUE, results="hide", fig.cap="Fitted trend showing periods of significant increase in temperature in blue. The original data are shown as grey points. Note the low precision of the data early in the CET series.", fig.height = 4.5}
 plot(Temperature - mean(Temperature) ~ Date, data = cet, type = "n",
      ylab = ylab)
 points(Temperature - mean(Temperature) ~ Date, data = cet,

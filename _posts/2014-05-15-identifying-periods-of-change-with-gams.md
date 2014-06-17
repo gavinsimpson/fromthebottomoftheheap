@@ -27,44 +27,41 @@ To bring you up to speed, I put the bits of code from the previous post that we 
 
 
 {% highlight r %}
-> ## Load the CET data and process as per other blog post
-> tmpf <- tempfile()
-> download.file("https://gist.github.com/gavinsimpson/b52f6d375f57d539818b/raw/2978362d97ee5cc9e7696d2f36f94762554eefdf/load-process-cet-monthly.R",
-+               tmpf, method = "wget")
-> source(tmpf)
-> ls()
+## Load the CET data and process as per other blog post
+tmpf <- tempfile()
+download.file("https://gist.github.com/gavinsimpson/b52f6d375f57d539818b/raw/2978362d97ee5cc9e7696d2f36f94762554eefdf/load-process-cet-monthly.R",
+              tmpf, method = "wget")
+source(tmpf)
+ls()
 {% endhighlight %}
 
 
 
 {% highlight text %}
- [1] "annCET" "bs"     "cet"    "CET"    "coefs"  "ctrl"   "dat"   
- [8] "fx"     "knots"  "m"      "m1"     "m2"     "m3"     "op"    
-[15] "p"      "p1"     "p2"     "p3"     "pdat"   "res"    "rn"    
-[22] "spl"    "tmpf"   "want"   "Years"  "ylab"   "ylim"  
+[1] "annCET" "cet"    "CET"    "rn"     "tmpf"   "Years" 
 {% endhighlight %}
 
 The gist contains code to download and process the monthly Central England Temperature (CET) time series so that it is ready for analysis via `gamm()`. Next we fit an additive model with seasonal and trend smooth and an AR(2) process for the residuals; the code predicts from the model at 200 locations over the entire time series and generates a pointwise, approximate 95% confidence interval on the trend spline.
 
 
 {% highlight r %}
-> ctrl <- list(niterEM = 0, msVerbose = TRUE, optimMethod="L-BFGS-B")
-> m2 <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time, k = 20),
-+            data = cet, correlation = corARMA(form = ~ 1|Year, p = 2),
-+            control = ctrl)
-> 
-> want <- seq(1, nrow(cet), length.out = 200)
-> pdat <- with(cet,
-+              data.frame(Time = Time[want], Date = Date[want],
-+                         nMonth = nMonth[want]))
-> p2 <- predict(m2$gam, newdata = pdat, type = "terms", se.fit = TRUE)
-> pdat <- transform(pdat, p2 = p2$fit[,2], se2 = p2$se.fit[,2])
-> 
-> df.res <- df.residual(m2$gam)
-> crit.t <- qt(0.025, df.res, lower.tail = FALSE)
-> pdat <- transform(pdat,
-+                   upper = p2 + (crit.t * se2),
-+                   lower = p2 - (crit.t * se2))
+ctrl <- list(niterEM = 0, msVerbose = TRUE, optimMethod="L-BFGS-B")
+m2 <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time, k = 20),
+           data = cet, correlation = corARMA(form = ~ 1|Year, p = 2),
+           control = ctrl)
+
+want <- seq(1, nrow(cet), length.out = 200)
+pdat <- with(cet,
+             data.frame(Time = Time[want], Date = Date[want],
+                        nMonth = nMonth[want]))
+p2 <- predict(m2$gam, newdata = pdat, type = "terms", se.fit = TRUE)
+pdat <- transform(pdat, p2 = p2$fit[,2], se2 = p2$se.fit[,2])
+
+df.res <- df.residual(m2$gam)
+crit.t <- qt(0.025, df.res, lower.tail = FALSE)
+pdat <- transform(pdat,
+                  upper = p2 + (crit.t * se2),
+                  lower = p2 - (crit.t * se2))
 {% endhighlight %}
 
 Note that I didn't compute the confidence interval last time out, but I'll use it here to augment the plots of the trend produced later.
@@ -93,26 +90,24 @@ To load the functions into R from Github use
 
 
 {% highlight r %}
-> ## download the derivatives gist
-> tmpf <- tempfile()
-> download.file("https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R",
-+               tmpf, method = "wget")
-> source(tmpf)
-> ls()
+## download the derivatives gist
+tmpf <- tempfile()
+download.file("https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R",
+              tmpf, method = "wget")
+source(tmpf)
+ls()
 {% endhighlight %}
 
 
 
 {% highlight text %}
- [1] "annCET"        "bs"            "cet"           "CET"          
- [5] "coefs"         "confint.Deriv" "crit.t"        "ctrl"         
- [9] "dat"           "Deriv"         "df.res"        "fx"           
-[13] "knots"         "m"             "m1"            "m2"           
-[17] "m3"            "op"            "p"             "p1"           
-[21] "p2"            "p3"            "pdat"          "plot.Deriv"   
-[25] "res"           "rn"            "signifD"       "spl"          
-[29] "take"          "take2"         "tmpf"          "want"         
-[33] "Years"         "ylab"          "ylim"         
+ [1] "annCET"        "cet"           "CET"           "confint.Deriv"
+ [5] "crit.t"        "ctrl"          "Deriv"         "df.res"       
+ [9] "m2"            "m2.d"          "m2.dci"        "m2.dsig"      
+[13] "op"            "p2"            "pdat"          "plot.Deriv"   
+[17] "rn"            "signifD"       "take"          "take2"        
+[21] "Term"          "tmpf"          "want"          "Years"        
+[25] "ylab"          "ylim"         
 {% endhighlight %}
 
 
@@ -121,7 +116,7 @@ I don't intend to explain all the code behind those functions, but the salient p
 
 {% highlight r %}
 X0 <- predict(mod, newDF, type = "lpmatrix")
-newD <- newD + eps
+newDF <- newDF + eps
 X1 <- predict(mod, newDF, type = "lpmatrix")
 Xp <- (X1 - X0) / eps
 {% endhighlight %}
@@ -184,9 +179,35 @@ From the plot it is clear that there are two periods of (statistically) signific
 
 That [post]({% post_url 2013-10-23-time-series-plots-with-lattice-and-ggplot %}) used the **lattice** and **ggplot2** packages to draw the plots. I still find it easier to just bash out a base graphics plot for such things unless I need the faceting features offered by those packages. Below I take such an approach and build a base graphics plot up from a series of plotting calls that successively augment the plot, starting with the estimated trend spline and pointwise confidence interval, then two calls to superimpose the periods of significant increase and decrease (although the latter doesn't actually draw anything in this plot)
 
+
+{% highlight r %}
+> ylim <- with(pdat, range(upper, lower, p2))
+> ylab <- expression(Temperature ~ (degree*C * ":" ~ centred))
+> 
+> plot(p2 ~ Date, data = pdat, type = "n", ylab = ylab, ylim = ylim)
+> lines(p2 ~ Date, data = pdat)
+> lines(upper ~ Date, data = pdat, lty = "dashed")
+> lines(lower ~ Date, data = pdat, lty = "dashed")
+> lines(unlist(m2.dsig$incr) ~ Date, data = pdat, col = "blue", lwd = 3)
+> lines(unlist(m2.dsig$decr) ~ Date, data = pdat, col = "red", lwd = 3)
+{% endhighlight %}
+
 ![Fitted trend showing periods of significant increase in temperature in blue.]({{ site.url }}/assets/img/posts/identifying-periods-of-change-with-gams-plot-trend-with-sizer.png) 
 
 When looking at a plot like this, it is always important to have in the back of your mind a picture of the original data and how variance is decomposed between the seasonal, trend and residual terms, as well as the *effect size* associated with the trend and seasonal splines. You get a very different impression of the magnitude of the trend from the plot shown below, which contains the original data as well as the fitted trend spline.
+
+
+{% highlight r %}
+> plot(Temperature - mean(Temperature) ~ Date, data = cet, type = "n",
++      ylab = ylab)
+> points(Temperature - mean(Temperature) ~ Date, data = cet,
++        col = "lightgrey", pch = 16, cex = 0.7)
+> lines(p2 ~ Date, data = pdat)
+> lines(upper ~ Date, data = pdat, lty = "dashed")
+> lines(lower ~ Date, data = pdat, lty = "dashed")
+> lines(unlist(m2.dsig$incr) ~ Date, data = pdat, col = "blue", lwd = 3)
+> lines(unlist(m2.dsig$decr) ~ Date, data = pdat, col = "red", lwd = 3)
+{% endhighlight %}
 
 ![Fitted trend showing periods of significant increase in temperature in blue. The original data are shown as grey points. Note the low precision of the data early in the CET series.]({{ site.url }}/assets/img/posts/identifying-periods-of-change-with-gams-plot-trend-with-sizer-and-data.png) 
 
