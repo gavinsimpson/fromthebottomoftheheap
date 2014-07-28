@@ -23,7 +23,7 @@ active: code
  * Dissimilarity coefficients
      * Chord, Bray-Curtis, Gower's Generalised coefficient, Manhattan, ...
  * Dissimilarity decisions thresholds
-     * <acronym title="Receiver Operator Characteristic">ROC</acronym> curves
+     * <abbr title="Receiver Operator Characteristic">ROC</abbr> curves
      * Monte Carlo resampling
      * Logistic regression
  * Stratigraphic diagrams
@@ -31,7 +31,7 @@ active: code
  
 
 ## Bugs, feature requests
-Bug reports and feature requests should be filed on [R-forge](https://r-forge.r-project.org/tracker/?atid=338&group_id=69&func=browse).
+Bug reports and feature requests should be filed as [issues](https://github.com/gavinsimpson/analogue/issues) on [github](https://github.com).
 
 ## Licence
 analogue is released under the [GNU General Public Licence Version 2](http://www.gnu.org/licenses/gpl-2.0.html).
@@ -39,4 +39,4 @@ analogue is released under the [GNU General Public Licence Version 2](http://www
 ## Links
 
  * [CRAN page](http://cran.r-project.org/package=analogue)
- * [Development site](http://r-forge.r-project.org/projects/analogue/) on R-Forge
+ * [Development site](https://github.com/gavinsimpson/analogue/) on [github](https://github.com)
