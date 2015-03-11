@@ -9,7 +9,8 @@ tags:
 - R
 - Science
 - Time series
-alert: "<strong>Updated</strong> This post was updated on 17 July 2011 following comments from readers."
+alert: "<strong>Updated</strong> The URL to the HadCRUT3v data set changed following the release of version 4 of the data set (12 January 2015).<br>
+<strong>Updated</strong> This post was updated on 17 July 2011 following comments from readers."
 ---
 
 Yesterday (June 11, 2011) the [BBC](http://www.bbc.co.uk/news/) [reported](http://www.bbc.co.uk/news/science-environment-13719510) on comments by [Prof. Phil Jones](http://www.uea.ac.uk/env/people/facstaff/jonesp), of the [Climatic Research Unit](http://www.cru.uea.ac.uk/) (CRU), [University of East Anglia](http://www.uea.ac.uk/) (UEA), that the warming experienced by the planet since 1995 was statistically significant. That the trend in the recent data was now significant when last year it was not, was attributed to the fact that one more data point (year) was now available for the analysis and Jones highlighted the utility of long-term monitoring data as more data is collected in detecting pattern in noisy data. In this post I wanted to take a closer look at these data and illustrate how we can use R to fit regression models to time series data.
@@ -17,7 +18,7 @@ Yesterday (June 11, 2011) the [BBC](http://www.bbc.co.uk/news/) [reported](http:
 I will look at the [HadCRUT3v](http://www.cru.uea.ac.uk/cru/data/temperature/) data set, using the global mean version of the data. I don't know specifically that Jones was commenting on these particular data as I have been unable to identify a source for his comments other than the information in the BBC article, but it seems plausible that Jones was talking about these data. To load these data into R we use
 
 {% highlight r %}
-URL <- url("http://www.cru.uea.ac.uk/cru/data/temperature/hadcrut3vgl.txt")
+URL <- url("http://www.cru.uea.ac.uk/cru/data/temperature/HadCRUT3v-gl.dat")
 gtemp <- read.table(URL, fill = TRUE)
 {% endhighlight %}
 

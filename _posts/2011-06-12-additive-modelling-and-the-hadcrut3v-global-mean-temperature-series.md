@@ -10,6 +10,7 @@ tags:
 - Time series
 active: blog
 category: R
+alert: "<strong>Updated</strong> The URL to the HadCRUT3v data set changed following the release of version 4 of the data set (12 January 2015)."
 ---
 
 [Earlier, I looked at the HadCRUT3vgl data](http://www.fromthebottomoftheheap.net/2011/06/11/global-warming-since-1995-now-significant/ 'Global warming since 1995 &apos;now significant&apos;') set using generalized least squares to investigate whether the trend in temperature since 1995 was statistically significant. Here I want to follow-up one of the points from the earlier posting; namely using a statistical technique that fits a local, and not global, model to the entire time series and see how that informs our knowledge of trends in the recent period.
@@ -35,7 +36,7 @@ source(tmp)
 
 {% highlight r %}
 ## Global temperatures
-URL <- url("http://www.cru.uea.ac.uk/cru/data/temperature/hadcrut3vgl.txt")
+URL <- url("http://www.cru.uea.ac.uk/cru/data/temperature/HadCRUT3v-gl.dat")
 gtemp <- read.table(URL, fill = TRUE)
 ## Don't need the even rows
 gtemp <- gtemp[-seq(2, nrow(gtemp), by = 2), ]
