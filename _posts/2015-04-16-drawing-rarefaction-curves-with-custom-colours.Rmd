@@ -1,0 +1,107 @@
+--- 
+title: "Drawing rarefaction curves with custom colours"
+status: publish
+layout: post
+published: true
+type: post
+tags:
+- vegan
+- rarefaction
+- plots
+active: blog
+category: R
+---
+
+```{r, echo = FALSE, include = FALSE, cache = FALSE}
+render_jekyll()
+opts_knit$set(progress = TRUE, base.url = "{{ site.url }}/assets/img/posts/", base.dir = "/home/gavin/work/web/jekyll/blog/assets/img/posts/")
+opts_chunk$set(results = "hold",
+               fig.path = "drawing-rarefaction-curves-with-custom-colours", 
+               comment = NA,
+               prompt = FALSE,
+               cache = TRUE,
+               cache.path = "../_knitr-cache/drawing-rarefaction-curves-with-custom-colours-", 
+               fig.show = "hold",
+               dev = "png",
+               dpi = 85,
+               tidy = FALSE,
+               fig.height = 7,
+               fig.width = 7,
+               dev.args = list(pointsize = 10))
+opts_chunk$set(fig.lp = "fig:")
+```
+
+I was sent an email this week by a **vegan** user who wanted to draw rarefaction curves using `rarecurve()` but with different colours for each curve. The solution to this one is quite easy as `rarecurve()` has argument `col` so the user could supply the appropriate vector of colours to use when plotting. However, they wanted to distinguish all 26 of their samples, which is certainly stretching the limits of perception if we only used colour. Instead we can vary other parameters of the plotted curves to help with identifying individual samples.
+
+
+```{r subset-data}
+library("vegan")
+data(BCI, package = "vegan")
+BCI2 <- BCI[1:26, ]
+raremax <- min(rowSums(BCI2))
+raremax
+```
+
+To set up the parameters we might use for plotting, `expand.grid()` is a useful helper function
+
+```{r expand-pars}
+col <- c("black", "darkred", "forestgreen", "orange", "blue", "yellow", "hotpink")
+lty <- c("solid", "dashed", "longdash", "dotdash")
+pars <- expand.grid(col = col, lty = lty, stringsAsFactors = FALSE)
+head(pars)
+```
+
+Then we can call `rarecurve()` as follows with the new graphical parameters
+
+```{r rarecurve-1, fig = TRUE, fig.cap = "First attempt at rarefaction curves with custom colours."}
+out <- with(pars[1:26, ],
+            rarecurve(BCI2, step = 20, sample = raremax, col = col,
+                      lty = lty, label = FALSE))
+```
+
+Note that I saved the output from `rarecurve()` in object `out`. This object contains everything we need to draw our own version of the plot if we wish. For example, we could use fewer colours and alter the line thickness instead to make up the required number of combinations.
+
+```{r expand-pars-2}
+col <- c("black", "darkred", "forestgreen", "hotpink", "blue")
+lty <- c("solid", "dashed", "dotdash")
+lwd <- c(1, 2)
+pars <- expand.grid(col = col, lty = lty, lwd = lwd, 
+                    stringsAsFactors = FALSE)
+head(pars)
+```
+
+Then we can get almost the same plot using the following code
+
+```{r plot-custom-rarecurves, fig = TRUE, fig.cap = "Second attempt at rarefaction curves with custom colours and plotting."}
+Nmax <- sapply(out, function(x) max(attr(x, "Subsample")))
+Smax <- sapply(out, max)
+plot(c(1, max(Nmax)), c(1, max(Smax)), xlab = "Sample Size",
+     ylab = "Species", type = "n")
+abline(v = raremax)
+for (i in seq_along(out)) {
+    N <- attr(out[[i]], "Subsample")
+    with(pars, lines(N, out[[i]], col = col[i], lty = lty[i], lwd = lwd[i]))
+}
+```
+
+Having done this, I don't believe this is a useful graphic because we're trying to distinguish between too many samples using graphical parameters. Where I do think this sort of approach might work is if the samples in the data set come from a few different groups and we want to colour the curves by group.
+
+
+```{r expand-pars-3}
+col <- c("darkred", "forestgreen", "hotpink", "blue")
+set.seed(3)
+grp <- factor(sample(seq_along(col), nrow(BCI2), replace = TRUE))
+cols <- col[grp]
+```
+
+The code above creates a grouping factor `grp` for illustration purposes; in real analyses you'd have this already as a factor variable in you data somewhere. We also have to expand the `col` vector because we are plotting each line in a loop. The plot code, reusing elements from the previous plot, is shown below: 
+
+```{r plot-custom-rarecurves-2, fig = TRUE, fig.cap = "An attempt at rarefaction curves output with custom colours per groups of curves."}
+plot(c(1, max(Nmax)), c(1, max(Smax)), xlab = "Sample Size",
+     ylab = "Species", type = "n")
+abline(v = raremax)
+for (i in seq_along(out)) {
+    N <- attr(out[[i]], "Subsample")
+    lines(N, out[[i]], col = cols[i])
+}
+```
