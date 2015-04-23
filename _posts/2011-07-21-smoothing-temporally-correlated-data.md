@@ -17,7 +17,7 @@ data, to which I have been fitting additive models to describe trends and other 
 
 {{ page.excerpt | markdownify  }}
 
-Unless we specifically tell the software that the data aren't independent it will perform smoothness selection assuming that we have \(( n \\) independent observations. The risk then is that too-complex a smooth term is fitted to the data &mdash; it is no-longer a case of updating the fitted model, the model itself will be over-fitted. In this post I want to illustrate the problem of smoothing correlated data with an example from a chapter in a text book that a reviewer alerted to me to some time back.
+Unless we specifically tell the software that the data aren't independent it will perform smoothness selection assuming that we have \\( n \\) independent observations. The risk then is that too-complex a smooth term is fitted to the data &mdash; it is no-longer a case of updating the fitted model, the model itself will be over-fitted. In this post I want to illustrate the problem of smoothing correlated data with an example from a chapter in a text book that a reviewer alerted to me to some time back.
 
 The example comes from Kohn, Schimek and Smith (2000) that I have cooked up using R. Kohn et al consider the model \\( f(x\_{t}) = 1280 x\_{t}\^4 (1 - x\_{t})\^4 \\), where \\( t = 1, 2, \\ldots, 100 \\), and \\( x\_{t} = t/100 \\). To this, errors \\( e\_{t} \\) are generated from a first-order auto-regressive (AR(1)) process with \\( \\phi\_{1} = 0.3713\\) to produce a random sample from the model such that \\( y\_{t} = f(x\_{t}) + e\_{t}\\). We can generate a sample of data from this model with the following R code
 
@@ -32,7 +32,7 @@ y <- as.numeric(Y + arima.sim(list(ar = 0.3713), n = n))
 
 The `arima.sim()` function is used to generate the appropriate AR(1) errors. A plot of this sample of data and the true function are shown below
 
-[![Random sample and true function as used by Kohn et al](http://ucfagls.files.wordpress.com/2011/07/schimek_example_1.png "smoothing_dependent_data_example_1")](http://ucfagls.files.wordpress.com/2011/07/schimek_example_1.png)
+![Random sample and true function as used by Kohn et al]({{ site.url }}/assets/img/posts/schimek_example_1.png "smoothing_dependent_data_example_1")
 
 To these data, I will fit a cubic smoothing spline via `smooth.spline()` and an additive model via `gam()` in package **mgcv**. In addition, let us assume that we don't know the exact nature of the dependence in the data but we know that they are temporally correlated so that we can fit a model that includes a plausible correlation structure. For that, I will use an additive model with an AR(1) correlation structure, fitted using a linear mixed effects representation of the additive model via the `gamm()` function, also from the **mgcv** package. `gamm()` uses the `lme()` function from the **nlme** package. I will arrange for the value
 of \\( \\phi\_{1}\\) be estimated as one of the model parameters, whilst the degree of smoothness is being estimated during fitting. The three models are fitted with the following three lines of R code:
@@ -45,7 +45,7 @@ m3 <- gamm(y ~ s(xt, k = 20), correlation = corAR1(form = ~ time))
 
 The three model fits are shown in the figure below
 
-[![The three resulting model fits to the Kohn et al example data set. Both the cubic smoothing spline and the standard additive model over fit the data resulting in very complex fits using a large number of degrees of freedom. The AM with AR(1) errors accurately fits the underlying true function](http://ucfagls.files.wordpress.com/2011/07/schimek_example_2.png "three_model_fits_to the kohn_et_al_example_data")](http://ucfagls.files.wordpress.com/2011/07/schimek_example_2.png)
+![The three resulting model fits to the Kohn et al example data set. Both the cubic smoothing spline and the standard additive model over fit the data resulting in very complex fits using a large number of degrees of freedom. The AM with AR(1) errors accurately fits the underlying true function]({{ site.url }}/assets/img/posts/schimek_example_2.png "three_model_fits_to the kohn_et_al_example_data")
 
 Both the cubic smoothing spline and the additive model over fit the
 data, resulting in very complex smooth functions using 34.25 and 16.82
