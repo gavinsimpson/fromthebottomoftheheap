@@ -16,6 +16,7 @@ category: R
 
 I was sent an email this week by a **vegan** user who wanted to draw rarefaction curves using `rarecurve()` but with different colours for each curve. The solution to this one is quite easy as `rarecurve()` has argument `col` so the user could supply the appropriate vector of colours to use when plotting. However, they wanted to distinguish all 26 of their samples, which is certainly stretching the limits of perception if we only used colour. Instead we can vary other parameters of the plotted curves to help with identifying individual samples.
 
+To illustrate, I'll use the Barro Colorado Island data set `BIC` that comes with **vegan**. I just take the first 26 samples as this was the data set size my correspondent indicated they had available.
 
 
 {% highlight r %}
@@ -44,6 +45,8 @@ raremax
 {% highlight text %}
 [1] 340
 {% endhighlight %}
+
+`raremax` is the minimum sample count achieved over the 26 samples. We will rarefy the sample counts to this value. 
 
 To set up the parameters we might use for plotting, `expand.grid()` is a useful helper function
 
@@ -78,7 +81,7 @@ out <- with(pars[1:26, ],
 
 ![First attempt at rarefaction curves with custom colours.]({{ site.url }}/assets/img/posts/drawing-rarefaction-curves-with-custom-coloursrarecurve-1-1.png) 
 
-Note that I saved the output from `rarecurve()` in object `out`. This object contains everything we need to draw our own version of the plot if we wish. For example, we could use fewer colours and alter the line thickness instead to make up the required number of combinations.
+Note that I saved the output from `rarecurve()` in object `out`. This object contains everything we need to draw our own version of the plot if we wish. For example, we could use fewer colours and alter the line thickness[^1] instead to make up the required number of combinations.
 
 
 {% highlight r %}
@@ -102,7 +105,9 @@ head(pars)
 6       black dashed   1
 {% endhighlight %}
 
-Then we can get almost the same plot using the following code
+[^1]: We can't use the approach outlined in this example to vary `lwd` because of the way `rarecurve()` draws the individual curves, in a loop. We have no way to tell `rarecurve()` to use the *i*th element of a vector of `lwd` values.
+
+Using the information in `out` returned by `rarecurve()` we can get almost the same plot using the following code to draw the elements by hand
 
 
 {% highlight r %}
