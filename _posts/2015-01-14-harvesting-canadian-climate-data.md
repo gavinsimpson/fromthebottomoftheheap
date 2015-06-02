@@ -219,7 +219,7 @@ getData <- function(stations, folder, verbose = TRUE, delete = TRUE) {
         ## Must have (eventually) read file OK, add station data
         cdata <- cbind.data.frame(StationID = rep(sites[i], NROW(cdata)),
                                   cdata)
-        names(cdata) <- cnames
+        names(cdata)[-1] <- cnames
         out[[i]] <- cdata
  
         if (isTRUE(verbose)) { # Update the progress bar
