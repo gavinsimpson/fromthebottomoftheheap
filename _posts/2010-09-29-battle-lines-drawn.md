@@ -1,4 +1,4 @@
---- 
+---
 title: Battle lines drawn
 status: publish
 layout: post
@@ -11,10 +11,9 @@ tags:
 - Science
 category: Science
 active: blog
-excerpt: "I'd been pondering what to write for my first foray into the blog-o-sphere. Several ideas were milling about my head but for some reason I never got round to putting fingers to keyboard. But the weekly newsletter from the UCL Provost has spurred me to action..."
 ---
 
-{{ page.excerpt | markdownify  }}
+I'd been pondering what to write for my first foray into the blog-o-sphere. Several ideas were milling about my head but for some reason I never got round to putting fingers to keyboard. But the weekly newsletter from the UCL Provost has spurred me to action...
 
 Today I lined up alongside my fellow UK scientists to draw a line in the sand. The ConLib coalition are considering savage cuts to UK science funding, and the person in charge of this doesn't even seem capable of doing his homework.
 
