@@ -10,6 +10,7 @@ tags:
 - packages
 active: blog
 category: R
+alert: "I have modified <i>slightly</i> the juxtaposition of Oliver Keyes' tweet and the subsequent comments about broken vignettes (and expanded it to packages to further distance this from the tweet). It was not my intention to link Oliver, via his tweet, with poor packagers. I only used the tweet to exemplify a common complaint I hear."
 ---
 
 On Twitter and elsewhere there has been much wailing and gnashing of teeth for some time over one particular aspect of the R ecosphere: [CRAN](http://cran.r-project.org/). I'm not here to argue that everything is peachy --- far from it in fact --- but I am going to argue that the problems we face *do not* begin and end with CRAN or one or more of it's maintainers.
@@ -35,10 +36,12 @@ Some package authors complain that CRAN is sweating the insignificant details at
 <blockquote class="twitter-tweet" lang="en" align="center"><p lang="en" dir="ltr">Let me say a big thank you to BDR for shouting at me for not using single quotes but not noticing fundamentally broken vignettes</p>&mdash; Oliver Keyes (@quominus) <a href="https://twitter.com/quominus/status/605025216222265344">May 31, 2015</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-complaining about being asked to single-quote something or other whilst broken vignettes seemingly languish on CRAN (it's not immediately clear whether Oliver was referring to his own vignettes or something from another package). The implication here seems to be that BDR is somehow being remiss in pointing out one transgression of the rules whilst simultaneously allowing other, more serious, transgressions. This is invariably a false argument of course. If BDR #sweat[s]theshitthatdoesntmatter (as @recology_ succinctly put it), he sure as hell isn't letting an obviously --- visibly --- broken vignette through the pearly gates now is he? Of course not! If there are broken vignettes on CRAN there are two reasons
+complaining about being asked to single-quote something or other whilst broken vignettes seemingly languish on CRAN (it's not immediately clear whether Oliver was referring to his own vignettes or something from another package). The implication here seems to be that BDR is somehow being remiss in pointing out one transgression of the rules whilst simultaneously allowing other, more serious, transgressions. This is invariably a false argument of course. If BDR #sweat[s]theshitthatdoesntmatter (as @recology_ succinctly put it), he sure as hell isn't letting an obviously --- visibly --- broken vignette through the pearly gates now is he? Of course not!
 
- 1. the author of the package doesn't care about fixing the vignette but it is broken in a non-obvious-to-CRAN way, or
- 2. the package author's vignette has broken due to recent changes in dependencies or R, (OK I guess there's a 3rd option...
+If there are broken vignettes/packages on CRAN there are two reasons
+
+ 1. the author of the package doesn't care about fixing the vignette/package but it is broken in a non-obvious-to-CRAN way, or
+ 2. the package author's vignette/package has broken due to recent changes in dependencies or R, (OK I guess there's a 3rd option...
  3. the package author doesn't know and, you know what, perhaps a friendly note to tell them would suffice )
 
 If the reality is 2. and the package is still on CRAN, then be thankful that CRAN is probably allowing a period of grace for the package author to fix the problem. Can you imagine the cacophony of wailing from the twitteRati if CRAN pulled their packages as soon as `R CMD check` threw an error? You might mistake such an event for the rapture...
