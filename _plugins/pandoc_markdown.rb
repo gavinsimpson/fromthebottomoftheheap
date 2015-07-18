@@ -3,10 +3,10 @@ module Jekyll
     class Markdown < Converter
       safe true
 
-      pygments_prefix "\n"
-      pygments_suffix "\n"
-      #highlighter_suffix "\n"
-      #highlighter_prefix "\n"
+      #pygments_prefix "\n"
+      #pygments_suffix "\n"
+      highlighter_prefix "\n"
+      highlighter_suffix "\n"
 
       def setup
         return if @setup
@@ -24,7 +24,7 @@ module Jekyll
           else
             STDERR.puts "Invalid Markdown processor: #{@config['markdown']}"
             STDERR.puts " Valid options are [ maruku | rdiscount | kramdown ]"
-            raise FatalException.new("Invalid Markdown process: #{@config['markdown']}")
+            raise Jekyll::Errors::FatalException.new("Invalid Markdown process: #{@config['markdown']}")
         end
         @setup = true
       end
@@ -56,7 +56,7 @@ module Jekyll
         rescue LoadError
           STDERR.puts 'You are missing a library required for Pandoc. Please run:'
           STDERR.puts ' $ [sudo] gem install pandoc-ruby'
-          raise FatalException.new("Missing dependency: pandoc-ruby")
+          raise Jekyll::Errors::FatalException.new("Missing dependency: pandoc-ruby")
         end
 
         def convert(content)
