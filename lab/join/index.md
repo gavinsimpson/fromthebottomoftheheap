@@ -8,4 +8,4 @@ tags: []
 active: lab
 ---
 
-I have funding for a graduate student at Masters or PhD level interested in studying abrupt environmental change in prairie lakes over the past few thousand years. I'll be posting more details shortly, but if you are interested [get in touch](mailto:gavin.simpson@uregina.ca).
+Currently there are no open positions in the lab, but I'm always interested in talking with potential graduate students or postdoctoral fellows about opportunities for funding and research ideas, so do please [get in touch](mailto:gavin.simpson@uregina.ca).
