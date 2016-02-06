@@ -9,7 +9,7 @@ tags:
 - Politics
 - Funding
 - Science
-category: Science
+category: science
 active: blog
 ---
 

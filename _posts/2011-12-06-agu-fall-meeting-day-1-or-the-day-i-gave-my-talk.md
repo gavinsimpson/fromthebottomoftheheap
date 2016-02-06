@@ -18,7 +18,7 @@ tags:
 - Nitrogen
 - Science
 active: blog
-category: Science
+category: science
 excerpt: "Yesterday (it is now morning on day 2) was the first proper day of the Fall Meeting. My fellow meeting attendees certainly need their coffee; between my hotel and the Moscone I passed about five Starbucks stores, each of which sported a long queue of poster tube-bearing or lanyard-wearing individuals desperate for a cup of joe."
 ---
 

@@ -15,7 +15,7 @@ tags:
 - Publishing
 - Science
 active: blog
-category: Science
+category: science
 excerpt: "In the past few days I've come across two advertorials (articles or editorials if I'm being generous) from Elsevier in the context of newsletters sent to editors and authors. Here I consider the [one sent to editors](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/) that Ross Mounce ([@rossmounce](https://twitter.com/#!/rmounce)) tweeted about earlier today."
 ---
 

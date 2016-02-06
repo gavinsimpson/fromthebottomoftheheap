@@ -12,7 +12,7 @@ tags:
 - Moscone Center
 - Science
 active: blog
-category: Science
+category: science
 excerpt: "Day 3 was an easier day for me with fewer talks that I wanted to see so I was able to spend a bit of time thinking about work matters and cogitating a bit more on the talks I was listening to. I also spent a large chunk of time in one of the poster sessions, which was very enlightening; it was like an informal talk session with authors presenting their posters ad hoc and groups discussions taking place about the results. (As I write this I have just come from my own poster session and had the same experience; far better than many poster sessions at other meetings.)"
 ---
 

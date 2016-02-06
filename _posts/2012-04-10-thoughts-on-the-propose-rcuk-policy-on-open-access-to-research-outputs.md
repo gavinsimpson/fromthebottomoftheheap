@@ -12,7 +12,7 @@ tags:
 - Research Councils UK
 - Science
 active: blog
-category: Science
+category: science
 excerpt: "Today is the last day of a consultation by [Research Councils UK](http://www.rcuk.ac.uk/) (RCUK) on its draft policy on [Access to Research Outputs](http://www.openscholarship.org/upload/docs/application/pdf/2012-03/rcuk_proposed_policy_on_access_to_research_outputs.pdf) [PDF]. The proposals are a clear and strong statement that RCUK-funded research should be made available via open access (OA). It goes far beyond the current OA offerings from some [publishers](/2012/03/31/elsevier-on-open-access-part-2/ 'Elsevier on Open Access part 2') and represents a welcome statement of support for the OA movement. Where the policy is less strident is on open access to research data and related materials.\n\n
 
 I copy my email to RCUK below."

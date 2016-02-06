@@ -12,7 +12,7 @@ tags:
 - Publishing
 - Science
 active: blog
-category: Science
+category: science
 ---
 After a little soul searching I signed the [Elsevier boycott](http://thecostofknowledge.com/), pledging not to do any [peer review](http://en.wikipedia.org/wiki/Peer_review 'Peer review') or editorial work for any of that publishers titles. I have written before about my objections to [Elsevier's practices](http://www.fromthebottomoftheheap.net/2012/03/04/the-cost-of-subscribing-to-academic-journals/ 'The cost of subscribing to academic journals') and have [boycotted Wiley](http://www.fromthebottomoftheheap.net/2012/01/18/im-on-peer-review-strike/ 'I’m on peer review strike!') for similar reasons. Here I want to briefly outline why it took me so long to sign the pledge to boycott Elsevier.
 

@@ -17,7 +17,7 @@ tags:
 - UK Government
 - Wiley
 active: blog
-category: Science
+category: science
 excerpt: "Following on from yesterday's momentous announcements from UK Government and RCUK on opening up access to research outputs funded by the British tax payer, [John Wiley & Sons](http://www.wiley.com/ 'John Wiley & Sons') Inc. have [announced](http://eu.wiley.com/WileyCDA/PressRelease/pressReleaseId-104139.html) the [Geoscience Data Journal](http://bit.ly/NBJvG7) in partnership with the [Royal Meteorological Society](http://en.wikipedia.org/wiki/Royal_Meteorological_Society 'Royal Meteorological Society'), the Met Office and [NERC](http://www.nerc.ac.uk 'Natural Environment Research Council')."
 ---
 

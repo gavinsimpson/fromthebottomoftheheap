@@ -9,7 +9,7 @@ tags:
 - "Early warning indicators"
 - "Time series"
 - R
-category: Science
+category: science
 active: blog
 ---
 Last year, Rong Wang and colleagues [@wang_flickering_2012] published a very nice paper in Nature, which claimed to have observed flickering, an early warning indicator of an approaching critical transition, in a diatom sediment sequence from Erhai Lake, Yunnan, China. What was particularly pleasing about this paper was that the authors had tried to use the sediment record to investigate whether we see signs of early warning indicators prior to a transition between stable states. It was refreshing to not see a transfer function!

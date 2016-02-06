@@ -9,7 +9,7 @@ tags:
 - NSERC
 - "Open Science"
 active: blog
-category: Science
+category: science
 ---
 
 Earlier this year the triumvirate of Canadian science funding bodies, the Natural Science and Engineering Research Council, the Canadian Institutes of Health Research (CIHR) and the Social Sciences and Humanities Research Council of Canada (SSHRC) (collectively referred to as the Tri-Agencies), announced their new policy of open access to research publications. This followed a period of consultation, begun in the fall of 2013, with the science communities funded by the Tri-Agencies. The policy came into effect, effectively, on May 1st this year (2015) and applies to all Tri-agency-funded grants awarded from May 1st 2015 onward. As part of its awareness programme for the policy, the Tri-Agencies have been holding webinars to explain the new policy and allow for questions from researchers. In the main the Tri-Agency policy is pretty clear, judging by the questions from academics during the webinar session that I attended recently, but we can conclude one or both of two things: i) academics don't read things unless the absolutely must, and ii) that academics have some interesting views about open access, what it means for them, and what they consider as being good-practice or complying with the new rules. I was asked after tweeting about this to summarise my notes from the webinar and on the Tri-Agency policy on open access in general.

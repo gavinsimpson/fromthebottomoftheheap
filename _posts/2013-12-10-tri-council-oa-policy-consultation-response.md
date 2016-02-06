@@ -11,7 +11,7 @@ tags:
 - "NSERC"
 - "CIHR"
 - "SSHRC"
-category: Science
+category: science
 active: blog
 ---
 

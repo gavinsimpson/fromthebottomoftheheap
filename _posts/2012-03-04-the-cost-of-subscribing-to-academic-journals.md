@@ -13,7 +13,7 @@ tags:
 - Research Works Act
 - Science
 active: blog
-category: Science
+category: science
 excerpt: "Much has been written about the Research Works Act [you could do a lot worse than [read](http://svpow.com/2012/01/09/do-your-bit-to-oppose-the-evil-research-works-act/) Saurodpod Mike on the [subject](http://svpow.com/2012/01/09/do-your-bit-to-oppose-the-evil-research-works-act/)], academic publishing and the relationship between the scientists who do most of the work and the publishers who then assert somewhat draconian rights over those works. A [boycott](http://thecostofknowledge.com/ 'Boycott Elsevier Website') of the biggest publisher of them all, [Elsevier](http://www.elsevier.com 'Elsevier'), started to gain a fair
 degree of traction with almost 8000 scientists having pledge to limit some or all of their interactions with Elsevier and its journals."
 ---

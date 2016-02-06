@@ -10,7 +10,7 @@ tags:
 - R
 - UKLEON
 active: blog
-category: Science
+category: science
 excerpt: "[NERC](http://www.nerc.ac.uk 'NERC Website') recently funded the formation of the UK Lake Ecological Observatory Network (UKLEON) as part of the its [Networks of Sensors](http://www.nerc.ac.uk/research/programmes/nos/ 'NERC Networks of Sensors home page') programme. UKLEON is led by [Ian Jones](http://www.ceh.ac.uk/staffwebpages/IanJones.html 'Ian Jones&#8217; staff page') at [CEH](http://www.ceh.ac.uk 'CEH Website') [Lancaster](http://www.ceh.ac.uk/sites/lancaster.html 'CEH Lancaster'). A fully-funded PhD project is associated with the UKLEON project, with the aim of investigating high resolution coherence in lake dynamics."
 ---
 

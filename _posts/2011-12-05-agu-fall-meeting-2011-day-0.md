@@ -9,7 +9,7 @@ tags:
 - AGU 2011
 - Conferences
 - Science
-category: Science
+category: science
 active: blog
 excerpt: "This is my first trip to the AGU Fall Meeting. As I write this I am on Level 2 of the [Moscone Center](http://www.moscone.com/ 'Moscone Center') (West), San Francisco, USA, having spent the past hour or so finalising my talk for tomorrow."
 ---

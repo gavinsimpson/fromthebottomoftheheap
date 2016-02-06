@@ -8,7 +8,7 @@ tags:
 - "Open data"
 - "Open science"
 - "Ecology"
-category: Science
+category: science
 active: blog
 ---
 Open science was present in good order at the recent <acronym title="Ecological Society of America">ESA</acronym> meeting in Minneapolis. Much of what was being discussed under that broadest of headings, *open science*, was the reproducibility of the science we do and one critical aspect of this is free, open access to data. Openly sharing data that underlie research publications is a rapidly-developing area of the scientific landscape faced today by scientists, not just ecologists; many journals now require data that support research papers be deposited under a permissive licence in approved repositories, such as [Dryad](http://datadryad.org/) or [figshare](http://figshare.com/), and a number of journals have been founded specifically to cater for the publication of *data papers*, including [Ubiquity Press](http://www.ubiquitypress.com/)' the [Journal of Open Archeological Data](http://openarchaeologydata.metajnl.com/), Nature Publishing Group's forthcoming [Scientific Data](http://www.nature.com/scientificdata/), and Wiley's [Geoscience Data Journal](http://onlinelibrary.wiley.com/journal/10.1002/(ISSN)2049-6060). Unfortunately, ecologists are more likely to be known for the iron-like grip with which the cling to their hard-won data. Into this landscape, Stephanie Hampton and colleagues [@hampton_big_data_2013] published (it's been online for a few months) a paper in [Frontiers in Ecology and Environment](http://www.frontiersinecology.org/); *[Big data and the future of ecology](http://doi.org/10.1890/120103)*

@@ -19,7 +19,7 @@ In previous posts ([here](/2011/06/12/additive-modelling-and-the-hadcrut3v-globa
 
 ## Catching up
 
-First off, if you haven't already done so, go read my [post on modelling seasonal data with GAMs]({% post_url 2011-06-12-additive-modelling-and-the-hadcrut3v-global-mean-temperature-series %}) as it provides the background info on the data and the model that I'll be looking at here but also explains how we fitted the model etc. Don't worry; you don't need to run all that code to follow this post as I have put the relevant data processing parts in a Github [gist](https://gist.github.com/gavinsimpson/b52f6d375f57d539818b) that we'll download and `source()` shortly.
+First off, if you haven't already done so, go read my [post on modelling seasonal data with GAMs]({% post_url 2014-05-09-modelling-seasonal-data-with-gam %}) as it provides the background info on the data and the model that I'll be looking at here but also explains how we fitted the model etc. Don't worry; you don't need to run all that code to follow this post as I have put the relevant data processing parts in a Github [gist](https://gist.github.com/gavinsimpson/b52f6d375f57d539818b) that we'll download and `source()` shortly.
 
 OK, now that you've read the previous post we can begin&hellip;
 
