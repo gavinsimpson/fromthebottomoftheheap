@@ -77,7 +77,7 @@ library("lattice")
 
 The key to creating the sort of plot shown in Figure 1 is to recognise that each of the lines we want to draw can be viewed as a separate y-axis variable. **lattice** allows for this by specifying multiple values on the left-hand-side of the formula used to describe the plot. We also need to facet the plot on `Site`. To draw the figure we use `xyplot()`
 
-{% highlight r linenos %}
+{% highlight r %}
 xyplot(Fitted + Upper + Lower + Signif ~ Date | Site,
        data = tdat,
        type = "l",
@@ -101,7 +101,7 @@ library("ggplot2")
 
 With **ggplot2** the key is to notice that each of the lines we want to draw on each panel can be drawn using different `geom_line()` *layers*, added sequentially to the plot. With each additional layer, we can override the default `mapping` by changing the `y` data in each layer using `aes()` within the `geom_line()` call. The code to create the plot is shown below.
 
-{% highlight r linenos %}
+{% highlight r %}
 ggplot(tdat, aes(x = Date, y = Fitted, group = Site)) +
     geom_line() +
     geom_line(mapping = aes(y = Upper), lty = "dashed") +

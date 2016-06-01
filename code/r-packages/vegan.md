@@ -25,7 +25,7 @@ active: code
  * **Data standardization**: Hellinger, Wisconsin, Chi-square, Beals smoothing.
 
 ## Bugs, feature requests
-Bug reports and feature requests should be filed on [R-forge](https://r-forge.r-project.org/tracker/?func=browse&group_id=68&atid=330).
+Bug reports and feature requests should be filed on [Github](https://github.com/vegandevs/vegan/issues).
 
 ## Licence
 **vegan** is released under the [GNU General Public Licence Version 2](http://www.gnu.org/licenses/gpl-2.0.html).
@@ -33,4 +33,4 @@ Bug reports and feature requests should be filed on [R-forge](https://r-forge.r-
 ## Links
 
  * [CRAN page](http://cran.r-project.org/package=vegan)
- * [Development site](http://r-forge.r-project.org/projects/vegan/) on R-Forge
+ * [Development site](https://github.com/vegandevs/vegan) on Github

@@ -5,11 +5,11 @@ layout: post
 published: true
 type: post
 tags: 
-- autocorrelation
-- cross-validation
+- Autocorrelation
+- Cross-validation
 - GCV
 - LOESS
-- overfitting
+- Overfitting
 - Palaeoecology
 - Palaeolimnology
 - R

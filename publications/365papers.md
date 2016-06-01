@@ -52,7 +52,7 @@ nocite: |
 
 20. Cahill, N., Rahmstorf, S. & Parnell, A. C. Change points of global temperature. *Environmental Research Letters* 10, 084002 (2015). [doi: 10.1088/1748-9326/10/8/084002](http://doi.org/10.1088/1748-9326/10/8/084002)
 
-21. Pya, N. & Wood, S. N. A note on basis dimension selection in generalized additive modelling. arXiv [stat.ME] (2016). at [http://arxiv.org/abs/1602.06696]()
+21. Pya, N. & Wood, S. N. A note on basis dimension selection in generalized additive modelling. *arXiv* [stat.ME] (2016). at [http://arxiv.org/abs/1602.06696]()
 
 22. Lawton, J. H. Patterns in Ecology. *Oikos* 75, 145–147 (1996). [doi: 10.2307/3546237](http://doi.org/10.2307/3546237)
 
@@ -61,3 +61,27 @@ nocite: |
 24. Scheuerell, M. D. et al. Analyzing large-scale conservation interventions with Bayesian hierarchical models: a case study of supplementing threatened Pacific salmon. *Ecol. Evol.* 5, 2115–2125 (2015). [doi: 10.1002/ece3.1509](https://doi.org/10.1002/ece3.1509)
 
 25. Fahrmeir, L. & Kneib, T. On the identification of trend and correlation in temporal and spatial regression. In *Recent Advances in Linear Models and Related Areas* 1–27 (Physica-Verlag HD, 2008). [doi: 10.1007/978-3-7908-2064-5_1](https://doi.org/10.1007/978-3-7908-2064-5_1)
+
+26. Boettiger, C. & Hastings, A. Quantifying limits to detection of early warning for critical transitions. *J. R. Soc. Interface* 9, 2527–2539 (2012). [doi: 10.1098/rsif.2012.0125](https://doi.org/10.1098/rsif.2012.0125)
+
+27. Drake, J. M. Early warning signals of stochastic switching. *Proc. Biol. Sci.* 280, 20130686 (2013). [doi: 10.1098/rspb.2013.0686](https://doi.org/10.1098/rspb.2013.0686)
+
+28. Boettiger, C. & Hastings, A. No early warning signals for stochastic transitions: insights from large deviation theory. *Proc. Biol. Sci.* 280, 20131372 (2013). [doi: 10.1098/rspb.2013.1372](https://doi.org/10.1098/rspb.2013.1372)
+
+29. Ganguli, B. & Wand, M. P. Feature Significance in Geostatistics. *J. Comput. Graph. Stat.* 13, 954–973 (2004). [doi:10.1198/106186004X12515](https://doi.org/10.1198/106186004X12515)
+
+30. Ganguli, B. & Wand, M. P. Feature significance in generalized additive models. *Stat. Comput.* 17, 179–192 (2007). [doi: 10.1007/s11222-006-9011-x](https://doi.org/10.1007/s11222-006-9011-x)
+
+31. de Valpine, P. & Harmon-Threatt, A. N. General models for resource use or other compositional count data using the Dirichlet-multinomial distribution. *Ecology* 94, 2678–2687 (2013). [doi: 10.1890/12-0416.1](https://doi.org/10.1890/12-0416.1)
+
+32. Kammann, E. E. & Wand, M. P. Geoadditive models. *J. R. Stat. Soc. Ser. C Appl. Stat.* 52, 1–18 (2003). [doi: 10.1111/1467-9876.00385](https://doi.org/10.1111/1467-9876.00385)
+
+33. Haslbeck, J. M. B. & Waldorp, L. J. mgm: Structure Estimation for Time-Varying Mixed Graphical Models in high-dimensional Data. *arXiv* [stat.AP] (2015). at [http://arxiv.org/abs/1510.06871]()
+
+34. O’Brien, J. D. & Record, N. The power and pitfalls of Dirichlet-multinomial mixture models for ecological count data. bioRxiv 045468 (2016). [doi: 10.1101/045468](https://doi.org/10.1101/045468)
+
+35. Marra, G. & Radice, R. A Bivariate Copula Additive Model for Location, Scale and Shape. arXiv [stat.ME] (2016). at [http://arxiv.org/abs/1605.07521]()
+
+36. Wood, S. N. P-splines with derivative based penalties and tensor product smoothing of unevenly distributed data. Stat. Comput. 1–5 (2016). [doi:10.1007/s11222-016-9666-x](https://doi.org/10.1007/s11222-016-9666-x)
+
+37. Kleiber, C. & Zeileis, A. Visualizing Count Data Regressions Using Rootograms. arXiv [stat.AP] (2016). at [http://arxiv.org/abs/1605.01311]()

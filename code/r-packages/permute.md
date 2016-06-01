@@ -30,7 +30,7 @@ The package comes with a large number of extractor functions to access aspects o
  * Calculation of maximum number of permutations for current design
 
 ## Bugs, feature requests
-**permute** is part of the [Vegan](https://r-forge.r-project.org/projects/vegan/) project. Bug reports and feature requests should be filed on the Vegan [R-Forge project](https://r-forge.r-project.org/tracker/?func=browse&group_id=1689&atid=5328).
+Bug reports and feature requests should be filed on the [Github](https://github.com/gavinsimpson/permute/issues) repository.
 
 ## Licence
 permute is released under the [GNU General Public Licence, version 2](http://www.gnu.org/licenses/gpl-2.0.html).
@@ -38,4 +38,4 @@ permute is released under the [GNU General Public Licence, version 2](http://www
 ## Links
 
  * [CRAN page](http://cran.r-project.org/package=permute)
- * [Development site](https://r-forge.r-project.org/projects/vegan/) on R-Forge
+ * [Development site](https://github.com/gavinsimpson/permute) on Github

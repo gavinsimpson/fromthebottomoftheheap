@@ -50,7 +50,7 @@ to produce this figure:
 The news report was about trends in temperature from 1995 onwards. We subset the data, selecting only the observations from 1995&ndash;2010 (and only variables `Year` and `Annual`) and plot those data
 
 {% highlight r %}
-grecent <- subset(gtemp, subset = Year &gt;= 1995,
+grecent <- subset(gtemp, subset = Year >= 1995,
                   select = c(Year, Annual))
 ## plot
 plot(Annual ~ Year, data = grecent, type = "o", ylab = ylab,

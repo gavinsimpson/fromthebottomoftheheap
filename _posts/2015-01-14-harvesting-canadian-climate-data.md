@@ -12,6 +12,7 @@ tags:
 - opendata
 active: blog
 category: R
+alert: "As of May 11, 2016, Government Canada has updated the data download URLs such that the URLs created by <code>genURLS()</code> are no longer valid. The <a href=\"https://gist.github.com/gavinsimpson/8c13e3c5f905fd67cf85\">gist</a> contains updated functions that work with the URL and data download API."
 ---
 
 
