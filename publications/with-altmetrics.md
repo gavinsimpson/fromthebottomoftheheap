@@ -14,9 +14,13 @@ Below is a list of my research publications covering papers in peer-reviewed jou
 
 Articles with a <i class="icon-file"></i> icon have a preprint or reprint available: click the icon to download this as a PDF.
 
+ 1. Jacobsen, M.C., Manunta, M., Pincott, E., Fenton, M., **Simpson, G.L.**, Klein, N. & Burch, M. (submitted) Specific Immunity to Cytomegalovirus in Paediatric Cardiac Transplantation. *American Journal of Transplantation*.
+
+ 1. Eberts, R.L., Wissel, B., **Simpson, G.L.**, Crawford, S.S., Stott, W., Hanner, R.H., Manzon, R.G., Wilson, J.Y., Boreham, D.R., & Somers, C.M. (submitted) Isotopic structure of Lake Whitefish in Lake Huron: evidence for regional and local populations based on resource use. *North American Journal of Fisheries Management*.
+
  1. Bogard, M., Finlay, K., Waiser, M., Tumber, V., Donald, D., Wiik, E., **Simpson, G.L.**, del Giorgio, P., & Leavitt, P.R. (submitted) Effects of nitrogen fertilization and ecosystem pH on planktonic metabolism and atmospheric CO~2~ exchange in hardwater lakes. *PLoS ONE*.
 
- 1. Bunting, L., Leavitt, P.R., **Simpson, G.L.**, Wissel, B., Laird, K.R., Cumming, B.F., St. Amand, A., & Engstrom, D.R. (accepted) Increased variability and sudden ecosystem state change in Lake Winnipeg, Canada, caused by 20th century agriculture. *Limnology & Oceanography*.
+ 1. Bunting, L., Leavitt, P.R., **Simpson, G.L.**, Wissel, B., Laird, K.R., Cumming, B.F., St. Amand, A., & Engstrom, D.R. (in press) [Increased variability and sudden ecosystem state change in Lake Winnipeg, Canada, caused by 20th century agriculture](http://doi.org/10.1002/lno.10355). *Limnology & Oceanography*. <a href="http://journal.frontiersin.org/article/10.3389/fevo.2015.00094/pdf"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
 
  1. Woolway, R.I., Jones, I.D., Maberly, S.C., French, J.R., Livingstone, D.M., Monteith, D.T., **Simpson, G.L.**, Thackeray, S.J., Andersen, M.R., Battarbee, R.W., DeGasperi, C.L., Evans, C.D., de Eyto, E., Feuchtmayr, H., Hamilton, D.P., Kernan, M., Krokowski, J, Rimmer, A., Rose, K.C., Rusak, J.A., Ryves, D.B., Scott, D.R., Shilland, E.M., Smyth, R.L., Staehr, P.A., Thomas, R., Waldron, S., & Weyhenmeyer, G.A. (2016) [Diel surface temperature range scales globally with lake size](http://doi.org/10.1371/journal.pone.0152466). *PLoS One* **11**(3): e0152466 <a href="http://journals.plos.org/plosone/article/asset?id=10.1371%2Fjournal.pone.0152466.PDF"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %} <div style="display: inline-block;" data-badge-type="4" data-badge-popover="bottom" class="altmetric-embed" data-doi="10.1371/journal.pone.0152466"></div>
 

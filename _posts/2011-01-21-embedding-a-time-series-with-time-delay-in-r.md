@@ -12,7 +12,7 @@ category: R
 excerpt: "I've recently been looking at [Martin Trauth](http://www.geo.uni-potsdam.de/member-details/show/108.html 'Martin Trauth's web page at The University of Potsdam Institute of Earth and Environmental Science')&apos;s book [MATLAB® Recipes for Earth Sciences](http://www.springer.com/earth+sciences+and+geography/computer+&+mathematical+applications/book/978-3-642-12761-8 'Matlab book page at Springer') to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whilst browsing, the [recurrence plot](http://en.wikipedia.org/wiki/Recurrence_plot 'Recurrence plots entry in Wikipedia') section caught my eye as something to look into further, both for palaeo-based work but also for work on ecological thresholds and tipping points."
 ---
 
-{{ page.excerpt || mardownify }}
+{{ page.excerpt | mardownify }}
 
 In a recurrence plot, the recurrences of a phase space are plotted. As we tend not to have the phase space, just the time series of observations, we [embed](http://en.wikipedia.org/wiki/Embedding) the observed series to produce the *m* dimensional phase space. A key feature of the recurrence plot is the *time delay* included during embedding. There is an `embed()` function in R but it does not handle the time delay aspects that one needs for the recurrence plot, so I decided to write my own. The results are shown below in my function `Embed()`. It has been written to replicate the standard R `embed()` function where `d = 1` (i.e. no time delay), which is a useful check that it is doing the right thing.
 

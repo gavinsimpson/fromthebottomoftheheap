@@ -1,5 +1,5 @@
 --- 
-title: "Simultaneous confidence intervals for derivatives of splines in GAMs"
+title: "Confidence intervals for derivatives of splines in GAMs"
 status: publish
 layout: post
 published: true
@@ -13,8 +13,8 @@ tags:
 - "Posterior simulation"
 active: blog
 category: R
+alert: "The original version of this post claimed to produce simultaneous confidence intervals. It was wrong; these are nowhere near a simultaneous interval. For one way to compute a simltaneous interval see this [newer post](/2016/12/15/simultaneous-interval-revisited/)."
 ---
-
 
 
 [Last time out](/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/) I looked at one of the complications of time series modelling with smoothers; you have a non-linear trend which may be statistically significant but it may not be increasing or decreasing everywhere. How do we identify where in the series the data are changing? In that post I explained how we can use the first derivatives of the model splines for this purpose, and used the method of finite differences to estimate them. To assess statistical significance of the derivative (the rate of change) I relied upon asymptotic normality and the usual pointwise confidence interval. That interval is fine if looking at just one point on the spline (not of much practical use), but when considering more points at once we have a multiple comparisons issue. Instead, a simultaneous interval is required, and for that we need to revisit a technique I [blogged about a few years ago](/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/); posterior simulation from the fitted GAM.
@@ -41,7 +41,6 @@ pdat <- with(cet,
                         nMonth = nMonth[want]))
 {% endhighlight %}
 
-
 Here, I'll use a version of the `Deriv()` function used in the last post modified to do the posterior simulation; `derivSimulCI()`. Let's load that too
 
 
@@ -52,7 +51,6 @@ download.file("https://gist.githubusercontent.com/gavinsimpson/ca18c9c789ef5237d
               tmpf, method = "wget")
 source(tmpf)
 {% endhighlight %}
-
 
 ## Posterior simulation
 The sorts of GAMs fitted by `mgcv::gam()` are, if we assume normally distributed errors, really just a linear regression. Instead of being a linear model in the original data however, the linear model is fitted using the basis functions as the covariates[^1]. As with any other linear model, we get back from it the point estimate, the \\( \\hat{\\beta}_j \\), and their standard errors. Consider the simple linear regression of *x* on *y*. Such a model has two terms
@@ -83,7 +81,6 @@ Returning to the simple linear regression case, let's do a little simulation fro
 > mod <- lm(y ~ x, data = dat)
 {% endhighlight %}
 
-
 The mean vector for the multivariate normal is just the set of model coefficients for `mod`, which are extracted using the `coef()` function, and the `vcov()` function is used to extract the VCOV of the fitted model.
 
 
@@ -95,7 +92,7 @@ The mean vector for the multivariate normal is just the set of model coefficient
 
 {% highlight text %}
 (Intercept)           x 
-      4.413       1.499 
+   4.412706    1.499317 
 {% endhighlight %}
 
 
@@ -107,11 +104,10 @@ The mean vector for the multivariate normal is just the set of model coefficient
 
 
 {% highlight text %}
-            (Intercept)         x
-(Intercept)     0.44563 -0.033760
-x              -0.03376  0.003115
+            (Intercept)            x
+(Intercept)  0.44563330 -0.033760188
+x           -0.03376019  0.003114669
 {% endhighlight %}
-
 Remember, the standard error is the square root of the diagonal elements of the VCOV
 
 {% highlight r %}
@@ -122,7 +118,7 @@ Remember, the standard error is the square root of the diagonal elements of the 
 
 {% highlight text %}
 (Intercept)           x 
-    0.66756     0.05581 
+ 0.66755771  0.05580922 
 {% endhighlight %}
 
 
@@ -135,9 +131,8 @@ Remember, the standard error is the square root of the diagonal elements of the 
 
 {% highlight text %}
 (Intercept)           x 
-    0.66756     0.05581 
+ 0.66755771  0.05580922 
 {% endhighlight %}
-
 The multivariate normal distribution is not part of the base R distributions set. Several implementations are available in a range of packages, but here I'll use the one in the **MASS** package which ships with all versions of R. To draw a nice plot, I'll simulate a large number of values but we'll just show the first few below
 
 
@@ -152,15 +147,14 @@ The multivariate normal distribution is not part of the base R distributions set
 
 
 {% highlight text %}
-     (Intercept)     x
-[1,]       4.398 1.477
-[2,]       4.536 1.496
-[3,]       5.328 1.427
-[4,]       4.811 1.446
-[5,]       4.216 1.510
-[6,]       4.153 1.528
+     (Intercept)        x
+[1,]    4.398392 1.476528
+[2,]    4.536195 1.496449
+[3,]    5.327903 1.426689
+[4,]    4.810953 1.446152
+[5,]    4.215752 1.509888
+[6,]    4.153201 1.528336
 {% endhighlight %}
-
 
 Each row of `sim` contains a pair of values, one intercept and one \\( \\hat{\\beta}_x \\), from the implied multivariate normal. The models implied by each row are all consistent with the fitted model. To visualize the multivariate normal for `mod` I'll use a bivariate kernel density estimate to estimate the density of points over a grid of simulated intercept and slope values
 
@@ -171,8 +165,7 @@ Each row of `sim` contains a pair of values, one intercept and one \\( \\hat{\\b
 > contour(kde$x, kde$y, kde$z, add = TRUE, col = "red", lwd = 2, drawlabels = FALSE)
 {% endhighlight %}
 
-![5000 random draws from the posterior distribution of the parameters of the fitted additive model. Contours are for a 2d kernel destiny estimate of the points.]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for_derivatives-contour-plot.png) 
-
+![5000 random draws from the posterior distribution of the parameters of the fitted additive model. Contours are for a 2d kernel destiny estimate of the points.]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for derivatives-contour-plot-1.png)
 
 The large spread in the points (from top left to bottom right) is illustrative of greater uncertainty in the intercept term than in \\( \\hat{\\beta}_x \\).
 
@@ -189,8 +182,7 @@ As I said earlier, each point on the plot represents a valid model consistent wi
 > matlines(dat$x, predict(mod, interval = "confidence")[,-1], col = "red", lty = "dashed")
 {% endhighlight %}
 
-![Fitted linear model and 50 posterior simulations (grey band) and 95% point-wise confidence interval (red dashes)]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for_derivatives-linear-regression-plus-simulations-plot.png) 
-
+![Fitted linear model and 50 posterior simulations (grey band) and 95% point-wise confidence interval (red dashes)]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for derivatives-linear-regression-plus-simulations-plot-1.png)
 
 The grey lines show the model fits for a random sample of 50 pairs of coefficients from the set of simulated values.
 
@@ -208,7 +200,6 @@ Before we get to posterior simulations for the derivatives of the CET additive m
 > vc <- vcov(m2$gam)
 {% endhighlight %}
 
-
 Next, generate a small sample from the posterior of the model, just for the purposes of illustration; we'll generate far larger samples later when we estimate a confidence interval on the derivatives of the trend spline.
 
 
@@ -216,13 +207,11 @@ Next, generate a small sample from the posterior of the model, just for the purp
 > set.seed(35)
 > sim <- mvrnorm(25, mu = coefs, Sigma = vc)
 {% endhighlight %}
-
 The linear predictor matrix, `lp`, has a column for every basis function, plus the constant term, in the model, but because the model is additive we can ignore the columns relating to the `nMonth` spline and the constant term and just work with the coefficients and columns of `lp` that pertain to the trend spline. Let's identify those
 
 {% highlight r %}
 > want <- grep("Time", colnames(lp))
 {% endhighlight %}
-
 Again, a simple bit of matrix multiplication gets us fitted values for the trend spline only
 
 {% highlight r %}
@@ -235,7 +224,6 @@ Again, a simple bit of matrix multiplication gets us fitted values for the trend
 {% highlight text %}
 [1] 200  25
 {% endhighlight %}
-
 We can now draw out each of these posterior simulations as follows
 
 {% highlight r %}
@@ -244,8 +232,7 @@ We can now draw out each of these posterior simulations as follows
 > matlines(pdat$Date, fits, col = "black", lty = "solid")
 {% endhighlight %}
 
-![Posterior simulations for the trend spline of the additive model fitted to the CET time series]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for_derivatives-cet-model-trend-posterior-simulations.png) 
-
+![Posterior simulations for the trend spline of the additive model fitted to the CET time series]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for derivatives-cet-model-trend-posterior-simulations-1.png)
 
 ## Posterior simulation for the first derivatives of a spline
 As we saw in the previous post, the linear predictor matrix can be used to generate finite differences-based estimates of the derivatives of a spline in a GAM fitted by **mgcv**. And as we just went through, we can combine posterior simulations with the linear predictor matrix. The main steps in the process of computing the finite differences and doing the posterior simulation are
@@ -257,7 +244,6 @@ newDF <- newDF + eps
 X1 <- predict(mod, newDF, type = "lpmatrix")
 Xp <- (X1 - X0) / eps
 {% endhighlight %}
-
 where two linear predictor matrices are created, offset from one another by a small amount `eps`, and differenced to get the slope of the spline, and
 
 
@@ -269,7 +255,6 @@ for(i in seq_len(nt)) {
   df <- Xi %*% t(simu[, want])    # derivatives
 }
 {% endhighlight %}
-
 which loops over the terms in the model, selects the relevant columns from the differenced predictor matrix, and computes the derivatives by a matrix multiplication with the set of posterior simulations. `simu` is the matrix of random draws from the posterior, multivariate normal distribution of the fitted model's parameters. Note that the code in `derivSimulCI()` is slightly different to this, but it does the same thing.
 
 To cut to the chase then, here is the code required to generate posterior simulations for the first derivatives of the spline terms in an additive model
@@ -278,7 +263,6 @@ To cut to the chase then, here is the code required to generate posterior simula
 {% highlight r %}
 > fd <- derivSimulCI(m2, samples = 10000)
 {% endhighlight %}
-
 `fd` is a list, the first *n* terms of which relate the the *n* terms in the model. Here *n* = 2. The names of the first two components are the names of the terms referenced in the model formula used to fit the model
 
 {% highlight r %}
@@ -298,7 +282,6 @@ List of 5
   ..- attr(*, "dimnames")=List of 2
  - attr(*, "class")= chr "derivSimulCI"
 {% endhighlight %}
-
 As I haven't yet written a `confint()` method, we'll need to compute the confidence interval by hand, which is no bad thing of course! We do this by by taking two extreme quantiles of the distribution of the 10,000 posterior simulations we generated for the first derivative *at each* of the 200 points we wanted to evaluate the derivative. One of the reasons I did 10,000 simulations is that for a 95% confidence interval we only need sort the simulated derivatives in ascending order and extract the 250th and the 9750th of these ordered values. In practice we'll let the `quantile()` function do the hard work
 
 
@@ -308,18 +291,16 @@ As I haven't yet written a `confint()` method, we'll need to compute the confide
 +                                probs = c(0.025, 0.975)))
 {% endhighlight %}
 
-
 `CI` is now a list with two components, each of which contains a matrix with two rows (the two probability quantiles we asked for) and 200 columns (the number of locations at which the first derivative was evaluated).
 
-There is a `plot()` method, which by default produces plots of all the terms in the model and includes the simultaneous confidence interval as well
+There is a `plot()` method, which by default produces plots of all the terms in the model and includes the ~~simultaneous~~ point-wise confidence interval as well
 
 
 {% highlight r %}
 > plot(fd, sizer = TRUE)
 {% endhighlight %}
 
-![First derivative of the seasonal and trend splines from the CET time series additive model. The grey band is a 95% simultaneous confidence interval. Sections of the spline where the confidence interval does not include zero are indicated by coloured sections.]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for_derivatives-plot-deriv-method.png) 
-
+![First derivative of the seasonal and trend splines from the CET time series additive model. The grey band is a 95% ~~simultaneous~~ point-wise confidence interval. Sections of the spline where the confidence interval does not include zero are indicated by coloured sections.]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for derivatives-plot-deriv-method-1.png)
 
 ## Wrapping up
 `derivSimulCI()` computes the actual derivative as well as the derivatives for each simulation. Rather than rely upon the `plot()` method we could draw our own plot with the confidence interval. To extract the derivative of the fitted spline use
@@ -327,8 +308,7 @@ There is a `plot()` method, which by default produces plots of all the terms in 
 {% highlight r %}
 > fit.fd <- fd[[2]]$deriv
 {% endhighlight %}
-
-and then produce a plot with the actual derivative, the 95% simultaneous confidence interval, and 20 of the derivatives for the posterior simulations, we can use
+and then produce a plot with the actual derivative, the 95% ~~simultaneous~~ point-wise confidence interval, and 20 of the derivatives for the posterior simulations, we can use
 
 
 {% highlight r %}
@@ -340,5 +320,4 @@ and then produce a plot with the actual derivative, the 95% simultaneous confide
 +          col = "grey")
 {% endhighlight %}
 
-![First derivative of the trend spline from the CET time series additive model. The red dashed lines enclose the 95% simultaneous confidence interval. Superimposed are the first derivatives of the splines for 20 randomly selected posterior simulations from the fitted spline.]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for_derivatives-plot-deriv-ci-by-hand.png) 
-
+![First derivative of the trend spline from the CET time series additive model. The red dashed lines enclose the 95% ~~simultaneous~~ point-wise confidence interval. Superimposed are the first derivatives of the splines for 20 randomly selected posterior simulations from the fitted spline.]({{ site.url }}/assets/img/posts/simultaneous-confidence-intervals-for derivatives-plot-deriv-ci-by-hand-1.png)

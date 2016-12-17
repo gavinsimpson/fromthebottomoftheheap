@@ -85,3 +85,39 @@ nocite: |
 36. Wood, S. N. P-splines with derivative based penalties and tensor product smoothing of unevenly distributed data. Stat. Comput. 1–5 (2016). [doi:10.1007/s11222-016-9666-x](https://doi.org/10.1007/s11222-016-9666-x)
 
 37. Kleiber, C. & Zeileis, A. Visualizing Count Data Regressions Using Rootograms. arXiv [stat.AP] (2016). at [http://arxiv.org/abs/1605.01311]()
+
+38. Hart, S. P., Schreiber, S. J. & Levine, J. M. How variation between individuals affects species coexistence. *Ecology Letters* (2016). [doi: 10.1111/ele.12618](http://doi.org/10.1111/ele.12618)
+
+39. Barros, C., Thuiller, W., Georges, D., Boulangeat, I. & Münkemüller, T. N-dimensional hypervolumes to study stability of complex ecosystems. *Ecology Letters* **19**, 729--742 (2016). [doi: 10.1111/ele.12617](http://doi.org/10.1111/ele.12617)
+
+40. Brewer, M. J., Butler, A. & Cooksley, S. L. The relative performance of AIC, AICC and BIC in the presence of unobserved heterogeneity. *Methods Ecol. Evol.* **7**, 679–692 (2016). [doi: 10.1111/2041-210X.12541](http://doi.org/10.1111/2041-210X.12541)
+
+41. de Mazancourt, C. et al. Predicting ecosystem stability from community composition and biodiversity. *Ecology Letters* **16**, 617–625 (2013). [dio: 10.1111/ele.12088](http://doi.org/10.1111/ele.12088)
+
+42. Ye, H., & Sugihara, G. Information leverage in interconnected ecosystems: Overcoming the curse of dimensionality. *Science*, **353**(6302), 922–925 (2016) [doi: 10.1126/science.aag0863](http://doi.org/10.1126/science.aag0863)
+
+43. ter Braak, C. J. F. & Schaffers, A. P. Co-Correspondence Analysis: a New Ordination Method to Relate Two Community Compositions. *Ecology* 85, 834–846 (2004).  [doi: 10.1890/03-0021](http://doi.org/10.1890/03-0021)
+
+44. Birks, H. J. B. Challenges in the presentation and analysis of plant-macrofossil stratigraphical data. *Veg. Hist. Archaeobot.* 23, 309–330 (2014). [doi: 10.1007/s00334-013-0430-2](http://doi/10.1007/s00334-013-0430-2)
+
+45. Donchyts, G. et al. Earth’s surface water change over the past 30 years. *Nat. Clim. Chang.* 6, 810–813 (2016). [doi: 10.1038/nclimate3111](http://doi/10.1038/nclimate3111)
+
+46. Lemoine, N. P. et al. Underappreciated problems of low replication in ecological field studies. *Ecology* (2016). [doi: 10.1002/ecy.1506](http://doi.org/10.1002/ecy.1506)
+
+47. Beissinger, S. R. et al. Incorporating Imperfect Detection into Joint Models of Communities: A response to Warton et al. *Trends Ecol. Evol.* **31**, 736--737 (2016). [doi: 10.1016/j.tree.2016.07.009](http://doi.org/10.1016/j.tree.2016.07.009)
+
+48. Warton, D. I. et al. Extending Joint Models in Community Ecology: A Response to Beissinger et al. *Trends Ecol. Evol.* **31**, 737--738 (2016). [doi: 10.1016/j.tree.2016.07.009](http://doi.org/10.1016/j.tree.2016.07.007)
+
+49. Ernest, S. k. M. et al. Zero Sum, the Niche, and Metacommunities: Long‐Term Dynamics of Community Assembly. *American Naturalist* **172**, E257--E269 (2008). [doi: 10.1086/592402](http://doi.org/10.1086/592402)
+
+50. Paerl, H. W. et al. It takes two to tango: When and where dual nutrient (N & P) reductions are needed to protect lakes and downstream ecosystems. *Environ. Sci. Technol.* (2016). [doi: 10.1021/acs.est.6b02575](http://doi.org/10.1021/acs.est.6b02575)
+
+51. Schindler, D. W., Carpenter, S. R., Chapra, S. C., Hecky, R. E. & Orihel, D. M. Reducing Phosphorus to Curb Lake Eutrophication is a Success. *Environ. Sci. Technol.* **50**, 8923--8929 (2016). [doi: 10.1021/acs.est.6b02204](http://doi.org/10.1021/acs.est.6b02204)
+
+52. Brooks, J. R. et al. Stable isotope estimates of evaporation : inflow and water residence time for lakes across the United States as a tool for national lake water quality assessments. *Limnol. Oceanogr.* **59**, 2150--2165 (2014). [doi: 10.4319/lo.2014.59.6.2150](http://doi.org/10.4319/lo.2014.59.6.2150)
+
+53. D. Vinebrooke, R. et al. Impacts of multiple stressors on biodiversity and ecosystem functioning: the role of species co-tolerance. Oikos 104, 451–457 (2004). [doi: 10.1111/j.0030-1299.2004.13255.x](http://doi.org/10.1111/j.0030-1299.2004.13255.x)
+
+54. Desjardins-Proulx, P., Laigle, I., Poisot, T. & Gravel, D. Ecological Interactions and the Netflix Problem. *bioRxiv* **089771** (2016). [doi: 10.1101/089771](http://doi.org/10.1101/089771)
+
+55. Dunn, P. K. Occurrence and quantity of precipitation can be modelled simultaneously. *Int. J. Climatol.* **24**, 1231--1239 (2004). [doi: 10.1002/joc.1063](http://doi.org/10.1002/joc.1063)
