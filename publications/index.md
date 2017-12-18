@@ -14,16 +14,32 @@ Below is a list of my research publications covering papers in peer-reviewed jou
 
 Articles with a <i class="icon-file"></i> icon have a preprint or reprint available: click the icon to download this as a PDF.
 
- 1. Jacobsen, M.C., Manunta, M., Pincott, E., Fenton, M., **Simpson, G.L.**, Klein, N. & Burch, M. (submitted) Specific Immunity to Cytomegalovirus in Paediatric Cardiac Transplantation. *American Journal of Transplantation*.
+ 1. Hayes, N.M., Haig, H.A., **Simpson, G.L.**, & Leavitt, P.R. (in review) Seasonal and interannual evidence that environmental change increases the magnitude, duration, and risk of exposure to the cyanobacterial toxin microcystin. *Limnology & Oceanography Letters*.
+ 
+ 1. Wiik, E., Haig, H.A., Hayes, N.M., Finlay, K., **Simpson, G.L.**, Vogt, R.J., & Leavitt, P.R. (in revision) Generalized additive models of climatic and metabolic controls of sub-annual variation in pCO~2~ in productive hardwater lakes. *Journal of Geophysical Research: Biogeoscience*.
+
+ 1. Beck, K.K., Fletcher, M-S., Gadd, P.S., Heijnis, H., Saunders, K.M., **Simpson, G.L.**, & Zawadzki, A. (in revision) Variance and rate-of-change as early warning signals for a critical transition in an  aquatic ecosystem state: a test case from Tasmania, Australia. *Journal of Geophysical Research: Biogeosciences*.
+
+ 1. Anderson, N.J., Curtis, C.J., Whiteford, E. J., Jones, V.J., McGowan, S., **Simpson, G.L.**, & Kaiser, J. (in revision) Regional variability in the atmospheric nitrogen deposition signal and its transfer to the sediment record in Greenland lakes. *Limnology & Oceanography*.
+ 
+ 1. Hayes, N.M., Patoine, A., Haig, H.A., **Simpson, G.L.**, Swarbrick, V.J., Wiik, E., & Leavitt, P.R. (in revision) Spatial and temporal variation in the importance of net nitrogen fixation to phytoplankton growth in productive hardwater lakes. *Limnology & Oceanography*.
+ 
+ 1. Jacobsen, M.C., Lett, K. **Simpson, G.L.**, Barden, J., & Buttigieg, J. (submitted). Targeting of the large-conductance, voltage and Ca^2+^-activated K^+^ (BK) channel in acute spinal cord injury is neuroprotective. *Journal of Spinal Cord Medicine*.
+
+ 1. Jacobsen, M.C., Manunta, M., Pincott, E., Fenton, M., **Simpson, G.L.**, Klein, N. & Burch, M. (in review) Specific Immunity to Cytomegalovirus in Paediatric Cardiac Transplantation. *Transplantation*.
+
+ 1. Curtis, C.J., Kaiser, J., Marca, A., Anderson, N.J., **Simpson, G.L.**, Jones, V.J., & Whiteford, E. (accepted) [Spatial variations in snowpack chemistry and isotopic composition of NO~3~^-^ along a nitrogen deposition gradient in West Greenland](http://doi.org/10.5194/bg-2017-140). *Biogeosciences*. <a href="{{ site.url }}/assets/reprints/curtis-etal-2017-biogeosciences-accepted.pdf"><i class="icon-file addToolTip" data-original-title="Download pre-print or reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
+
+ 1. Bogard, M.J., Finlay, K., Waiser, M.J., Tumber, V.P., Donald, D.B., Wiik, E., **Simpson, G.L.**, del Giorgio, P.A., & Leavitt, P.R. (2017) [Effects of experimental nitrogen fertilization on planktonic metabolism and CO~2~ flux in a hypereutrophic hardwater lake](https://doi.org/10.1371/journal.pone.0188652). *PLoS ONE* **12**(12): e0188652. <a href="https://doi.org/10.1371/journal.pone.0188652"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a>  {% include cc-by-icon.html %}
  
  1. Mushet, G.R., Laird, K.R., Das, B., Hesjedal, B., Leavitt, P.R., Scott, K.A., **Simpson G.L.**, Wissel, B., Wolfe, J., & Cumming
-B.F. (submitted). Effects of Nitrogen Deposition and Climate Change on Scaled Chrysophytes in Lakes Downwind of the Athabasca Oil Sands, Canada. *Journal of Paleolimnology*.
+B.F. (in press). [Regional climate changes drive increased scaled-chrysophyte abundance in lakes downwind of Athabasca Oil Sands nitrogen emissions](http://doi.org/10.1007/s10933-017-9987-6) *Journal of Paleolimnology*. 
+ 
+ 1. Laird, K.L., Das, B., Hesjedal, B., Leavitt, P.R., Mushet, G.R., Scott, K.A., **Simpson, G.L.**, Wissel, B., Wolfe, J., & Cumming, B.F. (in press) [Paleolimnological assessment of nutrient enrichment on diatom assemblages in *a priori* defined nitrogen- and phosphorus-limited lakes lakes downwind of the Athabasca Oil Sands, Canada](https://doi.org/10.4081/jlimnol.2017.1598). *Journal of Limnology*. <a href="http://www.jlimnol.it/index.php/jlimnol/article/download/jlimnol.2017.1598/1299"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-nc-icon.html %}
 
- 1. Eberts, R.L., Wissel, B., **Simpson, G.L.**, Crawford, S.S., Stott, W., Hanner, R.H., Manzon, R.G., Wilson, J.Y., Boreham, D.R., & Somers, C.M. (accepted) Isotopic structure of Lake Whitefish in Lake Huron: evidence for regional and local populations based on resource use. *North American Journal of Fisheries Management*.
+ 1. Eberts, R.L., Wissel, B., **Simpson, G.L.**, Crawford, S.S., Stott, W., Hanner, R.H., Manzon, R.G., Wilson, J.Y., Boreham, D.R., & Somers, C.M. (2017) [Isotopic structure of Lake Whitefish in Lake Huron: evidence for regional and local populations based on resource use](http://doi.org/10.1080/02755947.2016.1245225). *North American Journal of Fisheries Management* **37**(1): 133--148.
 
- 1. Bogard, M., Finlay, K., Waiser, M., Tumber, V., Donald, D., Wiik, E., **Simpson, G.L.**, del Giorgio, P., & Leavitt, P.R. (submitted) Effects of nitrogen fertilization and ecosystem pH on planktonic metabolism and atmospheric CO~2~ exchange in hardwater lakes. *PLoS ONE*.
-
- 1. Bunting, L., Leavitt, P.R., **Simpson, G.L.**, Wissel, B., Laird, K.R., Cumming, B.F., St. Amand, A., & Engstrom, D.R. (in press) [Increased variability and sudden ecosystem state change in Lake Winnipeg, Canada, caused by 20th century agriculture](http://doi.org/10.1002/lno.10355). *Limnology & Oceanography*. <a href="http://journal.frontiersin.org/article/10.3389/fevo.2015.00094/pdf"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
+ 1. Bunting, L., Leavitt, P.R., **Simpson, G.L.**, Wissel, B., Laird, K.R., Cumming, B.F., St. Amand, A., & Engstrom, D.R. (2016) [Increased variability and sudden ecosystem state change in Lake Winnipeg, Canada, caused by 20th century agriculture](http://doi.org/10.1002/lno.10355). *Limnology & Oceanography* **61**(6); 2090--2107. <a href="http://onlinelibrary.wiley.com/doi/10.1002/lno.10355/pdf"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
 
  1. Woolway, R.I., Jones, I.D., Maberly, S.C., French, J.R., Livingstone, D.M., Monteith, D.T., **Simpson, G.L.**, Thackeray, S.J., Andersen, M.R., Battarbee, R.W., DeGasperi, C.L., Evans, C.D., de Eyto, E., Feuchtmayr, H., Hamilton, D.P., Kernan, M., Krokowski, J, Rimmer, A., Rose, K.C., Rusak, J.A., Ryves, D.B., Scott, D.R., Shilland, E.M., Smyth, R.L., Staehr, P.A., Thomas, R., Waldron, S., & Weyhenmeyer, G.A. (2016) [Diel surface temperature range scales globally with lake size](http://doi.org/10.1371/journal.pone.0152466). *PLoS One* **11**(3): e0152466 <a href="http://journals.plos.org/plosone/article/asset?id=10.1371%2Fjournal.pone.0152466.PDF"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
 
