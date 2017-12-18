@@ -182,7 +182,7 @@ Before we move on, to bring us up to speed with the people that jumped ahead, co
 m <- m7
 {% endhighlight %}
 
-## Interrogating the fitted model  {#nextsection
+## Interrogating the fitted model  {#nextsection}
 
 I'm going to cut to the chase and look at the fitted model and use it to ask some questions about how temperature has changed both within and between years over the last 100 years. In part 2 of this post I'll look at doing inference on the fitted model, but for now I'll skip that.
 
