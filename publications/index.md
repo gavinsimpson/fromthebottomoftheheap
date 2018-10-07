@@ -14,28 +14,37 @@ Below is a list of my research publications covering papers in peer-reviewed jou
 
 Articles with a <i class="icon-file"></i> icon have a preprint or reprint available: click the icon to download this as a PDF.
 
+ 1. **Simpson, G.L.** (accepted 2018-09-07) [Modelling palaeoecological time series using generalized additive models](https://doi.org/10.1101/322248). *Frontiers in Ecology & Evolution; Paleoecology*. <a href="https://www.biorxiv.org/content/early/2018/08/16/322248.full.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
+
+ 1. Finlay, K., Vogt, R.J., **Simpson, G.L.**, & Leavitt, P.R. (revision submitted 2018-07-09) Seasonality of *p*CO~2~ in hard-water lakes of the northern Great Plains: The legacy effect of climate and limnological conditions. *Limnology & Oceanography*.
+
+ 1. Swarbrick, V.J., **Simpson, G.L.**, Glibert, P.M., Leavitt, P.R. (revision submitted 2018-08-21) Stimulation or suppression: Drivers of dichotomous phytoplankton response to ammonium enrichment in hardwater lakes. *Limnology & Oceanography*.
+
+ 1. Barr, C., Tibby, J., Leng, M.J., Tyler, J.J., Henderson, A.C.G., Overpeck, J.T., **Simpson, G.L.**, Cole, J.E., Phipps, S.J., Marshall, J.C., McGregor, G.B., Hua, Q., & McRobie, F.H. (in review) Asian monsoon influences on ENSO and related east-Australian rainfall variability over the last 7700 years.
+
  1. Hayes, N.M., Haig, H.A., **Simpson, G.L.**, & Leavitt, P.R. (in review) Seasonal and interannual evidence that environmental change increases the magnitude, duration, and risk of exposure to the cyanobacterial toxin microcystin. *Limnology & Oceanography Letters*.
- 
- 1. Wiik, E., Haig, H.A., Hayes, N.M., Finlay, K., **Simpson, G.L.**, Vogt, R.J., & Leavitt, P.R. (in revision) Generalized additive models of climatic and metabolic controls of sub-annual variation in pCO~2~ in productive hardwater lakes. *Journal of Geophysical Research: Biogeoscience*.
-
- 1. Beck, K.K., Fletcher, M-S., Gadd, P.S., Heijnis, H., Saunders, K.M., **Simpson, G.L.**, & Zawadzki, A. (in revision) Variance and rate-of-change as early warning signals for a critical transition in an  aquatic ecosystem state: a test case from Tasmania, Australia. *Journal of Geophysical Research: Biogeosciences*.
-
- 1. Anderson, N.J., Curtis, C.J., Whiteford, E. J., Jones, V.J., McGowan, S., **Simpson, G.L.**, & Kaiser, J. (in revision) Regional variability in the atmospheric nitrogen deposition signal and its transfer to the sediment record in Greenland lakes. *Limnology & Oceanography*.
- 
- 1. Hayes, N.M., Patoine, A., Haig, H.A., **Simpson, G.L.**, Swarbrick, V.J., Wiik, E., & Leavitt, P.R. (in revision) Spatial and temporal variation in the importance of net nitrogen fixation to phytoplankton growth in productive hardwater lakes. *Limnology & Oceanography*.
+  
+ 1. Hayes, N.M., Patoine, A., Haig, H.A., **Simpson, G.L.**, Swarbrick, V.J., Wiik, E., & Leavitt, P.R. (accepted 2018-10-05) Spatial and temporal variation in the importance of net nitrogen fixation to phytoplankton growth in productive hardwater lakes. *Freshwater Biology*.
  
  1. Jacobsen, M.C., Lett, K. **Simpson, G.L.**, Barden, J., & Buttigieg, J. (submitted). Targeting of the large-conductance, voltage and Ca^2+^-activated K^+^ (BK) channel in acute spinal cord injury is neuroprotective. *Journal of Spinal Cord Medicine*.
 
- 1. Jacobsen, M.C., Manunta, M., Pincott, E., Fenton, M., **Simpson, G.L.**, Klein, N. & Burch, M. (in review) Specific Immunity to Cytomegalovirus in Paediatric Cardiac Transplantation. *Transplantation*.
+ 1. Wiik, E., Haig, H.A., Hayes, N.M., Finlay, K., **Simpson, G.L.**, Vogt, R.J., & Leavitt, P.R. (2018) [Generalized additive models of climatic and metabolic controls of sub-annual variation in pCO~2~ in productive hardwater lakes](https://doi.org/10.1029/2018JG004506) *Journal of Geophysical Research: Biogeoscience* **123**(6), 1940--1959.
 
- 1. Curtis, C.J., Kaiser, J., Marca, A., Anderson, N.J., **Simpson, G.L.**, Jones, V.J., & Whiteford, E. (accepted) [Spatial variations in snowpack chemistry and isotopic composition of NO~3~^-^ along a nitrogen deposition gradient in West Greenland](http://doi.org/10.5194/bg-2017-140). *Biogeosciences*. <a href="{{ site.url }}/assets/reprints/curtis-etal-2017-biogeosciences-accepted.pdf"><i class="icon-file addToolTip" data-original-title="Download pre-print or reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
+ 1. Anderson, N.J., Curtis, C.J., Whiteford, E. J., Jones, V.J., McGowan, S., **Simpson, G.L.**, & Kaiser, J. (2018) [Regional variability in the atmospheric nitrogen deposition signal and its transfer to the sediment record in Greenland lakes](https://doi.org/10.1002/lno.10936). *Limnology & Oceanography*. <a href="https://aslopubs.onlinelibrary.wiley.com/doi/pdf/10.1002/lno.10936"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
+
+ 1. Jacobsen, M.C., Manunta, M.D.I., Pincott, E.S., Fenton, M., **Simpson, G.L.**, Klein, N.J. & Burch, M. (2018) [Specific Immunity to Cytomegalovirus in Paediatric Cardiac Transplantation.](https://doi.org/10.1097/TP.0000000000002157) *Transplantation* **102**(9), 1569--1575. <a href="{{ site.url }}/assets/reprints/specific-immunity-to-cmv-in-pediatric-cardiac-transplantation-preprint.pdf"><i class="icon-file addToolTip" data-original-title="Download pre-print or reprint PDF" data-placement="top" data-animation="true"></i></a>
+
+ 1. Beck, K.K., Fletcher, M-S., Gadd, P.S., Heijnis, H., Saunders, K.M., **Simpson, G.L.**, & Zawadzki, A. (2018) [Variance and rate-of-change as early warning signals for a critical transition in an  aquatic ecosystem state: a test case from Tasmania, Australia.](https://doi.org/10.1002/2017JG004135) *Journal of Geophysical Research: Biogeosciences* **123**(2), 495--508. <a href="https://doi.org/10.1002/2017JG004135"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a>
+
+ 1. Curtis, C.J., Kaiser, J., Marca, A., Anderson, N.J., **Simpson, G.L.**, Jones, V.J., & Whiteford, E. (2018) [Spatial variations in snowpack chemistry, isotopic composition of NO~3~^-^ and nitrogen deposition from the ice sheet margin to the coast of western Greenland
+](https://doi.org/10.5194/bg-15-529-2018). *Biogeosciences* **15** 529--550. <a href="https://www.biogeosciences.net/15/529/2018/bg-15-529-2018.pdf"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
 
  1. Bogard, M.J., Finlay, K., Waiser, M.J., Tumber, V.P., Donald, D.B., Wiik, E., **Simpson, G.L.**, del Giorgio, P.A., & Leavitt, P.R. (2017) [Effects of experimental nitrogen fertilization on planktonic metabolism and CO~2~ flux in a hypereutrophic hardwater lake](https://doi.org/10.1371/journal.pone.0188652). *PLoS ONE* **12**(12): e0188652. <a href="https://doi.org/10.1371/journal.pone.0188652"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a>  {% include cc-by-icon.html %}
  
  1. Mushet, G.R., Laird, K.R., Das, B., Hesjedal, B., Leavitt, P.R., Scott, K.A., **Simpson G.L.**, Wissel, B., Wolfe, J., & Cumming
-B.F. (in press). [Regional climate changes drive increased scaled-chrysophyte abundance in lakes downwind of Athabasca Oil Sands nitrogen emissions](http://doi.org/10.1007/s10933-017-9987-6) *Journal of Paleolimnology*. 
+B.F. (2017). [Regional climate changes drive increased scaled-chrysophyte abundance in lakes downwind of Athabasca Oil Sands nitrogen emissions](http://doi.org/10.1007/s10933-017-9987-6) *Journal of Paleolimnology* **53**(3), 419--435. 
  
- 1. Laird, K.L., Das, B., Hesjedal, B., Leavitt, P.R., Mushet, G.R., Scott, K.A., **Simpson, G.L.**, Wissel, B., Wolfe, J., & Cumming, B.F. (in press) [Paleolimnological assessment of nutrient enrichment on diatom assemblages in *a priori* defined nitrogen- and phosphorus-limited lakes lakes downwind of the Athabasca Oil Sands, Canada](https://doi.org/10.4081/jlimnol.2017.1598). *Journal of Limnology*. <a href="http://www.jlimnol.it/index.php/jlimnol/article/download/jlimnol.2017.1598/1299"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-nc-icon.html %}
+ 1. Laird, K.L., Das, B., Hesjedal, B., Leavitt, P.R., Mushet, G.R., Scott, K.A., **Simpson, G.L.**, Wissel, B., Wolfe, J., & Cumming, B.F. (2017) [Paleolimnological assessment of nutrient enrichment on diatom assemblages in *a priori* defined nitrogen- and phosphorus-limited lakes lakes downwind of the Athabasca Oil Sands, Canada](https://doi.org/10.4081/jlimnol.2017.1598). *Journal of Limnology*, **76**(3) 488--502. <a href="http://www.jlimnol.it/index.php/jlimnol/article/download/jlimnol.2017.1598/1299"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-nc-icon.html %}
 
  1. Eberts, R.L., Wissel, B., **Simpson, G.L.**, Crawford, S.S., Stott, W., Hanner, R.H., Manzon, R.G., Wilson, J.Y., Boreham, D.R., & Somers, C.M. (2017) [Isotopic structure of Lake Whitefish in Lake Huron: evidence for regional and local populations based on resource use](http://doi.org/10.1080/02755947.2016.1245225). *North American Journal of Fisheries Management* **37**(1): 133--148.
 
@@ -55,11 +64,11 @@ B.F. (in press). [Regional climate changes drive increased scaled-chrysophyte ab
 
  1. Juggins, S., **Simpson, G.L.**, Telford, R.J. (2015) [Taxon selection using statistical learning techniques to improve transfer function prediction](http://doi.org/10.1177/0959683614556388). *The Holocene* **25**(1), 130--136.
  
+ 1. Orr, H.G., **Simpson, G.L.**, des Clers, S., Watts, G., Hughes, M., Hannaford, J., Dunbar, M.J., Laiz&eacute;, C.L.R., Wilby, R.L., Battarbee, R.W., Evans, R. (2015) [Detecting changing river temperatures in England and Wales](http://doi.org/10.1002/hyp.10181). *Hydrological Processes* **59**(3), 752--766. <a href="{{ site.url }}/assets/reprints/orr-et-al-hydrological-processes-2014-water-temperature-trends.pdf"><i class="icon-file addToolTip" data-original-title="Download pre-print or reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
+ 
  1. Curtis, C.J., **Simpson, G.L.**, Battarbee, R.W., & Maberley S. (2014) [Challenges in Defining Critical Loads for Nitrogen in UK Lakes](http://doi.org/10.1007/978-94-007-7939-6_36). In Sutton, M.A., Mason, K.E., Sheppard, L.J., Sverdrup, H., Haeuber, R., & Hicks, W.K. (Eds) [Nitrogen Deposition, Critical Loads and Biodiversity](http://doi.org/10.1007/978-94-007-7939-6). Springer, Dordrecht.
 
  1. Baron, J.S. *& 38 others* (2014) [The Effects of Atmospheric Nitrogen Deposition on Terrestrial and Freshwater Biodiversity](http://doi.org/10.1007/978-94-007-7939-6_49). In Sutton, M.A., Mason, K.E., Sheppard, L.J., Sverdrup, H., Haeuber, R., & Hicks, W.K. (Eds) [Nitrogen Deposition, Critical Loads and Biodiversity](http://doi.org/10.1007/978-94-007-7939-6). Springer, Dordrecht.
- 
- 1. Orr, H.G., **Simpson, G.L.**, des Clers, S., Watts, G., Hughes, M., Hannaford, J., Dunbar, M.J., Laiz&eacute;, C.L.R., Wilby, R.L., Battarbee, R.W., Evans, R. (in press) [Detecting changing river temperatures in England and Wales](http://doi.org/10.1002/hyp.10181). *Hydrological Processes*. <a href="{{ site.url }}/assets/reprints/orr-et-al-hydrological-processes-2014-water-temperature-trends.pdf"><i class="icon-file addToolTip" data-original-title="Download pre-print or reprint PDF" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
 
  1. Seddon, A., Mackay, A., Baker, A., and 66 others (2014) [Looking forward through the past. Identification of fifty priority research questions in palaeoecology](http://doi.org/10.1111/1365-2745.12195). *Journal of Ecology* **102**(1), 256--267. <a href="{{ site.url }}/assets/reprints/palaeo-50-published-cc-by-nc.pdf"><i class="icon-file addToolTip" data-original-title="Download pre-print or reprint PDF" data-placement="top" data-animation="true"></i></a>
 
