@@ -1,0 +1,499 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Are some seasons warming more than others?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GAM, Time series, Central England Temperature, Splines, Interactions" />
+
+
+<meta name="description" content="I ended the last post with some pretty plots of air temperature change within and between years in the Central England Temperature series. The elephant in the room1 at the end of that post was is the change in the within year (seasonal) effect over time statistically significant? This is the question I’ll try to answer, or at least show how to answer, now.
+
+
+
+well, one of the elephants; I also wasn’t happy with the AR(7) for the residuals↩
+
+
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Are some seasons warming more than others?" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2015-11-23T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Are some seasons warming more than others?" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2015-11-23T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2015/11/23/are-some-seasons-warming-more-than-others/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="I ended the last post with some pretty plots of air temperature change within and between years in the Central England Temperature series. The elephant in the room1 at the end of that post was is the change in the within year (seasonal) effect over time statistically significant? This is..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Are some seasons warming more than others?" />
+
+
+<meta name="twitter:description" content="I ended the last post with some pretty plots of air temperature change within and between years in the Central England Temperature series. The elephant in the room1 at the end of that post was is ..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="23 Nov 2015"/>
+<meta name="citation_date" content="23 Nov 2015"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Are some seasons warming more than others?"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2015/12/14/agu-2015-poster/">AGU Fall Meeting 2015</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2015/11/21/climate-change-and-spline-interactions/">Climate change and spline interactions</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Are some seasons warming more than others? </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>I ended the <a href="/2015/11/21/climate-change-and-spline-interactions/">last post</a> with some pretty plots of air temperature change within and between years in the <a href="http://www.metoffice.gov.uk/hadobs/hadcet/">Central England Temperature series</a>. The elephant in the room<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> at the end of that post was <em>is the change in the within year (seasonal) effect over time statistically significant?</em> This is the question I’ll try to answer, or at least show how to answer, now.</p>
+<p>The model I fitted in the last post was</p>
+<p>\[ y = \beta_0 + f(x_1, x_2) + \varepsilon, \quad \varepsilon \sim N(0, \sigma^2\mathbf{\Lambda}) \]</p>
+<p>and allowed, as we saw, for the within year spline/effect to vary smoothly with the trend or between year effect. Answering our scientific question require that we determine whether the spline interaction model (above) fits the data significantly better than the additive model</p>
+<p>\[ y = \beta_0 + f_{\mathrm{seasonal}}(x_1) + f_{\mathrm{trend}}(x_2) + \varepsilon, \quad \varepsilon \sim N(0, \sigma^2\mathbf{\Lambda}) \]</p>
+<p>which has a fixed seasonal effect?</p>
+<p>The model we ended up with was the spline interaction with an AR(7) in the residuals. To catch you up, the chunk below loads the CET data and fits the model we were left with at the end of the <a href="/2015/11/21/climate-change-and-spline-interactions/">previous post</a></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Loading required package: nlme
+This is mgcv 1.8-9. For overview type 'help("mgcv-package")'.</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Loading required package: methods</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">source</span><span class="p">(</span><span class="n">con</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">url</span><span class="p">(</span><span class="s2">"http://bit.ly/loadCET"</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"libcurl"</span><span class="p">))</span><span class="w">
+</span><span class="n">close</span><span class="p">(</span><span class="n">con</span><span class="p">)</span><span class="w">
+</span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">loadCET</span><span class="p">()</span><span class="w">
+
+</span><span class="c1">## need a list with gamm default for verbose output</span><span class="w">
+</span><span class="n">ctrl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">niterEM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">optimMethod</span><span class="o">=</span><span class="s2">"L-BFGS-B"</span><span class="p">,</span><span class="w"> </span><span class="n">maxIter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">,</span><span class="w"> </span><span class="n">msMaxIter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## knots - see previous post</span><span class="w">
+</span><span class="n">knots</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">nMonth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0.5</span><span class="p">,</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">12</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span><span class="p">),</span><span class="w"> </span><span class="m">12.5</span><span class="p">))</span><span class="w">
+</span><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">te</span><span class="p">(</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"cr"</span><span class="p">,</span><span class="s2">"cc"</span><span class="p">),</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">10</span><span class="p">,</span><span class="m">12</span><span class="p">)),</span><span class="w">
+          </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">,</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">,</span><span class="w">
+          </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">7</span><span class="p">))</span></code></pre>
+</figure>
+<p>To answer our question, we want to fit the following two pseudo-code models and compare them using a likelihood ratio test</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="w"> </span><span class="n">x2</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w">
+</span><span class="n">m0</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x2</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span><span class="w">
+</span><span class="n">anova</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="w"> </span><span class="n">m0</span><span class="p">)</span></code></pre>
+</figure>
+<p>As is often the case in the real world, things aren’t quite so simple; there are several issues we need to take care of if we are going to really be testing nested models and the smooth terms that we’re interested in, specifically we need to</p>
+<ol type="1">
+<li>ensure that the models really are nested models,</li>
+<li>fit using maximum likelihood (<code>method = "ML"</code>) not residual maximum likelihood (<code>method = "ML"</code>) because the two models have different <em>fixed</em> effects</li>
+<li>fit the same AR(7) process in the residuals in both models.</li>
+</ol>
+<p>To compare additive models we really want to ensure that the fixed effects parts are properly nested and appropriate for an ANOVA-like decomposition of <em>main</em> effects and <em>interactions</em>. <strong>mgcv</strong> provides a very simple way to achieve this via a tensor product interaction smooth and the <code>ti()</code> function. <code>ti()</code> smooths are created in the same way as the <code>te()</code> smooth we encountered in the last post, but unlike <code>te()</code>, <code>ti()</code> smooths do <em>not</em> incorporate the main effects of the terms involved in the smooth. It is further assumed therefore that you have included the main effects smooths in the model formula.</p>
+<p>Hence we can now fit models like</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span><span class="w">
+</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">ti</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span><span class="w"> </span><span class="n">x2</span><span class="p">)</span></code></pre>
+</figure>
+<p>and be certain that the <code>s(x1)</code> and <code>s(x2)</code> terms in each model are equivalent. Note that you can use <code>s()</code> or <code>ti()</code> for these main effects components; if you have a single variable involved in a <code>ti()</code> term you get the main effect. I’m going to use <code>s()</code> in the code below, because I had better experience fitting the <code>gamm()</code> models we’re using with <code>s()</code> rather than <code>ti()</code> main effects.</p>
+<p>Fitting with maximum likelihood instead of residual maximum likelihood is just a simple matter of using <code>method = "ML"</code> in the <code>gamm()</code> call.</p>
+<p>The last thing we need to fix before we proceed is making sure that the main effects model and the main effects plus interaction model both incorporate the same AR(7) process that we fitted originally and which we refitted here earlier as <code>m</code>. To achieve this, we need to supply the AR coefficients to <code>corARMA()</code> when fitting our decomposed models, and indicate that <code>gamm()</code> (well, the underlying <code>lme()</code> code) shouldn’t try to estimate any of the parameters for the AR(7) process.</p>
+<p>We can access the AR coefficients of <code>m</code> through the <code>intervals()</code> extractor functions and a little bit of digging. In the chunk below I store the AR(7) coefficients in the object <code>phi</code>. Now when fitting the <code>gamm()</code> models we have to pass <code>value = phi, fixed = TRUE</code> to the <code>corARMA()</code> bits of the model call to have it use the supplied coefficients instead of estimating a new set.</p>
+<p>We are now ready to fit our two models to test whether the interaction smooth is required</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">phi</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">unname</span><span class="p">(</span><span class="n">intervals</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"var-cov"</span><span class="p">)</span><span class="o">$</span><span class="n">corStruct</span><span class="p">[,</span><span class="w"> </span><span class="m">2</span><span class="p">])</span><span class="w">
+</span><span class="n">m1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cr"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+               </span><span class="n">ti</span><span class="p">(</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"cr"</span><span class="p">,</span><span class="s2">"cc"</span><span class="p">),</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">10</span><span class="p">,</span><span class="w"> </span><span class="m">12</span><span class="p">)),</span><span class="w">
+           </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ML"</span><span class="p">,</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">,</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">,</span><span class="w">
+           </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">phi</span><span class="p">,</span><span class="w"> </span><span class="n">fixed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">7</span><span class="p">))</span><span class="w">
+</span><span class="n">m0</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cr"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">),</span><span class="w">
+           </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ML"</span><span class="p">,</span><span class="w"> </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">,</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">,</span><span class="w">
+           </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">phi</span><span class="p">,</span><span class="w"> </span><span class="n">fixed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">7</span><span class="p">))</span></code></pre>
+</figure>
+<p>The <code>anova()</code> method is used to compared the fitted models</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">anova</span><span class="p">(</span><span class="n">m0</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">m1</span><span class="o">$</span><span class="n">lme</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">       Model df     AIC      BIC    logLik   Test  L.Ratio p-value
+m0$lme     1  5 14750.9 14782.70 -7370.449                        
+m1$lme     2  7 14706.0 14750.52 -7346.001 1 vs 2 48.89479  &lt;.0001</code></pre>
+</figure>
+<p>There is clear support for <code>m1</code> the model that allows for the seasonal smooth to vary as a smooth function of the trend over the model with additive effects.</p>
+<p>What does our model say about the change in monthly temperature over the past century? Below I simply predict the temperature for each month in 1914 and 2014 and then compute the difference between years.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w">
+             </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1914</span><span class="p">,</span><span class="w"> </span><span class="m">2014</span><span class="p">),</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">),</span><span class="w">
+                        </span><span class="n">nMonth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">12</span><span class="p">,</span><span class="w"> </span><span class="n">times</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)))</span><span class="w">
+</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">)</span><span class="w">
+</span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">fitted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">fYear</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">as.factor</span><span class="p">(</span><span class="n">Year</span><span class="p">))</span><span class="w">
+</span><span class="n">dif</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Month</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">12</span><span class="p">,</span><span class="w">
+                             </span><span class="n">Difference</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fitted</span><span class="p">[</span><span class="n">Year</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="m">2014</span><span class="p">]</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">fitted</span><span class="p">[</span><span class="n">Year</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="m">1914</span><span class="p">]))</span></code></pre>
+</figure>
+<p>A plot of the temperature differences<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a> is shown below, being produced by the following code</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">dif</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Difference</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Month</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">difference</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">degree</span><span class="o">*</span><span class="n">C</span><span class="p">),</span><span class="w">
+         </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Month"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">theme_bw</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">                        </span><span class="c1"># minimal theme</span><span class="w">
+    </span><span class="n">scale_y_continuous</span><span class="p">(</span><span class="n">breaks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">12</span><span class="p">,</span><span class="w">   </span><span class="c1"># tweak where the x-axis ticks are</span><span class="w">
+                       </span><span class="n">labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">month.abb</span><span class="p">,</span><span class="w"> </span><span class="c1"># &amp; with what labels</span><span class="w">
+                       </span><span class="n">minor_breaks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NULL</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_x_continuous</span><span class="p">(</span><span class="n">breaks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">1.2</span><span class="p">,</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.1</span><span class="p">),</span><span class="w">
+                       </span><span class="n">minor_breaks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NULL</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/are-some-seasons-warming-more-than-others-plot-1-1.png" alt="Difference in monthly temperature predictions between 1914 and 2014" /><figcaption>Difference in monthly temperature predictions between 1914 and 2014</figcaption>
+</figure>
+<p>Most months have seen at least ~0.5°C increase in mean temperature between 1914 and 2014, with October and November both experiencing over a degree of warming over the period.</p>
+<p>Before I finish, it is instructive to look at what the <code>ti()</code> term in the decomposed model looks like and represents</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">))</span><span class="w">
+</span><span class="n">op</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">mar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">4</span><span class="p">,</span><span class="w"> </span><span class="m">4</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">0.1</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">m1</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">pers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w">
+</span><span class="n">par</span><span class="p">(</span><span class="n">op</span><span class="p">)</span><span class="w">
+</span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/are-some-seasons-warming-more-than-others-plot-smooths-1.png" alt="Smooths for the spline interaction model including a tensor product interaction smooth" /><figcaption>Smooths for the spline interaction model including a tensor product interaction smooth</figcaption>
+</figure>
+<p>The first two terms are the overall trend and seasonal cycle respectively. The third term, shown as a perspective plot, is the tensor production interaction term. This term reflects the amount by which the fitted temperature is adjusted from the overall trend and seasonal cycle for any combination of month and year.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>well, one of the elephants; I also wasn’t happy with the AR(7) for the residuals<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>If I was being more thorough, I could use the prediction matrix feature of <code>gam()</code> models to put approximate confidence intervals on these differences.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2015/11/23/are-some-seasons-warming-more-than-others/";
+  var disqus_title = "Are some seasons warming more than others?";
+  //var disqus_identifier = "/2015/11/23/are-some-seasons-warming-more-than-others";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>23 November 2015</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/time-series/"><span class="label label-inverse">Time series</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/central-england-temperature/"><span class="label label-inverse">Central England Temperature</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/splines/"><span class="label label-inverse">Splines</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/interactions/"><span class="label label-inverse">Interactions</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

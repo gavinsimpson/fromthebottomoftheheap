@@ -1,0 +1,486 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>What is ordisurf() doing...?</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="R, vegan, ordination" />
+
+
+<meta name="description" content="I'm writing this post for two reasons: i) someone searched on Google for the term 'what is ordisurf doing' and ended up on my blog, and ii) because I have been on the receiving end of reviewers comments on a paper I co-authored where they didn't know what `ordisurf()` was doing either! It is hardly surprising that people who don't know R or haven't studied the code or the examples in the **vegan** documentation do not realise what `ordisurf()` is trying to do as there isn't a paper in the scientific literature explaining the method. Whilst a solution to that part of the problem will have to wait until Jari, Dave Roberts and I get our acts together and write one, this post might be useful in the interim." />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="What is ordisurf() doing...?" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2011-06-10T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="What is ordisurf() doing...?" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2011-06-10T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2011/06/10/what-is-ordisurf-doing/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="I'm writing this post for two reasons: i) someone searched on Google for the term 'what is ordisurf doing' and ended up on my blog, and ii) because I have been on the receiving end of reviewers comments on a paper I co-authored where they didn't know what `ordisurf()` was..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="What is ordisurf() doing...?" />
+
+
+<meta name="twitter:description" content="I'm writing this post for two reasons: i) someone searched on Google for the term 'what is ordisurf doing' and ended up on my blog, and ii) because I have been on the receiving end of reviewers co..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="10 Jun 2011"/>
+<meta name="citation_date" content="10 Jun 2011"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="What is ordisurf() doing...?"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2011/06/11/global-warming-since-1995-now-significant/">Global warming since 1995 'now significant'</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2011/06/08/stratigraphic-diagrams-using-analogue/">Stratigraphic diagrams using analogue</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>What is ordisurf() doing...? </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>
+I’m writing this post for two reasons: i) someone searched on Google for the term ‘what is ordisurf doing’ and ended up on my blog, and ii) because I have been on the receiving end of reviewers comments on a paper I co-authored where they didn’t know what <code>ordisurf()</code> was doing either! It is hardly surprising that people who don’t know R or haven’t studied the code or the examples in the <strong>vegan</strong> documentation do not realise what <code>ordisurf()</code> is trying to do as there isn’t a paper in the scientific literature explaining the method. Whilst a solution to that part of the problem will have to wait until Jari, Dave Roberts and I get our acts together and write one, this post might be useful in the interim.
+</p>
+<p>Before direct gradient analysis or canonical ordination was invented/used in ecology, the standard approach to analysing multivariate ecological data was to ordinate them using PCA or CA, for example, and then relate the separate, important axes of that ordination with a set of environmental variables. A multiple regression was often used to relate the two, with ordination axis score taken as the response variable and the set of environmental variables as the predictors. This is problematic for methods like nMDS that don’t have axes, where we should consider the <em>k</em> dimensions of the solution as a whole rather than as independent “axes” of variation, which is where <code>ordisurf()</code> comes in.</p>
+<p>So we have something tangible to work with in the ensuing discussion, lets fit a simple PCA to the classic Dutch Dune Meadows data set, available in <strong>vegan</strong>, and display the resulting biplot</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">require</span><span class="p">(</span><span class="n">vegan</span><span class="p">)</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">dune</span><span class="p">)</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">dune.env</span><span class="p">)</span><span class="w">
+
+</span><span class="n">dune.pca</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rda</span><span class="p">(</span><span class="n">dune</span><span class="p">)</span><span class="w">
+</span><span class="n">biplot</span><span class="p">(</span><span class="n">dune.pca</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/dune_biplot.png" title="PCA biplot of the Dutch Dune Meadows data" alt="PCA biplot of the Dutch Dune Meadows data" /><figcaption>PCA biplot of the Dutch Dune Meadows data</figcaption>
+</figure>
+<p>For these data the main continuous, quantitative variable is <code>A1</code>, the thickness of the soil A1 horizon. The <code>envfit()</code> can be used to project a biplot arrow for this variable into the ordination</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">17</span><span class="p">)</span><span class="w">
+</span><span class="n">dune.ev</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">envfit</span><span class="p">(</span><span class="n">dune.pca</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">A1</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dune.env</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">dune.ev</span><span class="p">)</span></code></pre>
+</figure>
+<p>The result of the vector fitting is shown below, indicating borderline significance for the A1 horizon</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">R&gt; dune.ev
+
+***VECTORS
+
+       PC1     PC2     r2 Pr(&gt;r)
+A1 0.98316 0.18274 0.2632  0.063 .
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+P values based on 999 permutations.</code></pre>
+</figure>
+<p>As this is an unconstrained ordination, there is no reason at all to assume that the values of the A1 horizon vary in a linear fashion across the biplot. Instead, it might be better to fit a smooth response surface of A1 values over the limits of the biplot. For that we use <code>ordisurf()</code>.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">dune.sf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ordisurf</span><span class="p">(</span><span class="n">dune.pca</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">A1</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">plot</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
+</span><span class="n">biplot</span><span class="p">(</span><span class="n">dune.pca</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">dune.ev</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">dune.sf</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<p>Combining all the various plotting elements thus far we get this figure</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/dune_biplot_with_contours.png" title="PCA biplot of the Dutch Dune Meadows data with biplot arrow and response surface for soil A1 horizon thickness overlain" alt="PCA biplot of the Dutch Dune Meadows data with biplot arrow and response surface for soil A1 horizon thickness overlain" /><figcaption>PCA biplot of the Dutch Dune Meadows data with biplot arrow and response surface for soil A1 horizon thickness overlain</figcaption>
+</figure>
+<p>The fitted surface is far from linear! The object returned by <code>ordisurf()</code> is an augments object of class <code>"gam"</code> from the <strong>mgcv</strong> package, so we can use methods from that package to interrogate the result</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">R&gt; summary(dune.sf)
+
+Family: gaussian
+Link function: identity
+
+Formula:
+y ~ s(x1, x2, k = knots)
+&lt;environment: 0x5df9e50&gt;
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)   4.8500     0.3567    13.6  2.1e-08 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df    F p-value
+s(x1,x2) 7.583  8.621 1.94   0.147
+
+R-sq.(adj) =  0.464   Deviance explained = 67.8%
+GCV score = 4.4577  Scale est. = 2.5448    n = 20</code></pre>
+</figure>
+<p>Here we also see that there is little evidence to reject the null hypothesis. So what is <code>ordisurf()</code> actually doing? It is doing nothing more than fitting the following model using the <code>gam()</code> function</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">require</span><span class="p">(</span><span class="n">mgcv</span><span class="p">)</span><span class="w">
+</span><span class="n">scrs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">scores</span><span class="p">(</span><span class="n">dune.pca</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"sites"</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">))</span><span class="w">
+</span><span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="n">A1</span><span class="p">))</span><span class="w">
+</span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">A1</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">PC1</span><span class="p">,</span><span class="w"> </span><span class="n">PC2</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat</span><span class="p">)</span></code></pre>
+</figure>
+<p>Line 1 loads the <strong>mgcv</strong> package. In line 2 we extract the site scores on PCA axes 1 and 2 using symmetric scaling (<code>scaling = 3</code>) and convert to a data frame. Then we column-bind the soil A1 horizon thickness data into object <code>dat</code>, which we can pass as the <code>data</code> object in the call to <code>gam()</code>. The final line of code (line 4) fits the response surface model using a model formula and a 2D smooth on the PCA axis 1 and 2 sites scores. We restrict the complexity of this smooth using <code>k = 10</code> as there are only 14 unique values for <code>A1</code> and the default were starting with a smooth with more degrees of freedom than unique data points.</p>
+<p>It should now be clear that we fit a model to predict the soil A1 horizon thickness using a 2-D smooth of the PCA site scores on axes 1 and 2 as the predictor variable. This is backwards to how we might conventionally think of the problem of relating explanatory variables to ordination axes, but it is logical if you think of the model as saying “given the main pattern in the species composition described by ordination axes, how well does this pattern explain variation in response variable at the sites.”</p>
+<p>In newer versions of <strong>vegan</strong> (&gt;= 1.17-9) we now provide access to more of the functionality provided by <a href="http://www.maths.bath.ac.uk/~sw283/" title="Simon Wood&#39;s website at University of Bath">Simon Wood’s</a> <strong><a href="http://people.bath.ac.uk/sw283/mgcv/" title="Simon&#39;s mgcv page">mgcv</a></strong> package for fitting GAMs:</p>
+<ul>
+<li>you can alter the penalty used in the GCV routine that selects the degree of smoothness in the fitted smooth function (the response surface) via argument <code>penalty</code>. A penalty of 1.4 degrees of freedom per knot is often suggested if greater penalty on complex smooths is desired (<code>penalty = 1.4</code>);</li>
+<li><code>ordisurf()</code> now accepts the <code>method</code> argument of <code>gam()</code>. Simon’s latest advice to me was that doing the smoothness selection via Marginal (Maximum) Likelihood (ML) or Restricted Maximum Likelihood (REML) gave the most reliable <em>p</em>-values on the smooth functions. To use this form of model fitting instead of GCV, supply <code>method = "ML"</code> or <code>method = "REML"</code> in the <code>ordisurf()</code> call;</li>
+<li>By default, <code>gam()</code> can penalize smooths back to linear functions/surfaces but no further. An additional penalty term can be added to the smoothness selection procedure so that smooths can be penalised all the way back to zero degrees of freedom, effectively removing those terms from the model. This is a formal means of model selection. To turn this feature on, add <code>select = TRUE</code> to the <code>ordisurf()</code> call.</li>
+</ul>
+<p>As a final illustration, we compare the response surface fitted earlier with one fitted using ML smoothness selection and the extra penalty term</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">dune.sf2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ordisurf</span><span class="p">(</span><span class="n">dune.pca</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">A1</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">plot</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w">
+                     </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ML"</span><span class="p">,</span><span class="w"> </span><span class="n">select</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+</span><span class="n">biplot</span><span class="p">(</span><span class="n">dune.pca</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">dune.ev</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">dune.sf2</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<p>We get a similar pattern to before</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/dune_biplot_with_contours_ml_selection.png" title="PCA biplot of the Dutch Dune Meadows data with A1 horizon thickness response surface overlain, fitted using ML and an additional smoothness penalty" alt="PCA biplot of the Dutch Dune Meadows data with A1 horizon thickness response surface overlain, fitted using ML and an additional smoothness penalty" /><figcaption>PCA biplot of the Dutch Dune Meadows data with A1 horizon thickness response surface overlain, fitted using ML and an additional smoothness penalty</figcaption>
+</figure>
+<p>but the surface is a lot less complex using approximately 4.5 degrees of freedom compared with approximately 8.7 in <code>dune.sf</code>. This doesn’t alter our interpretation of the significance of the relationship between the plant composition and A1 horizon thickness, however.</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">R&gt; summary(dune.sf2)
+
+Family: gaussian
+Link function: identity
+
+Formula:
+y ~ s(x1, x2, k = knots)
+&lt;environment: 0x61d67d8&gt;
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)
+(Intercept)   4.8500     0.3958   12.26 2.24e-09 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+           edf Ref.df     F p-value
+s(x1,x2) 3.519  4.999 1.883   0.156
+
+R-sq.(adj) =   0.34   Deviance explained = 46.3%
+ML score = 41.909  Scale est. = 3.1326    n = 20</code></pre>
+</figure>
+<p>It remains to be seen whether we can trust the <em>p</em>-values that <strong>mgcv</strong> provides for predictor data derived from an ordination. Preliminary simulations that Jari Oksanen and I have made suggest the <em>p</em>-values have the right Type I error rate when we use randomly generated data with no relationship to the ordination axes. However, we have only just started this work and those are the sorts of results that are best presented for peer review and not relegated to a blog post. I hope that goes some way to explaining what on Earth it is that <code>ordisurf()</code> does…</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2011/06/10/what-is-ordisurf-doing/";
+  var disqus_title = "What is ordisurf() doing...?";
+  //var disqus_identifier = "/2011/06/10/what-is-ordisurf-doing";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>10 June 2011</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/vegan/"><span class="label label-inverse">vegan</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/ordination/"><span class="label label-inverse">ordination</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

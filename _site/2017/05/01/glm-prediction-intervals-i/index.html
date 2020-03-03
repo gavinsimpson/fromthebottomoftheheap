@@ -1,0 +1,551 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Prediction intervals for GLMs part I</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GLM, models, prediction interval, statistical modelling, logistic regression" />
+
+
+<meta name="description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by the OP in their question. Lately there’s been a bit of back and forth between Jarrett Byrnes and myself about what a prediction “interval” for a GLM might mean. Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something here that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. For illustration, I thought I’d use some small teaching example data sets, but whilst writing the post it started to get a little on the long side. So, I’ve broken it into two and in this part I look at logistic regression.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Prediction intervals for GLMs part I" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2017-05-01T08:45:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Prediction intervals for GLMs part I" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2017-05-01T08:45:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-i/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by the OP in their question. Lately..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Prediction intervals for GLMs part I" />
+
+
+<meta name="twitter:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="01 May 2017"/>
+<meta name="citation_date" content="01 May 2017"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Prediction intervals for GLMs part I"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-ii/">Prediction intervals for GLMs part II</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/">Simultaneous intervals for derivatives of smooths revisited</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Prediction intervals for GLMs part I <small>Binomial GLMs</small></h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>One of my more popular <a href="http://stackoverflow.com/a/14424417/429846">answers</a> on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by the OP in their question. Lately there’s been a bit of back and forth between Jarrett Byrnes and myself about what a prediction “interval” for a GLM might mean. Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something here that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. For illustration, I thought I’d use some small teaching example data sets, but whilst writing the post it started to get a little on the long side. So, I’ve broken it into two and in this part I look at logistic regression.</p>
+<p>The first example concerns a small experiment on the rare insectivorous pitcher plant <em>Darlingtonia californica</em> (the cobra lily) used as an example in <span class="citation" data-cites="Gotelli2013-wm">Gotelli and Ellison (2013)</span> and originally reported in <span class="citation" data-cites="Dixon2005-bb">Dixon et al. (2005)</span>. <em>Darlingtonia</em> grows leaves that are modified to form a pitcher trap, which is filled with nectar that attracts insects, in particular vespulid wasps (<em>Vespula atropilosa</em>). The observations in the data set are on the height of pitcher traps (<code>leafHeight</code>) and whether or not the leaf was visited by a wasp (<code>visited</code>). The code chunk below downloads the data from the book’s website and loads it into R ready for use.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">darlurl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"http://harvardforest.fas.harvard.edu/sites/harvardforest.fas.harvard.edu/files/ellison-pubs/2004/DarlingtoniaData3.txt"</span><span class="w">
+</span><span class="n">darl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">setNames</span><span class="p">(</span><span class="n">read.fwf</span><span class="p">(</span><span class="n">darlurl</span><span class="p">,</span><span class="w"> </span><span class="n">widths</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">8</span><span class="p">,</span><span class="m">9</span><span class="p">),</span><span class="w"> </span><span class="n">header</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">skip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1L</span><span class="p">),</span><span class="w">
+                 </span><span class="nf">c</span><span class="p">(</span><span class="s2">"leafHeight"</span><span class="p">,</span><span class="w"> </span><span class="s2">"visited"</span><span class="p">))</span><span class="w">
+</span><span class="n">darl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">darl</span><span class="p">,</span><span class="w"> </span><span class="n">visited</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">as.logical</span><span class="p">(</span><span class="n">visited</span><span class="p">))</span></code></pre>
+</figure>
+<p>Kernel density estimates of the distributions of the leaf heights for visited and unvisited leaves is one way to visualise these data. Here we use <strong>ggplot2</strong></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">
+
+</span><span class="n">xlab</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"Leaf height [cm]"</span><span class="w">
+</span><span class="n">ggplot</span><span class="p">(</span><span class="n">darl</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">leafHeight</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">visited</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">stat</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"density"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xlab</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Density"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/glm-prediction-intervals-i-load-packages-plot-darlingtonia-1.png" alt="Kernel density estimates of the distribution of heights of leaves visited or not by wasps." /><figcaption>Kernel density estimates of the distribution of heights of leaves visited or not by wasps.</figcaption>
+</figure>
+<p>We’re interested in modelling the probability of leaf visitation as a function of leaf height. For this a binomial GLM is a logical choice, with the canonical link function, the logit or logistic function. Such a model is fitted using <code>glm()</code> as follows</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">glm</span><span class="p">(</span><span class="n">visited</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">leafHeight</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">darl</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">binomial</span><span class="p">)</span><span class="w">
+</span><span class="n">summary</span><span class="p">(</span><span class="n">m</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Call:
+glm(formula = visited ~ leafHeight, family = binomial, data = darl)
+
+Deviance Residuals: 
+     Min        1Q    Median        3Q       Max  
+-2.18274  -0.46820  -0.23897  -0.08519   1.90573  
+
+Coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept) -7.29295    2.16081  -3.375 0.000738 ***
+leafHeight   0.11540    0.03655   3.158 0.001591 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 46.105  on 41  degrees of freedom
+Residual deviance: 26.963  on 40  degrees of freedom
+AIC: 30.963
+
+Number of Fisher Scoring iterations: 6</code></pre>
+</figure>
+<p>The model summary suggests an effect of leaf height that is unlikely to be observed if there were no effect. For a unit increase in leaf height, the odds of visitation increase by 1.12 times (given by <code>exp(coef(m)[2])</code>).</p>
+<p>How the probability of visitation varies as a function of leaf height, as estimated by the binomial GLM, can be visualised by predicting for a grid of values over the observed range of leaf heights. An approximate 95% point-wise confidence interval can also be created for the fitted function. In this case, we should create the confidence interval on the scale of the linear predictor where we assume things behave in a more Gaussian-like manner, and then backtransform the calculated interval on to the probability scale using the invers of the link function. The code below shows a general solution for this, where the inverse link function is obtained from the <code>family()</code> object contained within the fitted GLM object</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ilink</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">family</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="o">$</span><span class="n">linkinv</span><span class="w">
+</span><span class="n">pd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">darl</span><span class="p">,</span><span class="w">
+           </span><span class="n">data.frame</span><span class="p">(</span><span class="n">leafHeight</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="nf">min</span><span class="p">(</span><span class="n">leafHeight</span><span class="p">),</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">leafHeight</span><span class="p">),</span><span class="w">
+                                       </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">)))</span><span class="w">
+</span><span class="n">pd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"link"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)[</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">])</span><span class="w">
+</span><span class="n">pd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">Fitted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="p">),</span><span class="w"> </span><span class="n">Upper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)),</span><span class="w">
+                </span><span class="n">Lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)))</span><span class="w">
+
+</span><span class="n">ggplot</span><span class="p">(</span><span class="n">darl</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">leafHeight</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">as.numeric</span><span class="p">(</span><span class="n">visited</span><span class="p">)))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Lower</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Upper</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">leafHeight</span><span class="p">),</span><span class="w">
+                </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"steelblue2"</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">,</span><span class="w"> </span><span class="n">inherit.aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Fitted</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">leafHeight</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Probability of visitation"</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xlab</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/glm-prediction-intervals-i-fitted-function-and-ci-1.png" alt="Estimated probability of visitation plus pointwise 95% confidence interval." /><figcaption>Estimated probability of visitation plus pointwise 95% confidence interval.</figcaption>
+</figure>
+<p>So far, so standard; the confidence interval is just that, a Wald confidence interval on the fitted function based on the standard errors of the estimates of the model coefficients. It is not a prediction interval, however.</p>
+<p>The fitted model can be interpreted as describing the binomial distribution for any given value of <code>leafHeight</code>. The binomial distribution is specified by two parameters; <em>n</em> the number of trials (specified via argument <code>size</code> in R’s <code>dbinom()</code> and related functions), and <em>p</em> the probability of success. In the <em>Darlingtonia</em> example, <em>n</em> is 1 because each leaf was the result of 1 trial; was the leaf visited or not during the experiment? <em>p</em> is given by <span class="math inline">\(g(\eta)^{-1} = g(\beta_0 + \beta_1 \text{leaf height})^{-1}\)</span>, where <span class="math inline">\(g\)</span> is the logit link function and <span class="math inline">\(g^{-1}\)</span> is its inverse. In other words, the probability parameter of the binomial distribution is a function of <code>leafHeight</code>.</p>
+<p>To create a prediction interval for a value of <code>leafHeight</code>, we could look at the probability quantiles of the binomial distribution with <code>size = 1</code> and <code>prob = Fitted[leafHeight]</code>. For example, for the minimum and maximum observed leaf heights the extreme 2.5% and 97.5% probability quantiles are</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">qbinom</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">prob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">head</span><span class="p">(</span><span class="n">Fitted</span><span class="p">,</span><span class="w"> </span><span class="m">1L</span><span class="p">)))</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">qbinom</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">prob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tail</span><span class="p">(</span><span class="n">Fitted</span><span class="p">,</span><span class="w"> </span><span class="m">1L</span><span class="p">)))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0 0
+[1] 0 1</code></pre>
+</figure>
+<p>In the first instance, for the minimum observed leaf height, the prediction interval is 0. Yes, just 0. For the maximum observed leaf height the 95% prediction interval is 0–1. Neither of these is very useful; one isn’t even an interval in the usual sense of the word, and the other is so wide as to encompass both 0 and 1, which is no more information than we had before we started the whole exercise — a leaf can only be visited or not.</p>
+<p>But this isn’t quite what we want; we’ve only explore the quantiles of the distributions conditional upon the estimated probability. A real prediction interval would account for the uncertainty in this estimate. For that, we need the upper and lower confidence limits for the estimated probability.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">qbinom</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">prob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">head</span><span class="p">(</span><span class="n">Lower</span><span class="p">,</span><span class="w"> </span><span class="m">1L</span><span class="p">),</span><span class="w"> </span><span class="n">head</span><span class="p">(</span><span class="n">Upper</span><span class="p">,</span><span class="w"> </span><span class="m">1L</span><span class="p">))))</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">qbinom</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">prob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">tail</span><span class="p">(</span><span class="n">Lower</span><span class="p">,</span><span class="w"> </span><span class="m">1L</span><span class="p">),</span><span class="w"> </span><span class="n">tail</span><span class="p">(</span><span class="n">Upper</span><span class="p">,</span><span class="w"> </span><span class="m">1L</span><span class="p">))))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0 1
+[1] 0 1</code></pre>
+</figure>
+<p>I think we can all agree that these intervals aren’t really that useful…</p>
+<p>Another way to use the fitted model is via what it says about the posterior density of the two possible predicted values, visited or unvisited. This can be computed using <code>dbinom()</code> using the code below, again for the minimum and maximum observed leaf heights</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">db</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">dbinom</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="m">1</span><span class="p">),</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w">
+                             </span><span class="n">prob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Fitted</span><span class="p">[</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">100</span><span class="p">)]),</span><span class="w">
+                      </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="n">colnames</span><span class="p">(</span><span class="n">db</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"NotVisited"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Visited"</span><span class="p">)</span><span class="w">
+</span><span class="n">rownames</span><span class="p">(</span><span class="n">db</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">paste</span><span class="p">(</span><span class="s2">"leafHeight ="</span><span class="p">,</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">leafHeight</span><span class="p">)))</span><span class="w">
+</span><span class="nf">round</span><span class="p">(</span><span class="n">db</span><span class="p">,</span><span class="w"> </span><span class="m">4</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">                NotVisited Visited
+leafHeight = 14     0.9966  0.0034
+leafHeight = 84     0.0831  0.9169</code></pre>
+</figure>
+<p>We see almost all the probability density on the unvisited option for leaves 14cm in height (which is also why the 95% interval we calculated earlier was all on unvisted (0), we’d need to go beyond a 99.7% interval to get the visited alernative (1) included in the interval). For leaves of 84cm, most of the density is on the visited outcome, but with approximately 8% on the unvisited outcome.</p>
+<p>However, these values are exactly what we get if we just take the fitted probabilities for these leaf heights, which are given by the solid line in the plot we made earlier</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">Fitted</span><span class="p">[</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">100</span><span class="p">)])</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0.003410958 0.916879065</code></pre>
+</figure>
+<p>These values are for the visited outcome, but subtract them from 1 and you have the values for the unvisited outcome</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">Fitted</span><span class="p">[</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">100</span><span class="p">)])</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0.99658904 0.08312093</code></pre>
+</figure>
+<p>As before, this ignores the uncertainty in the estimated probability of visitation. The densities incorporating this uncertainty are shown in the table below</p>
+<table>
+<caption>Estimated probability of the visited and not-visited outcomes based on the upper (upr) and lower (lwr) 95% interval of the model-estimated probability of visitation for two leaf heights.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;"></th>
+<th style="text-align: right;">Not Visited (lwr)</th>
+<th style="text-align: right;">Not Visited (upr)</th>
+<th style="text-align: right;">Visited (lwr)</th>
+<th style="text-align: right;">Visited (upr)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">leafHeight = 14</td>
+<td style="text-align: right;">0.9999</td>
+<td style="text-align: right;">0.9125</td>
+<td style="text-align: right;">0.0001</td>
+<td style="text-align: right;">0.0875</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">leafHeight = 84</td>
+<td style="text-align: right;">0.4415</td>
+<td style="text-align: right;">0.0103</td>
+<td style="text-align: right;">0.5585</td>
+<td style="text-align: right;">0.9897</td>
+</tr>
+</tbody>
+</table>
+<p>One more thing we can do with the fitted model is simulate random outcomes from it. Again we do this for the minimum and maximum observed leaf heights, first for the lowest leaf height</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">nrand</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">10000</span><span class="w">
+</span><span class="n">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="n">table</span><span class="p">(</span><span class="n">rbinom</span><span class="p">(</span><span class="n">nrand</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">prob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">Fitted</span><span class="p">[</span><span class="m">1</span><span class="p">])))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">nrand</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">     0      1 
+0.9977 0.0023 </code></pre>
+</figure>
+<p>and then for the largest observed leaf height</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="n">table</span><span class="p">(</span><span class="n">rbinom</span><span class="p">(</span><span class="n">nrand</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">prob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pd</span><span class="p">,</span><span class="w"> </span><span class="n">Fitted</span><span class="p">[</span><span class="m">100</span><span class="p">])))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">nrand</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">     0      1 
+0.0867 0.9133 </code></pre>
+</figure>
+<p>The numbers should look pretty familiar — they are very close to both the posterior densities returned using <code>dbinom()</code> and the the fitted probabilities we just looked at. In fact, as <code>nrand</code> tends to infinity, the proportions of the two outcomes will also approach those given by <code>dbinom()</code>. As before, though I won’t show it, a complete interval would also include the uncertainty in the estimated probability.</p>
+<p>In this example, the most useful outputs from the model are all based on the binomial distributions given values of leaf height. The interval given by the extreme 2.5th and 97.5th probability quantiles isn’t of much use at all; for the two values of leaf height we looked at the interval either wasn’t an interval or it told us no more information than we already possessed, that leaves either were or were not visited.</p>
+<p>That said, this binomial GLM example is pretty extreme; the observed data only take values <em>0</em> or <em>1</em> and nothing else. However, this has been a useful exercise to think about what the fitted model represents.</p>
+<p>In the second part of this post I’ll look at a model for a count response, which will start to look a little more interval-like than the one here.</p>
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references">
+<div id="ref-Dixon2005-bb">
+<p>Dixon, P. M., Ellison, A. M., and Gotelli, N. J. (2005). Improving the precision of estimates of the frequency of rare events. <em>Ecology</em> 86, 1114–1123. doi:<a href="https://doi.org/10.1890/04-0601">10.1890/04-0601</a>.</p>
+</div>
+<div id="ref-Gotelli2013-wm">
+<p>Gotelli, N. J., and Ellison, A. M. (2013). <em>A primer of ecological statistics</em>. second. Sinauer Associates Inc.</p>
+</div>
+</div>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-i/";
+  var disqus_title = "Prediction intervals for GLMs part I";
+  //var disqus_identifier = "/2017/05/01/glm-prediction-intervals-i";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>01 May 2017</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/glm/"><span class="label label-inverse">GLM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/models/"><span class="label label-inverse">models</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/prediction-interval/"><span class="label label-inverse">prediction interval</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/statistical-modelling/"><span class="label label-inverse">statistical modelling</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/logistic-regression/"><span class="label label-inverse">logistic regression</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

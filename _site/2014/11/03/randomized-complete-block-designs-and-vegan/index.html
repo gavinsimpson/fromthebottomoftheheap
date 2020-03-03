@@ -1,0 +1,657 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Analysing a randomised complete block design with vegan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="vegan, permute, permutations" />
+
+
+<meta name="description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the permute package. Jari also cooked up a standard interface that we can use to drop this and some extra features neatly into any function we want; this allows us to have permutation tests run on many CPU cores in parallel, splitting the computational burden and reducing the run time of tests, and also a mechanism that allows users to pass a matrix of user-defined permutations to be used in tests. These new features are now fully working in the development version of vegan, which you can find on github, and which should be released to CRAN shortly. Ahead of the release, I’m preparing some examples to show off the new capabilities; first off I look at data from a randomized, complete block design experiment analysed using RDA &amp; restricted permutations.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Analysing a randomised complete block design with vegan" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2014-11-03T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Analysing a randomised complete block design with vegan" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2014-11-03T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2014/11/03/randomized-complete-block-designs-and-vegan/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the permute package...." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Analysing a randomised complete block design with vegan" />
+
+
+<meta name="twitter:description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="03 Nov 2014"/>
+<meta name="citation_date" content="03 Nov 2014"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Analysing a randomised complete block design with vegan"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2015/01/14/harvesting-canadian-climate-data/">Harvesting Canadian climate data</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2014/10/14/analogue-0.14-0-now-available-on-CRAN/">analogue 0.14-0 released</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Analysing a randomised complete block design with vegan </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>It has been a long time coming. <a href="http://cran.r-project.org/package=vegan"><strong>Vegan</strong></a> now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the <a href="http://cran.r-project.org/package=permute"><strong>permute</strong></a> package. Jari also cooked up a standard interface that we can use to drop this and some extra features neatly into any function we want; this allows us to have permutation tests run on many CPU cores in parallel, splitting the computational burden and reducing the run time of tests, and also a mechanism that allows users to pass a matrix of user-defined permutations to be used in tests. These new features are now fully working in the development version of <strong>vegan</strong>, which you can find on <a href="https://github.com/vegandevs/vegan">github</a>, and which should be released to CRAN shortly. Ahead of the release, I’m preparing some examples to show off the new capabilities; first off I look at data from a randomized, complete block design experiment analysed using RDA &amp; restricted permutations.</p>
+<p>To follow this example locally you’ll need to have version 2.1-43 or later of <strong>vegan</strong> installed. You can grab the <a href="https://github.com/vegandevs/vegan">sources from github</a> and build it yourself, or grab a Windows binary from the <a href="https://ci.appveyor.com/project/gavinsimpson/vegan/branch/master/artifacts">Appveyor Continuous integration service</a> that we’re using to test on that platform — you want the <code>.zip</code> file from the Artefacts. Once you’ve sorted out the installation, we can begin.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"vegan"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Loading required package: permute
+Loading required package: lattice
+This is vegan 2.1-43</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"gdata"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">gdata: read.xls support for 'XLS' (Excel 97-2004) files ENABLED.
+
+gdata: read.xls support for 'XLSX' (Excel 2007+) files ENABLED.
+
+Attaching package: 'gdata'
+
+The following object is masked from 'package:stats':
+
+    nobs
+
+The following object is masked from 'package:utils':
+
+    object.size</code></pre>
+</figure>
+<p>We’ll need <strong>gdata</strong>, and its <code>read.xls()</code> function, to read from the XLS format files that the data for the example come as.</p>
+<p>The data set itself is quite simple and small, consisting of counts on 23 species from 16 plots, and arise from a randomised complete block designed experiment described by Špačková and colleagues <span class="citation" data-cites="Spackova1998-ad">(1998)</span> and analysed by <span class="citation" data-cites="Smilauer2014-ac">(Šmilauer and Lepš, 2014)</span> in their recent book using Canoco v5.</p>
+<p>The experiment tested the effects on seedling recruitment to a range of treatments</p>
+<ul>
+<li>control</li>
+<li>removal of litter</li>
+<li>removal of the dominant species <em>Nardus stricta</em></li>
+<li>removal of litter and moss (mos couldn’t be removed without also removing litter)</li>
+</ul>
+<p>The treatments were replicated replicated in four, randomised complete blocks.</p>
+<p>The data are available from the accompanying website to the book <em>Multivariate Analysis of Ecological Data using CANOCO 5</em> <span class="citation" data-cites="Smilauer2014-ac">(Šmilauer and Lepš, 2014)</span>. They are supplied as XLS format files in a ZIP archive. We can read these into R directly from the website with a little bit of effort</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## Download the data zip</span><span class="w">
+</span><span class="n">furl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"http://regent.prf.jcu.cz/maed2/chap15.zip"</span><span class="w">
+</span><span class="n">td</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempdir</span><span class="p">()</span><span class="w">
+</span><span class="n">tf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">(</span><span class="n">tmpdir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">td</span><span class="p">,</span><span class="w"> </span><span class="n">fileext</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">".zip"</span><span class="p">)</span><span class="w">
+</span><span class="n">download.file</span><span class="p">(</span><span class="n">furl</span><span class="p">,</span><span class="w"> </span><span class="n">tf</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## list the files in the zip, we want the xls version (file 3)</span><span class="w">
+</span><span class="n">fname</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">unzip</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span><span class="w"> </span><span class="n">list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="o">$</span><span class="n">Name</span><span class="p">[</span><span class="m">3</span><span class="p">]</span><span class="w">
+</span><span class="n">unzip</span><span class="p">(</span><span class="n">tf</span><span class="p">,</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fname</span><span class="p">,</span><span class="w"> </span><span class="n">exdir</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">td</span><span class="p">,</span><span class="w"> </span><span class="n">overwrite</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w"> </span><span class="c1"># unzip</span><span class="w">
+</span><span class="n">datpath</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">file.path</span><span class="p">(</span><span class="n">td</span><span class="p">,</span><span class="w"> </span><span class="n">fname</span><span class="p">)</span><span class="w">                        </span><span class="c1"># path to xls</span><span class="w">
+
+</span><span class="c1">## read the xls file, sheet 2 contains species data, sheet 3 the env</span><span class="w">
+</span><span class="n">spp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">read.xls</span><span class="p">(</span><span class="n">datpath</span><span class="p">,</span><span class="w"> </span><span class="n">sheet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">skip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">row.names</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="n">env</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">read.xls</span><span class="p">(</span><span class="n">datpath</span><span class="p">,</span><span class="w"> </span><span class="n">sheet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="n">row.names</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<p>The <code>block</code> variable is currently coded as an integer and needs converting to a factor if we are to use it correctly in the analysis</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">env</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">env</span><span class="p">,</span><span class="w"> </span><span class="n">block</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factor</span><span class="p">(</span><span class="n">block</span><span class="p">))</span></code></pre>
+</figure>
+<p>The gradient lengths are short,</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">decorana</span><span class="p">(</span><span class="n">spp</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Call:
+decorana(veg = spp) 
+
+Detrended correspondence analysis with 26 segments.
+Rescaling of axes with 4 iterations.
+
+                  DCA1   DCA2    DCA3    DCA4
+Eigenvalues     0.1759 0.1898 0.11004 0.05761
+Decorana values 0.2710 0.1822 0.07219 0.02822
+Axis lengths    1.9821 1.4140 1.15480 0.87680</code></pre>
+</figure>
+<p>motivating the use of redundancy analysis (RDA). Additionally, we may be interested in how the raw abundance of seedlings change following experimental manipulation, o we may wish to focus on the proportional differences between treatments. The first case is handled naturaly by RDA. The second case will require some form of standardisation by samples, say by sample totals.</p>
+<p>First, let’s test the first null hypothesis; that there is no effect of the treatment on seedling recruitment. This is a simple RDA. We should take into account the <code>block</code> factor when we assess this model for significance. How we do this illustrates two potential approaches to performing permutation tests</p>
+<ol type="1">
+<li><p><strong>design</strong>-based permutations, where how the samples are permuted follows the experimental design, or</p></li>
+<li><p><strong>model</strong>-based permutations, where the experimental design is included in the analysis directly and residuals are permuted by simple randomisation.</p></li>
+</ol>
+<p>There is an important difference between the two approach, one which I’ll touch on shortly.</p>
+<p>We’ll proceed by fitting the model, conditioning on <code>block</code> to remove between block differences</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">mod1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rda</span><span class="p">(</span><span class="n">spp</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">Condition</span><span class="p">(</span><span class="n">block</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">)</span><span class="w">
+</span><span class="n">mod1</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Call: rda(formula = spp ~ treatment + Condition(block), data =
+env)
+
+               Inertia Proportion Rank
+Total         990.8000     1.0000     
+Conditional   166.1000     0.1676    3
+Constrained   329.8000     0.3329    3
+Unconstrained 494.9000     0.4995    9
+Inertia is variance 
+
+Eigenvalues for constrained axes:
+  RDA1   RDA2   RDA3 
+284.81  30.83  14.20 
+
+Eigenvalues for unconstrained axes:
+   PC1    PC2    PC3    PC4    PC5    PC6    PC7    PC8    PC9 
+226.83 139.51  72.77  30.11   9.81   9.14   2.80   2.19   1.73 </code></pre>
+</figure>
+<p>There is a strong single, linear gradient in the data as evidenced by the relative magnitudes of the eigenvalues (here expressed as proportions of the total variance)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">eigenvals</span><span class="p">(</span><span class="n">mod1</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">mod1</span><span class="o">$</span><span class="n">tot.chi</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">      RDA1       RDA2       RDA3        PC1        PC2        PC3 
+0.28746238 0.03111202 0.01432998 0.22893569 0.14080915 0.07344450 
+       PC4        PC5        PC6        PC7        PC8        PC9 
+0.03038815 0.00989932 0.00922185 0.00282396 0.00221132 0.00174669 </code></pre>
+</figure>
+<h2 id="design-based-permutations">Design-based permutations</h2>
+<p>A <em>design</em>-based permutation test of these data would be on conditioned on the <code>block</code> variable, by restricting permutation of sample only <em>within</em> the levels of <code>block</code>. In this situation, samples are never permuted between blocks, only within. We can set up this type of permutation design as follows</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">h</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">how</span><span class="p">(</span><span class="n">blocks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="o">$</span><span class="n">block</span><span class="p">,</span><span class="w"> </span><span class="n">nperm</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">999</span><span class="p">)</span></code></pre>
+</figure>
+<p>Note that we could use the <code>plots</code> argument instead of <code>blocks</code> to restrict the permutations in the same way, but using <code>blocks</code> is simpler. I also set the required number of permutations for the test here.</p>
+<p>Constrained ordinations in <strong>vegan</strong> are tested using the <code>anova()</code> function. New in the development version of the package is the <code>permutations</code> argument, which is the key to supplying instructions on how you want to permute to <code>anova()</code>. <code>permutations</code> can take a number of different types of instruction</p>
+<ol type="1">
+<li><p>an object of class <code>"how"</code>, whch contains details of a restricted permutation design that <code>shuffleSet()</code> from the <strong>permute</strong> package will use to generate permutations from, or</p></li>
+<li><p>a number indicating the number of permutations required, in which case these are simple randomisations with no restriction, unless the <code>strata</code> argument is used, or</p></li>
+<li><p>a matrix of user-specified permutations, 1 row per permutation.</p></li>
+</ol>
+<p>To perform the design-based permutation we’ll pass <code>h</code>, created earlier, to <code>anova()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span><span class="w">
+</span><span class="n">p1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">anova</span><span class="p">(</span><span class="n">mod1</span><span class="p">,</span><span class="w"> </span><span class="n">permutations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
+</span><span class="n">p1</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Permutation test for rda under reduced model
+Blocks:  env$block 
+Permutation: free
+Number of permutations: 999
+
+Model: rda(formula = spp ~ treatment + Condition(block), data = env)
+         Df Variance      F Pr(&gt;F)  
+Model     3   329.84 1.9995  0.086 .
+Residual  9   494.88                
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</figure>
+<p>Note that I’ve run this on three cores in parallel; this is another new feature of the development version of <strong>vegan</strong> and can considerably reduce the time needed to run permutation tests. I have four cores on my laptop but left one free for the other software I have running.</p>
+<p>The overall permutation test indicates no significant effect of treatment on the abundance of seedlings. We can test individual axes by adding <code>by = "axis"</code> to the <code>anova()</code> call</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">24</span><span class="p">)</span><span class="w">
+</span><span class="n">p1axis</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">anova</span><span class="p">(</span><span class="n">mod1</span><span class="p">,</span><span class="w"> </span><span class="n">permutations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"axis"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Loading required package: parallel</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">p1axis</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Permutation test for rda under reduced model
+Marginal tests for axes
+Blocks:  env$block 
+Permutation: free
+Number of permutations: 999
+
+Model: rda(formula = spp ~ treatment + Condition(block), data = env)
+         Df Variance      F Pr(&gt;F)  
+RDA1      1   284.81 5.1797  0.018 *
+RDA2      1    30.83 0.5606  0.691  
+RDA3      1    14.20 0.2582  0.923  
+Residual  9   494.88                
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</figure>
+<p>This confirms the earlier impression that there is a single, linear gradient in the data set. A biplot shows that this axis of variation is associated with the Moss (&amp; Litter) removal treatment. The variation between the other treatments lies primarily along axis two and is substantially less than that associated with the Moss &amp; Litter removal.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">mod1</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"species"</span><span class="p">,</span><span class="w"> </span><span class="s2">"cn"</span><span class="p">),</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w">
+     </span><span class="n">xlim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-10.5</span><span class="p">,</span><span class="w"> </span><span class="m">1.5</span><span class="p">))</span><span class="w">
+</span><span class="n">text</span><span class="p">(</span><span class="n">mod1</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"species"</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">)</span><span class="w">
+</span><span class="n">text</span><span class="p">(</span><span class="n">mod1</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cn"</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1.2</span><span class="p">,</span><span class="w">
+     </span><span class="n">labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Control"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Litter+Moss"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Litter"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Removal"</span><span class="p">))</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/randomized-complete-block-design-and-vegan-biplot-1.png" alt="Figure 1: RDA biplot showing species scores and treatment centroids." /><figcaption>Figure 1: RDA biplot showing species scores and treatment centroids.</figcaption>
+</figure>
+<p>In the above figure, I used <code>scaling = 1</code>, so-called <em>inter-sample distance scaling</em>, as this best represents the centroid scores, which are computed as the treatment-wise average of the sample scores.</p>
+<h2 id="model-based-permutation">Model-based permutation</h2>
+<p>The alternative permutation approach, known as model-based permutations, and would employ free permutation of residuals after the effects of the covariables have been accounted for. This is justified because under the null hypothesis, the residuals are freely exchangeable once the effects of the covariables are removed. There is a clear advantage of model-based permutations over design-based permutations; where the sample size is small, as it is here, there tends to be few blocks and the resulting design-based permutation test relatively weak compared to the model-based version.</p>
+<p>It is simple to switch to model-based permutations, be setting the blocks indicator in the permutation design to <code>NULL</code>, removing the blocking structure from the design</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">setBlocks</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="kc">NULL</span><span class="w">                    </span><span class="c1"># remove blocking</span><span class="w">
+</span><span class="n">getBlocks</span><span class="p">(</span><span class="n">h</span><span class="p">)</span><span class="w">                            </span><span class="c1"># confirm</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">NULL</code></pre>
+</figure>
+<p>Next we repeat the permutation test using the modified <code>h</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">51</span><span class="p">)</span><span class="w">
+</span><span class="n">p2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">anova</span><span class="p">(</span><span class="n">mod1</span><span class="p">,</span><span class="w"> </span><span class="n">permutations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
+</span><span class="n">p2</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Permutation test for rda under reduced model
+Permutation: free
+Number of permutations: 999
+
+Model: rda(formula = spp ~ treatment + Condition(block), data = env)
+         Df Variance      F Pr(&gt;F)  
+Model     3   329.84 1.9995  0.068 .
+Residual  9   494.88                
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</figure>
+<p>The estimated <em>p</em> value is slightly smaller now. The difference between treatments is predominantly in the Moss &amp; Litter removal with differences between the control and the other treatments lying along the insignificant axes</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">83</span><span class="p">)</span><span class="w">
+</span><span class="n">p2axis</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">anova</span><span class="p">(</span><span class="n">mod1</span><span class="p">,</span><span class="w"> </span><span class="n">permutations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"axis"</span><span class="p">)</span><span class="w">
+</span><span class="n">p2axis</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Permutation test for rda under reduced model
+Marginal tests for axes
+Permutation: free
+Number of permutations: 999
+
+Model: rda(formula = spp ~ treatment + Condition(block), data = env)
+         Df Variance      F Pr(&gt;F)   
+RDA1      1   284.81 5.1797  0.010 **
+RDA2      1    30.83 0.5606  0.735   
+RDA3      1    14.20 0.2582  0.960   
+Residual  9   494.88                 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</figure>
+<h2 id="chages-in-relative-seedling-composition">Chages in relative seedling composition</h2>
+<p>As mentioned earlier, interest is also, perhaps predominantly, in whether any of the treatments have different species composition. To test this hypothesis we standardise by the sample (row) norm using <code>decostand()</code>. Alternatively we could have used <code>method = "total"</code> to work with proportional abundances. We then repeat the earlier steps, this time using only model-based permutations owing to their greater power.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">spp.norm</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">decostand</span><span class="p">(</span><span class="n">spp</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"normalize"</span><span class="p">,</span><span class="w"> </span><span class="n">MARGIN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+
+</span><span class="n">mod2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rda</span><span class="p">(</span><span class="n">spp.norm</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">Condition</span><span class="p">(</span><span class="n">block</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">env</span><span class="p">)</span><span class="w">
+</span><span class="n">mod2</span><span class="w">
+</span><span class="n">eigenvals</span><span class="p">(</span><span class="n">mod2</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">mod2</span><span class="o">$</span><span class="n">tot.chi</span><span class="w">
+
+</span><span class="n">set.seed</span><span class="p">(</span><span class="m">76</span><span class="p">)</span><span class="w">
+</span><span class="n">anova</span><span class="p">(</span><span class="n">mod2</span><span class="p">,</span><span class="w"> </span><span class="n">permutations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">,</span><span class="w"> </span><span class="n">parallel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Call: rda(formula = spp.norm ~ treatment + Condition(block), data
+= env)
+
+              Inertia Proportion Rank
+Total          0.3726     1.0000     
+Conditional    0.0814     0.2184    3
+Constrained    0.0725     0.1945    3
+Unconstrained  0.2188     0.5871    9
+Inertia is variance 
+
+Eigenvalues for constrained axes:
+   RDA1    RDA2    RDA3 
+0.04517 0.01718 0.01012 
+
+Eigenvalues for unconstrained axes:
+    PC1     PC2     PC3     PC4     PC5     PC6     PC7     PC8     PC9 
+0.08026 0.07074 0.02860 0.01916 0.00989 0.00585 0.00223 0.00167 0.00038 
+
+      RDA1       RDA2       RDA3        PC1        PC2        PC3 
+0.12123276 0.04610541 0.02716385 0.21539133 0.18983329 0.07675497 
+       PC4        PC5        PC6        PC7        PC8        PC9 
+0.05140906 0.02655227 0.01570519 0.00597888 0.00447093 0.00101031 
+Permutation test for rda under reduced model
+Permutation: free
+Number of permutations: 999
+
+Model: rda(formula = spp.norm ~ treatment + Condition(block), data = env)
+         Df Variance      F Pr(&gt;F)
+Model     3 0.072475 0.9939  0.449
+Residual  9 0.218768              </code></pre>
+</figure>
+<p>The results suggest no difference in species composition under the experimental manipulation.</p>
+<p>That’s it for this post. In the next example I’ll take a look at a more complex example, one where model-based permutations can’t be used to test all the hypotheses we might want to in an experimental design.</p>
+<h2 id="references" class="unnumbered">References</h2>
+<div id="refs" class="references">
+<div id="ref-Smilauer2014-ac">
+<p>Šmilauer, P., and Lepš, J. (2014). <em>Multivariate analysis of ecological data using CANOCO 5</em>. 2 edition. Cambridge University Press.</p>
+</div>
+<div id="ref-Spackova1998-ad">
+<p>Špačková, I., Kotorová, I., and Lepš, J. (1998). Sensitivity of seedling recruitment to moss, litter and dominant removal in an oligotrophic wet meadow. <em>Folia geobotanica</em> 33, 17–30. doi:<a href="https://doi.org/10.1007/BF02914928">10.1007/BF02914928</a>.</p>
+</div>
+</div>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2014/11/03/randomized-complete-block-designs-and-vegan/";
+  var disqus_title = "Analysing a randomised complete block design with vegan";
+  //var disqus_identifier = "/2014/11/03/randomized-complete-block-designs-and-vegan";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>03 November 2014</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/vegan/"><span class="label label-inverse">vegan</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/permute/"><span class="label label-inverse">permute</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/permutations/"><span class="label label-inverse">permutations</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

@@ -1,0 +1,609 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Confidence intervals for derivatives of splines in GAMs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GAM, Time series, Modelling, Central England Temperature, Confidence interval, Posterior simulation" />
+
+
+<meta name="description" content="Last time out I looked at one of the complications of time series modelling with smoothers; you have a non-linear trend which may be statistically significant but it may not be increasing or decreasing everywhere. How do we identify where in the series the data are changing? In that post I explained how we can use the first derivatives of the model splines for this purpose, and used the method of finite differences to estimate them. To assess statistical significance of the derivative (the rate of change) I relied upon asymptotic normality and the usual pointwise confidence interval. That interval is fine if looking at just one point on the spline (not of much practical use), but when considering more points at once we have a multiple comparisons issue. Instead, a simultaneous interval is required, and for that we need to revisit a technique I blogged about a few years ago; posterior simulation from the fitted GAM.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Confidence intervals for derivatives of splines in GAMs" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2014-06-16T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Confidence intervals for derivatives of splines in GAMs" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2014-06-16T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2014/06/16/simultaneous-confidence-intervals-for-derivatives/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Last time out I looked at one of the complications of time series modelling with smoothers; you have a non-linear trend which may be statistically significant but it may not be increasing or decreasing everywhere. How do we identify where in the series the data are changing? In that post..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Confidence intervals for derivatives of splines in GAMs" />
+
+
+<meta name="twitter:description" content="Last time out I looked at one of the complications of time series modelling with smoothers; you have a non-linear trend which may be statistically significant but it may not be increasing or decre..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="16 Jun 2014"/>
+<meta name="citation_date" content="16 Jun 2014"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Confidence intervals for derivatives of splines in GAMs"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2014/07/31/simulating-species-abundance-data-with-the-coenocliner-package/">Simulating species abundance data with coenocliner</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2014/05/15/identifying-periods-of-change-with-gams/">Identifying periods of change in time series with GAMs</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Confidence intervals for derivatives of splines in GAMs </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+                              <div class="alert alert-error">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h3>Update!</h3>
+                <p><p>The original version of this post claimed to produce simultaneous confidence intervals. It was wrong; these are nowhere near a simultaneous interval. For one way to compute a simltaneous interval see this <a href="/2016/12/15/simultaneous-interval-revisited/">newer post</a>.</p>
+</p>
+              </div>
+
+              
+            <p><a href="/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/">Last time out</a> I looked at one of the complications of time series modelling with smoothers; you have a non-linear trend which may be statistically significant but it may not be increasing or decreasing everywhere. How do we identify where in the series the data are changing? In that post I explained how we can use the first derivatives of the model splines for this purpose, and used the method of finite differences to estimate them. To assess statistical significance of the derivative (the rate of change) I relied upon asymptotic normality and the usual pointwise confidence interval. That interval is fine if looking at just one point on the spline (not of much practical use), but when considering more points at once we have a multiple comparisons issue. Instead, a simultaneous interval is required, and for that we need to revisit a technique I <a href="/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/">blogged about a few years ago</a>; posterior simulation from the fitted GAM.</p>
+<p>To get a headstart on this, I’ll reuse the model we fitted to the <abbr title="Central England Temperature">CET</abbr> time series from the previous post. Just copy and paste the code below into your R session</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## Load the CET data and process as per other blog post</span><span class="w">
+</span><span class="n">tmpf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">()</span><span class="w">
+</span><span class="n">download.file</span><span class="p">(</span><span class="s2">"https://gist.github.com/gavinsimpson/b52f6d375f57d539818b/raw/2978362d97ee5cc9e7696d2f36f94762554eefdf/load-process-cet-monthly.R"</span><span class="p">,</span><span class="w">
+              </span><span class="n">tmpf</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"wget"</span><span class="p">)</span><span class="w">
+</span><span class="n">source</span><span class="p">(</span><span class="n">tmpf</span><span class="p">)</span><span class="w">
+</span><span class="c1">## Load mgcv and fit the model</span><span class="w">
+</span><span class="n">require</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span><span class="w">
+</span><span class="n">ctrl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">niterEM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">msVerbose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">optimMethod</span><span class="o">=</span><span class="s2">"L-BFGS-B"</span><span class="p">)</span><span class="w">
+</span><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w">
+           </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="o">|</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
+           </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)</span><span class="w">
+</span><span class="c1">## prediction data</span><span class="w">
+</span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">nrow</span><span class="p">(</span><span class="n">cet</span><span class="p">),</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">200</span><span class="p">)</span><span class="w">
+</span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w">
+             </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Time</span><span class="p">[</span><span class="n">want</span><span class="p">],</span><span class="w"> </span><span class="n">Date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Date</span><span class="p">[</span><span class="n">want</span><span class="p">],</span><span class="w">
+                        </span><span class="n">nMonth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nMonth</span><span class="p">[</span><span class="n">want</span><span class="p">]))</span></code></pre>
+</figure>
+<p>Here, I’ll use a version of the <code>Deriv()</code> function used in the last post modified to do the posterior simulation; <code>derivSimulCI()</code>. Let’s load that too</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## download the derivatives gist</span><span class="w">
+</span><span class="n">tmpf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">()</span><span class="w">
+</span><span class="n">download.file</span><span class="p">(</span><span class="s2">"https://gist.githubusercontent.com/gavinsimpson/ca18c9c789ef5237dbc6/raw/295fc5cf7366c831ab166efaee42093a80622fa8/derivSimulCI.R"</span><span class="p">,</span><span class="w">
+              </span><span class="n">tmpf</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"wget"</span><span class="p">)</span><span class="w">
+</span><span class="n">source</span><span class="p">(</span><span class="n">tmpf</span><span class="p">)</span></code></pre>
+</figure>
+<h2 id="posterior-simulation">Posterior simulation</h2>
+<p>The sorts of GAMs fitted by <code>mgcv::gam()</code> are, if we assume normally distributed errors, really just a linear regression. Instead of being a linear model in the original data however, the linear model is fitted using the basis functions as the covariates<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>. As with any other linear model, we get back from it the point estimate, the \( \hat{\beta}_j \), and their standard errors. Consider the simple linear regression of <em>x</em> on <em>y</em>. Such a model has two terms</p>
+<ol type="1">
+<li>the constant term (the model intercept), and</li>
+<li>the effect on <em>y</em> of a unit change in <em>x</em>.</li>
+</ol>
+<p>In fitting the model we get a point estimate for each term, plus their standard errors in the form of the variance-covariance (VCOV) matrix of the terms<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>. Taken together, the point estimates of the model terms and the VCOV describe a multivariate normal distribution. In the case of the simple linear regression, this is a bivariate normal. Note that the point estimates are known as the <em>mean vector</em> of the multivariate normal; each point estimate is the mean, or expectation, of a single random normal variable whose variance is given by the standard error of the point estimate.</p>
+<p>Computers are good at simulating data and you’ll most likely be familiar with <code>rnorm()</code> to generate random, normally distributed values from a distribution with mean 0 and unit standard deviation. Well, simulating from a multivariate normal is just as simple<a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a>, as long as you have the mean vector and the variance covariance matrix of the parameters.</p>
+<p>Returning to the simple linear regression case, let’s do a little simulation from a known model and look at the multivariate normal distribution of the model parameters.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">set.seed</span><span class="p">(</span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">N</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">runif</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">1.45</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">rnorm</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">mean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">sd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## sort dat on x to make things easier later</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">dat</span><span class="p">[</span><span class="n">order</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lm</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat</span><span class="p">)</span></code></pre>
+</figure>
+<p>The mean vector for the multivariate normal is just the set of model coefficients for <code>mod</code>, which are extracted using the <code>coef()</code> function, and the <code>vcov()</code> function is used to extract the VCOV of the fitted model.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">(Intercept)           x 
+   4.412706    1.499317 </code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="p">(</span><span class="n">vc</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">vcov</span><span class="p">(</span><span class="n">mod</span><span class="p">))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">            (Intercept)            x
+(Intercept)  0.44563330 -0.033760188
+x           -0.03376019  0.003114669</code></pre>
+</figure>
+<p>Remember, the standard error is the square root of the diagonal elements of the VCOV</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">summary</span><span class="p">(</span><span class="n">mod</span><span class="p">))[,</span><span class="w"> </span><span class="s2">"Std. Error"</span><span class="p">]</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">(Intercept)           x 
+ 0.66755771  0.05580922 </code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="nf">sqrt</span><span class="p">(</span><span class="n">diag</span><span class="p">(</span><span class="n">vc</span><span class="p">))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">(Intercept)           x 
+ 0.66755771  0.05580922 </code></pre>
+</figure>
+<p>The multivariate normal distribution is not part of the base R distributions set. Several implementations are available in a range of packages, but here I’ll use the one in the <strong>MASS</strong> package which ships with all versions of R. To draw a nice plot, I’ll simulate a large number of values but we’ll just show the first few below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">require</span><span class="p">(</span><span class="s2">"MASS"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">set.seed</span><span class="p">(</span><span class="m">10</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">nsim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">5000</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">sim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">mvrnorm</span><span class="p">(</span><span class="n">nsim</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">mod</span><span class="p">),</span><span class="w"> </span><span class="n">Sigma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vc</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">head</span><span class="p">(</span><span class="n">sim</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">     (Intercept)        x
+[1,]    4.398392 1.476528
+[2,]    4.536195 1.496449
+[3,]    5.327903 1.426689
+[4,]    4.810953 1.446152
+[5,]    4.215752 1.509888
+[6,]    4.153201 1.528336</code></pre>
+</figure>
+<p>Each row of <code>sim</code> contains a pair of values, one intercept and one \( \hat{\beta}_x \), from the implied multivariate normal. The models implied by each row are all consistent with the fitted model. To visualize the multivariate normal for <code>mod</code> I’ll use a bivariate kernel density estimate to estimate the density of points over a grid of simulated intercept and slope values</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">kde</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">kde2d</span><span class="p">(</span><span class="n">sim</span><span class="p">[,</span><span class="m">1</span><span class="p">],</span><span class="w"> </span><span class="n">sim</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">75</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">sim</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkgrey"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">contour</span><span class="p">(</span><span class="n">kde</span><span class="o">$</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">kde</span><span class="o">$</span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">kde</span><span class="o">$</span><span class="n">z</span><span class="p">,</span><span class="w"> </span><span class="n">add</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">drawlabels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-confidence-intervals-for%20derivatives-contour-plot-1.png" alt="5000 random draws from the posterior distribution of the parameters of the fitted additive model. Contours are for a 2d kernel destiny estimate of the points." /><figcaption>5000 random draws from the posterior distribution of the parameters of the fitted additive model. Contours are for a 2d kernel destiny estimate of the points.</figcaption>
+</figure>
+<p>The large spread in the points (from top left to bottom right) is illustrative of greater uncertainty in the intercept term than in \( \hat{\beta}_x \).</p>
+<p>As I said earlier, each point on the plot represents a valid model consistent with the estimates we achieved for the sample of data used to fit the model. If we were to multiple the second column of <code>sim</code> with the observed data and add on the first column of <code>sim</code>, we’d obtain fitted values for the observed <code>x</code> values for 5000 simulations from the fitted model as shown in the plot below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">take</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sample</span><span class="p">(</span><span class="n">nrow</span><span class="p">(</span><span class="n">sim</span><span class="p">),</span><span class="w"> </span><span class="m">50</span><span class="p">)</span><span class="w"> </span><span class="c1">## take 50 simulations at random</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fits</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">dat</span><span class="o">$</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">sim</span><span class="p">[</span><span class="n">take</span><span class="p">,</span><span class="w"> </span><span class="p">])</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">matlines</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">fits</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"#A9A9A97D"</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">abline</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">matlines</span><span class="p">(</span><span class="n">dat</span><span class="o">$</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">interval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"confidence"</span><span class="p">)[,</span><span class="m">-1</span><span class="p">],</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dashed"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-confidence-intervals-for%20derivatives-linear-regression-plus-simulations-plot-1.png" alt="Fitted linear model and 50 posterior simulations (grey band) and 95% point-wise confidence interval (red dashes)" /><figcaption>Fitted linear model and 50 posterior simulations (grey band) and 95% point-wise confidence interval (red dashes)</figcaption>
+</figure>
+<p>The grey lines show the model fits for a random sample of 50 pairs of coefficients from the set of simulated values.</p>
+<h2 id="posterior-simulation-for-additive-models">Posterior simulation for additive models</h2>
+<p>You’ll be pleased to know that there is very little difference (non really) between what I just went through above for a simple linear regression and what is required to simulate from the posterior distribution of a GAM. However, instead of dealing with two or just a few regression coefficients, we now have to concern ourselves with the potentially larger number of coefficients corresponding to the basis functions that combine to form the fitted splines. The only practical difference is that instead of multiplying each simulation by the observed data<a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a> with <strong>mgcv</strong> we generate the linear predictor matrix for the observations and multiply that by the model coefficients to get simulations. If you’ve read the <a href="/2014/05/15/identifying-periods-of-change-with-gams/">previous post</a> you should be somewhat familiar with the <code>lpmatrix</code> now.</p>
+<p>Before we get to posterior simulations for the derivatives of the CET additive model fitted earlier, let’s look at some simulations for the trend term in that model, <code>m2</code>. If you look back at an earlier code block, I created a grid of 200 points over the range of the data which we’ll use to evaluate properties of the fitted model. This is in object <code>pdat</code>. First we generate the linear predictor matrix using <code>predict()</code> and grab the model coefficients and the variance covariance matrix of the coefficients</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">lp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">coefs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">vc</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">vcov</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">)</span></code></pre>
+</figure>
+<p>Next, generate a small sample from the posterior of the model, just for the purposes of illustration; we’ll generate far larger samples later when we estimate a confidence interval on the derivatives of the trend spline.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">set.seed</span><span class="p">(</span><span class="m">35</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">sim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">mvrnorm</span><span class="p">(</span><span class="m">25</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coefs</span><span class="p">,</span><span class="w"> </span><span class="n">Sigma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">vc</span><span class="p">)</span></code></pre>
+</figure>
+<p>The linear predictor matrix, <code>lp</code>, has a column for every basis function, plus the constant term, in the model, but because the model is additive we can ignore the columns relating to the <code>nMonth</code> spline and the constant term and just work with the coefficients and columns of <code>lp</code> that pertain to the trend spline. Let’s identify those</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">grep</span><span class="p">(</span><span class="s2">"Time"</span><span class="p">,</span><span class="w"> </span><span class="n">colnames</span><span class="p">(</span><span class="n">lp</span><span class="p">))</span></code></pre>
+</figure>
+<p>Again, a simple bit of matrix multiplication gets us fitted values for the trend spline only</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">fits</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lp</span><span class="p">[,</span><span class="w"> </span><span class="n">want</span><span class="p">]</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">sim</span><span class="p">[,</span><span class="w"> </span><span class="n">want</span><span class="p">])</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">dim</span><span class="p">(</span><span class="n">fits</span><span class="p">)</span><span class="w"> </span><span class="c1">## 25 columns, 1 per simulation, 200 rows, 1 per evaln point</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 200  25</code></pre>
+</figure>
+<p>We can now draw out each of these posterior simulations as follows</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">ylims</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">fits</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylims</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">matlines</span><span class="p">(</span><span class="n">pdat</span><span class="o">$</span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">fits</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-confidence-intervals-for%20derivatives-cet-model-trend-posterior-simulations-1.png" alt="Posterior simulations for the trend spline of the additive model fitted to the CET time series" /><figcaption>Posterior simulations for the trend spline of the additive model fitted to the CET time series</figcaption>
+</figure>
+<h2 id="posterior-simulation-for-the-first-derivatives-of-a-spline">Posterior simulation for the first derivatives of a spline</h2>
+<p>As we saw in the previous post, the linear predictor matrix can be used to generate finite differences-based estimates of the derivatives of a spline in a GAM fitted by <strong>mgcv</strong>. And as we just went through, we can combine posterior simulations with the linear predictor matrix. The main steps in the process of computing the finite differences and doing the posterior simulation are</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">X0</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">newDF</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
+</span><span class="n">newDF</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">newDF</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">eps</span><span class="w">
+</span><span class="n">X1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">newDF</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
+</span><span class="n">Xp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="p">(</span><span class="n">X1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">X0</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">eps</span></code></pre>
+</figure>
+<p>where two linear predictor matrices are created, offset from one another by a small amount <code>eps</code>, and differenced to get the slope of the spline, and</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="k">for</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nf">seq_len</span><span class="p">(</span><span class="n">nt</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="n">Xi</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Xp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">0</span><span class="w">
+  </span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">grep</span><span class="p">(</span><span class="n">t.labs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">colnames</span><span class="p">(</span><span class="n">X1</span><span class="p">))</span><span class="w">
+  </span><span class="n">Xi</span><span class="p">[,</span><span class="w"> </span><span class="n">want</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Xp</span><span class="p">[,</span><span class="w"> </span><span class="n">want</span><span class="p">]</span><span class="w">
+  </span><span class="n">df</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Xi</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">simu</span><span class="p">[,</span><span class="w"> </span><span class="n">want</span><span class="p">])</span><span class="w">    </span><span class="c1"># derivatives</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>which loops over the terms in the model, selects the relevant columns from the differenced predictor matrix, and computes the derivatives by a matrix multiplication with the set of posterior simulations. <code>simu</code> is the matrix of random draws from the posterior, multivariate normal distribution of the fitted model’s parameters. Note that the code in <code>derivSimulCI()</code> is slightly different to this, but it does the same thing.</p>
+<p>To cut to the chase then, here is the code required to generate posterior simulations for the first derivatives of the spline terms in an additive model</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">fd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">derivSimulCI</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span><span class="w"> </span><span class="n">samples</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10000</span><span class="p">)</span></code></pre>
+</figure>
+<p><code>fd</code> is a list, the first <em>n</em> terms of which relate the the <em>n</em> terms in the model. Here <em>n</em> = 2. The names of the first two components are the names of the terms referenced in the model formula used to fit the model</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">str</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">List of 5
+ $ nMonth  :List of 2
+ $ Time    :List of 2
+ $ gamModel:List of 31
+  ..- attr(*, "class")= chr "gam"
+ $ eps     : num 1e-07
+ $ eval    : num [1:200, 1:2] 1 1.06 1.11 1.17 1.22 ...
+  ..- attr(*, "dimnames")=List of 2
+ - attr(*, "class")= chr "derivSimulCI"</code></pre>
+</figure>
+<p>As I haven’t yet written a <code>confint()</code> method, we’ll need to compute the confidence interval by hand, which is no bad thing of course! We do this by by taking two extreme quantiles of the distribution of the 10,000 posterior simulations we generated for the first derivative <em>at each</em> of the 200 points we wanted to evaluate the derivative. One of the reasons I did 10,000 simulations is that for a 95% confidence interval we only need sort the simulated derivatives in ascending order and extract the 250th and the 9750th of these ordered values. In practice we’ll let the <code>quantile()</code> function do the hard work</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">CI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lapply</span><span class="p">(</span><span class="n">fd</span><span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">],</span><span class="w">
+</span><span class="o">+</span><span class="w">              </span><span class="k">function</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="n">apply</span><span class="p">(</span><span class="n">x</span><span class="o">$</span><span class="n">simulations</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">quantile</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">                                </span><span class="n">probs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">)))</span></code></pre>
+</figure>
+<p><code>CI</code> is now a list with two components, each of which contains a matrix with two rows (the two probability quantiles we asked for) and 200 columns (the number of locations at which the first derivative was evaluated).</p>
+<p>There is a <code>plot()</code> method, which by default produces plots of all the terms in the model and includes the <del>simultaneous</del> point-wise confidence interval as well</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">sizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-confidence-intervals-for%20derivatives-plot-deriv-method-1.png" alt="First derivative of the seasonal and trend splines from the CET time series additive model. The grey band is a 95% simultaneous point-wise confidence interval. Sections of the spline where the confidence interval does not include zero are indicated by coloured sections." /><figcaption>First derivative of the seasonal and trend splines from the CET time series additive model. The grey band is a 95% <del>simultaneous</del> point-wise confidence interval. Sections of the spline where the confidence interval does not include zero are indicated by coloured sections.</figcaption>
+</figure>
+<h2 id="wrapping-up">Wrapping up</h2>
+<p><code>derivSimulCI()</code> computes the actual derivative as well as the derivatives for each simulation. Rather than rely upon the <code>plot()</code> method we could draw our own plot with the confidence interval. To extract the derivative of the fitted spline use</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">fit.fd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">fd</span><span class="p">[[</span><span class="m">2</span><span class="p">]]</span><span class="o">$</span><span class="n">deriv</span></code></pre>
+</figure>
+<p>and then produce a plot with the actual derivative, the 95% <del>simultaneous</del> point-wise confidence interval, and 20 of the derivatives for the posterior simulations, we can use</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">set.seed</span><span class="p">(</span><span class="m">76</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">take</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sample</span><span class="p">(</span><span class="n">nrow</span><span class="p">(</span><span class="n">fd</span><span class="p">[[</span><span class="m">2</span><span class="p">]]</span><span class="o">$</span><span class="n">simulations</span><span class="p">),</span><span class="w"> </span><span class="m">20</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">pdat</span><span class="o">$</span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">fit.fd</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">CI</span><span class="p">[[</span><span class="m">2</span><span class="p">]]),</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">matlines</span><span class="p">(</span><span class="n">pdat</span><span class="o">$</span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">CI</span><span class="p">[[</span><span class="m">2</span><span class="p">]]),</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dashed"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">matlines</span><span class="p">(</span><span class="n">pdat</span><span class="o">$</span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">fd</span><span class="p">[[</span><span class="m">2</span><span class="p">]]</span><span class="o">$</span><span class="n">simulations</span><span class="p">[,</span><span class="w"> </span><span class="n">take</span><span class="p">],</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">          </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"grey"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-confidence-intervals-for%20derivatives-plot-deriv-ci-by-hand-1.png" alt="First derivative of the trend spline from the CET time series additive model. The red dashed lines enclose the 95% simultaneous point-wise confidence interval. Superimposed are the first derivatives of the splines for 20 randomly selected posterior simulations from the fitted spline." /><figcaption>First derivative of the trend spline from the CET time series additive model. The red dashed lines enclose the 95% <del>simultaneous</del> point-wise confidence interval. Superimposed are the first derivatives of the splines for 20 randomly selected posterior simulations from the fitted spline.</figcaption>
+</figure>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>It is a little bit more complex than this, of course. If you allow <code>gam()</code> to select the degree of smoothness then you need to fit a penalized regression. Plus, the time series models fitted to the CET data aren’t fitted via <code>gam()</code> but via <code>gamm()</code>, where we are using the observation that a penalized regression can be expressed as a linear mixed model, with random effects being used to represent some of the penalty terms. If you specify the degree of smoothing to use, these complications go away.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>The (squares of the) standard errors are on the diagonal of the VCOV, with the relationship between pairs of parameters being contained in the off-diagonal elements.<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>in practice. I suspect it is not quite so simple if one had to sit down and implement it…<a href="#fnref3" class="footnote-back">↩</a></p></li>
+<li id="fn4"><p>or a set of new values at which you want to evaluate the confidence interval<a href="#fnref4" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2014/06/16/simultaneous-confidence-intervals-for-derivatives/";
+  var disqus_title = "Confidence intervals for derivatives of splines in GAMs";
+  //var disqus_identifier = "/2014/06/16/simultaneous-confidence-intervals-for-derivatives";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>16 June 2014</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/time-series/"><span class="label label-inverse">Time series</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/modelling/"><span class="label label-inverse">Modelling</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/central-england-temperature/"><span class="label label-inverse">Central England Temperature</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/confidence-interval/"><span class="label label-inverse">Confidence interval</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/posterior-simulation/"><span class="label label-inverse">Posterior simulation</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

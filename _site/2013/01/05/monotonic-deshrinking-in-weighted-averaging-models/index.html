@@ -1,0 +1,488 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Monotonic deshrinking in weighted averaging models</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="analogue, deshrinking, Palaeoecology, Palaeolimnology, R, Statistics, transfer function, weighted averaging" />
+
+
+<meta name="description" content="Weighted averaging regression and calibration is the most widely used method for developing a palaeolimnological transfer function. Such models are used to reconstruct properties of the past lake environment such as pH, total phosphorus, and water temperature with, it has to be said, varying degrees of success and usefulness.
+
+
+In simple weighted averaging (WA) there is little to specify other than the predictors (the species or other proxy data) and the response (the thing you wish to build a model for and predict). The one user-specified option in a simple WA is the type of deshrinking to use.
+
+
+Why deshrinking?" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Monotonic deshrinking in weighted averaging models" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2013-01-05T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Monotonic deshrinking in weighted averaging models" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2013-01-05T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2013/01/05/monotonic-deshrinking-in-weighted-averaging-models/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Weighted averaging regression and calibration is the most widely used method for developing a palaeolimnological transfer function. Such models are used to reconstruct properties of the past lake environment such as pH, total phosphorus, and water temperature with, it has to be said, varying degrees of success and usefulness. In..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Monotonic deshrinking in weighted averaging models" />
+
+
+<meta name="twitter:description" content="Weighted averaging regression and calibration is the most widely used method for developing a palaeolimnological transfer function. Such models are used to reconstruct properties of the past lake ..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="05 Jan 2013"/>
+<meta name="citation_date" content="05 Jan 2013"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Monotonic deshrinking in weighted averaging models"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2013/01/11/shading-regions-under-a-curve/">Shading regions under a curve</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2013/01/04/a-new-version-of-analogue-for-a-new-year/">A new version of analogue for a new year</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Monotonic deshrinking in weighted averaging models </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>
+Weighted averaging regression and calibration is the most widely used method for developing a palaeolimnological transfer function. Such models are used to reconstruct properties of the past lake environment such as pH, total phosphorus, and water temperature with, it has to be said, varying degrees of success and usefulness.
+</p>
+<p>
+In simple weighted averaging (WA) there is little to specify other than the predictors (the species or other proxy data) and the response (the thing you wish to build a model for and predict). The one user-specified option in a simple WA is the type of deshrinking to use.
+</p>
+<p>
+Why deshrinking?
+</p>
+<p>Well, in a WA model, averages of the response are effectively taken twice; i) first when the WA optima of the response variable for each taxon is computed, and ii) a second time when a weighted average of the optima for the species in each sample is computed to give the raw WA estimate of the response for each sample. Note that the weights here are the values in the predictor data matrix; usually these are species or taxon abundances (often the in the form of proportions or percentages).</p>
+<p>The effect of taking averages twice is to shrink the range of possible estimates from a WA model. This can be illustrated using some of the tools from <a href="http://bit.ly/VFk6Le">analogue</a>. First load the package and the SWAP example data set</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## load analogue...</span><span class="w">
+</span><span class="n">require</span><span class="p">(</span><span class="n">analogue</span><span class="p">)</span><span class="w">
+</span><span class="c1">## ...and some example data</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">swapdiat</span><span class="p">)</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">swappH</span><span class="p">)</span></code></pre>
+</figure>
+<p>Next, compute the WA pH optima for each diatom taxon</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">opt</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">optima</span><span class="p">(</span><span class="n">swapdiat</span><span class="p">,</span><span class="w"> </span><span class="n">swappH</span><span class="p">)</span><span class="w"> </span><span class="c1">## compute WA optima</span></code></pre>
+</figure>
+<p>The final step is to use some simple matrix algebra to give the raw WA estimates of the pH for each SWAP sample (site). (Note that the <code>swapdiat</code> object needs to be cast as a matrix for the matrix algebra step, which we do using <code>data.matrix()</code>)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">diat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.matrix</span><span class="p">(</span><span class="n">swapdiat</span><span class="p">)</span><span class="w">  </span><span class="c1">## convert to a matrix</span><span class="w">
+</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="p">((</span><span class="n">diat</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">opt</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">rowSums</span><span class="p">(</span><span class="n">diat</span><span class="p">))[,</span><span class="w"> </span><span class="m">1</span><span class="p">]</span><span class="w"> </span><span class="c1">## compute raw WA estimates</span></code></pre>
+</figure>
+<p>I won’t go into the details of the last step; it is a reasonably optimised bit of R code to compute a weighted average of the pH optima for each species in a given sample. (The first part of the code involving the matrix multiplication operator <code>%*%</code> forms a weighted sum of the pH optima, with weights given by the abundances of the diatom taxa.)</p>
+<p>From the above we can see that there are three types of pH value:</p>
+<ul>
+<li>the observed pH in <code>swappH</code></li>
+<li>the pH optima for each taxon in <code>opt</code>, and</li>
+<li>the WA estimate of pH for each site in <code>pred</code>.</li>
+</ul>
+<p>A quick look at the range of the pH values for each stage shows the shrinkage problem resulting from averaging</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">r.obs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">swappH</span><span class="p">)</span><span class="w">
+</span><span class="n">r.opt</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">opt</span><span class="p">)</span><span class="w">
+</span><span class="n">r.wa</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; rbind(r.obs, r.opt, r.wa)
+          [,1]    [,2]
+r.obs 4.330000 7.25000
+r.opt 4.500000 7.25000
+r.wa  4.875662 6.62395</code></pre>
+</figure>
+<p>About a whole pH unit has been lost due to the repeated taking of averages. Clearly, this is a problem for WA models, one that is addressed through the using a deshrinking step.</p>
+<p>Traditionally there were two approaches to deshrinking; <em>inverse</em> and <em>classical</em> deshrinking. In the inverse approach, a model of the form</p>
+<p><span class="math display">\[ \mathrm{observed} = \beta_0 + \beta_1\mathrm{wa\_{est}} + \varepsilon \]</span></p>
+<p>which is a simple linear regression with the observed values as the response and the raw WA estimates as the predictor. The classical deshrinking approach flips the role of the response and the predictor such the model is</p>
+<p><span class="math display">\[ \mathrm{wa_{est}} = \beta_0 + \beta_1\mathrm{observed} + \varepsilon \]</span></p>
+<p>Expanded WA estimates are achieved by taking the usual predicted values from the inverse model or by inverting the classical model equation.</p>
+<p>Both the inverse and classical deshrinking approaches are linear. The idea of using a non-linear deshrinking step has long been proposed in the literature, all the way back to ter Braak and Juggins (1993) and Marchetto (1994), but in practice the idea has not caught on, presumably because of a lack of widely-available and user-friendly software that implement the technique.</p>
+<p>In the non-linear deshrinking approach the following model is use, which is very similar to that of the inverse approach</p>
+<p><span class="math display">\[ \mathrm{observed} = \beta_0 + f_1(\mathrm{wa_{est}}) + \varepsilon \]</span></p>
+<p>where \( f_1() \) is a smooth, monotonic function. The monotonicity constraint is important; as the raw WA estimate increases in value the expanded estimate should also increase. In other words we don’t allow for the expanded estimate to get smaller (bigger) as the raw WA estimate gets bigger (smaller).</p>
+<p>New code in <strong>analogue</strong> implements this monotonic deshrinking idea. The seed of the actual implementation used here is murky.<sup><a href="#notes">1</a></sup> Briefly, both <strong>analogue</strong> and <strong>rioja</strong> fit a cubic regression spline via <code>s(wa.est, bs = "cr")</code>, but as the standard <code>gam()</code> function won’t constrain the smooth to be monotonic some additional steps have to be performed, and we end up fitting a penalised regression with monotonicity constraints invoked. The code to show how to do this in <strong>mgcv</strong> was sitting there in one of Simon’s man pages!</p>
+<p>So what does this look like? The figure below shows the raw WA pH estimates and the observed pH values for the SWAP diatom data we looked at earlier. The thick green line fitted through the points is the monotonic cubic regression spline fitted via <strong>mgcv</strong>.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/monotonic_deshrinking_figure_1.png" alt="Monotonic deshrinking spline for the SWAP diatom pH data set" /><figcaption>Monotonic deshrinking spline for the SWAP diatom pH data set</figcaption>
+</figure>
+<p>The monotonic deshrinking and the plot were produced using</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## do the monotonic deshrinking</span><span class="w">
+</span><span class="n">mono</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">deshrink</span><span class="p">(</span><span class="n">swappH</span><span class="p">,</span><span class="w"> </span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"monotonic"</span><span class="p">)</span><span class="o">$</span><span class="n">env</span><span class="w">
+
+</span><span class="c1">## need to get things in increasing order for plotting</span><span class="w">
+</span><span class="n">ord</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">order</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## draw the data and the fitted monotonic cubic regression spline</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">swappH</span><span class="p">,</span><span class="w"> </span><span class="n">asp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r.obs</span><span class="p">,</span><span class="w"> </span><span class="n">xlim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r.obs</span><span class="p">,</span><span class="w">
+     </span><span class="n">panel.first</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">abline</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkgrey"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
+     </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Observed pH"</span><span class="p">,</span><span class="w"> </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Raw WA pH"</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">mono</span><span class="p">[</span><span class="n">ord</span><span class="p">]</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">pred</span><span class="p">[</span><span class="n">ord</span><span class="p">],</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span></code></pre>
+</figure>
+<p>In this example, there appears to be two relationships between the raw WA estimates and the observed pH; a steeper one up to pH 6.0 and a somewhat less strong one thereafter. Figure 2 shows a comparison of the three deshrinking methods discussed above.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/monotonic_deshrinking_figure_2.png" alt="Comparison of inverse, classical and monotonic deshrinking for the SWAP diatom pH data set" /><figcaption>Comparison of inverse, classical and monotonic deshrinking for the SWAP diatom pH data set</figcaption>
+</figure>
+<p>The inverse and classicial deshrinking values were computed using</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">inv</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">deshrink</span><span class="p">(</span><span class="n">swappH</span><span class="p">,</span><span class="w"> </span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"inverse"</span><span class="p">)</span><span class="o">$</span><span class="n">env</span><span class="w">
+</span><span class="n">cla</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">deshrink</span><span class="p">(</span><span class="n">swappH</span><span class="p">,</span><span class="w"> </span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"classical"</span><span class="p">)</span><span class="o">$</span><span class="n">env</span></code></pre>
+</figure>
+<p>The figure was produced using</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ylim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">r.obs</span><span class="p">,</span><span class="w"> </span><span class="n">r.wa</span><span class="p">,</span><span class="w"> </span><span class="n">mono</span><span class="p">,</span><span class="w"> </span><span class="n">inv</span><span class="p">,</span><span class="w"> </span><span class="n">cla</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">swappH</span><span class="p">,</span><span class="w"> </span><span class="n">asp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">,</span><span class="w"> </span><span class="n">xlim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">,</span><span class="w">
+     </span><span class="n">panel.first</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">abline</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkgrey"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
+     </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Observed pH"</span><span class="p">,</span><span class="w"> </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Raw WA pH"</span><span class="p">)</span><span class="w">
+</span><span class="n">ord</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">order</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">inv</span><span class="p">[</span><span class="n">ord</span><span class="p">]</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">pred</span><span class="p">[</span><span class="n">ord</span><span class="p">],</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkorange"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">cla</span><span class="p">[</span><span class="n">ord</span><span class="p">]</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">pred</span><span class="p">[</span><span class="n">ord</span><span class="p">],</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"navyblue"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">mono</span><span class="p">[</span><span class="n">ord</span><span class="p">]</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">pred</span><span class="p">[</span><span class="n">ord</span><span class="p">],</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">legend</span><span class="p">(</span><span class="s2">"topleft"</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Monotonic"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Inverse"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Classical"</span><span class="p">),</span><span class="w">
+       </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="s2">"darkorange"</span><span class="p">,</span><span class="s2">"navyblue"</span><span class="p">),</span><span class="w">
+       </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">)</span></code></pre>
+</figure>
+<p>The monotonic deshrinking curve is quite similar to the inverse deshrinking one; this is not surprising as monotonic deshrinking is a local version of the inverse deshrinking model. The two curves only deviate from one another above pH 5.5.</p>
+<p>There does seem to be a slight improvement in WA model performance when using monotonic deshrinking over the other deshrinking techniques, for the SWAP data set at least. Well, that was the conclusion of the paper John and I have been working on for a special issue of JoPL. But you’ll have to wait for the paper (and accompanying blog post) for the full details when it is accepted and in press.</p>
+<p>##Notes <sup>1</sup> Steve Juggins discussed the idea briefly in a presentation he gave at UCL a number of years ago and I had at the back of my mind been mulling how to do this in R without having code the entire thing(!) myself. John Birks recently suggested that I use monotonic deshrinking in a comparison of transfer function methods we were doing for a special issue of the Journal of Paleolimnology (JoPL). It turns out that Richard Telford, a colleague of John’s, had discussed this with both John and Steve too including the implementation used in <strong>analogue</strong> and, as it turned out, also in Steve’s <strong>rioja</strong> R package. It seems Steve and I implemented almost the same idea, independently; me after I’d been scouring Simon Wood’s exceedingly useful man pages for his <strong>mgcv</strong> package trying to find out how to do something with <code>gam()</code> to analyse time series data.</p>
+<p>##References</p>
+<ul>
+<li>Marchetto (1994; <em>Journal of Paleolimnology</em> <strong>12</strong>, 155–162)</li>
+<li>ter Braak &amp; Juggins (1993; <em>Hydrobiologia</em>, 269/270, 485–502)</li>
+</ul>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2013/01/05/monotonic-deshrinking-in-weighted-averaging-models/";
+  var disqus_title = "Monotonic deshrinking in weighted averaging models";
+  //var disqus_identifier = "/2013/01/05/monotonic-deshrinking-in-weighted-averaging-models";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>05 January 2013</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/analogue/"><span class="label label-inverse">analogue</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/deshrinking/"><span class="label label-inverse">deshrinking</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/palaeoecology/"><span class="label label-inverse">Palaeoecology</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/palaeolimnology/"><span class="label label-inverse">Palaeolimnology</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/statistics/"><span class="label label-inverse">Statistics</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/transfer-function/"><span class="label label-inverse">transfer function</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/weighted-averaging/"><span class="label label-inverse">weighted averaging</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

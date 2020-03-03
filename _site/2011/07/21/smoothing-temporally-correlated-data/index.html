@@ -1,0 +1,429 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Smoothing temporally correlated data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="R, Time series, Smoothing, Additive models" />
+
+
+<meta name="description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit." />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Smoothing temporally correlated data" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2011-07-21T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Smoothing temporally correlated data" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2011-07-21T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2011/07/21/smoothing-temporally-correlated-data/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Smoothing temporally correlated data" />
+
+
+<meta name="twitter:description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling tempora..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="21 Jul 2011"/>
+<meta name="citation_date" content="21 Jul 2011"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Smoothing temporally correlated data"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2011/07/23/passing-non-graphical-parameters-to-graphical-functions-using/">Passing non-graphical parameters to graphical functions using ...</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2011/06/14/no-lake-is-an-island-phd-opportunity/">No lake is an island: PhD Opportunity</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Smoothing temporally correlated data </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>
+Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit.
+</p>
+<p>Unless we specifically tell the software that the data aren’t independent it will perform smoothness selection assuming that we have \( n \) independent observations. The risk then is that too-complex a smooth term is fitted to the data — it is no-longer a case of updating the fitted model, the model itself will be over-fitted. In this post I want to illustrate the problem of smoothing correlated data with an example from a chapter in a text book that a reviewer alerted to me to some time back.</p>
+<p>The example comes from Kohn, Schimek and Smith (2000) that I have cooked up using R. Kohn et al consider the model \( f(x_{t}) = 1280 x_{t}^4 (1 - x_{t})^4 \), where \( t = 1, 2, \ldots, 100 \), and \( x_{t} = t/100 \). To this, errors \( e_{t} \) are generated from a first-order auto-regressive (AR(1)) process with \( \phi_{1} = 0.3713\) to produce a random sample from the model such that \( y_{t} = f(x_{t}) + e_{t}\). We can generate a sample of data from this model with the following R code</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">321</span><span class="p">)</span><span class="w">
+</span><span class="n">n</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">100</span><span class="w">
+</span><span class="n">time</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="n">n</span><span class="w">
+</span><span class="n">xt</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">time</span><span class="o">/</span><span class="n">n</span><span class="w">
+</span><span class="n">Y</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="p">(</span><span class="m">1280</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">xt</span><span class="o">^</span><span class="m">4</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="p">(</span><span class="m">1</span><span class="o">-</span><span class="w"> </span><span class="n">xt</span><span class="p">)</span><span class="o">^</span><span class="m">4</span><span class="w">
+</span><span class="n">y</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">as.numeric</span><span class="p">(</span><span class="n">Y</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">arima.sim</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">ar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.3713</span><span class="p">),</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">))</span></code></pre>
+</figure>
+<p>The <code>arima.sim()</code> function is used to generate the appropriate AR(1) errors. A plot of this sample of data and the true function are shown below</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/schimek_example_1.png" title="smoothing_dependent_data_example_1" alt="Random sample and true function as used by Kohn et al" /><figcaption>Random sample and true function as used by Kohn et al</figcaption>
+</figure>
+<p>To these data, I will fit a cubic smoothing spline via <code>smooth.spline()</code> and an additive model via <code>gam()</code> in package <strong>mgcv</strong>. In addition, let us assume that we don’t know the exact nature of the dependence in the data but we know that they are temporally correlated so that we can fit a model that includes a plausible correlation structure. For that, I will use an additive model with an AR(1) correlation structure, fitted using a linear mixed effects representation of the additive model via the <code>gamm()</code> function, also from the <strong>mgcv</strong> package. <code>gamm()</code> uses the <code>lme()</code> function from the <strong>nlme</strong> package. I will arrange for the value of \( \phi_{1}\) be estimated as one of the model parameters, whilst the degree of smoothness is being estimated during fitting. The three models are fitted with the following three lines of R code:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">smooth.spline</span><span class="p">(</span><span class="n">xt</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w">
+</span><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">xt</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">))</span><span class="w">
+</span><span class="n">m3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">xt</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corAR1</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">time</span><span class="p">))</span></code></pre>
+</figure>
+<p>The three model fits are shown in the figure below</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/schimek_example_2.png" title="three_model_fits_to the kohn_et_al_example_data" alt="The three resulting model fits to the Kohn et al example data set. Both the cubic smoothing spline and the standard additive model over fit the data resulting in very complex fits using a large number of degrees of freedom. The AM with AR(1) errors accurately fits the underlying true function" /><figcaption>The three resulting model fits to the Kohn et al example data set. Both the cubic smoothing spline and the standard additive model over fit the data resulting in very complex fits using a large number of degrees of freedom. The AM with AR(1) errors accurately fits the underlying true function</figcaption>
+</figure>
+<p>Both the cubic smoothing spline and the additive model over fit the data, resulting in very complex smooth functions using 34.25 and 16.82 degrees of freedom respectively. The additive model with AR(1) errors does a very good job of retrieving the true function from which the data were generated, only really deviating from this function at low values of \( x_{t}\) where there are few data to constrain the fit. The code used to produce the figure is shown below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">edf2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">summary</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span><span class="o">$</span><span class="n">edf</span><span class="w">
+</span><span class="n">edf3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">summary</span><span class="p">(</span><span class="n">m3</span><span class="o">$</span><span class="n">gam</span><span class="p">)</span><span class="o">$</span><span class="n">edf</span><span class="w">
+
+</span><span class="n">plot</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">xt</span><span class="p">,</span><span class="w"> </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">t</span><span class="p">]),</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="n">t</span><span class="p">]))</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">Y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">xt</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dashed"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">fitted</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">xt</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkolivegreen"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">fitted</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">xt</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">fitted</span><span class="p">(</span><span class="n">m3</span><span class="o">$</span><span class="n">lme</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">xt</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"midnightblue"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">legend</span><span class="p">(</span><span class="s2">"topleft"</span><span class="p">,</span><span class="w">
+       </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Truth"</span><span class="p">,</span><span class="w">
+       </span><span class="n">paste</span><span class="p">(</span><span class="s2">"Cubic spline (edf = "</span><span class="p">,</span><span class="w"> </span><span class="nf">round</span><span class="p">(</span><span class="n">m1</span><span class="o">$</span><span class="n">df</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w"> </span><span class="s2">")"</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">),</span><span class="w">
+       </span><span class="n">paste</span><span class="p">(</span><span class="s2">"AM (edf = "</span><span class="p">,</span><span class="w"> </span><span class="nf">round</span><span class="p">(</span><span class="n">edf2</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w"> </span><span class="s2">")"</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">),</span><span class="w">
+       </span><span class="n">paste</span><span class="p">(</span><span class="s2">"AM + AR(1) (edf = "</span><span class="p">,</span><span class="w"> </span><span class="nf">round</span><span class="p">(</span><span class="n">edf3</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w"> </span><span class="s2">")"</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">)),</span><span class="w">
+       </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"black"</span><span class="p">,</span><span class="w"> </span><span class="s2">"darkgreen"</span><span class="p">,</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="s2">"midnightblue"</span><span class="p">),</span><span class="w">
+       </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"dashed"</span><span class="p">,</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="m">3</span><span class="p">)),</span><span class="w">
+       </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="m">3</span><span class="p">)),</span><span class="w">
+       </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">)</span></code></pre>
+</figure>
+<p>The <code>intervals()</code> function can be used to extract the estimate for \( \phi_{1} \) and a 95% confidence interval on the estimate:</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; intervals(m3$lme, which = "var-cov") ## edited for brevity
+....
+ Correlation structure:
+        lower      est.     upper
+Phi 0.1705591 0.4032966 0.5934125
+attr(,"label")
+[1] "Correlation structure:"
+....</code></pre>
+</figure>
+<p>Despite being somewhat imprecise, the estimate, \( \hat{\phi}_{1} = 0.4033 \), is very close to the known values used to generate the sample of data.</p>
+<p>Whilst being a little contrived (I purposely increased the basis dimension on the basic additive model to <code>k = 20</code> [otherwise the fit with the default <code>k</code> is close the model with AR(1) errors!], and use GCV smoothness selection rather than the better performing ML or REML methods available in <code>gam()</code>), the example shows quite nicely the problems associated with smoothness selection when fitting additive model to dependent data. If you know something about the system under study and the sort of variation in the data one might expect to observe, an alternative approach to fitting an additive model to dependent data would be to fix the smoothness at an appropriate, low value. To perform any subsequent inference on the fitted model, we would have to estimate a correlation matrix from the residuals of that model using a time series model and use that to update the covariance matrix of the fitted additive model. I’m still working on how to do that last bit with <code>gam()</code> and <strong>mgcv</strong>.</p>
+<h2 id="references">References</h2>
+<p>Kohn R., Schimek M.G., Smith M. (2000) Spline and kernel regression for dependent data. In Schimekk M.G. (Ed) (2000) <em>Smoothing and Regression: approaches, computation and application</em>. John Wiley &amp; Sons, Inc.</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2011/07/21/smoothing-temporally-correlated-data/";
+  var disqus_title = "Smoothing temporally correlated data";
+  //var disqus_identifier = "/2011/07/21/smoothing-temporally-correlated-data";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>21 July 2011</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/time-series/"><span class="label label-inverse">Time series</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/smoothing/"><span class="label label-inverse">Smoothing</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/additive-models/"><span class="label label-inverse">Additive models</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

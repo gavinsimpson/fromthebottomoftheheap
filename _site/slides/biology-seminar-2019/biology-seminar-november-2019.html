@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Wibbly Wobbly Timey Wimey Stuff</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Gavin Simpson • Kim Hinz • Stefano Mezzini" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="my.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: inverse, bottom, left, my-title-slide, title-slide
+
+# Wibbly Wobbly Timey Wimey Stuff
+### Gavin Simpson • Kim Hinz • Stefano Mezzini
+### Department of Biology • November 29th 2019
+
+---
+
+class: inverse
+
+???
+
+We meet today on Treaty 4 lands, the territories of the Cree, Saulteaux (SOH-toh), Dakota, Lakota, Nakoda, and the homeland of the Métis Nation.
+
+Today, these lands continue to be the shared territory of many diverse peoples.
+
+
+---
+class: inverse center middle subsection
+
+# Use statistics to learn from data in presence of noise
+
+???
+
+One way to describe statistics is the principled process by which we learn from data in the presence of noise and uncertainty
+
+---
+class: inverse center middle subsection
+
+# Learning from data&amp;hellip;?
+
+???
+
+Why would we want to learn from data?
+
+---
+class: inverse center middle subsection
+
+# Estimate parameters for a theoretical model
+
+???
+
+Lotka-Voltera models of competition between species
+
+---
+class: inverse center middle subsection
+
+# Compare theory with observation
+
+???
+
+What do the data tell us?
+
+If we want to know how theory matches with observation then we might want to see what the data can tell us without imposing too many restrictions or constraints on our statistical model
+
+---
+class: inverse center middle subsection
+
+# Progress with little or no theory
+
+???
+
+We may have little or no theory to work with, so we take an empirical approach which may lead to the development of new theory
+
+---
+class: inverse
+background-image: url('./resources/franki-chamaki-z4H9MYmWIMA-unsplash.jpg')
+background-size: cover
+
+# 
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@franki?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Franki Chamaki"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Franki Chamaki&lt;/span&gt;&lt;/a&gt;
+]
+
+???
+
+We learn from data because it can highlight our preconceptions and biases
+
+---
+
+# Learning from data
+
+![](biology-seminar-november-2019_files/figure-html/lm-plot-1.svg)&lt;!-- --&gt;
+
+???
+
+Learning from data could be a simple as fitting a linear regression model...
+
+---
+class: inverse
+background-image: url('./resources/deep-learning-turned-up-to-11.jpg')
+background-size: contain
+
+# 
+
+???
+
+Or as complex as fitting a sophisticated multi-layered neural network trained on huge datasets or corpora
+
+---
+
+# Learning involves trade-offs
+
+.row[
+.col-6[
+.center[![:scale 75%](resources/low-bias-low-variance.jpg)]
+]
+
+.col-6[
+.center[![:scale 75%](resources/interpretable-black-box.jpg)]
+]
+]
+
+???
+
+Learning from data involves trade offs
+
+We can have models that fit our data well &amp;mdash; low bias &amp;mdash; but which are highly variable, or
+
+We can fit models that have lower variance, but these tend to have higher bias, i.e. fit the data less well
+
+A linear regression model is very interpretable but unless the underlying relationship is linear it will have poor fit
+
+Deep learning may fit data incredibly well but the model is very difficult to interpret and understand
+
+---
+
+# Generalized Additive Models
+
+&lt;br /&gt;
+
+![](resources/tradeoff-slider.png)
+
+.references[Source: [GAMs in R by Noam Ross](https://noamross.github.io/gams-in-r-course/)]
+
+???
+
+GAMs are an intermediate-complexity model
+
+* can learn from data without needing to be informed by the user
+* remain interpretable because we can visualize the fitted features
+
+---
+class: inverse middle center subsection
+
+# GAMs fit wibbly wobbly functions
+
+---
+class: inverse
+background-image: url('resources/wiggly-things.png')
+background-size: contain
+
+???
+
+Heresey, I know, but I prefer my sci-fi more Duffer Brothers than Time Lord
+
+---
+
+# The wibbly wobbly stuff  &amp;mdash; splines
+
+
+
+.center[![](resources/spline-anim.gif)]
+
+???
+
+GAMs use splines to represent the non-linear relationships between covariates, here `x`, and the response variable on the `y` axis.
+
+---
+
+# Splines formed from basis functions
+
+![](biology-seminar-november-2019_files/figure-html/basis-functions-1.svg)&lt;!-- --&gt;
+
+???
+
+Splines are built up from basis functions
+
+Here I'm showing a cubic regression spline basis with 10 knots/functions
+
+We weight each basis function to get a spline. Here all the basisi functions have the same weight so they would fit a horizontal line
+
+---
+
+# Weight basis functions &amp;rarr; spline
+
+
+
+.center[![](resources/basis-fun-anim.gif)]
+
+???
+
+But if we choose different weights we get more wiggly spline
+
+Each of the splines I showed you earlier are all generated from the same basis functions but using different weights
+
+---
+
+# How do GAMs learn from data?
+
+![](biology-seminar-november-2019_files/figure-html/example-data-figure-1.svg)&lt;!-- --&gt;
+
+???
+
+How does this help us learn from data?
+
+Here I'm showing a simulated data set, where the data are drawn from the orange functions, with noise. We want to learn the orange function from the data
+
+---
+
+# Choose weights to best fit data
+
+
+
+.center[![](resources/gam-crs-animation.gif)]
+
+???
+
+Fitting a GAM involves finding the weights for the basis functions that produce a spline that fits the data best, subject to some constraints
+
+---
+class: inverse middle center subsection
+
+# Avoid overfitting our sample
+
+---
+class: inverse middle center subsection
+
+# Use a wiggliness penalty &amp;mdash; avoid fitting too wibbly wobbly models
+
+---
+
+# Outputs
+
+* Developing methodological approaches
+
+* Developing packages to enable model-fitting by other scientists
+
+* Training
+
+.row[
+
+.col-6[
+![](resources/frontiers-paper-title.png)
+.small[
+Simpson (2018) *Frontiers in Ecology &amp; Evolution*
+
+[doi: 10/gfrc4p](http://doi.org/gfrc4p)
+]
+]
+
+.col-6[
+![](resources/hgam-paper-title.png)
+.small[
+Pedersen *et al* (2019) *PeerJ*
+
+[doi: 10/c6wz](http://doi.org/c6wz)
+]
+]
+
+]
+
+---
+class: inverse middle center subsection
+
+# Trends in water quality data
+
+---
+class: inverse
+background-image: url('resources/memes-are-cool.jpg')
+background-size: contain
+
+# 
+
+???
+
+Memes are cool
+
+---
+
+# Why statistics?
+
+* Estimate effect size
+
+* Estimate variance
+
+* Make predictions from a model
+
+--
+
+.bigger[.center[*Stats are cool*™]]
+
+---
+
+# Badly explained stats
+
+.row[
+
+.col-6[
+.big[Stats profs be like]
+
+.centre[![:scale 120%](resources/stats-are-cool.jpg)]
+]
+
+.col-6[]
+
+]
+
+---
+
+# Badly explained stats
+
+.row[
+
+.col-6[
+.big[Stats profs be like]
+
+.centre[![:scale 120%](resources/stats-are-cool.jpg)]
+]
+
+.col-6[
+.big[Students be like]
+
+.centre[![:scale 83%](resources/amy-pond-sure.jpg)]
+]
+
+]
+
+---
+
+# Badly explained stats
+
+GAMs
+
+1. Conditional distribution
+
+2. &amp;nbsp;
+
+3. &amp;nbsp;
+
+.bigger[
+`$$y_i \sim EF(\mu_i, \Theta)$$`
+]
+
+---
+class: inverse
+background-image: url(resources/wait-what-dw0.jpg)
+background-size: cover
+
+# 
+
+---
+# Badly explained stats
+
+GAMs
+
+1. Conditional distribution
+
+2. Link function
+
+3. &amp;nbsp;
+
+.big[
+`$$g(\mathbb{E}(y_i)) = g(\mu_i) = \eta_i$$`
+]
+
+---
+class: inverse
+background-image: url(resources/wait-what-dw1.jpg)
+background-size: contain
+
+# 
+
+---
+
+# Badly explained stats
+
+GAMs
+
+1. Conditional distribution
+
+2. Link function
+
+3. Linear predictor
+
+.big[
+`$$\eta = \beta_0 + \sum_{j=1}^{p} f_j(x_j)$$`
+]
+
+---
+class: inverse
+background-image: url(resources/wait-what-dw2.jpg)
+background-size: cover
+
+# 
+
+---
+
+# Badly explained stats
+
+GAMs
+
+1. Conditional distribution
+
+2. Link function
+
+3. Linear predictor
+
+*Homework*: read chapter on GAMs and do ex. 1&amp;ndash;20
+
+---
+class: inverse
+
+# 
+
+&lt;video controls&gt;
+  &lt;source src="resources/timey-wimey-trends-subbed.mp4" type="video/mp4"&gt;
+Your browser does not support the video tag.
+&lt;/video&gt;
+
+---
+class: inverse middle center subsection
+
+# Let's skip the theory and see the applications!
+
+---
+
+# Master Agreement on Apportionment
+
+.row[
+
+.col-4[
+
+* 12 rivers in AB, SK, MB
+
+* Apportionment of inter-provincial river water
+
+* Water quality objectives
+
+]
+
+.col-8[
+.center[![](resources/maa-map.gif)]
+]
+
+]
+
+---
+class: inverse middle center subsection
+
+# Sulphate in the Assiniboine River
+
+---
+
+# Sulphate in the Assiniboine River
+
+Sulphate ([SO&lt;sub&gt;4&lt;/sub&gt;]) in Assiniboine River near Shellmouth
+
+* No significant increases over the years
+
+* Keep [SO&lt;sub&gt;4&lt;/sub&gt;] &lt; 299 mg L&lt;sup&gt;-1&lt;/sup&gt;
+
+.row[
+
+.col-12[
+.center[![:scale 90%](resources/assiniboine-at-shellmouth.png)]
+]
+
+]
+
+---
+background-image: url('resources/so4.png')
+background-size: contain
+
+# The data
+
+---
+
+# The seasonal Mann-Kendall test
+
+* Test statistic used for the detection of a trend in a time series
+
+* Commonly used for water quality assessment (Hirsch et al. 1982)
+
+* Used by the Prairie Provinces Water Board &amp;mdash; responsible for MAA
+
+* Assumes that the trend is monotonic
+
+.references[
+Hirsch, R.M., Slack, J.R. and Smith, R.A. (1982), Techniques for trend assessment for monthly water quality data, *Water Resources Research* **18**, 107&amp;ndash;121.
+]
+
+---
+class: inverse middle center subsection
+
+# GAMs should provide a more robust approach to trend detection
+
+---
+
+# Model structure I
+
+Create a model with *year*, *seasonal*, and *flow* effects
+
+--
+.row[
+
+.col-12[
+.center[![](resources/so4-smooths.png)]
+]
+
+]
+
+---
+
+# Model structure II
+
+Add interactions between terms
+
+--
+.row[
+
+.col-12[
+.center[![](resources/so4-tis.png)]
+]
+
+]
+
+???
+
+How seasonal patterns change over the years,
+How the effect of flow changes over the years (e.g. FX of dilution in seasons of high/low pollution),
+How the effect of flow changes over the seasons (e.g. FX of dilution in years of high/low pollution)
+
+---
+
+# Using the model
+
+1. Estimate `\(\mathbb{E}([\text{SO}_4])\)` over time
+
+2. Estimate probability [SO&lt;sub&gt;4&lt;/sub&gt;] exceeds the guideline (299 mg L&lt;sup&gt;-1&lt;/sup&gt;) over time
+
+3. Identify years of significant increase in [SO&lt;sub&gt;4&lt;/sub&gt;]
+
+---
+
+# Expected [SO&lt;sub&gt;4&lt;/sub&gt;] over time
+
+&lt;br /&gt;
+
+.row[
+
+.col-12[
+.center[![](resources/wibbly-wobbly-so4.gif)]
+]
+
+]
+
+---
+
+# Expected [SO&lt;sub&gt;4&lt;/sub&gt;] given log(Flow)
+
+.row[
+
+.col-12[
+.center[![](resources/so4-rayshader.png)]
+]
+
+]
+
+---
+
+# P( [SO&lt;sub&gt;4&lt;/sub&gt;] &amp;gt;299 mg L&lt;sup&gt;-1&lt;/sup&gt; ) given log(Flow)
+
+.row[
+
+.col-12[
+.center[![](resources/so4-prob.png)]
+]
+
+]
+
+---
+
+# Instantaneous rate of change
+
+&lt;br /&gt;
+.row[
+
+.col-12[
+.center[![](resources/so4-derivative.png)]
+]
+
+]
+
+---
+
+# Identify periods of change
+
+&lt;br /&gt;
+.row[
+
+.col-12[
+.center[![](resources/so4-derivative.gif)]
+]
+
+]
+
+---
+class: inverse
+background-image: url('resources/p-hacking.jpg')
+background-size: contain
+background-position: right
+
+# using α = 0.05 &lt;br/ &gt;as a guide&amp;hellip;
+
+---
+
+# Identify periods of significant change
+
+&lt;br /&gt;
+.row[
+
+.col-12[
+.center[![](resources/so4-derivative-signif.gif)]
+]
+
+]
+
+---
+
+# Conclusions
+
+Using the model we can show that:
+
+1. The expected value of [SO&lt;sub&gt;4&lt;/sub&gt;] was often &amp;gt; 299 mg L&lt;sup&gt;-1&lt;/sup&gt; &amp;mdash; esp. after 2010
+
+2. The probability that [SO&lt;sub&gt;4&lt;/sub&gt;] exceeded 299 mg L&lt;sup&gt;-1&lt;/sup&gt; was often high &amp;mdash; esp. after 2010
+
+3. [SO&lt;sub&gt;4&lt;/sub&gt;] increased markedly post 2008 &amp;mdash; **failure of the water quality objectives**
+
+&lt;br /&gt;
+
+.big[[SO&lt;sub&gt;4&lt;/sub&gt;] in the Assiniboine River should be monitored more closely]
+
+---
+class: inverse middle center subsection
+
+# Saskatchewan's changing climate
+
+---
+background-image: url('resources/station-map.gif')
+background-size: contain
+background-position: right
+
+# Saskatchewan's&lt;br /&gt; temperature
+
+.row[
+
+.col-7[
+
+* Adjusted and Homogenized Canadian Climate Data (AHCCD)
+
+* Monthly mean temperature
+
+* 36 climate stations
+
+* Variables
+
+    * Year
+	* Month
+	* Latitude
+	* Longitude
+	* Climate Station
+
+* 36693 observations
+
+]
+
+.col-5[
+
+]
+]
+
+???
+
+~ 36 stations ranging from Uranium City in the Taiga Shield to Poplar River near the Canadian-US border
+
+Random effect allows the model to account for the variance between locations due to any systematic/random error
+
+There 36 693 observations
+
+Daily temperature data are available, and models have been run for these, but we decided to use monthly temperature because there were less than 37 thousand observations vs the 1.1 million
+
+Mention map
+
+---
+class: inverse middle center subsection
+
+# yes&amp;hellip; moar GAMs&amp;hellip;
+
+???
+
+To show changing trends, I used HGAM…
+
+After Gavin’s and Stefano’s presentations, expect one of the following thoughts on GAMs.
+
+---
+class: inverse
+background-image: url('resources/understand.png')
+background-size: contain
+
+---
+class: inverse
+background-image: url('resources/sure.png')
+background-size: contain
+
+---
+class: inverse
+background-image: url('resources/lost-focus.png')
+background-size: contain
+
+---
+class: inverse
+background-image: url('resources/linear-vs-gam.png')
+background-size: contain
+
+???
+
+At the very simplest, GAMs better model wiggly data and show trends more accurately than linear models would
+
+---
+class: inverse middle center subsection
+
+# Hierarchical GAMs
+
+???
+
+Don’t freak out before I get the chance to present on why I’m really here
+
+HGAMs are a lot simpler than you may expect
+
+Only difference is data can be grouped, and trends can vary between the groups
+
+---
+class: inverse
+background-image: url('resources/confused-fear.png')
+background-size: contain
+
+---
+class: inverse
+background-image: url('resources/confused-again.png')
+background-size: contain
+
+---
+
+# Hierarchical GAMs
+
+* HGAMs are similar to GAMs
+
+* Instead of one model per time series, model all time series at once
+
+* Smooths can vary between time series
+
+* Can determine
+
+    * common trend over all stations
+	
+	* unique trend for each station
+
+---
+class: inverse
+background-image: url('resources/simple.png')
+background-size: contain
+
+???
+
+Quick heads up
+
+---
+class: inverse
+background-image: url('resources/i-dont-know.gif')
+background-size: contain
+
+--
+
+.footnote[The *Stavrinauts* made me add this&amp;hellip;]
+
+---
+class: inverse middle center subsection
+
+# Why a hierarchical GAM?
+
+???
+
+Not to bore with stats jargon
+
+---
+class: inverse middle center subsection
+
+# Many studies of Canadian temperature &amp; climate data
+
+---
+class: inverse middle center subsection
+
+# Individual linear models for each climate station
+
+---
+class: inverse middle center subsection
+
+# Have to compare all the models *post hoc*
+
+---
+class: inverse middle center subsection
+
+# We know temperature not changing linearly
+
+---
+class: inverse middle center subsection
+
+# HGAMs allow us to model wiggly curves and account for spatial trends
+
+???
+
+HGAMs allow us to model wiggly curves to the data and account for location differences, all in one model
+
+---
+class: inverse
+background-image: url('resources/one-model.png')
+background-size: contain
+
+---
+background-image: url('resources/draw-time.png')
+background-size: 95%
+
+# Effects of time
+
+???
+
+Break down components of the model
+
+Left: average seasonal trend across all stations, summers much warmer than winters
+
+---
+class: inverse
+background-image: url('resources/no-kidding.png')
+background-size: contain
+
+---
+background-image: url('resources/draw-time.png')
+background-size: 95%
+
+# Effects of time
+
+???
+
+Difference is 30-40 degrees
+
+Middle: temperature change throughout the years
+
+Fewer temperature stations in the beginning, hence the large Cis
+
+Temperature has become more variable between years
+
+Right: while left shows average trends, the right plot shows how seasonal trends have changed by year
+
+---
+background-image: url('resources/month-years-main.gif')
+background-size: 85%
+background-position: bottom
+
+# Seasonal temperature changes over time
+
+???
+
+Three main cities in Saskatchewan for last 118 years
+
+Temperatures are increasing throughout the seasons, but the winters are more drastic
+
+---
+background-image: url('resources/draw-lat-long.png')
+background-size: contain
+background-position: right
+
+# Effect of space
+
+.row[
+
+.col-6[
+* Northern SK is colder than southern SK
+]
+
+.col-6[
+]
+
+]
+
+???
+
+First thing to notice is that north SK is colder than south SK
+
+---
+class: inverse
+background-image: url('resources/no-kidding.png')
+background-size: contain
+
+---
+background-image: url('resources/draw-lat-long.png')
+background-size: contain
+background-position: right
+
+# Effect of space
+
+.row[
+
+.col-7[
+* Northern SK is colder than southern SK
+
+* Difference is about 9&amp;#8451;
+
+* Fewer stations in northern SK
+
+* Need to use the model to extrapolate between stations
+]
+
+.col-5[
+
+]
+
+]
+
+???
+
+9 degrees difference
+
+Fewer stations in north; therefore, use model to extrapolate for all possible
+
+---
+background-image: url('resources/lat-long.gif')
+background-size: contain
+background-position: right
+
+# Space &amp; time
+
+.row[
+
+.col-7[
+* 2018 modelled temperature
+
+* Spatial pattern changes throughout the year
+
+* Greater temperature variability in northern SK
+]
+
+.col-5[
+
+]
+
+]
+
+???
+
+How spatial trends change throughout the year
+
+North SK has these two vertical bands that are warmer in the summer and colder in the winter than the adjacent area
+
+South SK is not as variable and remains even throughout the year
+
+---
+background-image: url('resources/draw-time.png')
+background-size: 95%
+
+# Effects of time
+
+???
+
+Refresher, these plots show the global/average trend, but we also want to know how individual stations vary around these average trends
+
+---
+background-image: url('resources/draw-location.png')
+background-size: 95%
+background-position: bottom
+
+# Station effects
+
+???
+
+First plot shows how locations vary within years
+
+Some have warmer winters and cooler summers than average
+
+Some are the inverse. Most stay around the average
+
+Second plot: how locations vary throughout the years
+
+Again, most stay around the average. But some have increased
+
+Two weird ones that have cooled and are now closer to the average
+
+---
+
+# Conclusions
+
+* HGAMs are useful for modelling wiggly data from many climate stations
+
+* Temperatures have significantly increased across Saskatchewan since the 1880s
+
+* This change is more clearly seen in the winter months
+
+* Seasonal trends vary spatially and temporally
+
+* Significant variation in the trends at each climate station
+
+---
+class: inverse middle center subsection
+
+# Climate change affecting lake temperatures?
+
+---
+class: inverse
+background-image: url('resources/fellow-kids-vsn-1.gif')
+background-size: contain
+
+---
+
+
+
+# 
+
+.references[
+Data: Woolway *et al* (2019) *Climate Change* **155**, 81&amp;ndash;94 [doi: 10/c7z9](http://doi.org/c7z9)
+]
+
+![](biology-seminar-november-2019_files/figure-html/plot-blelham-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center subsection
+
+# Why worry about minimum temperatures?
+
+---
+
+# Why worry about minimum temperatures?
+
+Annual minimum temperature is a strong control on many in-lake processes (eg Hampton *et al* 2017)
+
+Extreme events can have long-lasting effects on lake ecology &amp;mdash; mild winter in Europe 2006&amp;ndash;7 (eg Straile *et al* 2010)
+
+Reduction in habitat or refugia for cold-adapted species
+
+* Arctic charr (*Salvelinus alpinus*)
+* Opossum shrimp (*Mysis salemaai*)
+
+.references[Hampton *et al* (2017). Ecology under lake ice. *Ecology Letters* **20**, 98–111. [doi: 10/f3tpzh](http://doi.org/f3tpzh)
+
+Straile *et al* (2010). Effects of a half a millennium winter on a deep lake &amp;mdash; a shape of things to come? *Global Change Biology* **16**, 2844–2856. [doi: 10/bx6t4d](http://doi.org/bx6t4d)]
+
+---
+class: inverse
+background-image: url('./resources/colbert-extremes.gif')
+background-size: contain
+
+# 
+
+---
+
+# Multiple time series &amp;rarr; HGAM
+
+![](biology-seminar-november-2019_files/figure-html/plot-all-lakes-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse
+background-image: url('./resources/one-does-not-simply.jpg')
+background-size: contain
+
+# 
+
+---
+class: inverse center middle subsection
+
+# central limit theorem
+
+???
+
+Central limit theorem shows us that the Gaussian or normal distribution is the sampling distribution for many sample statistics, including sample means, as samples sizes become large
+
+Central limit theorem underlies much of the theory that justifies much of the statistics you learn about in your statistics courses, and supports the use of the Gaussian or normal distribution
+
+---
+
+# Annual minimum temperature
+
+![](biology-seminar-november-2019_files/figure-html/plot-minima-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center subsection
+
+# block minima
+
+---
+
+# Fisher&amp;ndash;Tippett&amp;ndash;Gnedenko theorem
+
+&gt; The **maximum** of a sample of iid random variables after proper renormalization can only converge in distribution to one of three possible distributions; the *Gumbel* distribution, the *Fréchet* distribution, or the *Weibull* distribution.
+
+.row[
+
+.col-4[
+.center[![:scale 95%](./resources/fisher.jpg)
+.smaller[Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%E0%A4%B0%E0%A5%8B%E0%A4%A8%E0%A4%BE%E0%A4%A1%E0%A5%8D.jpg)]]
+]
+.col-4[ 
+.center[![:scale 88%](./resources/tippett.jpg)]
+.smaller[Source: [ral.ucar.edu](https://ral.ucar.edu/projects/extremes/Extremes/history.html)]
+]
+.col-4[ 
+.center[![:scale 97%](./resources/gnedenko.png)]
+.smaller[Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gnedenko.png)]
+]
+
+]
+
+---
+class: inverse middle center subsection
+
+# block minima&amp;hellip;?
+
+---
+class: inverse middle center subsection
+
+# highly technical fix
+
+---
+
+# Negate the minima
+
+![](biology-seminar-november-2019_files/figure-html/plot-minima-negated-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center subsection
+
+# plus some jiggery-pokery after model fitting
+
+---
+class: inverse middle center subsection
+background-image: url('resources/the-scream.jpg')
+background-size: cover
+
+# three distributions &amp;mdash; WTF
+
+---
+
+# Generalised extreme value distribution
+
+In 1978 Daniel McFadden demonstrated the common functional form for all three distributions — the GEVD
+
+`$$G(y) = \exp \left \{ - \left [ 1 + \xi \left ( \frac{y - \mu}{\sigma} \right ) \right ]_{+}^{-1/\xi} \right \}$$`
+
+.row[
+.col-6[
+Three parameters to estimate
+
+* location `\(\mu\)`,
+* scale `\(\sigma\)`, and
+* shape `\(\xi\)`
+]
+.col-6[
+Three distributions
+
+* Gumbel distribution when `\(\xi\)` = 0,
+* Fréchet distribution when `\(\xi\)` &gt; 0, and
+* Weibull distribution when `\(\xi\)` &lt; 0
+]
+]
+
+---
+class: inverse middle center subsection
+
+# Fit HGAMLSS using GEV for response
+
+---
+class: inverse middle center subsection
+
+# HGAMLSS&amp;hellip;?
+
+---
+class: inverse middle center subsection
+
+# Model μ, σ, ξ with smooths of Year
+
+---
+
+# Estimated smooths
+
+&amp;nbsp;
+
+![](biology-seminar-november-2019_files/figure-html/draw-gev-model-smooths-1.svg)&lt;!-- --&gt;
+
+---
+
+# 
+
+![](biology-seminar-november-2019_files/figure-html/fitted-values-plot-1.svg)&lt;!-- --&gt;
+
+---
+
+# 
+
+![](biology-seminar-november-2019_files/figure-html/fitted-trends-plot-1.svg)&lt;!-- --&gt;
+
+---
+
+# Summary
+
+* Lake **minimum** surface water temperatures have increased by on the order of 1&amp;ndash;3 degrees over the last 60 years
+
+* Evidence that the distribution of annual minima has changed in many lakes &amp;mdash; implications for future extreme events which have long-term knock-on effects
+
+* HGAMLSS with the GEV distribution are a good way of modelling common trends in environmental extremes
+
+---
+
+# Acknowledgements
+
+### Funding
+
+.row[
+
+.col-6[
+.center[![:scale 70%](./resources/NSERC_C.svg)]
+]
+
+.col-6[
+.center[![:scale 70%](./resources/fgsr-logo.jpg)]
+]
+
+]
+
+### Data
+
+* Prairie Provinces Water Board &amp;mdash; Dr. Joanne Sketchell
+* Environment and Climate Change Canada &amp; Government of Canada
+* Iestyn Woolway and colleagues for archiving the lake surface water data
+
+### Slides
+
+* HTML Slide deck [bit.ly/bio-wibbly](http://bit.ly/bio-wibbly) &amp;copy; Simpson, Hinz, Mezzini (2019) [![Creative Commons Licence](https://i.creativecommons.org/l/by/4.0/88x31.png)](http://creativecommons.org/licenses/by/4.0/)
+* RMarkdown [Source](https://github.com/simpson-lab/biology-seminar-2019)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="macros.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9",
+"slideNumberFormat": "<div class=\"progress-bar-container\">   <div class=\"progress-bar\" style=\"width: calc(%current% / %total% * 100%);\">   </div> </div>"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

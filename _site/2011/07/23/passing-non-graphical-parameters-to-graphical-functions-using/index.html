@@ -1,0 +1,454 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Passing non-graphical parameters to graphical functions using ...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="R, Programming, Functions" />
+
+
+<meta name="description" content="Argument passing via `...` is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. `...` is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When writing you own plot methods, using `...` allows the user of your function to pass arguments like `cex`, `col`, `lty`, etc. on to the plotting function inside your method. You do, however, need to be careful in where you use `...` and which functions you pass `...` on to." />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Passing non-graphical parameters to graphical functions using ..." />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2011-07-23T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Passing non-graphical parameters to graphical functions using ..." />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2011-07-23T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2011/07/23/passing-non-graphical-parameters-to-graphical-functions-using/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Argument passing via `...` is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. `...` is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Passing non-graphical parameters to graphical functions using ..." />
+
+
+<meta name="twitter:description" content="Argument passing via `...` is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. `...` ..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="23 Jul 2011"/>
+<meta name="citation_date" content="23 Jul 2011"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Passing non-graphical parameters to graphical functions using ..."/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2011/10/04/permute-a-package-for-generating-restricted-permutations/">permute: a package for generating restricted permutations</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2011/07/21/smoothing-temporally-correlated-data/">Smoothing temporally correlated data</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Passing non-graphical parameters to graphical functions using ... </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>
+Argument passing via <code>…</code> is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. <code>…</code> is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When writing you own plot methods, using <code>…</code> allows the user of your function to pass arguments like <code>cex</code>, <code>col</code>, <code>lty</code>, etc. on to the plotting function inside your method. You do, however, need to be careful in where you use <code>…</code> and which functions you pass <code>…</code> on to.
+</p>
+<p>Consider the following object <code>FOO</code> that is a data frame with our own class <code>"foo"</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">FOO</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">)</span><span class="w">
+</span><span class="n">rownames</span><span class="p">(</span><span class="n">FOO</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nb">LETTERS</span><span class="p">[</span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">]</span><span class="w">
+</span><span class="nf">class</span><span class="p">(</span><span class="n">FOO</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"foo"</span></code></pre>
+</figure>
+<p>A simplified <code>plot()</code> method to plot the <code>x</code> and <code>y</code> components of our object, displaying the data as points or text labels might be</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot.foo</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"points"</span><span class="p">,</span><span class="s2">"text"</span><span class="p">),</span><span class="w"> </span><span class="n">...</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">X</span><span class="o">$</span><span class="n">x</span><span class="w">
+    </span><span class="n">y</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">X</span><span class="o">$</span><span class="n">y</span><span class="w">
+    </span><span class="n">type</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">match.arg</span><span class="p">(</span><span class="n">type</span><span class="p">)</span><span class="w">
+    </span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p">)</span><span class="w">
+    </span><span class="k">if</span><span class="p">(</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"points"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">points</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p">)</span><span class="w">
+    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">text</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rownames</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">...</span><span class="p">)</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+    </span><span class="nf">invisible</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>Note that we are passing <code>...</code> on to each of <code>plot()</code>, <code>points()</code>, and <code>text()</code> so our method is very simple. However, if we try to suppress the drawing of axes using the <code>axes</code> argument of <code>plot.default()</code>, our method will generate errors</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; plot(FOO, axes = FALSE)
+Warning message:
+In plot.xy(xy.coords(x, y), type = type, ...) :
+  "axes" is not a graphical parameter</code></pre>
+</figure>
+<p>Turning warnings into errors, we see that the call to <code>points()</code> is where the warning originates (actually in <code>plot.xy()</code>, frame 5, but <code>points()</code> is the offending code in our method)</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; options(warn = 2) ## turn warnings to errors
+&gt; 
+&gt; plot(FOO, axes = FALSE)
+Error in plot.xy(xy.coords(x, y), type = type, ...) : 
+  (converted from warning) "axes" is not a graphical parameter
+&gt; ## look at the call stack
+&gt; traceback()
+9: doWithOneRestart(return(expr), restart)
+8: withOneRestart(expr, restarts[[1L]])
+7: withRestarts({
+       .Internal(.signalCondition(simpleWarning(msg, call), msg, 
+           call))
+       .Internal(.dfltWarn(msg, call))
+   }, muffleWarning = function() NULL)
+6: .signalSimpleWarning("\"axes\" is not a graphical parameter", 
+       quote(plot.xy(xy.coords(x, y), type = type, ...)))
+5: plot.xy(xy.coords(x, y), type = type, ...)
+4: points.default(x, y, ...)
+3: points(x, y, ...)
+2: plot.foo(FOO, axes = FALSE)
+1: plot(FOO, axes = FALSE)</code></pre>
+</figure>
+<p>The warning results from our function passing <code>axes = FALSE</code> on to the lower-level plotting functions. An obvious solution is to process <code>...</code> and strip out any offending non-graphical parameters and then arrange for the calls to use the stripped out <code>...</code>. Doing this is possible, but is very complicated. There is an alternative, simpler solution that is used in several base R functions and suggested to me by Brian Ripley (when I asked about doing this on R-Help for a function in the vegan package). The trick is to have a local, in-line wrapper around <code>points()</code> of the following form:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">lPoints</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">...</span><span class="p">,</span><span class="w"> </span><span class="n">log</span><span class="p">,</span><span class="w"> </span><span class="n">axes</span><span class="p">,</span><span class="w"> </span><span class="n">frame.plot</span><span class="p">,</span><span class="w"> </span><span class="n">panel.first</span><span class="p">,</span><span class="w"> </span><span class="n">panel.last</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> 
+    </span><span class="n">points</span><span class="p">(</span><span class="n">...</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>Here we list all the arguments of <code>plot.default()</code> we <em>don’t</em> want passed on to the low-level plotting calls, but importantly, they are listed <em>after</em> <code>...</code>. The only code in the body of the local function is a call to the low-level graphics function we want to use. Importantly, of the arguments taken by <code>lPoints()</code> only <code>...</code> is passed on to the graphics function it wraps. Because the arguments from <code>plot.default()</code> are named and come after <code>...</code> in the definition of <code>lPoints()</code>, any arguments passed to <code>lPoints()</code> that fully match the named arguments are automatically stripped from the <code>...</code> that is passed on to the wrapped function. Using this trick, we can now write our <code>plot.foo()</code> method like this:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot.foo</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"points"</span><span class="p">,</span><span class="s2">"text"</span><span class="p">),</span><span class="w"> </span><span class="n">...</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">lPoints</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">...</span><span class="p">,</span><span class="w"> </span><span class="n">log</span><span class="p">,</span><span class="w"> </span><span class="n">axes</span><span class="p">,</span><span class="w"> </span><span class="n">frame.plot</span><span class="p">,</span><span class="w">
+                        </span><span class="n">panel.first</span><span class="p">,</span><span class="w"> </span><span class="n">panel.last</span><span class="p">)</span><span class="w"> </span><span class="n">points</span><span class="p">(</span><span class="n">...</span><span class="p">)</span><span class="w">
+    </span><span class="n">lText</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">...</span><span class="p">,</span><span class="w"> </span><span class="n">log</span><span class="p">,</span><span class="w"> </span><span class="n">axes</span><span class="p">,</span><span class="w"> </span><span class="n">frame.plot</span><span class="p">,</span><span class="w">
+                      </span><span class="n">panel.first</span><span class="p">,</span><span class="w"> </span><span class="n">panel.last</span><span class="p">)</span><span class="w"> </span><span class="n">text</span><span class="p">(</span><span class="n">...</span><span class="p">)</span><span class="w">
+    </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">X</span><span class="o">$</span><span class="n">x</span><span class="w">
+    </span><span class="n">y</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">X</span><span class="o">$</span><span class="n">y</span><span class="w">
+    </span><span class="n">type</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">match.arg</span><span class="p">(</span><span class="n">type</span><span class="p">)</span><span class="w">
+    </span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p">)</span><span class="w">
+    </span><span class="k">if</span><span class="p">(</span><span class="n">type</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"points"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">lPoints</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">...</span><span class="p">)</span><span class="w">
+    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">lText</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rownames</span><span class="p">(</span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">...</span><span class="p">)</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+    </span><span class="nf">invisible</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>Now we can pass arguments to both <code>plot.default()</code> and <code>points()</code> and <code>text()</code>, and the call that raised the warning earlier, now works without complaint:</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; plot(FOO, axes = FALSE)
+&gt;</code></pre>
+</figure>
+<p>Remember to reset the warning level if you followed the code above</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">options</span><span class="p">(</span><span class="n">warn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span></code></pre>
+</figure>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2011/07/23/passing-non-graphical-parameters-to-graphical-functions-using/";
+  var disqus_title = "Passing non-graphical parameters to graphical functions using ...";
+  //var disqus_identifier = "/2011/07/23/passing-non-graphical-parameters-to-graphical-functions-using";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>23 July 2011</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/programming/"><span class="label label-inverse">Programming</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/functions/"><span class="label label-inverse">Functions</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

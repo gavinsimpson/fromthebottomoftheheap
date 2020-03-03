@@ -1,0 +1,650 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Prediction intervals for GLMs part II</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GLM, models, prediction interval, statistical modelling, Poisson, offset, counts, GAM" />
+
+
+<meta name="description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. I’ve broken it into two and in this, the second part, I look at Possion models.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Prediction intervals for GLMs part II" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2017-05-01T09:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Prediction intervals for GLMs part II" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2017-05-01T09:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-ii/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail as to why,..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Prediction intervals for GLMs part II" />
+
+
+<meta name="twitter:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussi..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="01 May 2017"/>
+<meta name="citation_date" content="01 May 2017"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Prediction intervals for GLMs part II"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2017/05/04/compare-mgcv-with-glmmTMB/">Fitting count and zero-inflated count GLMMs with mgcv</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-i/">Prediction intervals for GLMs part I</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Prediction intervals for GLMs part II <small>Poisson GLMs</small></h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>One of my more popular <a href="http://stackoverflow.com/a/14424417/429846">answers</a> on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. I’ve broken it into two and in this, the second part, I look at Possion models.</p>
+<p>The second example — purely because I happen to have it handy from teaching this semester — is from <span class="citation" data-cites="Korner-Nievergelt2015-tk">Korner-Nievergelt et al. (2015)</span>, and concerns the number of breeding pairs of the common whitethroat (<em>Silvia communis</em>). This species likes to inhabit field margins and fallow lands and has been adversely affected by intensive agricultural activities reducing these types of habitat on the landscape. As a mitigiation effort, wildflower fields are sown and left largely unmanaged for several years. The data come from a study looking at how the number of breeding pairs of common whitethroat change as the composition and structure of the plant community changes over time. The data are in the <strong>blmeco</strong> package available on CRAN.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## install.packages("blmeco") # first, if not already installed</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"blmeco"</span><span class="p">)</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">wildflowerfields</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span></code></pre>
+</figure>
+<p>The example in <span class="citation" data-cites="Korner-Nievergelt2015-tk">Korner-Nievergelt et al. (2015)</span> uses a Poisson GLM with a quadratic effect of the variable <code>age</code>. Instead I’ll use a Poisson GAM, but in all other respects the analysis follows that from the text book (only the year 2007 data are used, field size transformed to hectares).</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span><span class="w">
+</span><span class="n">wf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">subset</span><span class="p">(</span><span class="n">wildflowerfields</span><span class="p">,</span><span class="w"> </span><span class="n">year</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="m">2007</span><span class="p">),</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">100</span><span class="p">)</span><span class="w">
+</span><span class="n">wf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span><span class="w"> </span><span class="n">size.z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">size</span><span class="p">))</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">sd</span><span class="p">(</span><span class="n">size</span><span class="p">))</span><span class="w">
+</span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">bp</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">6</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">size.z</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset</span><span class="p">(</span><span class="nf">log</span><span class="p">(</span><span class="n">size</span><span class="p">)),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">wf</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">poisson</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span><span class="w">
+</span><span class="n">summary</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: poisson 
+Link function: log 
+
+Formula:
+bp ~ s(age, k = 6) + size.z + offset(log(size))
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)  -1.1791     0.3333  -3.538 0.000404 ***
+size.z       -0.5283     0.2893  -1.826 0.067861 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+         edf Ref.df Chi.sq p-value  
+s(age) 2.608  3.223  7.323   0.074 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.207   Deviance explained = 46.3%
+-REML = 33.589  Scale est. = 1         n = 41</code></pre>
+</figure>
+<p>The primary variable of interest shows a moderate amount of non-linearity, similar to that of the quadratic effect of <code>age</code> in the version from the text book, though the effect of field age is weak at best. The fitted model is illustrated graphically below, holding <code>size</code> constant at the mean field size</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ilink</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">family</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span><span class="o">$</span><span class="n">linkinv</span><span class="w">
+</span><span class="n">newd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span><span class="w"> </span><span class="n">expand.grid</span><span class="p">(</span><span class="n">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="nf">min</span><span class="p">(</span><span class="n">age</span><span class="p">),</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">age</span><span class="p">),</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">300</span><span class="p">),</span><span class="w">
+                             </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">size.z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">))</span><span class="w">
+</span><span class="n">newd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">as.data.frame</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"link"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)))</span><span class="w">
+</span><span class="n">newd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">fitted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="p">),</span><span class="w"> </span><span class="n">upper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)),</span><span class="w">
+                  </span><span class="n">lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)))</span><span class="w">
+</span><span class="n">ggplot</span><span class="p">(</span><span class="n">wf</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bp</span><span class="o">/</span><span class="n">size</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lower</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upper</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">age</span><span class="p">),</span><span class="w">
+                </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.1</span><span class="p">,</span><span class="w"> </span><span class="n">inherit.aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fitted</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_jitter</span><span class="p">(</span><span class="n">width</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.1</span><span class="p">,</span><span class="w"> </span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Age [years]"</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="s2">"Number of Breeding Pairs ["</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">pairs</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">ha</span><span class="o">^</span><span class="p">{</span><span class="m">-1</span><span class="p">}</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="s2">"]"</span><span class="p">),</span><span class="w">
+         </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Common Whitethroat densities in Wildflower Fields"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Estimated densities for average field of ~1.8 ha"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/glm-prediction-intervals-ii-plot-wildflowers-1.png" alt="The fitted GAM for the common whitethroat data, showing the estimated number of breeding pairs per hectare with a 95% pointwise confidence interval. The points are the observed densities of breeding pairs." /><figcaption>The fitted GAM for the common whitethroat data, showing the estimated number of breeding pairs per hectare with a 95% pointwise confidence interval. The points are the observed densities of breeding pairs.</figcaption>
+</figure>
+<p>So far so good, but how do we interpret this model? For simplicity, lets assume that fields only come in integer ages. What the model implies is that for each integer age the observations are best fitted by (or described by; or generated from) a Poisson model with parameter <span class="math inline">\(\lambda\)</span> equal to the value of the solid line at each particular age. This value of <span class="math inline">\(\lambda\)</span> is just an estimate of the true value and so we might envisage the observations for each year as having come from Poisson distributions with values of <span class="math inline">\(\lambda\)</span> given by the values of the upper and lower confidence band also shown in the figure above. For fields of two and five years of age these distributions look like this</p>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/glm-prediction-intervals-ii-implied-poisson-distributions-1.png" /></p>
+<p>The fitted Poisson distributions for the two field ages are shown by the green points and lines in the figure above. The effect of field age is to shift the estimated Poisson distribution to the right, towards on average higher numbers of breeding pairs. The uncertainty in the estimated model is shown by the orange and blue points and lines; these are based on the lower and upper 95% pointwise confidence interval on the estimate mean number of breeding pairs for fields of two and five years of age. The orange points illustrate the Poisson distribution from which the points might have been derived if the true value of <span class="math inline">\(\lambda\)</span> were at the lower end of the confidence interval. The blue points show the Poisson distribution if the true values of <span class="math inline">\(\lambda\)</span> was at the upper end of the confidence interval. Each of these distributions implies, potentially at least, different predicted numbers of breeding pairs.</p>
+<p>We have estimated the expected number of breeding pairs given the age of the field and it’s size. We also have a (pointwise) 95% confidence interval on that expectation. As before, this isn’t a prediction interval, so what would one of those look like in this case? Somewhat similar to those we created for the binomial GLM earlier, except now we have posterior densities (the probability density implied by the Poisson distribution with <span class="math inline">\(\lambda\)</span> given as a function of field age) for all the integers 0–∞, although once we get above 10 breeding pairs the density is going to be effectively 0 even if not technically so.</p>
+<p>Note that I said integers above; we can’t have 2.5 breeding pairs <em>as a prediction</em>. Hence any prediction interval is really talking about points of probability for each integer <span class="math inline">\(\in \{0, 1, 2, \infty\}\)</span> (even if we might consider a much smaller upper limit than that) not a continuous interval. Having said that, perhaps I’m being to pedantic? In some instances, the upper and lower 2.5<sup>th</sup> and 97.5<sup>th</sup> probability quantiles of the implied Poisson distribution do begin to look more like a prediction interval.</p>
+<p>To illustrate I’ll work my way through some code to illustrate some ways of thinking about what the fitted model says in terms of predicting the numbers of breeding pairs of common whitethroats. First a little bit of prep; I’ll illustrate various intervals for two hypothetical fields or average size, one created two years ago and a second five years ago.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">p</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="m">5</span><span class="p">),</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">size.z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w">
+</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">setNames</span><span class="p">(</span><span class="n">as.data.frame</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)),</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"fit"</span><span class="p">,</span><span class="w"> </span><span class="s2">"se"</span><span class="p">))</span><span class="w">
+</span><span class="n">p</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">pred</span><span class="p">)</span><span class="w">
+</span><span class="n">p</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">)),</span><span class="w">
+               </span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="p">),</span><span class="w"> </span><span class="n">upper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">)))</span><span class="w">
+</span><span class="n">p</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">  age size size.z        fit        se      lower    lambda     upper
+1   2    1      0 -1.7184424 0.5805902 0.05615594 0.1793453 0.5727752
+2   5    1      0 -0.1295676 0.3260103 0.45767855 0.8784752 1.6861589</code></pre>
+</figure>
+<p><code>p</code> contains the estimated value of <span class="math inline">\(\lambda\)</span> (the expected number of breeding pairs), and the upper and lower 95% pointwise interval about this expected count, for the two fields. First, the 95% interval for the model estimated <span class="math inline">\(\lambda\)</span> for the younger of the two fields, based on <code>qpois()</code>, the quantile function of the conditional distribution of the number of breeding pairs given field age</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">qpois</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">[</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="s2">"lambda"</span><span class="p">])</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0 1</code></pre>
+</figure>
+<p>Hence we might expect either 0, 1 breeding pairs. But, we haven’t accounted for the uncertainty in the estimated <span class="math inline">\(\lambda\)</span>. At the lower end of of the 95% interval on the estimated <span class="math inline">\(\lambda\)</span> the prediction interval would be</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">qpois</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">[</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="s2">"lower"</span><span class="p">])</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0 1</code></pre>
+</figure>
+<p>and</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">qpois</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="p">[</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="s2">"upper"</span><span class="p">])</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0 2</code></pre>
+</figure>
+<p>for the upper end, leading to a prediction interval of 0–2 breeding pairs. The same prediction interval for the five year old field would be</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">qpois</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">),</span><span class="w"> </span><span class="n">lambda</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="s2">"lower"</span><span class="p">],</span><span class="w"> </span><span class="n">p</span><span class="p">[</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="s2">"upper"</span><span class="p">]))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0 5</code></pre>
+</figure>
+<p>We can also look at the probability densities of the poisson distribution for the estimated value of <span class="math inline">\(\lambda\)</span> and its 95% confidence interval. The table below shows these probability densities for a two-year old field</p>
+<table>
+<caption>Posterior densities for selected numbers of breeding pairs for a two year old field. Columns show the densities for a poisson distribution with <span class="math inline">\(\lambda\)</span> equal to the esimated value and the lower and upper limits on the estimated values for this field.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;"># of pairs</th>
+<th style="text-align: right;">lower</th>
+<th style="text-align: right;">estimate</th>
+<th style="text-align: right;">upper</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.9454</td>
+<td style="text-align: right;">0.8358</td>
+<td style="text-align: right;">0.5640</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.0531</td>
+<td style="text-align: right;">0.1499</td>
+<td style="text-align: right;">0.3230</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0015</td>
+<td style="text-align: right;">0.0134</td>
+<td style="text-align: right;">0.0925</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0008</td>
+<td style="text-align: right;">0.0177</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0025</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0003</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0000</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0000</td>
+</tr>
+</tbody>
+</table>
+<p>For example, we’d expect to observe no breeding pairs in 95–56% of average sized, two-year old fields. The same values are shown for a five-year old tree in the table below</p>
+<table>
+<caption>Posterior densities for selected numbers of breeding pairs for a five year old field. Columns show the densities for a poisson distribution with <span class="math inline">\(\lambda\)</span> equal to the esimated value and the lower and upper limits on the estimated values for this field.</caption>
+<thead>
+<tr class="header">
+<th style="text-align: right;"># of pairs</th>
+<th style="text-align: right;">lower</th>
+<th style="text-align: right;">estimate</th>
+<th style="text-align: right;">upper</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">0.6328</td>
+<td style="text-align: right;">0.4154</td>
+<td style="text-align: right;">0.1852</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.2896</td>
+<td style="text-align: right;">0.3649</td>
+<td style="text-align: right;">0.3123</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">0.0663</td>
+<td style="text-align: right;">0.1603</td>
+<td style="text-align: right;">0.2633</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">0.0101</td>
+<td style="text-align: right;">0.0469</td>
+<td style="text-align: right;">0.1480</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">0.0012</td>
+<td style="text-align: right;">0.0103</td>
+<td style="text-align: right;">0.0624</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0.0001</td>
+<td style="text-align: right;">0.0018</td>
+<td style="text-align: right;">0.0210</td>
+</tr>
+<tr class="odd">
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0003</td>
+<td style="text-align: right;">0.0059</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0000</td>
+<td style="text-align: right;">0.0014</td>
+</tr>
+</tbody>
+</table>
+<!--
+
+| Age [yrs]|     0|     1|     2|     3|     4|     5|  6|  7|
+|---------:|-----:|-----:|-----:|-----:|-----:|-----:|--:|--:|
+|         1| 0.948| 0.051| 0.002| 0.000| 0.000| 0.000|  0|  0|
+|         2| 0.835| 0.152| 0.012| 0.001| 0.000| 0.000|  0|  0|
+|         3| 0.626| 0.295| 0.066| 0.012| 0.002| 0.000|  0|  0|
+|         4| 0.455| 0.355| 0.147| 0.035| 0.006| 0.002|  0|  0|
+|         5| 0.408| 0.371| 0.160| 0.049| 0.012| 0.001|  0|  0|
+|         6| 0.476| 0.353| 0.133| 0.032| 0.004| 0.001|  0|  0|
+|         7| 0.553| 0.335| 0.093| 0.018| 0.002| 0.000|  0|  0|
+|         8| 0.628| 0.290| 0.071| 0.010| 0.001| 0.000|  0|  0|
+|         9| 0.672| 0.263| 0.058| 0.007| 0.000| 0.000|  0|  0|
+
+
+Table: Estimated probability of the visited and no-visited outcomes based on the upper (upr) and lower (lwr) 95% interval of the model-estimated probability of visitation for two leafe heights.
+
+
+| Age [yrs]|     0|     1|     2|     3|     4|     5|  6|  7|
+|---------:|-----:|-----:|-----:|-----:|-----:|-----:|--:|--:|
+|         1| 0.948| 0.051| 0.001| 0.000| 0.000| 0.000|  0|  0|
+|         2| 0.836| 0.150| 0.013| 0.001| 0.000| 0.000|  0|  0|
+|         3| 0.625| 0.294| 0.069| 0.011| 0.001| 0.000|  0|  0|
+|         4| 0.450| 0.359| 0.143| 0.038| 0.008| 0.001|  0|  0|
+|         5| 0.415| 0.365| 0.160| 0.047| 0.010| 0.002|  0|  0|
+|         6| 0.476| 0.353| 0.131| 0.032| 0.006| 0.001|  0|  0|
+|         7| 0.556| 0.326| 0.096| 0.019| 0.003| 0.000|  0|  0|
+|         8| 0.618| 0.297| 0.072| 0.011| 0.001| 0.000|  0|  0|
+|         9| 0.665| 0.271| 0.055| 0.008| 0.001| 0.000|  0|  0|
+
+
+Table: Estimated probability of the visited and no-visited outcomes based on the upper (upr) and lower (lwr) 95% interval of the model-estimated probability of visitation for two leafe heights.
+-->
+<p>I could repeat the process of simulating breeding pairs from the poisson distributions with estimated values of <span class="math inline">\(\lambda\)</span> but the code to illustrate this gets tedious and this post is long enough already.</p>
+<p>The prediction intervals for the Poisson model are starting to look more like intervals than the ones for the binomial model we looked at earlier. They’re still not something we can easily convey on a plot like we can with linear models and <code>predict.lm</code>, however.</p>
+<p>For continous conditional distributions, prediction “intervals” act like their linear model counterparts, as long as we take the extra step of computing the prediction interval using the probability quantile function (the <code>qfoo()</code> functions in R where <code>foo</code> is the abbreviation for the distribution) and potentially include the uncertainty in the estimated expectations (fitted values on the response scale) as we did in both examples above.</p>
+<p>Ok, I think that’s enough modelling pedantry for one [Ed: er-um, <em>two</em>] post.</p>
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references">
+<div id="ref-Korner-Nievergelt2015-tk">
+<p>Korner-Nievergelt, F., Felten, S. von, Roth, T., Gulat, J., Almasi, B., and Korner-Nievergelt, P. (2015). <em>Bayesian data analysis in ecology using linear models with R, BUGS, and stan</em>. Elsevier Science &amp; Technology Books.</p>
+</div>
+</div>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-ii/";
+  var disqus_title = "Prediction intervals for GLMs part II";
+  //var disqus_identifier = "/2017/05/01/glm-prediction-intervals-ii";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>01 May 2017</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/glm/"><span class="label label-inverse">GLM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/models/"><span class="label label-inverse">models</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/prediction-interval/"><span class="label label-inverse">prediction interval</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/statistical-modelling/"><span class="label label-inverse">statistical modelling</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/poisson/"><span class="label label-inverse">Poisson</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/offset/"><span class="label label-inverse">offset</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/counts/"><span class="label label-inverse">counts</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

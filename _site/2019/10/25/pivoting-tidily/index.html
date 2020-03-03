@@ -1,0 +1,583 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Pivoting tidily</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="data, data processing, data wrangling, pivot tables, import, tidyr, tidyverse, pivoting" />
+
+
+<meta name="description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was writing some R code to import the raw data for the lab from an Excel sheet, it occurred to me that this would be a good excuse to look at the new pivot_longer() and pivot_wider() functions from the tidyr package. In this post I show how these new functions facilitate common data processing steps; I was personally surprised how little data wrangling was actually needed in the end to read in the data from the lab.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Pivoting tidily" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2019-10-25T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Pivoting tidily" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2019-10-25T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2019/10/25/pivoting-tidily/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was writing some..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Pivoting tidily" />
+
+<meta name="twitter:image" content="https://www.fromthebottomoftheheap.net/assets/img/posts/pivoting-tidily-plot-1.png" />
+
+
+<meta name="twitter:description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Ins..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="25 Oct 2019"/>
+<meta name="citation_date" content="25 Oct 2019"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Pivoting tidily"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2020/02/26/what-three-years-evaluating-discovery-grants-taught-me/">What evaluating Discovery Grants for the last three years has taught me</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2019/06/18/radian-console-for-r/">radian: a modern console for R</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Pivoting tidily </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was writing some R code to import the raw data for the lab from an Excel sheet, it occurred to me that this would be a good excuse to look at the new <code>pivot_longer()</code> and <code>pivot_wider()</code> functions from the <em>tidyr</em> package. In this post I show how these new functions facilitate common data processing steps; I was personally surprised how little data wrangling was actually needed in the end to read in the data from the lab.</p>
+<p>In the lab course the students conduct an experiment to study the effect of the plant hormone <em>gibberellin</em> on plant growth. Over a number of weeks the students apply gibberellic acid (in two concentrations) or daminozide, a gibberellic acid antagonist, to the tips of the leaves of pea plants that are grown in a growth chamber with a 16-hour photoperiod. The students work in groups, with some of the groups growing the wild-type cultivar, whilst others work with a mutant dwarf cultivar. Each group has six plants per treatment level, and every seven days the students measure the height of each plant and the number of internodes that each plant has. On the last day of the experiment the plants are harvested and their fresh weight measured.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/plant-phys-plants-in-growth-room.jpg" alt="The pea plants from the 2019 Plant Physiology Lab course, toward the end of the experimental period" /><figcaption>The pea plants from the 2019 Plant Physiology Lab course, toward the end of the experimental period</figcaption>
+</figure>
+<p>Originally the data were recorded in a less than satisfactory way — let’s just say the original data sheets would have been good candidates for one of Jenny Bryan’s talks on spreadsheets. After being cleaned up a bit, we have something that looks like this in Excel</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/pivoting-tidily-raw-data.png" alt="Raw data in the Excel Workbook" /><figcaption>Raw data in the Excel Workbook</figcaption>
+</figure>
+<p>This isn’t perfect as we have data in the column names — the numbers after the colons are the day of observation — but it is a pretty simple layout for the students to complete, and this is how we decided to ask the students to record the data during the 2019 lab course, so this is what we have to work with going forward.</p>
+<p>Ultimately we want to be able to refer to columns named <code>height</code>, <code>internodes</code>, etc depending on the statistical analysis the students will do, and we’re going to need a column with the observation days in it.</p>
+<h2 id="pivoting">Pivoting</h2>
+<p>If you’re not familiar with pivoting, it is important to realize that we can store the same data in a wide rectangle or a long (or tall) rectangle</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/original-dfs-tidy.png" alt="Examples of wide and long representations of the same data. Source: Garrick Aden-Buie’s (@grrrck) Tidy Animated Verbs" /><figcaption>Examples of <em>wide</em> and <em>long</em> representations of the same data. Source: Garrick Aden-Buie’s (<a href="https://twitter.com/grrrck">@grrrck</a>) <a href="https://github.com/gadenbuie/tidyexplain">Tidy Animated Verbs</a></figcaption>
+</figure>
+<p>The same information is stored in both the long and wide representations, but the two representations differ in how useful they are for certain types of operation or how easily they can be used in a statistical analysis. It’s also worth noting that there are more than just long or wide representations of the data; as we’ll see shortly, the long representation of the Plant Physiology Lab data is too general and we’ll need to arrange the data in a slightly wider form.</p>
+<p>Moving between long and wide representations is known as <em>pivoting</em>. The animation below show the general idea of how the cells in one format are rearranged into the other format, with the relevant metadata that doesn’t get rearranged being extended or reduced as needed so we don’t loose any information.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/tidyr-longer-wider.gif" alt="Pivoting between wide and long representations of the same data. Source: Garrick Aden-Buie’s (@grrrck) Tidy Animated Verbs modified by Mara Averick (@dataandme)" /><figcaption>Pivoting between <em>wide</em> and <em>long</em> representations of the same data. Source: Garrick Aden-Buie’s (<a href="https://twitter.com/grrrck">@grrrck</a>) <a href="https://github.com/gadenbuie/tidyexplain">Tidy Animated Verbs</a> modified by Mara Averick (<a href="https://twitter.com/dataandme">@dataandme</a>)</figcaption>
+</figure>
+<p>With the lab data I showed earlier, we’re going to need to pivot from the original wide format into a longer format — just as the animation above shows. As we want to output an object that is <em>longer</em> than the input we will use the <code>pivot_longer()</code> function.</p>
+<p>To start we will need to import the data from the <code>.xls</code> sheet, which I’ll do using the <em>readxl</em> package</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s1">'curl'</span><span class="p">)</span><span class="w">    </span><span class="c1"># download files</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'readxl'</span><span class="p">)</span><span class="w">  </span><span class="c1"># read from Excel sheets</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'tidyr'</span><span class="p">)</span><span class="w">   </span><span class="c1"># data processing</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'dplyr'</span><span class="p">)</span><span class="w">   </span><span class="c1"># mo data processing</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'forcats'</span><span class="p">)</span><span class="w"> </span><span class="c1"># mo mo data processing</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'ggplot2'</span><span class="p">)</span><span class="w"> </span><span class="c1"># plotting</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">
+
+</span><span class="c1">## Load Data</span><span class="w">
+</span><span class="n">tmp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">()</span><span class="w">
+</span><span class="n">curl_download</span><span class="p">(</span><span class="s2">"https://github.com/gavinsimpson/plant-phys/raw/master/f18ph.xls"</span><span class="p">,</span><span class="w"> </span><span class="n">tmp</span><span class="p">)</span><span class="w">
+</span><span class="n">plant</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">read_excel</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span><span class="w"> </span><span class="n">sheet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<p>We have to download the data first — which I do using <code>curl_download()</code> from the <em>curl</em> package — because <code>read_excel()</code> doesn’t currently know how to read from URLs at the moment.</p>
+<p>Now we have our plant data within R, stored in a data frame</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plant</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 24 x 12
+   treatment cultivar plantid `height:0` `internodes:0` `height:7`
+   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt;      &lt;dbl&gt;          &lt;dbl&gt;      &lt;dbl&gt;
+ 1 control   wt             1        235              4        525
+ 2 control   wt             2        182              3        391
+ 3 control   wt             3        253              3        452
+ 4 control   wt             4        151              3        350
+ 5 control   wt             5        195              3        335
+ 6 control   wt             6        187              4        190
+ 7 ga10      wt             1        250              4        458
+ 8 ga10      wt             2        220              4        345
+ 9 ga10      wt             3        180              2        300
+10 ga10      wt             4        230              4        510
+# … with 14 more rows, and 6 more variables: `internodes:7` &lt;dbl&gt;,
+#   `height:14` &lt;dbl&gt;, `internodes:14` &lt;dbl&gt;, `height:21` &lt;dbl&gt;,
+#   `internodes:21` &lt;dbl&gt;, `freshwt:21` &lt;dbl&gt;</code></pre>
+</figure>
+<p>To go to the long representation we have to tell <code>pivot_longer()</code> a couple of bits of information</p>
+<ul>
+<li>the name of the object to pivot,</li>
+<li>which columns contain the data we want to pivot (or alternatively which columns not to pivot if that is easier),</li>
+<li>the <em>name</em> we want to call the new column that will contain the <em>variable name</em> information from the original data, and</li>
+<li>optionally, the name of the new column that will contain the data values. The default is to name this column <code>value</code> so you don’t need to change this if you’re happy with that.</li>
+</ul>
+<p>So, to get our wide plant data into a longer format we would do this</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">pivot_longer</span><span class="p">(</span><span class="n">plant</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span><span class="w"> </span><span class="n">names_to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"variable"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 216 x 5
+   treatment cultivar plantid variable       value
+   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;          &lt;dbl&gt;
+ 1 control   wt             1 height:0       235  
+ 2 control   wt             1 internodes:0     4  
+ 3 control   wt             1 height:7       525  
+ 4 control   wt             1 internodes:7     5  
+ 5 control   wt             1 height:14      810  
+ 6 control   wt             1 internodes:14   10  
+ 7 control   wt             1 height:21     1090  
+ 8 control   wt             1 internodes:21   14  
+ 9 control   wt             1 freshwt:21       7.2
+10 control   wt             2 height:0       182  
+# … with 206 more rows</code></pre>
+</figure>
+<p>The <code>-(1:3)</code> is short-hand for excluding the first three columns of <code>plant</code> from the pivot. Here, we’re creating a new variable called (imaginatively!) <code>variable</code>. As you can see we now have our data in a much longer representation, with a single column containing all of the observations that this group of students made.</p>
+<p>However, we have a bit of a problem: we have the added complication that some of the column names contain actual data that we want to use. While we have a column containing this information — it is not lost — the observation day or variable name information is not directly accessible in this format. What we could do is split the strings in this new <code>variable</code> column on <code>":"</code> and form two new columns from there.</p>
+<p>Thankfully, this is such a common operation that <code>pivot_longer()</code> (and it’s predecessor, <code>gather()</code>) can do this for you — all you have to do is tell <code>pivot_longer()</code> what character to split on, and what names you want for the columns that result from splitting the strings up.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">pivot_longer</span><span class="p">(</span><span class="n">plant</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span><span class="w"> </span><span class="n">names_sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">":"</span><span class="p">,</span><span class="w"> </span><span class="n">names_to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"variable"</span><span class="p">,</span><span class="s2">"day"</span><span class="p">))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 216 x 6
+   treatment cultivar plantid variable   day    value
+   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;      &lt;chr&gt;  &lt;dbl&gt;
+ 1 control   wt             1 height     0      235  
+ 2 control   wt             1 internodes 0        4  
+ 3 control   wt             1 height     7      525  
+ 4 control   wt             1 internodes 7        5  
+ 5 control   wt             1 height     14     810  
+ 6 control   wt             1 internodes 14      10  
+ 7 control   wt             1 height     21    1090  
+ 8 control   wt             1 internodes 21      14  
+ 9 control   wt             1 freshwt    21       7.2
+10 control   wt             2 height     0      182  
+# … with 206 more rows</code></pre>
+</figure>
+<p>The changes we made above were to specify <code>names_sep</code> with the correct separator, and we pass a vector of new column names to <code>names_to</code> rather than the single name we provided previously.</p>
+<p>Those of you with good eyes may have noticed another problem that we will encounter if we stopped here. The <code>day</code> variable that was just created is stored as a character vector. It is likely that we’ll want this information stored as a number if we’re going to analyze the data. We can do the required conversion within <code>pivot_longer()</code> call by specifying what the developers have started calling a <em>prototype</em> across many of the <em>tidyverse</em> packages. A prototype is an object that has the same properties that you want objects built from that prototype to take. Here we want the <code>day</code> variable as a column of integer numbers, so we set the prototype for this vector to <code>integer()</code> using the <code>names_ptypes</code> argument</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plant</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">pivot_longer</span><span class="p">(</span><span class="n">plant</span><span class="p">,</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">),</span><span class="w"> </span><span class="n">names_sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">":"</span><span class="p">,</span><span class="w"> </span><span class="n">names_to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"variable"</span><span class="p">,</span><span class="s2">"day"</span><span class="p">),</span><span class="w">
+                      </span><span class="n">names_ptypes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">day</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">integer</span><span class="p">()))</span><span class="w">
+</span><span class="n">plant</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 216 x 6
+   treatment cultivar plantid variable     day  value
+   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;      &lt;int&gt;  &lt;dbl&gt;
+ 1 control   wt             1 height         0  235  
+ 2 control   wt             1 internodes     0    4  
+ 3 control   wt             1 height         7  525  
+ 4 control   wt             1 internodes     7    5  
+ 5 control   wt             1 height        14  810  
+ 6 control   wt             1 internodes    14   10  
+ 7 control   wt             1 height        21 1090  
+ 8 control   wt             1 internodes    21   14  
+ 9 control   wt             1 freshwt       21    7.2
+10 control   wt             2 height         0  182  
+# … with 206 more rows</code></pre>
+</figure>
+<p>Notice that we pass <code>names_ptypes</code> a <em>named</em> list of prototypes, with the list name matching one or more of the variables listed in <code>names_to</code>.</p>
+<p>Now we have successfully wrangled the data into a long format and recovered the information hidden in the column names of the original data file. However, as it stands, we can’t easily use the data in this format in a statistical model. We want the students on the course to analyze the data to estimate what effects the treatments have on the height of the plants over the course of the experiment. With the data in this long format we don’t have a variable <code>height</code> containing just the height of the plants that we can refer to in a linear model say.</p>
+<p>What we want is to create new columns for <code>height</code>, <code>internodes</code> and <code>freshwt</code> and pivot the <code>value</code> data out into those columns. As we’re adding columns we’re making the data wider, so we can use the <code>pivot_wider()</code> function to do what we want. Now we need to tell <code>pivot_wider()</code></p>
+<ul>
+<li>where to take the <em>names</em> of the new variables that are going to be created <strong>from</strong> — here that’s the <code>variable</code> column, and</li>
+<li>where to take the <em>data</em> values <strong>from</strong> that are going to be put into these new columns — here, that’s the <code>value</code> column</li>
+</ul>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plant</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">pivot_wider</span><span class="p">(</span><span class="n">plant</span><span class="p">,</span><span class="w"> </span><span class="n">names_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable</span><span class="p">,</span><span class="w"> </span><span class="n">values_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w">
+</span><span class="n">plant</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 96 x 7
+   treatment cultivar plantid   day height internodes freshwt
+   &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt;
+ 1 control   wt             1     0    235          4    NA  
+ 2 control   wt             1     7    525          5    NA  
+ 3 control   wt             1    14    810         10    NA  
+ 4 control   wt             1    21   1090         14     7.2
+ 5 control   wt             2     0    182          3    NA  
+ 6 control   wt             2     7    391          5    NA  
+ 7 control   wt             2    14    615          9    NA  
+ 8 control   wt             2    21    810         12     3.8
+ 9 control   wt             3     0    253          3    NA  
+10 control   wt             3     7    452          6    NA  
+# … with 86 more rows</code></pre>
+</figure>
+<p>As with other <em>tidyverse</em> package, we don’t have to quote the names of the columns we want to pull data from.</p>
+<p>There are a couple of other things we need to do to make the data fully useful:</p>
+<ol type="1">
+<li>it would be helpful to have a unique identifier for each individual plant — currently the <code>plantid</code> is just the values <code>1:6</code> repeated for each treatment group,</li>
+<li>it would also be good practice to convert <code>treatment</code> into a factor, and to set the control treatment as the reference level against which the other treatment levels will be compared — if we didn’t do that, the <code>b9</code> level (daminozide treatment) would be the reference level</li>
+</ol>
+<p>We can do those data processing steps quite easily now we have the data imported and arranged nicely the way we want them</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plant</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">mutate</span><span class="p">(</span><span class="n">plant</span><span class="p">,</span><span class="w">
+                </span><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">paste0</span><span class="p">(</span><span class="n">cultivar</span><span class="p">,</span><span class="w"> </span><span class="s2">"_"</span><span class="p">,</span><span class="w"> </span><span class="n">treatment</span><span class="p">,</span><span class="w"> </span><span class="s2">"_"</span><span class="p">,</span><span class="w"> </span><span class="n">plantid</span><span class="p">),</span><span class="w">
+                </span><span class="n">treatment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fct_relevel</span><span class="p">(</span><span class="n">treatment</span><span class="p">,</span><span class="w"> </span><span class="s1">'control'</span><span class="p">))</span><span class="w">
+</span><span class="n">plant</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 96 x 8
+   treatment cultivar plantid   day height internodes freshwt id          
+   &lt;fct&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;       
+ 1 control   wt             1     0    235          4    NA   wt_control_1
+ 2 control   wt             1     7    525          5    NA   wt_control_1
+ 3 control   wt             1    14    810         10    NA   wt_control_1
+ 4 control   wt             1    21   1090         14     7.2 wt_control_1
+ 5 control   wt             2     0    182          3    NA   wt_control_2
+ 6 control   wt             2     7    391          5    NA   wt_control_2
+ 7 control   wt             2    14    615          9    NA   wt_control_2
+ 8 control   wt             2    21    810         12     3.8 wt_control_2
+ 9 control   wt             3     0    253          3    NA   wt_control_3
+10 control   wt             3     7    452          6    NA   wt_control_3
+# … with 86 more rows</code></pre>
+</figure>
+<p>Here I just pasted together the <code>cultivar</code>, <code>treatment</code> and <code>plantid</code> information into a unique id for each individual plant. This won’t be used directly by the students in any analysis they do as this is a second year course and they don’t know about mixed models (yet), but it is handy to have this <code>id</code> available for plotting. The <code>treatment</code> variable is converted to a factor and the reference level set to be <code>"control"</code> using the <code>fct_relevel()</code> function from the <em>forcats</em> package.</p>
+<p>The students will do one other step before proceeding to look at the data — each sheet in the <code>.xls</code> file contains observations from a single group and hence a single cultivar, and we want the students to compare cultivars. So they will repeat the steps above to import a second sheet of data containing data from the cultivar they didn’t work with, and then stick the two data sets together. But I’ll spare you having to repeat that.</p>
+<p>If you’re interested, this is what the data look like, for a single cultivar and single group</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">plant</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">day</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">height</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">treatment</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Height (mm)'</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Day'</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Treatment'</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/pivoting-tidily-plot-1.png" alt="Plot of the plant growth data" /><figcaption>Plot of the plant growth data</figcaption>
+</figure>
+<p>(and now you can see why I needed a unique plant identifier even though the students will essentially ignore this clustering in the data when the analyse it.)</p>
+<p>The <code>.xls</code> file we downloaded at the start of the script contains multiple sheets all formatted the same way, so we could pull in all the data into one big analysis if you wanted, but in the lab we’re just getting the students one set of wild-type and mutant cultivars. I’m grateful to <a href="https://www.uregina.ca/science/biology/people/instructors/davis-maria.html">Dr. Maria Davis</a>, the lab instructor for the course, for making the data from the course available to anyone who wants to use it — if you do use it, be sure to give Maria and the 2018 cohort of BIOL266 Plant Physiology students at the University of Regina an acknowledgement.</p>
+<p>If you’re interested in the statistical analyses that we’ll be getting the students to do in the lab, I have an (at the time of writing this, almost finished) <code>Rmd</code> file in the <a href="https://github.com/gavinsimpson/plant-phys">GitHub repo</a> for the lab course with all the instructions. It’s pretty simple ANOVA and ANCOVA analyses, but we do get the students to do <em>post hoc</em> testing using the excellent <em>emmeans</em> package, if you’re interested.</p>
+<p>Finally, none of the data wrangling I did above is that complex, and I certainly didn’t need to use <em>tidyr</em> and <em>dplyr</em> etc to achieve the result I wanted. It is quite trivial to do this pivoting and wrangling in base R; we could just uses the <code>reshape()</code> function, <code>strplit()</code>, etc. However, if you’ve ever used <code>reshape()</code> you’ll know that the argument names for that function make no sense to anyone except perhaps the person that wrote the function. The real advantage of doing the wrangling using <em>tidyr</em> and <em>dplyr</em> is that we end up with code that is much more easy to read and understand, which is very important for students on these courses, who will have had little to no exposure to programming and related data science techniques.</p>
+<p>Anyway, happy pivoting!</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2019/10/25/pivoting-tidily/";
+  var disqus_title = "Pivoting tidily";
+  //var disqus_identifier = "/2019/10/25/pivoting-tidily";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>25 October 2019</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/data/"><span class="label label-inverse">data</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/data-processing/"><span class="label label-inverse">data processing</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/data-wrangling/"><span class="label label-inverse">data wrangling</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/pivot-tables/"><span class="label label-inverse">pivot tables</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/import/"><span class="label label-inverse">import</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/tidyr/"><span class="label label-inverse">tidyr</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/tidyverse/"><span class="label label-inverse">tidyverse</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/pivoting/"><span class="label label-inverse">pivoting</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

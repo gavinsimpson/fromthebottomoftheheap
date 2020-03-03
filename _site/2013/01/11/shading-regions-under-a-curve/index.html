@@ -1,0 +1,566 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Shading regions under a curve</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="Area under a curve, Graphics, Plotting, Polygon, R" />
+
+
+<meta name="description" content="Over on the [Clastic Detritus blog](http://wp.me/p6FnH-13u), Brian Romans posted a nice introduction to plotting in R. At the end of his post, Brian mentioned he would like to colour in areas under the data curve corresponding to particular ranges of grain sizes. The comment area on a blog isn't really amenable to giving a full answer to the problem posed so I gave a few pointers. Other commenters also suggested solutions.
+
+
+The problem is how to shade or colour in areas under a curve. The more general problem is how to do this when you don't have any data that fall on the margins of the regions you wish to shade. Here is more solution to that more general problem." />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Shading regions under a curve" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2013-01-11T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Shading regions under a curve" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2013-01-11T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2013/01/11/shading-regions-under-a-curve/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Over on the [Clastic Detritus blog](http://wp.me/p6FnH-13u), Brian Romans posted a nice introduction to plotting in R. At the end of his post, Brian mentioned he would like to colour in areas under the data curve corresponding to particular ranges of grain sizes. The comment area on a blog isn't really..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Shading regions under a curve" />
+
+
+<meta name="twitter:description" content="Over on the [Clastic Detritus blog](http://wp.me/p6FnH-13u), Brian Romans posted a nice introduction to plotting in R. At the end of his post, Brian mentioned he would like to colour in areas unde..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="11 Jan 2013"/>
+<meta name="citation_date" content="11 Jan 2013"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Shading regions under a curve"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/">Decluttering ordination plots in vegan part 1: ordilabel()</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2013/01/05/monotonic-deshrinking-in-weighted-averaging-models/">Monotonic deshrinking in weighted averaging models</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Shading regions under a curve </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>
+Over on the <a href="http://wp.me/p6FnH-13u">Clastic Detritus blog</a>, Brian Romans posted a nice introduction to plotting in R. At the end of his post, Brian mentioned he would like to colour in areas under the data curve corresponding to particular ranges of grain sizes. The comment area on a blog isn’t really amenable to giving a full answer to the problem posed so I gave a few pointers. Other commenters also suggested solutions.
+</p>
+<p>
+The problem is how to shade or colour in areas under a curve. The more general problem is how to do this when you don’t have any data that fall on the margins of the regions you wish to shade. Here is more solution to that more general problem.
+</p>
+<p>As I don’t have Brian’s data lets generate some similar data with the help of the <strong>mgcv</strong> package</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="n">mgcv</span><span class="p">)</span><span class="w">
+</span><span class="n">set.seed</span><span class="p">(</span><span class="m">2</span><span class="p">)</span><span class="w"> </span><span class="c1">## simulate some data... </span><span class="w">
+</span><span class="n">dat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamSim</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">400</span><span class="p">,</span><span class="w"> </span><span class="n">dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"normal"</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">b</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x2</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dat</span><span class="p">)</span><span class="w">
+</span><span class="n">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span><span class="w">
+</span><span class="n">newX</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">dat</span><span class="p">,</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">x2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sort</span><span class="p">(</span><span class="n">runif</span><span class="p">(</span><span class="m">100</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="n">x2</span><span class="p">),</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">x2</span><span class="p">)))))</span><span class="w">
+</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">b</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newX</span><span class="p">)</span><span class="w">
+
+</span><span class="n">bed</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Volume</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">Diameter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newX</span><span class="p">[,</span><span class="m">1</span><span class="p">])</span></code></pre>
+</figure>
+<p>I’m not going to explain that as it is but a means to an end. The resulting data can be nicely plotted via</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">Volume</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">)</span></code></pre>
+</figure>
+<p>with the resulting plot shown in Figure 1, below.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/polygon_under_curve_data_figure_1.png" alt="Example data used to illustrate shading areas under a curve" /><figcaption>Example data used to illustrate shading areas under a curve</figcaption>
+</figure>
+<p>To illustrate, let’s assume we want to shade the regions under the curve as defined by the following start and end points of four regions</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">from</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0.1</span><span class="p">,</span><span class="w"> </span><span class="m">0.25</span><span class="p">,</span><span class="w"> </span><span class="m">0.37</span><span class="p">,</span><span class="w"> </span><span class="m">0.78</span><span class="p">)</span><span class="w">
+</span><span class="n">to</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0.25</span><span class="p">,</span><span class="w"> </span><span class="m">0.37</span><span class="p">,</span><span class="w"> </span><span class="m">0.63</span><span class="p">,</span><span class="w"> </span><span class="m">0.84</span><span class="p">)</span></code></pre>
+</figure>
+<p>To cut to the chase, here is my solution to the problem:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><table class="rouge-table"><tbody><tr><td class="gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+</pre></td><td class="code"><pre><span class="n">polyCurve</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">miny</span><span class="p">,</span><span class="w">
+                      </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="n">border</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">col</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">drawPoly</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">fun</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">miny</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="p">,</span><span class="w"> </span><span class="n">border</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">Sq</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">to</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">)</span><span class="w">
+        </span><span class="n">polygon</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">Sq</span><span class="p">[</span><span class="m">1</span><span class="p">],</span><span class="w"> </span><span class="n">Sq</span><span class="p">,</span><span class="w"> </span><span class="n">Sq</span><span class="p">[</span><span class="n">n</span><span class="p">]),</span><span class="w">
+                </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">miny</span><span class="p">,</span><span class="w"> </span><span class="n">fun</span><span class="p">(</span><span class="n">Sq</span><span class="p">),</span><span class="w"> </span><span class="n">miny</span><span class="p">),</span><span class="w">
+                </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">col</span><span class="p">,</span><span class="w"> </span><span class="n">border</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">border</span><span class="p">)</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+    </span><span class="n">lf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">from</span><span class="p">)</span><span class="w">
+    </span><span class="n">stopifnot</span><span class="p">(</span><span class="n">identical</span><span class="p">(</span><span class="n">lf</span><span class="p">,</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">to</span><span class="p">)))</span><span class="w">
+    </span><span class="k">if</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">col</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">lf</span><span class="p">)</span><span class="w">
+        </span><span class="n">col</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">col</span><span class="p">,</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lf</span><span class="p">)</span><span class="w">
+    </span><span class="k">if</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">border</span><span class="p">)</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">lf</span><span class="p">)</span><span class="w">
+        </span><span class="n">border</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">border</span><span class="p">,</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lf</span><span class="p">)</span><span class="w">
+    </span><span class="k">if</span><span class="p">(</span><span class="nf">missing</span><span class="p">(</span><span class="n">miny</span><span class="p">))</span><span class="w">
+        </span><span class="n">miny</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="n">y</span><span class="p">)</span><span class="w">
+    </span><span class="n">interp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">approxfun</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">)</span><span class="w">
+    </span><span class="n">mapply</span><span class="p">(</span><span class="n">drawPoly</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">to</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">col</span><span class="p">,</span><span class="w"> </span><span class="n">border</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">border</span><span class="p">,</span><span class="w">
+           </span><span class="n">MoreArgs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">fun</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">interp</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">miny</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">miny</span><span class="p">))</span><span class="w">
+    </span><span class="nf">invisible</span><span class="p">()</span><span class="w">
+</span><span class="p">}</span>
+</pre></td></tr></tbody></table></code></pre>
+</figure>
+<p>Don’t worry, I’ll explain all of that in a minute; first let’s see <code>polyCurve()</code> in use</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">cols</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="w"> </span><span class="s2">"navyblue"</span><span class="p">,</span><span class="w"> </span><span class="s2">"orange"</span><span class="p">)</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">Volume</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w">
+               </span><span class="n">panel.first</span><span class="w"> </span><span class="o">=</span><span class="w">
+               </span><span class="n">polyCurve</span><span class="p">(</span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">Volume</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">to</span><span class="p">,</span><span class="w">
+                         </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="n">border</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">)))</span></code></pre>
+</figure>
+<p>The resulting plot should look like the one in Figure 2 below.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/final_plot_polygon_under_the_curve.png" alt="Final plot showing the example data and four regions under the curve shaded" /><figcaption>Final plot showing the example data and four regions under the curve shaded</figcaption>
+</figure>
+<p>Now the nitty gritty. <code>polyCurve()</code> takes the x and y data points, the start and end points of the areas to be shaded in (arguments <code>from</code> and <code>to</code>), an option to override the minimum value on the y axis to which the shading will extend (can be missing), plus vectors of colours for the fill and border of each polygon drawn.</p>
+<p>Lines 3–8 define an internal function <code>drawPoly()</code>, which will actually draw a single polygon over the region under the curve defined by its arguments <code>from</code> and <code>to</code>. The first argument to <code>drawPoly()</code> is <code>fun</code>, which is a function that returns values on the curve for a vector of locations in the x variable/axis. We’ll see how this function is derived later. Notice that we pass in here some of the arguments previously described that control the look of the polygons and how far down on the y-axis the polygon will be drawn (<code>miny</code>).</p>
+<p>The first line of <code>drawPoly()</code> generates an equally-spaced sequence of <code>n</code> values over the range of the polygon on the x-axis. <code>n</code> defaults to 50 values but this can be changed if needed especially if the data in that region are very wiggly or the region quite wide. The next part of <code>drawPoly()</code> uses the <code>polygon()</code> function to actually draw the polygon. We pass it the x coordinate as the sequence of values just created, with the first and last points in the sequence repeated. The y coordinates are supplied as the output from <code>fun()</code> for the sequence of points, augmented at the start and end by the value of <code>miny</code>. And that’s it.</p>
+<p>Lines 9–16 of <code>polyCurve()</code> do some sanity checking and house keeping</p>
+<ul>
+<li>First the lengths of <code>from</code> and <code>to</code> are checked to see if they are equal</li>
+<li>Then we check the lengths of the vectors of fill and border colours, <code>col</code> and <code>border</code> to see if these match up with the number of polygons to be drawn. If the lengths don’t match, we extend each vector to match the number of polygons to be drawn. This is a nice little feature that allows for a single colour to be supplied and have <code>polyCurve()</code> still work.</li>
+<li>Finally, we check to see if argument <code>miny</code> was set by the user and if not we assign to it the minimum value taken by <code>y</code>.</li>
+</ul>
+<p>The next line is where some R magic happens. Recall that <code>drawPoly()</code> takes a function as its first argument, which returns interpolated values along the data curve at specified x variable locations. This is where that function is created. <code>approxfun()</code> is one of those great little R functions that really saves a lot of time and coding. Essentially, <code>approxfun()</code> linearly (by default) interpolates a set of x and y coordinates. But crucially, and here is the kicker, it returns a <em>function</em> that, if given new locations for the x coordinate, will return interpolated values for the y coordinate.</p>
+<p>Rather than interpolating the data curve for each region for which we want to draw a polygon, we interpolate the entire data curve with <code>approxfun()</code> and then reuse that function to generate the interpolated values we need when drawing each region’s polygon.</p>
+<p>The last major piece of <code>polyCurve()</code> code is where we repeatedly call <code>drawPoly()</code>, once per region to be covered by a polygon. I could have done this part with a <code>for()</code> loop, iterating over the regions and calling <code>drawPoly()</code> with the appropriate <code>from</code>, <code>to</code>, <code>col</code> and <code>border</code>, etc. That would be relatively easy to do, but it is not really R-like. R provides a family of functions, known as the <code>apply</code> functions, which in many cases allow one to do away with an explicit <code>for()</code>. (Note that the loop is still there, it is just hidden away from view and in some cases done in compiled code rather than interpretted R code.)</p>
+<p>We want to call <code>drawPoly()</code> for each combination of <code>from</code>, <code>to</code>, <code>col</code> and <code>border</code>. For this we need a the <em>multivariate</em> <code>apply</code> function <code>mapply()</code>. We pass <code>mapply()</code> the function we wish to repeatedly call. After this we give the arguments we wish to call our function with. <code>mapply()</code> will call our function once for each combination of these arguments. I.e. it will call <code>drawPoly()</code> with <code>from[i]</code>, <code>to[i]</code>, <code>col[i]</code> and <code>border[i]</code>, where <code>i</code> takes the value 1, 2, 3, … in turn. The final part of our <code>mapply()</code> call is to pass some extra arguments needed for <code>drawPoly()</code>; these arguments don’t change with each polygon so they are supplied as a list object to the <code>MoreArgs</code> argument. Notice that I name the elements of this list using the name of the <code>drawPoly()</code> argument I want each element passed on to.</p>
+<p>The final line is last bit of house keeping; <code>polyCurve()</code> returns nothing and does so invisibly.</p>
+<p>Let’s return to the code we used to actually draw Figure 2 above</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">cols</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="w"> </span><span class="s2">"navyblue"</span><span class="p">,</span><span class="w"> </span><span class="s2">"orange"</span><span class="p">)</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">Volume</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w">
+               </span><span class="n">panel.first</span><span class="w"> </span><span class="o">=</span><span class="w">
+               </span><span class="n">polyCurve</span><span class="p">(</span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">Volume</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">from</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">to</span><span class="p">,</span><span class="w">
+                         </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cols</span><span class="p">,</span><span class="w"> </span><span class="n">border</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">)))</span></code></pre>
+</figure>
+<p>This is a fairly standard call to <code>plot()</code>. The none-standard part is the use of the <code>panel.first</code> argument. This is actually an argument of <code>plot.default()</code>, the default <code>plot</code> method. It takes an R expression, a bit of R code, that will be run after the plotting region has been defined and axes drawn, but crucially <em>before</em> the data for the plot are actually drawn. This is where we want <code>polyCurve()</code> to be run, so the coloured polygons end up being drawn <em>underneath</em> the actual data. This produces a nicer looking plot than having the polygons drawn over the top of the data.</p>
+<p>It is worth noting that there is a corresponding <code>panel.last</code> argument which works the same way but is only run once all the other plotting is complete. A further point to note is that these two arguments work nicely when the default <code>plot</code> is called, but they can break when other <code>plot</code> methods are called first. Things break because the expression supplied to <code>panel.first</code> might end up getting evaluated (run) <em>before</em> any plotting has even taken place, because the argument is being evaluated in the wrong place (at the wrong time). At the very least, <code>panel.first</code> will have no effect, but it might raise an error in some situations.</p>
+<p>So there we have it. Interpolating the data allows for a relatively concise solution to the problem of shading areas under a curve. It is a general solution not requiring one to have data at the boundaries of the regions to be shaded and as such doesn’t require any selection of data points within the region to draw the polygon through.</p>
+<p>If you are still with me, it might be useful to visualise how <code>drawPoly()</code> and <code>polyCurve()</code> work, to see what each part of the process is doing.</p>
+<p>First, set up a base plot onto which we can draw; this shows the data as before, but with the data points draw in a smaller size.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">Volume</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">,</span><span class="w">
+     </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Interpolated points on the\ndata curve"</span><span class="p">)</span></code></pre>
+</figure>
+<p>Next, use <code>approxfun()</code> to produce an interpolation function for the data</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">FUN</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">approxfun</span><span class="p">(</span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">Volume</span><span class="p">))</span></code></pre>
+</figure>
+<p><code>FUN()</code> takes a single argument, the locations on the x variable for which interpolated y coordinates are to be returned, e.g.</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; FUN((1:10) * 0.1) 
+ [1]  8.394756 12.740232 12.004102  8.834530  7.239627  8.145023
+ [7]  7.831734  5.340844  4.948277        NA</code></pre>
+</figure>
+<p>Notice that <code>NA</code> is returned for values outside the range of the data; This is the default behaviour of <code>approxfun()</code>, which can be changed via argument <code>rule</code>, but we can’t get it to extrapolate beyond the range of the data.</p>
+<p>Now, generate a set of x coordinates for the region of the curve we want to interpolate. Here I use the bit of the curve between the two peaks in the data.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">Sq</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">from</span><span class="p">[</span><span class="m">3</span><span class="p">],</span><span class="w"> </span><span class="n">to</span><span class="p">[</span><span class="m">3</span><span class="p">],</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">)</span></code></pre>
+</figure>
+<p>We use 20 values here, so the plot we will produce in a minute isn’t overly crowded, but the more values you draw over the region, the smoother the fit to the data curve itself. The interpolated values for this sequence of coordinates is given by <code>FUN()</code></p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; FUN(Sq)
+ [1] 9.724055 9.300774 8.907145 8.565961 8.233448 7.924078
+ [7] 7.675439 7.471385 7.315091 7.263203 7.216052 7.210351
+[13] 7.339273 7.468195 7.600860 7.801945 7.996272 8.180440
+[19] 8.347901 8.429620</code></pre>
+</figure>
+<p>and we can draw these locations on the plot via a call to <code>points()</code>, giving it the x coordinates, <code>Sq</code>, and the output from <code>FUN(Sq)</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">points</span><span class="p">(</span><span class="n">Sq</span><span class="p">,</span><span class="w"> </span><span class="n">FUN</span><span class="p">(</span><span class="n">Sq</span><span class="p">),</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"#FF000088"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">)</span></code></pre>
+</figure>
+<p>The points were drawn in red, with some alpha transparency so that the data and curve show through from underneath. The resulting plot should look like the one in the left hand panel of Figure 3 below.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/working_polygon_under_curve.png" alt="Illustrating the steps involved in interpolating the data curve and drawing a polygon under the curve" /><figcaption>Illustrating the steps involved in interpolating the data curve and drawing a polygon under the curve</figcaption>
+</figure>
+<p>Now that we have a good handle on what <code>approxfun()</code> is doing, we can move on to the drawing of the polygon that will shade in the area under the curve defined by our region. Start a new plot as before</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">Volume</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">,</span><span class="w">
+      </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"The final polygon"</span><span class="p">)</span><span class="w">
+</span><span class="n">FUN</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">approxfun</span><span class="p">(</span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">Volume</span><span class="p">))</span><span class="w">
+</span><span class="n">Sq</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">from</span><span class="p">[</span><span class="m">3</span><span class="p">],</span><span class="w"> </span><span class="n">to</span><span class="p">[</span><span class="m">3</span><span class="p">],</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">)</span></code></pre>
+</figure>
+<p>We now need to do a few housekeeping steps that will make the subsequent plotting much easier.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">miny</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="n">Volume</span><span class="p">))</span><span class="w">
+</span><span class="n">xvals</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">Sq</span><span class="p">[</span><span class="m">1</span><span class="p">],</span><span class="w"> </span><span class="n">Sq</span><span class="p">,</span><span class="w"> </span><span class="n">Sq</span><span class="p">[</span><span class="m">20</span><span class="p">])</span><span class="w">
+</span><span class="n">yvals</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">miny</span><span class="p">,</span><span class="w"> </span><span class="n">FUN</span><span class="p">(</span><span class="n">Sq</span><span class="p">),</span><span class="w"> </span><span class="n">miny</span><span class="p">)</span><span class="w">
+</span><span class="n">col</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"#FF000088"</span></code></pre>
+</figure>
+<p>First we looked-up the minimum value of the y coordinate, <code>Volume</code>. Then we created a set of x and y coordinates for which we want the polygon drawing. For the x coordinates, notice how we extend the sequence by prepending the first element of <code>Sq</code> and appending the last element on to the vector of x coordinates <code>Sq</code>. We do this because we have two points with the same x coordinate at the edges of the region we want to cover in a polygon; one on the curve and one at the bottom of the plot. The y coordinates were generated by calling our interpolation function <code>FUN()</code>, and as with the x coordinates, we pad this vector of coordinates at both ends with the minimum value of <code>Volume</code>. This takes care of the vertices of the polygon that fall to the bottom of the plot. We also store the plotting colour so we don’t have to keep repeating it in the steps to follow.</p>
+<p>Having done that bit of housekeeping, we can draw the polygon. In the code below I draw the actual polygon and overlay on it the vertices of the polygon through which R actually draws the line of the polygon</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">polygon</span><span class="p">(</span><span class="n">xvals</span><span class="p">,</span><span class="w"> </span><span class="n">yvals</span><span class="p">,</span><span class="w"> </span><span class="n">border</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">col</span><span class="p">)</span><span class="w">
+</span><span class="n">points</span><span class="p">(</span><span class="n">xvals</span><span class="p">,</span><span class="w"> </span><span class="n">yvals</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">col</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">)</span></code></pre>
+</figure>
+<p>(Note that the behaviour of <code>polygon()</code> is to join the first and last vertices, hence we didn’t need to do that bit ourselves.)</p>
+<p>At this point the plot should look like the right hand panel of Figure 3, above. The entirety of Figure 3 can be reproduced via the following code</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="n">op</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">mar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">5</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">0.1</span><span class="p">)</span><span class="w">
+</span><span class="c1">## plot1</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">Volume</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">,</span><span class="w">
+     </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Interpolated points on the\ndata curve"</span><span class="p">)</span><span class="w">
+</span><span class="n">FUN</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">approxfun</span><span class="p">(</span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">Volume</span><span class="p">))</span><span class="w">
+</span><span class="n">Sq</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">from</span><span class="p">[</span><span class="m">3</span><span class="p">],</span><span class="w"> </span><span class="n">to</span><span class="p">[</span><span class="m">3</span><span class="p">],</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">)</span><span class="w">
+</span><span class="n">points</span><span class="p">(</span><span class="n">Sq</span><span class="p">,</span><span class="w"> </span><span class="n">FUN</span><span class="p">(</span><span class="n">Sq</span><span class="p">),</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"#FF000088"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">)</span><span class="w">
+</span><span class="c1">## plot2</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">Volume</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Diameter</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">,</span><span class="w">
+     </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"The final polygon"</span><span class="p">)</span><span class="w">
+</span><span class="n">miny</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">bed</span><span class="p">,</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="n">Volume</span><span class="p">))</span><span class="w">
+</span><span class="n">xvals</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">Sq</span><span class="p">[</span><span class="m">1</span><span class="p">],</span><span class="w"> </span><span class="n">Sq</span><span class="p">,</span><span class="w"> </span><span class="n">Sq</span><span class="p">[</span><span class="m">20</span><span class="p">])</span><span class="w">
+</span><span class="n">yvals</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">miny</span><span class="p">,</span><span class="w"> </span><span class="n">FUN</span><span class="p">(</span><span class="n">Sq</span><span class="p">),</span><span class="w"> </span><span class="n">miny</span><span class="p">)</span><span class="w">
+</span><span class="n">col</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"#FF000088"</span><span class="w">
+</span><span class="n">polygon</span><span class="p">(</span><span class="n">xvals</span><span class="p">,</span><span class="w"> </span><span class="n">yvals</span><span class="p">,</span><span class="w"> </span><span class="n">border</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">col</span><span class="p">)</span><span class="w">
+</span><span class="n">points</span><span class="p">(</span><span class="n">xvals</span><span class="p">,</span><span class="w"> </span><span class="n">yvals</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">col</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">)</span><span class="w">
+</span><span class="n">par</span><span class="p">(</span><span class="n">op</span><span class="p">)</span><span class="w">
+</span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2013/01/11/shading-regions-under-a-curve/";
+  var disqus_title = "Shading regions under a curve";
+  //var disqus_identifier = "/2013/01/11/shading-regions-under-a-curve";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>11 January 2013</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/area-under-a-curve/"><span class="label label-inverse">Area under a curve</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/graphics/"><span class="label label-inverse">Graphics</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/plotting/"><span class="label label-inverse">Plotting</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/polygon/"><span class="label label-inverse">Polygon</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

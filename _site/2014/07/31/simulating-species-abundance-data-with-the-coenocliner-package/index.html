@@ -1,0 +1,646 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Simulating species abundance data with coenocliner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="coenocliner" />
+
+
+<meta name="description" content="Coenoclines are, according to the Oxford Dictionary of Ecology (Allaby, 1998), “gradients of communities (e.g. in a transect from the summit to the base of a hill), reflecting the changing importance, frequency, or other appropriate measure of different species populations”. In much ecological research, and that of related fields, data on these coenoclines are collected and analyzed in a variety of ways. When developing new statistical methods or when trying to understand the behaviour of existing methods, we often resort to simulating data with known pattern or structure and then torture whatever method is of interest with the simulated data to tease out how well methods work or where they breakdown. There’s a long history of using computers to simulate species abundance data along coenoclines but until recently no R packages were available that performed coenocline simulation. coenocliner was designed to fill this gap, and today, the package was released to CRAN.
+
+
+Allaby, M. (1998). A dictionary of ecology. second. Oxford University Press.
+
+
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Simulating species abundance data with coenocliner" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2014-07-31T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Simulating species abundance data with coenocliner" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2014-07-31T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2014/07/31/simulating-species-abundance-data-with-the-coenocliner-package/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Coenoclines are, according to the Oxford Dictionary of Ecology (Allaby, 1998), “gradients of communities (e.g. in a transect from the summit to the base of a hill), reflecting the changing importance, frequency, or other appropriate measure of different species populations”. In much ecological research, and that of related fields, data on..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Simulating species abundance data with coenocliner" />
+
+
+<meta name="twitter:description" content="Coenoclines are, according to the Oxford Dictionary of Ecology (Allaby, 1998), “gradients of communities (e.g. in a transect from the summit to the base of a hill), reflecting the changing importa..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="31 Jul 2014"/>
+<meta name="citation_date" content="31 Jul 2014"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Simulating species abundance data with coenocliner"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2014/10/14/analogue-0.14-0-now-available-on-CRAN/">analogue 0.14-0 released</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2014/06/16/simultaneous-confidence-intervals-for-derivatives/">Confidence intervals for derivatives of splines in GAMs</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Simulating species abundance data with coenocliner </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>Coenoclines are, according to the Oxford Dictionary of Ecology <span class="citation" data-cites="Allaby1998">(Allaby, 1998)</span>, <em>“gradients of communities (e.g. in a transect from the summit to the base of a hill), reflecting the changing importance, frequency, or other appropriate measure of different species populations”</em>. In much ecological research, and that of related fields, data on these coenoclines are collected and analyzed in a variety of ways. When developing new statistical methods or when trying to understand the behaviour of existing methods, we often resort to simulating data with known pattern or structure and then torture whatever method is of interest with the simulated data to tease out how well methods work or where they breakdown. There’s a long history of using computers to simulate species abundance data along coenoclines but until recently no <strong>R</strong> packages were available that performed coenocline simulation. <strong>coenocliner</strong> was designed to fill this gap, and today, the package was <a href="http://cran.r-project.org/web/packages/coenocliner/index.html">released to CRAN</a>.</p>
+<p><strong>coenocliner</strong> can simulate species abundance or occurrence data along one or two gradients from either a Gaussian or generalised beta response model. Parameters for the response model are supplied for each species and parameterised species repsonse curves along the gradients are returned. Simulated abundance or occurrence data can be produced by sampling from one of several error distributions which use the parameterised species response curves as the expected count or probability of occurrence for the chosen error distribution. The available error distributions are</p>
+<ul>
+<li>Poisson</li>
+<li>Negative binomial</li>
+<li>Bernoulli (occurrence; Binomial with denominator \(m = 1\))</li>
+<li>Binomial (counts with specified denominator \(m\))</li>
+<li>Beta-binomial</li>
+<li>Zero-inflated Poisson (ZIP)</li>
+<li>Zero-inflated negative binomial (ZINB)</li>
+</ul>
+<p>You can find the <a href="https://github.com/gavinsimpson/coenocliner/">source code on github</a> and <a href="https://github.com/gavinsimpson/coenocliner/issues">report</a> any bugs or issues there. In the remainder of this posting I give an overview of <strong>coenocliner</strong> and show three examples illustrating features of package.</p>
+<h2 id="introduction-to-coenocliner">Introduction to coenocliner</h2>
+<p>To begin, load <strong>coenocliner</strong> and check the start-up message to see if you are using the current (0.1-0) release of the package</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"coenocliner"</span><span class="p">)</span></code></pre>
+</figure>
+<p>The main function in <strong>coenocliner</strong> is <code>coenocline()</code>, which provides a relatively simple interface to coenocline simulation allowing flexible specification of gradient locations and response model parameters for species. Gradient locations are specified via argument <code>x</code>, which can be a single vector, or, in the case of two gradients, a matrix or a list containing vectors of gradient values. The matrix version assumes the first gradient’s values are in the first column and those for the second gradient in the second column</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">xy</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">7</span><span class="p">,</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">),</span><span class="w">
+            </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">,</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">))</span></code></pre>
+</figure>
+<p>Similarly, for the list version, the first component contains the values for the first gradient and the second component the values for the second gradient</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">xy</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">6</span><span class="p">,</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">),</span><span class="w">
+           </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">,</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">))</span></code></pre>
+</figure>
+<p>The species response model used is indicated via the <code>responseModel</code> argument; available options are <code>"gaussian"</code> and <code>"beta"</code> for the classic Gaussian response model and the generalise beta response model respectively. Parameters are supplied to <code>coenocline()</code> via the <code>params</code> argument. <code>showParams()</code> can be used list the parameters for the desired response model. The parameters for the Gaussian response model are</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">showParams</span><span class="p">(</span><span class="s2">"gaussian"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Species response model: Gaussian
+
+Parameters:
+[1] opt tol h* 
+
+    Parameters marked with '*' are only supplied once</code></pre>
+</figure>
+<p>As indicated, some parameters are only supplied once per species, regardless of whether there are one or two gradients. Hence for the Gaussian model, the parameter <code>h</code> is only supplied for the first gradient even if two gradients are required.</p>
+<p>Parameters are supplied as a matrix with named columns, or as a list with named components. For example, for a Gaussian response for each of 3 species we could use either of the two forms</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">opt</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">4</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">6</span><span class="p">)</span><span class="w">
+</span><span class="n">tol</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">0.25</span><span class="p">,</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
+</span><span class="n">h</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">10</span><span class="p">,</span><span class="m">20</span><span class="p">,</span><span class="m">30</span><span class="p">)</span><span class="w">
+</span><span class="n">parm</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">opt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">opt</span><span class="p">,</span><span class="w"> </span><span class="n">tol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tol</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">)</span><span class="w">     </span><span class="c1"># matrix form</span><span class="w">
+</span><span class="n">parl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">opt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">opt</span><span class="p">,</span><span class="w"> </span><span class="n">tol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tol</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">)</span><span class="w">      </span><span class="c1"># list form</span></code></pre>
+</figure>
+<p>In the case of two gradients, a list with two components, one per gradient, is required. The first component contains parameters for the first gradient, the second element contains those for the second gradient. These components can be either a matrix or a list, as described previously. For example a list with parameters supplied as matrices</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">opty</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">25</span><span class="p">,</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="m">75</span><span class="p">)</span><span class="w">
+</span><span class="n">tol</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">5</span><span class="p">,</span><span class="w"> </span><span class="m">10</span><span class="p">,</span><span class="w"> </span><span class="m">20</span><span class="p">)</span><span class="w">
+</span><span class="n">pars</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">px</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">parm</span><span class="p">,</span><span class="w">
+             </span><span class="n">py</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">opt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">opty</span><span class="p">,</span><span class="w"> </span><span class="n">tol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tol</span><span class="p">))</span></code></pre>
+</figure>
+<p>Note that parameter \(h\) is not specified in the second set as this parameter, the height of the response curve at the gradient optima, applies globally — in the case of two gradients, \(h\) refers to the height of the bell-shaped curve at the bivariate optimum.</p>
+<p>Notice also how parameters are specified at the species level. To evaluate the response curve at the supplied gradient locations each set of parameters needs to be repeated for each gradient location. Thankfully <code>coenocline()</code> takes care of this detail for us.</p>
+<p>Additional parameters that may be needed for the response model but which are not specified at the species level are supplied as a list with named components to argument <code>extraParams</code>. An example is the correlation between Gaussian response curves in case of two gradients. This, unfortunately, means that a single correlation between response curves applies to all species<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, and is caused by a poor choice of implementation. Thankfully this is relatively easy to fix, which will be done for version 0.2-0 along with a fix for a similar issue relating to the statement of additional parameters for the error distribution used (see below).</p>
+<p>To simulate realistic count data we need to sample <em>with error</em> from the parameterised species response curves. Which of the distributions (listed earlier) is used is specified via argument <code>countModel</code>; available options are</p>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] "poisson"      "negbin"       "bernoulli"    "binary"      
+[5] "binomial"     "betabinomial" "ZIP"          "ZINB"        </code></pre>
+</figure>
+<p>Some of these distributions (all bar <code>"poisson"</code> and <code>"bernoulli"</code>) require additional arguments, such as the \(\) parameter for (one parameterisation of) the negative binomial distribution. These arguments are supplied as a list with named components. Again, due to the same implementation snafu as for <code>extraParams</code>, such parameters act globally for all species<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>.</p>
+<p>The final argument is <em>expectation</em>, which defaults to <code>FALSE</code>. When set to <code>TRUE</code>, simulating species counts or occurrences with error is skipped and the values of the parameterised response curve evaluated at the gradient locations are returned. This option is handy if you want to look at or plot the species response curves used in a simulation.</p>
+<h2 id="example-usage">Example usage</h2>
+<p>In the next few sections the basic usage of <code>coenocline()</code> is illustrated.</p>
+<h3 id="gaussian-responses-along-a-single-gradient">Gaussian responses along a single gradient</h3>
+<p>This example, of multiple species responses along a single environmental gradient, illustrates the simplest usage of <code>coenocline()</code>. The example uses a hypothetical pH gradient with species optima drawn at random uniformally along the gradient. Species tolerances are the same for all species. The maximum abundance of each species, \(h\), is drawn from a lognormal distribution with a mean of ~20 (\(e^3\)). This simulation will be for a community of 20 species, evaluated at 100 equally spaced locations. First we set up the parameters</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">M</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">20</span><span class="w">                                    </span><span class="c1"># number of species</span><span class="w">
+</span><span class="n">ming</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">3.5</span><span class="w">                                </span><span class="c1"># gradient minimum...</span><span class="w">
+</span><span class="n">maxg</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">7</span><span class="w">                                  </span><span class="c1"># ...and maximum</span><span class="w">
+</span><span class="n">locs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">ming</span><span class="p">,</span><span class="w"> </span><span class="n">maxg</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">)</span><span class="w">      </span><span class="c1"># gradient locations</span><span class="w">
+</span><span class="n">opt</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">runif</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ming</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxg</span><span class="p">)</span><span class="w">   </span><span class="c1"># species optima</span><span class="w">
+</span><span class="n">tol</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">0.25</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="p">)</span><span class="w">                       </span><span class="c1"># species tolerances</span><span class="w">
+</span><span class="n">h</span><span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">ceiling</span><span class="p">(</span><span class="n">rlnorm</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">meanlog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">))</span><span class="w">    </span><span class="c1"># max abundances</span><span class="w">
+</span><span class="n">pars</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">opt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">opt</span><span class="p">,</span><span class="w"> </span><span class="n">tol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tol</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">)</span><span class="w"> </span><span class="c1"># put in a matrix</span></code></pre>
+</figure>
+<p>As a check, before simulating any count data, we can look at the coenocline implied by these parameters by returning the expectations only from <code>coenocline()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">mu</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coenocline</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">responseModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gaussian"</span><span class="p">,</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pars</span><span class="p">,</span><span class="w">
+                 </span><span class="n">expectation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<p>This returns a matrix of values obtained by evaluating each species response curve at the supplied gradient locations. There is one column per species and one row per gradient location</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="nf">class</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span><span class="w">
+</span><span class="nf">dim</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span><span class="w">
+</span><span class="n">head</span><span class="p">(</span><span class="n">mu</span><span class="p">[,</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">6</span><span class="p">])</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] "matrix"</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 100  20</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">      [,1]      [,2]      [,3]   [,4]      [,5]      [,6]
+[1,] 1.088 5.443e-20 1.433e-13 0.5025 1.461e-36 2.604e-38
+[2,] 1.553 2.165e-19 4.414e-13 0.6938 9.370e-36 1.669e-37
+[3,] 2.173 8.440e-19 1.333e-12 0.9391 5.892e-35 1.049e-36
+[4,] 2.981 3.225e-18 3.945e-12 1.2460 3.631e-34 6.460e-36
+[5,] 4.008 1.208e-17 1.144e-11 1.6203 2.194e-33 3.900e-35
+[6,] 5.282 4.435e-17 3.254e-11 2.0655 1.299e-32 2.308e-34</code></pre>
+</figure>
+<p>A quick way to visualise the parameterised species response is to use <code>matplot()</code><a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">matplot</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pH"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-expectations.png" alt="Figure 1: Gaussian species response curves along a hypothetical pH gradient" /><figcaption>Figure 1: Gaussian species response curves along a hypothetical pH gradient</figcaption>
+</figure>
+<p>The resultant plot is shown in Figure 1.</p>
+<p>As this looks OK, we can simulate some count data. The simplest model for doing so is to make random draws from a Poisson distribution with the mean, \(\), for each species set to value of the response curve evaluated at each gradient location. Hence the values in <code>mu</code> that we just created can be thought of as the expected count per species at each of the gradient locations we are interested in. To simulate Poisson count data, use <code>expectation = FALSE</code> or remove this argument from the call. To be more explicit, we should also state <code>countModel = "poisson"</code><a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">simp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coenocline</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">responseModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gaussian"</span><span class="p">,</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pars</span><span class="p">,</span><span class="w">
+                   </span><span class="n">countModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"poisson"</span><span class="p">)</span></code></pre>
+</figure>
+<p>Again, <code>matplot</code> is useful in visualizing the simulated data</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">matplot</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">simp</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"p"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">,</span><span class="w">
+        </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pH"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-simulations.png" alt="Figure 2: Simulated species abundances with Poisson errors from Gaussian response curves along a hypothetical pH gradient" /><figcaption>Figure 2: Simulated species abundances with Poisson errors from Gaussian response curves along a hypothetical pH gradient</figcaption>
+</figure>
+<p>The resultant plot is shown in Figure 2 above.</p>
+<p>Whilst the simulated counts look reasonable and follow the response curves in Figure  there is a problem; the variation around the expected curves is too small. This is due to the error variance implied by the Poisson distribution encapsulating only that variance which would arise due to repeated sampling at the gradient locations. Most species abundance data exhibit much larger degrees of variation than that shown in Figure .</p>
+<p>A solution to this is to sample from a distribution that incorporates additional variance or <em>overdispersion</em>. A natural partner to the Poisson that includes overdispersion is the negative binomial. To simulate count data using the negative binomial distribution we must alter <code>countModel</code> and supply the overdispersion parameter <span class="math inline">\(\alpha\)</span> to use<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a> via <code>countParams</code>.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">simnb</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coenocline</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">responseModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gaussian"</span><span class="p">,</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pars</span><span class="p">,</span><span class="w">
+                    </span><span class="n">countModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"negbin"</span><span class="p">,</span><span class="w"> </span><span class="n">countParams</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">))</span></code></pre>
+</figure>
+<p>Using <code>matplot</code> it is apparent that the simluated species data are now far more relalistic (Figure 3)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">matplot</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">simnb</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"p"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">10</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">,</span><span class="w">
+        </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pH"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-nb-simulations.png" alt="Figure 3: Simulated species abundance with negative binomial errors from Gaussian response curves along a hypothetical pH gradient" /><figcaption>Figure 3: Simulated species abundance with negative binomial errors from Gaussian response curves along a hypothetical pH gradient</figcaption>
+</figure>
+<h3 id="generalised-beta-responses-along-a-single-gradient">Generalised beta responses along a single gradient</h3>
+<p>In this example, I recreate figure 2 in <span class="citation" data-cites="Minchin1987">Minchin (1987)</span> and then simulate species abundances from the species response curves. The species parameters for the generalised beta response for the six species in <span class="citation" data-cites="Minchin1987">Minchin (1987)</span> are</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">A0</span><span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">5</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">7</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">9</span><span class="p">,</span><span class="m">8</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">10</span><span class="w">               </span><span class="c1"># max abundance</span><span class="w">
+</span><span class="n">m</span><span class="w">     </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">25</span><span class="p">,</span><span class="m">85</span><span class="p">,</span><span class="m">10</span><span class="p">,</span><span class="m">60</span><span class="p">,</span><span class="m">45</span><span class="p">,</span><span class="m">60</span><span class="p">)</span><span class="w">              </span><span class="c1"># location on gradient of modal abundance</span><span class="w">
+</span><span class="n">r</span><span class="w">     </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">6</span><span class="p">,</span><span class="m">5</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">10</span><span class="w">               </span><span class="c1"># species range of occurence on gradient</span><span class="w">
+</span><span class="n">alpha</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0.1</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">1.5</span><span class="p">,</span><span class="m">1</span><span class="p">)</span><span class="w">                </span><span class="c1"># shape parameter</span><span class="w">
+</span><span class="n">gamma</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0.1</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">0.5</span><span class="p">,</span><span class="m">4</span><span class="p">)</span><span class="w">                </span><span class="c1"># shape parameter</span><span class="w">
+</span><span class="n">locs</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">100</span><span class="w">                             </span><span class="c1"># gradient locations</span><span class="w">
+</span><span class="n">pars</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">r</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">alpha</span><span class="p">,</span><span class="w">
+              </span><span class="n">gamma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gamma</span><span class="p">,</span><span class="w"> </span><span class="n">A0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">A0</span><span class="p">)</span><span class="w">      </span><span class="c1"># species parameters, in list form</span></code></pre>
+</figure>
+<p>To recreate figure 2 in <span class="citation" data-cites="Minchin1987">Minchin (1987)</span> evaluations at the chosen gradient locations, <code>locs</code>, of the parameterised generalised beta are required and can be generated by passing <code>coenocline()</code> the gradient locations and the chosen species parameters as before, choosing the generalised beta response model and using <code>expectation = TRUE</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">mu</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coenocline</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">responseModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"beta"</span><span class="p">,</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pars</span><span class="p">,</span><span class="w"> </span><span class="n">expectation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<p>As before <code>mu</code> is a matrix with one column per species</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">head</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">     [,1] [,2]  [,3] [,4]   [,5] [,6]
+[1,]    0    0 44.52    0 0.5913    0
+[2,]    0    0 49.39    0 1.6582    0
+[3,]    0    0 53.90    0 3.0199    0
+[4,]    0    0 57.97    0 4.6085    0
+[5,]    0    0 61.52    0 6.3828    0
+[6,]    0    0 64.51    0 8.3138    0</code></pre>
+</figure>
+<p>and as such we can use <code>matplot()</code> to draw the species responses</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">matplot</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Gradient"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example2-beta-plot-expectations.png" alt="Figure 4: Generalised beta function species response curves along a hypothetical environmental gradient recreating Figure 2 in Minchin (1987)." /><figcaption>Figure 4: Generalised beta function species response curves along a hypothetical environmental gradient recreating Figure 2 in Minchin (1987).</figcaption>
+</figure>
+<p>Figure 4 is a good facsimile of figure 2 in <span class="citation" data-cites="Minchin1987">Minchin (1987)</span>.</p>
+<h3 id="gaussian-response-along-two-gradients">Gaussian response along two gradients</h3>
+<p>In this example I illustrate how to simulate species abundance in an environment comprising two gradients. Parameters for the simulation are defined first, including the number of species and samples required, followed by definitions of the gradient units and lengths, species optima, and tolerances for each gradient, and the maximal abundance (\(h\)).</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">10</span><span class="p">)</span><span class="w">
+</span><span class="n">N</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">30</span><span class="w">                                           </span><span class="c1"># number of samples</span><span class="w">
+</span><span class="n">M</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">20</span><span class="w">                                           </span><span class="c1"># number of species</span><span class="w">
+</span><span class="c1">## First gradient</span><span class="w">
+</span><span class="n">ming1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">3.5</span><span class="w">                                      </span><span class="c1"># 1st gradient minimum...</span><span class="w">
+</span><span class="n">maxg1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">7</span><span class="w">                                        </span><span class="c1"># ...and maximum</span><span class="w">
+</span><span class="n">loc1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">ming1</span><span class="p">,</span><span class="w"> </span><span class="n">maxg1</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w">             </span><span class="c1"># 1st gradient locations</span><span class="w">
+</span><span class="n">opt1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">runif</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ming1</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxg1</span><span class="p">)</span><span class="w">        </span><span class="c1"># species optima</span><span class="w">
+</span><span class="n">tol1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">0.5</span><span class="p">,</span><span class="w"> </span><span class="n">M</span><span class="p">)</span><span class="w">                               </span><span class="c1"># species tolerances</span><span class="w">
+</span><span class="n">h</span><span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">ceiling</span><span class="p">(</span><span class="n">rlnorm</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">meanlog</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">))</span><span class="w">           </span><span class="c1"># max abundances</span><span class="w">
+</span><span class="n">par1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">opt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">opt1</span><span class="p">,</span><span class="w"> </span><span class="n">tol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tol1</span><span class="p">,</span><span class="w"> </span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">h</span><span class="p">)</span><span class="w">      </span><span class="c1"># put in a matrix</span><span class="w">
+</span><span class="c1">## Second gradient</span><span class="w">
+</span><span class="n">ming2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1</span><span class="w">                                        </span><span class="c1"># 2nd gradient minimum...</span><span class="w">
+</span><span class="n">maxg2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">100</span><span class="w">                                      </span><span class="c1"># ...and maximum</span><span class="w">
+</span><span class="n">loc2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">ming2</span><span class="p">,</span><span class="w"> </span><span class="n">maxg2</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">N</span><span class="p">)</span><span class="w">             </span><span class="c1"># 2nd gradient locations</span><span class="w">
+</span><span class="n">opt2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">runif</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ming2</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">maxg2</span><span class="p">)</span><span class="w">        </span><span class="c1"># species optima</span><span class="w">
+</span><span class="n">tol2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">ceiling</span><span class="p">(</span><span class="n">runif</span><span class="p">(</span><span class="n">M</span><span class="p">,</span><span class="w"> </span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">5</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">))</span><span class="w">      </span><span class="c1"># species tolerances</span><span class="w">
+</span><span class="n">par2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">opt</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">opt2</span><span class="p">,</span><span class="w"> </span><span class="n">tol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tol2</span><span class="p">)</span><span class="w">             </span><span class="c1"># put in a matrix</span><span class="w">
+</span><span class="c1">## Last steps...</span><span class="w">
+</span><span class="n">pars</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">px</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">par1</span><span class="p">,</span><span class="w"> </span><span class="n">py</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">par2</span><span class="p">)</span><span class="w">                </span><span class="c1"># put parameters into a list</span><span class="w">
+</span><span class="n">locs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">expand.grid</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loc1</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">loc2</span><span class="p">)</span><span class="w">           </span><span class="c1"># put gradient locations together</span></code></pre>
+</figure>
+<p>Notice how the parameter sets for each gradient are individual matrices which are combined in a list, <code>pars</code>, ready for use. Also different this time is the <code>expand.grid()</code> call which is used to generate all pairwise combinations of the locations on the two gradients. This has the effect of creating a coordinate pair on the two gradients at which we’ll evaluate the response curves. In effect this creates a grid of points over the gradient space.</p>
+<p>Having set up the parameters, the call to <code>coenocline()</code> is the same as before, except now we specify a degree of correlation between the two gradients via <code>extraParams = list(corr = 0.5)</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">mu2d</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coenocline</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">responseModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gaussian"</span><span class="p">,</span><span class="w">
+                   </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pars</span><span class="p">,</span><span class="w"> </span><span class="n">extraParams</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">corr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">),</span><span class="w">
+                   </span><span class="n">expectation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<p><code>mu2d</code> now contains a matrix of expected species abundances, one column per species as before. Because of the way the <code>expand.grid()</code> function works, the ordering of species abudances in each column has the first gradient locations varying fastest — the locations on the first gradient are repeated in order for each location on the second gradient</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">head</span><span class="p">(</span><span class="n">locs</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">      x y
+1 3.500 1
+2 3.621 1
+3 3.741 1
+4 3.862 1
+5 3.983 1
+6 4.103 1</code></pre>
+</figure>
+<p>As a result, we can reshape the abundances for a single species into a matrix reflecting the grid of locations over the gradient space via a simple <code>matrix()</code> call, setting the number of columns in the resultant matrix equal to the number of gradient locations in the simulation. By way of illustration, this approach is used to prepare the expected abundances for four of the species in <code>mu2d</code> for plotting via the <code>persp()</code> plotting function</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="n">op</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">mar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">4</span><span class="p">))</span><span class="w">
+</span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">8</span><span class="p">,</span><span class="m">13</span><span class="p">,</span><span class="m">19</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">persp</span><span class="p">(</span><span class="n">loc1</span><span class="p">,</span><span class="w"> </span><span class="n">loc2</span><span class="p">,</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">mu2d</span><span class="p">[,</span><span class="w"> </span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">loc2</span><span class="p">)),</span><span class="w">
+          </span><span class="n">ticktype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"detailed"</span><span class="p">,</span><span class="w"> </span><span class="n">zlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">,</span><span class="w">
+          </span><span class="n">theta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">45</span><span class="p">,</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">30</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span><span class="n">par</span><span class="p">(</span><span class="n">op</span><span class="p">)</span><span class="w">
+</span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example3-persp-plots.png" alt="Figure 5: Bivariate Gaussian species responses for four selected species." /><figcaption>Figure 5: Bivariate Gaussian species responses for four selected species.</figcaption>
+</figure>
+<p>The selected species response curves are shown in Figure 5.</p>
+<p>Simulated counts for each species can be produced by removing <code>expectation = TRUE</code> from the call and choosing an error distribution to make random draws from. For example, for negative binomial errors with dispersion \(= 1\) we can use</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">sim2d</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coenocline</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">responseModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gaussian"</span><span class="p">,</span><span class="w">
+                    </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pars</span><span class="p">,</span><span class="w"> </span><span class="n">extraParams</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">corr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">),</span><span class="w">
+                    </span><span class="n">countModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"negbin"</span><span class="p">,</span><span class="w"> </span><span class="n">countParams</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">))</span></code></pre>
+</figure>
+<p>The resulting simulated counts for the same four selected species are shown in Figure 6, which was generated using the code below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="n">op</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">mar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">4</span><span class="p">))</span><span class="w">
+</span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">8</span><span class="p">,</span><span class="m">13</span><span class="p">,</span><span class="m">19</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">persp</span><span class="p">(</span><span class="n">loc1</span><span class="p">,</span><span class="w"> </span><span class="n">loc2</span><span class="p">,</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">sim2d</span><span class="p">[,</span><span class="w"> </span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">loc2</span><span class="p">)),</span><span class="w">
+          </span><span class="n">ticktype</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"detailed"</span><span class="p">,</span><span class="w"> </span><span class="n">zlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">,</span><span class="w">
+          </span><span class="n">theta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">45</span><span class="p">,</span><span class="w"> </span><span class="n">phi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">30</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span><span class="n">par</span><span class="p">(</span><span class="n">op</span><span class="p">)</span><span class="w">
+</span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example3-persp-plots2.png" alt="Figure 6: Simulated counts using negative binomial errors from bivariate Gaussian species responses for four selected species." /><figcaption>Figure 6: Simulated counts using negative binomial errors from bivariate Gaussian species responses for four selected species.</figcaption>
+</figure>
+<div id="refs" class="references">
+<div id="ref-Allaby1998">
+<p>Allaby, M. (1998). <em>A dictionary of ecology</em>. second. Oxford University Press.</p>
+</div>
+<div id="ref-Minchin1987">
+<p>Minchin, P. R. (1987). Simulation of multidimensional community patterns: Towards a comprehensive model. <em>Vegetatio</em> 71, 145–156.</p>
+</div>
+</div>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>This is not strictly true as you can work out how the species parameters are replicated relative to gradient values and hence pass a vector of the correct length with the species-specific values included. Study the outputs from <code>expand()</code> when supplied gradient locations and parameters to work out how to specify <code>extraParams</code> appropriately<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>Again, this is not strictly true as you can work out how the species parameters are replicated relative to gradient values and hence pass a vector of the correct length with the species-specific values included. Study the outputs from <code>expand()</code> when supplied gradient locations and parameters to work out how to specify <code>countParams</code> appropriately<a href="#fnref2" class="footnote-back">↩</a></p></li>
+<li id="fn3"><p>until such a time as the <strong>coenocliner</strong> has a <code>plot</code> method…<a href="#fnref3" class="footnote-back">↩</a></p></li>
+<li id="fn4"><p><code>countModel = "poisson"</code> is the default so this can be excluded from the call.<a href="#fnref4" class="footnote-back">↩</a></p></li>
+<li id="fn5"><p>Recall that this is only easily specifiable globally in version 0.1-0 of <strong>coenocliner</strong>.<a href="#fnref5" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2014/07/31/simulating-species-abundance-data-with-the-coenocliner-package/";
+  var disqus_title = "Simulating species abundance data with coenocliner";
+  //var disqus_identifier = "/2014/07/31/simulating-species-abundance-data-with-the-coenocliner-package";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>31 July 2014</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/coenocliner/"><span class="label label-inverse">coenocliner</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

@@ -1,0 +1,662 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Fitting count and zero-inflated count GLMMs with mgcv</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GLMM, mgcv, glmmTMB, GAM, splines, random effects, counts, negative binomial, zero inflation" />
+
+
+<meta name="description" content="A couple of days ago, Mollie Brooks and coauthors posted a preprint on BioRχiv illustrating the use of the glmmTMB R package for fitting zero-inflated GLMMs (Brooks et al., 2017). In the paper, glmmTMB is compared with several other GLMM-fitting packages. mgcv has recently gained the ability to fit a wider range of families beyond the exponential family of distributions, including zero-inflated Poisson models. mgcv can also fit simple GLMMs through a spline equivalent of a Gaussian random effect. So, whilst I was waiting on some Bayesian GAMs to finish sampling, I decided to see how mgcv compared against glmmTMB on the two examples used in the paper.
+
+
+Brooks, M. E., Kristensen, K., Benthem, K. J. van, Magnusson, A., Berg, C. W., Nielsen, A., et al. (2017). Modeling Zero-Inflated count data with glmmTMB. bioRxiv, 132753. doi:10.1101/132753.
+
+
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Fitting count and zero-inflated count GLMMs with mgcv" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2017-05-04T13:45:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Fitting count and zero-inflated count GLMMs with mgcv" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2017-05-04T13:45:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2017/05/04/compare-mgcv-with-glmmTMB/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="A couple of days ago, Mollie Brooks and coauthors posted a preprint on BioRχiv illustrating the use of the glmmTMB R package for fitting zero-inflated GLMMs (Brooks et al., 2017). In the paper, glmmTMB is compared with several other GLMM-fitting packages. mgcv has recently gained the ability to fit a..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Fitting count and zero-inflated count GLMMs with mgcv" />
+
+
+<meta name="twitter:description" content="A couple of days ago, Mollie Brooks and coauthors posted a preprint on BioRχiv illustrating the use of the glmmTMB R package for fitting zero-inflated GLMMs (Brooks et al., 2017). In the paper, gl..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="04 May 2017"/>
+<meta name="citation_date" content="04 May 2017"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Fitting count and zero-inflated count GLMMs with mgcv"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2017/10/10/difference-splines-i/">Comparing smooths in factor-smooth interactions I</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-ii/">Prediction intervals for GLMs part II</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Fitting count and zero-inflated count GLMMs with mgcv </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>A couple of days ago, Mollie Brooks and coauthors posted a <a href="http://doi.org/10.1101/132753">preprint</a> on <a href="http://biorxiv.org/">BioRχiv</a> illustrating the use of the <strong>glmmTMB</strong> R package for fitting zero-inflated GLMMs <span class="citation" data-cites="Brooks2017-so">(Brooks et al., 2017)</span>. In the paper, <strong>glmmTMB</strong> is compared with several other GLMM-fitting packages. <strong>mgcv</strong> has recently gained the ability to fit a wider range of families beyond the exponential family of distributions, including zero-inflated Poisson models. <strong>mgcv</strong> can also fit simple GLMMs through a spline equivalent of a Gaussian random effect. So, whilst I was waiting on some Bayesian GAMs to finish sampling, I decided to see how <strong>mgcv</strong> compared against <strong>glmmTMB</strong> on the two examples used in the paper.</p>
+<p>For this post I’ll be using a couple of packages beyond <strong>glmmTMB</strong> and <strong>mgcv</strong>; make sure you have <strong>ggplot2</strong> and <strong>ggstance</strong> installed if you wish to run through the code below.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"glmmTMB"</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"ggstance"</span><span class="p">)</span></code></pre>
+</figure>
+<p>There are several ways in which <strong>mgcv</strong> allows GLMMs to be fitted, but the way that interests me here is via <code>gam()</code> and the <em>random effect</em> spline basis. Penalised splines of the type provided in <strong>mgcv</strong> can also be represented in mixed model form, such that GAMs can also be fitted using mixed effect modelling software. The general idea is that the spline is decomposed into two parts:</p>
+<ol type="1">
+<li>the perfectly smooth parts of the basis, namely those functions, including constant and linear functions, in the penalty null space of the spline. These are added to the fixed effects model matrix, whilst,</li>
+<li>the remaining wiggly parts of the basis are treated as random effects.</li>
+</ol>
+<p>Given this duality between splines and random effects, you can reverse the idea and create a spline basis that is the equivalent of a simple Gaussian i.i.d random effect, such that you can fit a GLMM or GAMM using GAM software like <strong>mgcv</strong>. <strong>mgcv</strong> has the <code>re</code> basis for this, and I’ll exploit that to fit the zero-inflated GLMMs to the two examples.</p>
+<p>In <span class="citation" data-cites="Brooks2017-so">Brooks et al. (2017)</span>, two example data sets are used;</p>
+<ol type="1">
+<li><code>Salamanders</code> — Seven combinations of different salamander species and life-stages were repeatedly sampled four times at 23 sites in Applachian streams <span class="citation" data-cites="Price2016-no">(Price et al., 2016)</span>. Some of the streams were impacted by mountaintop removal and valley filling from coal mining. The data are available from <span class="citation" data-cites="Price2015-se">Price et al. (2015)</span>, as well as the <strong>glmmTMB</strong> package.</li>
+<li><code>Owls</code> — the second example is a well-studied one in mixed modelling papers and textbooks <span class="citation" data-cites="Zuur2009-vg">(Zuur et al., 2009, @Bolker2013–vl)</span>, and relates to the begging behaviour of owl nestlings. The data were originally reported in <span class="citation" data-cites="Roulin2007-rq">Roulin and Bersier (2007)</span>.</li>
+</ol>
+<h3 id="salamanders">Salamanders</h3>
+<p><span class="citation" data-cites="Brooks2017-so">Brooks et al. (2017)</span> fit several count models to the <code>Salamander</code> data set, including standard Poisson GLMMs, negative binomial GLMMs, with <span class="math inline">\(\theta\)</span> estimated and modelled via a linear predictor, as well as zero-inflated Poisson (ZIP) and zero-inflated negative binomial (ZINB) models. Of these, <code>gam()</code> can currently fit all but the negative binomial with <span class="math inline">\(\theta\)</span> modelled via a linear predictor and the ZINB models.</p>
+<p>The best fitting model of those presented was a negative binomial model, whilst <span class="citation" data-cites="Brooks2017-so">Brooks et al. (2017)</span> also illustrate how to generate fitted values from the ZIP. Rather than go through fitting all of the <span class="citation" data-cites="Brooks2017-so">Brooks et al. (2017)</span> models, I restrict fitting here to these two models. A <a href="https://gist.github.com/gavinsimpson/8a0f0e072b095295cf5f7af2762e05a7">gist</a> with code to fit all the models that <code>gam()</code> is capable of is available on Github. I have named the models similarly to <span class="citation" data-cites="Brooks2017-so">Brooks et al. (2017)</span> to facilitate comparison.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">nbgam2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">spp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">mined</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">site</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"re"</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Salamanders</span><span class="p">,</span><span class="w">
+              </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nb</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ML"</span><span class="p">)</span><span class="w">
+</span><span class="n">nbm2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">glmmTMB</span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">spp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">mined</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">site</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Salamanders</span><span class="p">,</span><span class="w">
+                </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nbinom2</span><span class="p">)</span></code></pre>
+</figure>
+<p>As <code>glmmTMB()</code> is currently only capable of fitting models using maximum likelihood, not REML, I use the Laplace approximate maximum likelihood estimation method for <code>gam()</code>. The new <code>nb</code> family in <strong>mgcv</strong> is for the negative binomial distribution with the (fixed) dispersion parameter <span class="math inline">\(\theta\)</span> estimated as a model parameter, in the same way that <code>MASS::glm.nb()</code> and <code>lme4::glmer.nb()</code> models do.</p>
+<p>In the <code>gam()</code> model, the random effect is specified using the standard <code>s()</code> smooth function with the <code>"re"</code> basis selected. The named variable, here <code>site</code>, should be stored as a factor in the data object to avoid problems.</p>
+<p>The figure below compares the coefficient estimates returned by <code>glmmTMB()</code> and <code>gam()</code>; they are very similar, which is encouraging.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">nb2.coefs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">estimate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">coef</span><span class="p">(</span><span class="n">summary</span><span class="p">(</span><span class="n">nbm2</span><span class="p">))</span><span class="o">$</span><span class="n">cond</span><span class="p">[,</span><span class="w"> </span><span class="s2">"Estimate"</span><span class="p">],</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">nbgam2</span><span class="p">)[</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">14</span><span class="p">)]),</span><span class="w">
+                        </span><span class="n">model</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s2">"glmmTMB"</span><span class="p">,</span><span class="w"> </span><span class="s2">"mgcv::gam"</span><span class="p">),</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">14</span><span class="p">),</span><span class="w">
+                        </span><span class="n">term</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="nf">names</span><span class="p">(</span><span class="n">coef</span><span class="p">(</span><span class="n">nbgam2</span><span class="p">)[</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">14</span><span class="p">)]),</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+
+</span><span class="n">ggplot</span><span class="p">(</span><span class="n">nb2.coefs</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">estimate</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">term</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">model</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position_dodgev</span><span class="p">(</span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.3</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NULL</span><span class="p">,</span><span class="w">
+         </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Regression estimate"</span><span class="p">,</span><span class="w">
+         </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Comparing mgcv with glmmTMB"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Salamander: Negative Binomial"</span><span class="p">)</span></code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/compare-mgcv-with-glmmtmb-salamander-nb2-coefs-1.png" /></p>
+<p>The values (posterior modes, or means) for the <code>site</code> random effect can also be compared</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">nbgam2.r</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">nbgam2</span><span class="p">)[</span><span class="o">-</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">14</span><span class="p">)]</span><span class="w">
+</span><span class="n">nbm2.r</span><span class="w">   </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ranef</span><span class="p">(</span><span class="n">nbm2</span><span class="p">)</span><span class="o">$</span><span class="n">cond</span><span class="o">$</span><span class="n">site</span><span class="p">[,</span><span class="m">1</span><span class="p">]</span><span class="w">
+</span><span class="n">nms</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="s2">"s\\(site\\)\\."</span><span class="p">,</span><span class="w"> </span><span class="s2">"Site "</span><span class="p">,</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="n">nbgam2.r</span><span class="p">))</span><span class="w">
+</span><span class="n">ranefs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">ranef</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="n">unname</span><span class="p">(</span><span class="n">nbgam2.r</span><span class="p">),</span><span class="w"> </span><span class="n">nbm2.r</span><span class="p">),</span><span class="w">
+                     </span><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s2">"glmmTMB"</span><span class="p">,</span><span class="w"> </span><span class="s2">"mgcv::gam"</span><span class="p">),</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">nbgam2.r</span><span class="p">)),</span><span class="w">
+                     </span><span class="n">site</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">nms</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="n">ranefs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">ranefs</span><span class="p">,</span><span class="w"> </span><span class="n">site</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factor</span><span class="p">(</span><span class="n">site</span><span class="p">,</span><span class="w"> </span><span class="n">nms</span><span class="p">[</span><span class="n">order</span><span class="p">(</span><span class="n">nbgam2.r</span><span class="p">)]))</span><span class="w">
+
+</span><span class="n">ggplot</span><span class="p">(</span><span class="n">ranefs</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ranef</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">site</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">model</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position_dodgev</span><span class="p">(</span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NULL</span><span class="p">,</span><span class="w">
+         </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Random effect"</span><span class="p">,</span><span class="w">
+         </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Comparing mgcv with glmmTMB"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Salamanders: Negative Binomial"</span><span class="p">)</span></code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/compare-mgcv-with-glmmtmb-slamander-nb2-ranefs-1.png" /></p>
+<p>As the figure above shows, these too are essentially equivalent for the two fits.</p>
+<p>The <code>summary()</code> output for the <code>glmmTMB()</code> model conveniently provides some additional useful information, in the context of GLMMs most notably the estimated variances (or standard deviations) of the random effect terms. As <code>gam()</code> wasn’t designed with GLMMs specifically in mind, the same information is not provided in the the <code>summary()</code> method for <code>gam()</code> model fits. However, Simon Wood has provided the <code>gam.vcomp()</code> function, which can be used to return the variance components of the model in a way that allows comparison with other mixed-models specific software.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">nbm2</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"> Family: nbinom2  ( log )
+Formula:          count ~ spp * mined + (1 | site)
+Data: Salamanders
+
+     AIC      BIC   logLik deviance df.resid 
+  1663.4   1734.8   -815.7   1631.4      628 
+
+Random effects:
+
+Conditional model:
+ Groups Name        Variance Std.Dev.
+ site   (Intercept) 0.2842   0.5331  
+Number of obs: 644, groups:  site, 23
+
+Overdispersion parameter for nbinom2 family ():    1 
+
+Conditional model:
+                 Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)       -3.3750     0.7576  -4.455 8.40e-06 ***
+sppPR              0.9306     0.8773   1.061 0.288829    
+sppDM              2.2485     0.7878   2.854 0.004314 ** 
+sppEC-A            0.7143     0.9052   0.789 0.430029    
+sppEC-L            1.8130     0.8130   2.230 0.025741 *  
+sppDES-L           2.5111     0.7795   3.221 0.001275 ** 
+sppDF              2.5765     0.7801   3.303 0.000957 ***
+minedno            4.1619     0.7932   5.247 1.55e-07 ***
+sppPR:minedno     -2.5831     0.9328  -2.769 0.005617 ** 
+sppDM:minedno     -2.1495     0.8258  -2.603 0.009245 ** 
+sppEC-A:minedno   -1.5828     0.9461  -1.673 0.094339 .  
+sppEC-L:minedno   -1.3383     0.8493  -1.576 0.115100    
+sppDES-L:minedno  -1.9358     0.8164  -2.371 0.017729 *  
+sppDF:minedno     -2.7426     0.8217  -3.338 0.000844 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+</figure>
+<p>Now the <code>gam()</code> version, conveniently with a confidence interval</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">gam.vcomp</span><span class="p">(</span><span class="n">nbgam2</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Standard deviations and 0.95 confidence intervals:
+
+          std.dev    lower     upper
+s(site) 0.5325309 0.327768 0.8652132
+
+Rank: 1/1</code></pre>
+</figure>
+<p>One further analysis that <span class="citation" data-cites="Brooks2017-so">Brooks et al. (2017)</span> do with the <code>Salamander</code> data (in their Appendix B) is to demonstrate how to generate and plot fitted values from the model. To do this, the analyst needs to consider whether to and how to marginalise over or condition on the random effects. The Appendix has some details on this more generally (via a linked reference) and more-specific pointers on how to go about doing this with <code>glmmTMB()</code> models. In the next few code chunks I will illustrate how to achieve the result from their section <em>Alternative prediction method</em>, where the aim is to predict at the population mode by setting the random effect component to 0. To illustrate this, <span class="citation" data-cites="Brooks2017-so">Brooks et al. (2017)</span> use the more complex ZIP model with linear predictors for both the mean and the zero-inflation components of the model. I fit those models first</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## glmmTMB()</span><span class="w">
+</span><span class="n">zipm3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">glmmTMB</span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">spp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">mined</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">site</span><span class="p">),</span><span class="w"> </span><span class="n">zi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">spp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">mined</span><span class="p">,</span><span class="w">
+                 </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Salamanders</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">poisson</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## gam()</span><span class="w">
+</span><span class="n">zipgam3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">count</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">spp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">mined</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">site</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"re"</span><span class="p">),</span><span class="w">
+                    </span><span class="o">~</span><span class="w"> </span><span class="n">spp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">mined</span><span class="p">),</span><span class="w">
+               </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Salamanders</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ziplss</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span></code></pre>
+</figure>
+<p>The <code>glmmTMB()</code> model has the zero-inflation linear predictor specified via the <code>ziformula</code> argument (abbreviated to <code>zi</code> above). With <code>gam()</code> however, multiple linear predictors are specified via a list of formula objects, only the first of which has a response (left-hand-side). The first formula, with the response, is for the Poisson mean, whilst the second is for the zero-inflation component. Note also that we use the special <code>ziplss()</code> family and that now the model is being estimated using REML, because that is the only option available for these models, which Simon Wood calls <strong>general smooth models</strong> <span class="citation" data-cites="Wood2016-fx">(Wood et al., 2016)</span>. Do note that there is (as of writing) no <code>link</code> argument(s) for the <code>ziplss()</code> family. This is due to the way the model is parameterised internally in the software. This will require us to pay particular attention to the implementation shortly.</p>
+<p>To recreate part of Figure B.3 in Appendix B <span class="citation" data-cites="Brooks2017-so">(Brooks et al., 2017)</span>, the code below predicts from the fitted <code>gam()</code> model for all combinations of the factors <code>mined</code> and <code>spp</code>. Notice how we have to specify a <code>site</code> in the prediction data, otherwise <code>predict()</code> will throw a tantrum. To set the random effect for <code>site</code> to zero, use the <code>exclude</code> argument. To exclude (i.e. set to zero) any model term, you supply a character vector or list of terms to <code>exclude</code>. For smooth terms, these must be named as they appear in <code>summary(model)</code>, hence the use of <code>"s(site)"</code>. The final step is to call <code>predict()</code> with <code>type = "link"</code>. This will return a two column matrix (or a list of two-column matrices if <code>se.fit = TRUE</code> is also used).</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## Newdata</span><span class="w">
+</span><span class="n">newd0</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">newd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as.data.frame</span><span class="p">(</span><span class="n">cbind</span><span class="p">(</span><span class="n">unique</span><span class="p">(</span><span class="n">Salamanders</span><span class="p">[,</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"mined"</span><span class="p">,</span><span class="s2">"spp"</span><span class="p">)]),</span><span class="w"> </span><span class="n">site</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"R -1"</span><span class="p">))</span><span class="w">
+</span><span class="n">rownames</span><span class="p">(</span><span class="n">newd0</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rownames</span><span class="p">(</span><span class="n">newd</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="kc">NULL</span><span class="w">
+</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">zipgam3</span><span class="p">,</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">exclude</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"s(site)"</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"link"</span><span class="p">)</span><span class="w">
+</span><span class="n">head</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">        [,1]       [,2]
+1 0.36061171 -3.7727169
+2 0.94857203  0.3875087
+3 0.07601834 -2.6504763
+4 0.35637762 -1.3459854
+5 0.55867674 -1.4747253
+6 1.14836206  0.3266343</code></pre>
+</figure>
+<p>The first column is the predicted value of the response from the Poisson part of the model <em>on the scale of the linear predictor</em> (the log scale). The second column is the predicted value from the zero-inflation component and is on the complementary log-log scale. Both of these need to be back transformed to the respective response scales and then multiplied together. To do this for the zero-inflation part, I copied the code from the base R <code>binomial()</code> family with the appropriate link specified. The second line of code below adds the predicted values for each combination of <code>mined</code> and <code>spp</code> to the prediction data object. Note that each component is back-transformed using the appropriate link, and then multiplied together.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ilink</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">binomial</span><span class="p">(</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cloglog"</span><span class="p">)</span><span class="o">$</span><span class="n">linkinv</span><span class="w">
+</span><span class="n">newd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">fitted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">exp</span><span class="p">(</span><span class="n">pred</span><span class="p">[,</span><span class="m">1</span><span class="p">])</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">ilink</span><span class="p">(</span><span class="n">pred</span><span class="p">[,</span><span class="m">2</span><span class="p">]))</span></code></pre>
+</figure>
+<p>A plot of the predicted values is then easily produced</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">spp</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fitted</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mined</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span></code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/compare-mgcv-with-glmmtmb-salamander-population-mode-plot-3-1.png" /></p>
+<p>Because of the way the <code>gam()</code> model is implemented, I could also have computed the Bayesian credible intervals using the Bayesian covariance matrix of the model parameters via the <code>se.fit</code> argument to <code>predict()</code>. I’ll perhaps save that for another day…</p>
+<h3 id="owls">Owls</h3>
+<p>The <code>Owls</code> data are also available in the <strong>glmmTMB</strong> package, which I load and then do a little processing of the data to simplify the name of the response variable and to mean centre the <code>ArrivalTime</code> covariate.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">data</span><span class="p">(</span><span class="n">Owls</span><span class="p">,</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"glmmTMB"</span><span class="p">)</span><span class="w">
+</span><span class="nf">names</span><span class="p">(</span><span class="n">Owls</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="s2">"SiblingNegotiation"</span><span class="p">,</span><span class="w"> </span><span class="s2">"NCalls"</span><span class="p">,</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="n">Owls</span><span class="p">))</span><span class="w">
+</span><span class="n">Owls</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">Owls</span><span class="p">,</span><span class="w"> </span><span class="n">cArrivalTime</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ArrivalTime</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">ArrivalTime</span><span class="p">))</span></code></pre>
+</figure>
+<p>Two ZIP models are considered</p>
+<ol type="1">
+<li>a ZIP with constant zero-inflation (an intercept-only model for the zero-inflation), and</li>
+<li>a ZIP with complex zero-inflation, where one covariate and a random effect for <code>Nest</code> are included in the linear predictor of the zero-inflation part of the model.</li>
+</ol>
+<p>The constant zero-inflation models are fitted using the <code>ziformula</code> argument for <code>glmmTMB</code> with <code>family = poisson</code>, whilst for <code>gam()</code> we use a list of two formula objects, the second for the ZI linear predictor, and the <code>ziplss</code> family. Note that this model could also be fitted using the <code>Zip()</code> family in <strong>mgcv</strong> but that employs a different, simpler fitting algorithm so to facilitate comparison with the more complex model I use <code>ziplss()</code> instead.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1.tmb</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">glmmTMB</span><span class="p">(</span><span class="n">NCalls</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">FoodTreatment</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cArrivalTime</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">SexParent</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset</span><span class="p">(</span><span class="n">logBroodSize</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Nest</span><span class="p">),</span><span class="w">
+                  </span><span class="n">ziformula</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Owls</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">poisson</span><span class="p">)</span><span class="w">
+</span><span class="n">m1.gam</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">NCalls</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">FoodTreatment</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cArrivalTime</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">SexParent</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">offset</span><span class="p">(</span><span class="n">logBroodSize</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Nest</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"re"</span><span class="p">),</span><span class="w">
+                   </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
+              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Owls</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ziplss</span><span class="p">())</span></code></pre>
+</figure>
+<p>Again note that these models are not estimated in the same way; <code>glmmTMB()</code> estimates the model parameters using maximum likelihood, whilst only REML estimation is available for the <code>ziplss()</code> family with <code>gam()</code>. In <code>gam()</code>, the intercept-only ZI linear predictor is specified with the formula <code>~ 1</code>.</p>
+<p>To compare the estimates of the model coefficients I wrote a little function to extract the estimated values and their standard errors from the two model objects</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">createCoeftab</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">TMB</span><span class="p">,</span><span class="w"> </span><span class="n">GAM</span><span class="p">,</span><span class="w"> </span><span class="n">GAMrange</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">bTMB</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">fixef</span><span class="p">(</span><span class="n">TMB</span><span class="p">)</span><span class="o">$</span><span class="n">cond</span><span class="p">[</span><span class="m">-1</span><span class="p">]</span><span class="w">
+    </span><span class="n">bGAM</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">GAM</span><span class="p">)[</span><span class="n">GAMrange</span><span class="p">]</span><span class="w">
+    </span><span class="n">seTMB</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">diag</span><span class="p">(</span><span class="n">vcov</span><span class="p">(</span><span class="n">TMB</span><span class="p">)</span><span class="o">$</span><span class="n">cond</span><span class="p">)[</span><span class="m">-1</span><span class="p">]</span><span class="w">
+    </span><span class="n">seGAM</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">diag</span><span class="p">(</span><span class="n">vcov</span><span class="p">(</span><span class="n">GAM</span><span class="p">))[</span><span class="n">GAMrange</span><span class="p">]</span><span class="w">
+    </span><span class="n">nms</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="n">bTMB</span><span class="p">)</span><span class="w">
+    </span><span class="n">nms</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="s2">"FoodTreatment"</span><span class="p">,</span><span class="w"> </span><span class="s2">"FT"</span><span class="p">,</span><span class="w"> </span><span class="n">nms</span><span class="p">)</span><span class="w">
+    </span><span class="n">nms</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sub</span><span class="p">(</span><span class="s2">"cArrivalTime"</span><span class="p">,</span><span class="w"> </span><span class="s2">"ArrivalTime"</span><span class="p">,</span><span class="w"> </span><span class="n">nms</span><span class="p">)</span><span class="w">
+    </span><span class="n">df</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">model</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="s2">"glmmTMB"</span><span class="p">,</span><span class="w"> </span><span class="s2">"mgcv::gam"</span><span class="p">),</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">bGAM</span><span class="p">)),</span><span class="w">
+                     </span><span class="n">term</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">nms</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
+                     </span><span class="n">estimate</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">unname</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="n">bTMB</span><span class="p">,</span><span class="w"> </span><span class="n">bGAM</span><span class="p">)))</span><span class="w">
+    </span><span class="n">df</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">df</span><span class="p">,</span><span class="w">
+                    </span><span class="n">upper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">estimate</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nf">sqrt</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="n">seTMB</span><span class="p">,</span><span class="w"> </span><span class="n">seGAM</span><span class="p">)),</span><span class="w">
+                    </span><span class="n">lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">estimate</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nf">sqrt</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="n">seTMB</span><span class="p">,</span><span class="w"> </span><span class="n">seGAM</span><span class="p">)))</span><span class="w">
+    </span><span class="n">df</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>Passing each of the models to <code>createCoeftab()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1.coefs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">createCoeftab</span><span class="p">(</span><span class="n">m1.tmb</span><span class="p">,</span><span class="w"> </span><span class="n">m1.gam</span><span class="p">,</span><span class="w"> </span><span class="n">GAMrange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="o">:</span><span class="m">6</span><span class="p">)</span></code></pre>
+</figure>
+<p>results in a tidy data frame suitable for plotting with <code>ggplot()</code>.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">m1.coefs</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">estimate</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">term</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">xmax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upper</span><span class="p">,</span><span class="w"> </span><span class="n">xmin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lower</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_pointrangeh</span><span class="p">(</span><span class="n">position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position_dodgev</span><span class="p">(</span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.3</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NULL</span><span class="p">,</span><span class="w">
+         </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Regression estimate"</span><span class="p">,</span><span class="w">
+         </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Comparing mgcv with glmmTMB"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Owls: ZIP with constant zero-inflation"</span><span class="p">,</span><span class="w">
+         </span><span class="n">caption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Bars are ±1 SE"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/compare-mgcv-with-glmmtmb-plot-m1-coefs-1.png" alt="Comparison of estimated model fixed effect parameters for the constant zer-inflation model fitted to the owl nestling behaviour data." /><figcaption>Comparison of estimated model fixed effect parameters for the constant zer-inflation model fitted to the owl nestling behaviour data.</figcaption>
+</figure>
+<p>As can be seen in the figure, the estimates from the two functions are quite similar.</p>
+<p>The more-complex models with covariates in the ZI linear predictor are fitted next</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m2.tmb</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">glmmTMB</span><span class="p">(</span><span class="n">NCalls</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">FoodTreatment</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cArrivalTime</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">SexParent</span><span class="w"> </span><span class="o">+</span><span class="w">
+                      </span><span class="n">offset</span><span class="p">(</span><span class="n">logBroodSize</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Nest</span><span class="p">),</span><span class="w">
+                  </span><span class="n">ziformula</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">FoodTreatment</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">Nest</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Owls</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">poisson</span><span class="p">)</span><span class="w">
+</span><span class="n">m2.gam</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">NCalls</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">FoodTreatment</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">cArrivalTime</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">SexParent</span><span class="w"> </span><span class="o">+</span><span class="w">
+                       </span><span class="n">offset</span><span class="p">(</span><span class="n">logBroodSize</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Nest</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"re"</span><span class="p">),</span><span class="w">
+                   </span><span class="o">~</span><span class="w"> </span><span class="n">FoodTreatment</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Nest</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"re"</span><span class="p">)),</span><span class="w">
+              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Owls</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ziplss</span><span class="p">())</span></code></pre>
+</figure>
+<p>As before, we gather the model coefficients</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m2.coefs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">createCoeftab</span><span class="p">(</span><span class="n">m2.tmb</span><span class="p">,</span><span class="w"> </span><span class="n">m2.gam</span><span class="p">,</span><span class="w"> </span><span class="n">GAMrange</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="o">:</span><span class="m">6</span><span class="p">)</span></code></pre>
+</figure>
+<p>and plot them</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">m2.coefs</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">estimate</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">term</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w"> </span><span class="n">shape</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">model</span><span class="p">,</span><span class="w">
+                     </span><span class="n">xmax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upper</span><span class="p">,</span><span class="w"> </span><span class="n">xmin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lower</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_pointrangeh</span><span class="p">(</span><span class="n">position</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">position_dodgev</span><span class="p">(</span><span class="n">height</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.3</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NULL</span><span class="p">,</span><span class="w">
+         </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Regression estimate"</span><span class="p">,</span><span class="w">
+         </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Comparing mgcv with glmmTMB"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Owls: ZIP with complex zero-inflation"</span><span class="p">,</span><span class="w">
+         </span><span class="n">caption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Bars are ±1 SE"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/compare-mgcv-with-glmmtmb-plot-m2-coefs-1.png" alt="Comparison of estimated model fixed effect parameters for the complex zer-inflation model fitted to the owl nestling behaviour data." /><figcaption>Comparison of estimated model fixed effect parameters for the complex zer-inflation model fitted to the owl nestling behaviour data.</figcaption>
+</figure>
+<p>and likewise as before, the estimates of the fixed effect terms are very similar indeed.</p>
+<h3 id="conclusions">Conclusions</h3>
+<p>The comparisons shown above show that <code>mgcv::gam()</code> and <code>glmmTMB()</code> produce very similar estimates for the two models. And some crude timings showed that <code>gam()</code> was 20–40% faster than <code>glmmTMB()</code> at fitting the examples discussed in the paper. So all is roses, right!? Who needs <code>glmmTMB()</code>?</p>
+<p>That would however, be totally the wrong message to take from this comparison. Most notably, and something that isn’t surfaced in these simple examples is that <code>gam()</code> is limited in the complexity of the random effects it can efficiently represent in models:</p>
+<ul>
+<li>it can’t do correlated random effects for random slopes and intercepts models (as far as I can tell anyway), and, and this is probably the deal breaker,</li>
+<li>model fitting with <code>gam()</code> gets bogged down quickly if the number of levels in a random effect gets large. <a href="https://twitter.com/jaimedash">Jamie Ashander</a> did some quick tests with a larger version of the Salamander with 100s of <code>site</code>s and <code>glmmTMB()</code> totally dominated <code>gam()</code>.</li>
+</ul>
+<p>And that’s fine; <code>gam()</code> was not designed to fit GLMMs — there are no less than <strong>three</strong> implementations <em>by Simon Wood alone</em> of functions to fit GAMs with complex random effects in mixed model software (<code>gamm()</code> to fit with <code>lme()</code>, <code>gamm4()</code> to fit using <code>lmer()</code> and <code>glmer()</code>, and <code>jagam()</code> in <strong>mgcv</strong> to fit via JAGS). Furthermore, <code>glmmTMB()</code> is currently more flexible in the range of models that it can fit than any these implementations, except for JAGS, because the <code>nb</code>, <code>Zip</code>, and <code>ziplss</code> families only work with <code>gam()</code>.</p>
+<p>What the above comparison illustrates, however, is that if you either don’t have complex or many random effects or that you don’t mind running models overnight, <code>gam()</code> is a good option for fitting GLMMs. Plus you have the advantage of estimating smooth functions of covariates, which is one area where <code>glmmTMB()</code> is currently very lacking compared to <code>gam()</code>.</p>
+<p>That said, it should be possible to emulate what Paul-Christian Bürkner has done in his <a href="https://cran.r-project.org/package=brms"><strong>brms</strong> package</a> (and similar implementations by Simon Wood in <code>gamm4()</code>) to use <strong>mgcv</strong> to set up the correct model matrices for the random effect representation of splines which can then be fitted using <code>glmmTMB()</code>.</p>
+<p>Finally, this was a fun exercise to replicate the analyses in <span class="citation" data-cites="Brooks2017-so">Brooks et al. (2017)</span>, motivated by a desire to understand what <strong>mgcv</strong> and <code>gam()</code> are doing with these random effect splines. It wasn’t intended as a prize-fight between two title contenders — hopefully this write-up didn’t come across that way. I also learned a lot more about <strong>glmmTMB</strong>, which is shaping up nicely and looks like it’ll have a place in my modelling toolbox.</p>
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references">
+<div id="ref-Bolker2013-vl">
+<p>Bolker, B. M., Gardner, B., Maunder, M., Berg, C. W., Brooks, M., Comita, L., et al. (2013). Strategies for fitting nonlinear ecological models in r, AD model builder, and BUGS. <em>Methods in ecology and evolution / British Ecological Society</em> 4, 501–512. doi:<a href="https://doi.org/10.1111/2041-210X.12044">10.1111/2041-210X.12044</a>.</p>
+</div>
+<div id="ref-Brooks2017-so">
+<p>Brooks, M. E., Kristensen, K., Benthem, K. J. van, Magnusson, A., Berg, C. W., Nielsen, A., et al. (2017). Modeling Zero-Inflated count data with glmmTMB. <em>bioRxiv</em>, 132753. doi:<a href="https://doi.org/10.1101/132753">10.1101/132753</a>.</p>
+</div>
+<div id="ref-Price2015-se">
+<p>Price, S. J., Muncy, B. L., Bonner, S. J., Drayer, A. N., and Barton, C. D. (2015). Data from: Effects of mountaintop removal mining and valley filling on the occupancy and abundance of stream salamanders. doi:<a href="https://doi.org/10.5061/dryad.5m8f6">10.5061/dryad.5m8f6</a>.</p>
+</div>
+<div id="ref-Price2016-no">
+<p>Price, S. J., Muncy, B. L., Bonner, S. J., Drayer, A. N., and Barton, C. D. (2016). Effects of mountaintop removal mining and valley filling on the occupancy and abundance of stream salamanders. <em>The Journal of applied ecology</em> 53, 459–468. doi:<a href="https://doi.org/10.1111/1365-2664.12585">10.1111/1365-2664.12585</a>.</p>
+</div>
+<div id="ref-Roulin2007-rq">
+<p>Roulin, A., and Bersier, L.-F. (2007). Nestling barn owls beg more intensely in the presence of their mother than in the presence of their father. <em>Animal behaviour</em> 74, 1099–1106.</p>
+</div>
+<div id="ref-Wood2016-fx">
+<p>Wood, S. N., Pya, N., and Säfken, B. (2016). Smoothing parameter and model selection for general smooth models. <em>Journal of the American Statistical Association</em> 111, 1548–1563. doi:<a href="https://doi.org/10.1080/01621459.2016.1180986">10.1080/01621459.2016.1180986</a>.</p>
+</div>
+<div id="ref-Zuur2009-vg">
+<p>Zuur, A. F., Ieno, E. N., Walker, N., Saveliev, A. A., and Smith, G. M. (2009). <em>Mixed effects models and extensions in ecology with r:</em> Springer New York doi:<a href="https://doi.org/10.1007/978-0-387-87458-6">10.1007/978-0-387-87458-6</a>.</p>
+</div>
+</div>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2017/05/04/compare-mgcv-with-glmmTMB/";
+  var disqus_title = "Fitting count and zero-inflated count GLMMs with mgcv";
+  //var disqus_identifier = "/2017/05/04/compare-mgcv-with-glmmTMB";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>04 May 2017</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/glmm/"><span class="label label-inverse">GLMM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/mgcv/"><span class="label label-inverse">mgcv</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/glmmtmb/"><span class="label label-inverse">glmmTMB</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/splines/"><span class="label label-inverse">splines</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/random-effects/"><span class="label label-inverse">random effects</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/counts/"><span class="label label-inverse">counts</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/negative-binomial/"><span class="label label-inverse">negative binomial</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/zero-inflation/"><span class="label label-inverse">zero inflation</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+
