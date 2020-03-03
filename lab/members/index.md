@@ -8,7 +8,23 @@ tags: []
 active: lab
 ---
 
-Current members of the lab are:
+## Current members of the lab are:
+
+### Kim Hinz (BSc Candidate / Co-Op Placement)
+
+### Stefano Mezzini (BSc Candidate / Co-Op Placement)
+
+### Rafaela Mendes (Mitacs Internship)
+
+## Former lab members
+
+### Dr. Leanne Heisler (PhD Candidate)
+
+### Yunue&#769;n Temoltzin Loranca (MSc Candidate)
+
+### Shaneen Teece (Research Associate)
+
+### Luis Alfredo Martinez Narro (Mitacs Internship)
 
 ### Dr. Emma Wiik (Postdoctoral Fellow)
 
