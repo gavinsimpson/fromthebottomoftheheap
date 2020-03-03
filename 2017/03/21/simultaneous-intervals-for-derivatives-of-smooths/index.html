@@ -1,0 +1,556 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Simultaneous intervals for derivatives of smooths revisited</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GAM, models, smooths, derivatives, simultaneous interval, confidence interval, statistical modelling" />
+
+
+<meta name="description" content="Eighteen months ago I screwed up! I’d written a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalized spline. It was a nice post that attracted some interest. It was also wrong. In December I corrected the first part of that mistake by illustrating one approach to compute an actual simultaneous interval, but only for the fitted smoother. At the time I thought that the approach I outlined would translate to the derivatives but I was being lazy then Christmas came and went and I was back to teaching — you know how it goes. Anyway, in this post I hope to finally rectify my past stupidity and show how the approach used to generate simultaneous intervals from the December 2016 post can be applied to the derivatives of a spline.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Simultaneous intervals for derivatives of smooths revisited" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2017-03-21T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Simultaneous intervals for derivatives of smooths revisited" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2017-03-21T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Eighteen months ago I screwed up! I’d written a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalized spline. It was a nice post that attracted some interest. It was also..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Simultaneous intervals for derivatives of smooths revisited" />
+
+
+<meta name="twitter:description" content="Eighteen months ago I screwed up! I’d written a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the ..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="21 Mar 2017"/>
+<meta name="citation_date" content="21 Mar 2017"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Simultaneous intervals for derivatives of smooths revisited"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-i/">Prediction intervals for GLMs part I</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2017/01/25/modelling-extremes-with-gams/">Modelling extremes using generalized additive models</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Simultaneous intervals for derivatives of smooths revisited <small></small></h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+                              <div class="alert alert-error">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h3>Update!</h3>
+                <p><p>The post below makes use of the <strong>tsgam</strong> package, development of which has ceased. Instead, please use the new <a href="https://github.com/gavinsimpson/gratia"><strong>gratia</strong> package</a>, which replaces <strong>tsgam</strong> and is being actively developed. <strong>tsgam</strong> remains available from Github, but is not receiving any updates or bug fixes at this time. The code below should not need any major changes to work with <strong>gratia</strong>; if something isn’t working however, please let me know.</p>
+</p>
+              </div>
+
+              
+            <p>Eighteen months ago <a href="https://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/">I screwed up</a>! I’d written a <a href="https://www.fromthebottomoftheheap.net/2014/06/16/simultaneous-confidence-intervals-for-derivatives/">post</a> in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalized spline. It was a nice post that attracted some interest. It was also wrong. In December I corrected the first part of that mistake by illustrating one approach to compute an actual simultaneous interval, but only for the fitted smoother. At the time I thought that the approach I outlined would translate to the derivatives but I was being lazy then Christmas came and went and I was back to teaching — you know how it goes. Anyway, in this post I hope to finally rectify my past stupidity and show how the approach used to generate simultaneous intervals from the December 2016 post can be applied to the derivatives of a spline.</p>
+<p>If you haven’t read the December 2016 post I suggest you do so as there I explain this:</p>
+<p><span class="math display">\[
+\begin{align}
+    \mathbf{\hat{f}_g} &amp;\pm m_{1 - \alpha} \begin{bmatrix}
+           \widehat{\mathrm{st.dev}} (\hat{f}(g_1) - f(g_1)) \\
+           \widehat{\mathrm{st.dev}} (\hat{f}(g_2) - f(g_2)) \\
+           \vdots \\
+           \widehat{\mathrm{st.dev}} (\hat{f}(g_M) - f(g_M)) \\
+         \end{bmatrix}
+\end{align}
+\]</span></p>
+<p>This equation states that the critical value for a 100(1 - <span class="math inline">\(\alpha\)</span>)% simultaneous interval is given by the 100(1 - <span class="math inline">\(\alpha\)</span>)% quantile of the distribution of the standard errors of deviations of the fitted values from the true values of the smoother. We don’t know this distribution, so we generated realizations from it using simulation, and used the empirical quantiles of the simulated distribution to give the appropriate critical value <span class="math inline">\(m\)</span> with which to calculate the simultaneous interval. In that post I worked my way through some R code to show how you can calculate this for a fitted spline.</p>
+<p>To keep this post relatively short, I won’t rehash the discussion of the code used to compute the critical value <span class="math inline">\(m\)</span>. I also won’t cover in detail how these derivatives are computed. We use finite differences and the general approach is explained in an <a href="/2014/05/15/identifying-periods-of-change-with-gams/">older post</a>. I don’t recommend you use the code in that post for real data analysis, however. Whilst I was putting together this post I re-wrote the derivative code as well as that for computing point-wise and simultaneous intervals and started a new R package <strong>tsgam</strong>. <strong>tsgam</strong> is is <a href="http://github.com/gavinsimpson/tsgam">available on GitHub</a> and we’ll use it here. Note this package isn’t even at version 0.1 yet, but the code for derivatives and intervals has been through several iterations now and works well whenever I have tested it.</p>
+<p>Assuming you have the <strong>devtools</strong> package installed, you can install <strong>tsgam</strong> using</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">devtools</span><span class="o">::</span><span class="n">install_github</span><span class="p">(</span><span class="s2">"gavinsimpson/tsgam"</span><span class="p">)</span></code></pre>
+</figure>
+<p>As example data, I’ll again use the strontium isotope data set included in the <strong>SemiPar</strong> package, and which is extensively analyzed in the monograph <em>Semiparametric Regression</em> <span class="citation" data-cites="Ruppert2003-pt">(Ruppert et al., 2003)</span>. First, load the packages we’ll need as well as the data, which is data set <code>fossil</code>. If you don’t have <strong>SemiPar</strong> installed, install it using <code>install.packages("SemiPar")</code> before proceeding</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span><span class="w">                         </span><span class="c1"># fit the GAM</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"tsgam"</span><span class="p">)</span><span class="w">                        </span><span class="c1"># code for derivatives &amp; intervals</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span><span class="w">                      </span><span class="c1"># package for nice plots</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">                   </span><span class="c1"># simpler theme for the plots</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"SemiPar"</span><span class="p">)</span><span class="w">       </span><span class="c1"># load the data</span></code></pre>
+</figure>
+<p>The <code>fossil</code> data set includes two variables and is a time series of strontium isotope measurements on samples from a sediment core. The data are shown below using <code>ggplot()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strontium.ratio</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">scale_x_reverse</span><span class="p">()</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-for-derivatives-of-smooths-plot-fossil-data-1.png" alt="The strontium isotope example data used in the post" /><figcaption>The strontium isotope example data used in the post</figcaption>
+</figure>
+<p>The aim of the analysis of these data is to model how the measured strontium isotope ratio changed through time, using a GAM to estimate the clearly non-linear change in the response. As time is the complement of sediment age, we should probably model this on that time scale, especially if you wanted to investigate residual temporal auto-correlation. This requires creating a new variable <code>negAge</code> for modelling purposes only</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">fossil</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">negAge</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">age</span><span class="p">)</span></code></pre>
+</figure>
+<p>As per the previous post a reasonable GAM for these data is fitted using <strong>mgcv</strong> and <code>gam()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">strontium.ratio</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">negAge</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span></code></pre>
+</figure>
+<p>Having fitted the model we should do some evaluation of it but I’m going to skip that here and move straight to computing the derivative of the fitted spline and a simultaneous interval for it. First we set some constants that we can refer to throughout the rest of the post</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## parameters for testing</span><span class="w">
+</span><span class="n">UNCONDITIONAL</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="kc">FALSE</span><span class="w"> </span><span class="c1"># unconditional or conditional on estimating smooth params?</span><span class="w">
+</span><span class="n">N</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">10000</span><span class="w">             </span><span class="c1"># number of posterior draws</span><span class="w">
+</span><span class="n">n</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">500</span><span class="w">               </span><span class="c1"># number of newdata values</span><span class="w">
+</span><span class="n">EPS</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1e-07</span><span class="w">           </span><span class="c1"># finite difference</span></code></pre>
+</figure>
+<p>To facilitate checking that this interval has the correct coverage properties I’m going to fix the locations where we’ll evaluate the derivative, calculating the vector of values to predict at once only. Normally you wouldn’t need to do this just to compute the derivatives and associated confidence intervals — you would just need to set the number of values <code>n</code> over the range of the predictors you want — and if you have a model with several splines it is probably easier to let <strong>tsgam</strong> handle this part for you.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## where are we going to predict at?</span><span class="w">
+</span><span class="n">newd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">negAge</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="nf">min</span><span class="p">(</span><span class="n">negAge</span><span class="p">),</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">negAge</span><span class="p">),</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">n</span><span class="p">)))</span></code></pre>
+</figure>
+<p>The <code>fderiv()</code> function in <strong>tsgam</strong> computes the first derivative of any splines in the supplied GAM<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> or you can request derivatives for a specified smooth term. As we have only a single smooth term in the model, we simply pass in the model and the data frame of locations at which to evaluate the derivative</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">fd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">fderiv</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">eps</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">EPS</span><span class="p">,</span><span class="w"> </span><span class="n">unconditional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UNCONDITIONAL</span><span class="p">)</span></code></pre>
+</figure>
+<p>(we set <code>eps = EPS</code>, so we have the same grid shift later in the post when checking coverage properties, and don’t account for the uncertainty due to estimating the smoothness parameters (<code>unconditional = FALSE</code>), normally you can leave these at the defaults). The object returned by <code>fderiv()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">str</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">List of 6
+ $ derivatives  :List of 1
+ $ terms        : chr "negAge"
+ $ model        :List of 52
+  ..- attr(*, "class")= chr [1:3] "gam" "glm" "lm"
+ $ eps          : num 1e-07
+ $ eval         :'data.frame':  500 obs. of  1 variable:
+ $ unconditional: logi FALSE
+ - attr(*, "class")= chr "fderiv"</code></pre>
+</figure>
+<p>contains a component <code>derivatives</code> that contains the evaluated derivatives for all or the selected smooth terms. The other components include a copy of the fitted model and some additional parameters that are required for the confidence intervals. Confidence intervals for the derivatives are computed using the <code>confint()</code> method. The <code>type</code> argument specifies whether point-wise or simultaneous intervals are required. For the latter, the number of simulations to draw is required via <code>nsim</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span><span class="w">                            </span><span class="c1"># set the seed to make this repeatable </span><span class="w">
+</span><span class="n">sint</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">confint</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"simultaneous"</span><span class="p">,</span><span class="w"> </span><span class="n">nsim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">N</span><span class="p">)</span></code></pre>
+</figure>
+<p>To make it easier to work with the results I wrote the <code>confint()</code> method so that it returned the confidence interval as a tidy data frame suitable for plotting with <strong>ggplot2</strong>. <code>sint</code> is a data frame with an identifier for which smooth term each row relates to (<code>term</code>), plus columns containing the estimated (<code>est</code>) derivative and the lower and upper confidence interval</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">head</span><span class="p">(</span><span class="n">sint</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">    term     lower      est    upper
+1 negAge -0.000053 -6.1e-06 0.000041
+2 negAge -0.000053 -6.1e-06 0.000041
+3 negAge -0.000053 -6.1e-06 0.000040
+4 negAge -0.000052 -6.1e-06 0.000040
+5 negAge -0.000052 -6.1e-06 0.000040
+6 negAge -0.000051 -6.0e-06 0.000039</code></pre>
+</figure>
+<p>The estimated derivative plus its 95% simultaneous confidence interval are shown below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">cbind</span><span class="p">(</span><span class="n">sint</span><span class="p">,</span><span class="w"> </span><span class="n">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">newd</span><span class="o">$</span><span class="n">negAge</span><span class="p">),</span><span class="w">
+       </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">est</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_hline</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">yintercept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lower</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upper</span><span class="p">),</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_x_reverse</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"First derivative"</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Age"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-for-derivatives-of-smooths-plot-sint-1.png" alt="Estimated first derivative of the spline fitted to the strontium isotope data. The grey band shows the 95% simultaneous interval." /><figcaption>Estimated first derivative of the spline fitted to the strontium isotope data. The grey band shows the 95% simultaneous interval.</figcaption>
+</figure>
+<p>So far so good.</p>
+<p>Having thought about how to apply the theory outlined in the previous post, it seems that all we need to do to apply it to derivatives is to make the assumption that <em>the estimate of the first derivative is unbiased</em> and hence we can proceed as we did in the previous post by computing <code>BUdiff</code> using a multivariate normal with zero mean vector and the Bayesian covariance matrix of the model coefficients. Where the version for derivatives differs is that we use a prediction matrix for the derivatives instead of for the fitted spline. This prediction matrix is created as follows</p>
+<ol type="1">
+<li>generate a prediction matrix from the current model for the locations in <code>newd</code>,</li>
+<li>generate a second prediction matrix as before but for slightly shifted locations <code>newd + eps</code></li>
+<li>difference these two prediction matrices yielding the prediction matrix for the first differences <code>Xp</code></li>
+<li>for each smooth in turn
+<ol type="1">
+<li>create a zero matrix, <code>Xi</code>, of the same dimensions as the prediction matrices</li>
+<li>fill in the columns of <code>Xi</code> that relate to the current smooth using the values of the same columns from <code>Xp</code></li>
+<li>multiply <code>Xi</code> by the vector of model coefficients to yield predicted first differences</li>
+<li>calculate the standard error of these predictions</li>
+</ol></li>
+</ol>
+<p>The matrix <code>Xi</code> is supplied for each smooth term in the <code>derivatives</code> component of the object returned by <code>fderiv()</code>.</p>
+<p>Once I’d grokked this one basic assumption about the unbiasedness of the first derivative, the rest of the translation of the method to derivatives fell into place. As we are using finite differences, we may be a little biased in estimating the first derivatives, but this can be reduced by makes <code>eps</code> smaller, thought the default probably suffices.</p>
+<p>To see the detail of how this is done, look at the source code for <code>tsgam:::simultaneous</code>, which apart from a bit of renaming of objects follows closely the code in the <a href="https://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/">previous post</a>.</p>
+<p>Having computed the purported simultaneous interval for the derivatives of the trend, we should do what I didn’t do in the original posts about these intervals and go and look at the coverage properties of the generated interval.</p>
+<p>To do that I’m going to simulate a large number, <code>N</code>, of draws from the posterior distribution of the model. Each of these draws is a fitted spline that includes the uncertainty in the estimated model coefficients. Note that I’m not including a correction here for the uncertainty due to smoothing parameters being estimated — you can set <code>unconditional = TRUE</code> throughout (or change <code>UNCONDITIONAL</code> above) to include this extra uncertainty if you wish.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">Vb</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">vcov</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">unconditional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">UNCONDITIONAL</span><span class="p">)</span><span class="w">
+</span><span class="n">set.seed</span><span class="p">(</span><span class="m">24</span><span class="p">)</span><span class="w">
+</span><span class="n">sims</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">MASS</span><span class="o">::</span><span class="n">mvrnorm</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="w"> </span><span class="n">Sigma</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Vb</span><span class="p">)</span><span class="w">
+</span><span class="n">X0</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
+</span><span class="n">newd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">newd</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">EPS</span><span class="w">
+</span><span class="n">X1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
+</span><span class="n">Xp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="p">(</span><span class="n">X1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">X0</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">EPS</span><span class="w">
+</span><span class="n">derivs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Xp</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">sims</span><span class="p">)</span></code></pre>
+</figure>
+<p>The code above basically makes a large number of draws from the model posterior and applies the steps of the algorithm outlined above to generate <code>derivs</code>, a matrix containing 10000 draws from the posterior distribution of the model derivatives. Our simultaneous interval should entirely contain about 95% of these posterior draws. Note that a draw here refers to the entire set of evaluations of the first derivative for each posterior draw from the model. The plot below shows 50 such draws (lines)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">matplot</span><span class="p">(</span><span class="n">derivs</span><span class="p">[,</span><span class="w"> </span><span class="n">sample</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="m">50</span><span class="p">)],</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-for-derivatives-of-smooths-plot-sample-of-derivs-1.png" alt="50 draws from the posterior distribution of the first derivative of the fitted spline." /><figcaption>50 draws from the posterior distribution of the first derivative of the fitted spline.</figcaption>
+</figure>
+<p>and 95% of the 10000 draws (lines) should lie <em>entirely</em> within the simultaneous interval if it has the right coverage properties. Put the other way, only 5% of the draws (lines) should ever venture outside the limits of the interval.</p>
+<p>To check this is the case, we reuse the the <code>inCI()</code> function that checks if a draw lies entirely within the interval or not</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">inCI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">upr</span><span class="p">,</span><span class="w"> </span><span class="n">lwr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nf">all</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">lwr</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">upr</span><span class="p">)</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>As each <em>column</em> of <code>derivs</code> contains a different draw, we want to apply <code>inCI()</code> to each column in turn</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">fitsInCI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">sint</span><span class="p">,</span><span class="w"> </span><span class="n">apply</span><span class="p">(</span><span class="n">derivs</span><span class="p">,</span><span class="w"> </span><span class="m">2L</span><span class="p">,</span><span class="w"> </span><span class="n">inCI</span><span class="p">,</span><span class="w"> </span><span class="n">upr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upper</span><span class="p">,</span><span class="w"> </span><span class="n">lwr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lower</span><span class="p">))</span></code></pre>
+</figure>
+<p><code>inCI()</code> returns a <code>TRUE</code> if all the points that make up the line representing a single posterior draw lie within the interval and <code>FALSE</code> otherwise, therefore we can sum up the <code>TRUE</code>s (recall that a <code>TRUE == 1</code> and a <code>FALSE == 0</code>) and divide by the number of draws to get an estimate of the coverage properties of the interval. If we do this for our interval</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="nf">sum</span><span class="p">(</span><span class="n">fitsInCI</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">fitsInCI</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0.95</code></pre>
+</figure>
+<p>we see that the interval includes 95% of the 10000 draws. Which, you’ll agree is pretty close to the desired coverage of 95%.</p>
+<p>That’s it for this post; whilst the signs are encouraging that these simultaneous intervals have the required coverage properties, I’ve only looked at them for a simple single-term GAM, and only for a response that is conditionally distributed Gaussian. I also haven’t looked at anything other than the coverage at an expected 95%. If you do use this in your work, please do check that the interval is working as anticipated. If you do discover problems, please let me know either in the comments below or via email. The next task is to start thinking about extending these ideas to work with a wider range of GAMs that <strong>mgcv</strong> can fit, include location-scale models and models with factor-smooth interactions.</p>
+<h2 id="references" class="unnumbered">References</h2>
+<div id="refs" class="references">
+<div id="ref-Ruppert2003-pt">
+<p>Ruppert, D., Wand, M. P., and Carroll, R. J. (2003). <em>Semiparametric regression</em>. Cambridge University Press.</p>
+</div>
+</div>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p><code>fderiv()</code> currently works for smooths of a single variable fitted using <code>gam()</code> or <code>gamm()</code>. It hasn’t been tested with the location-scale extended families in newer versions of <strong>mgcv</strong> and I doubt it will work with them currently. <a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/";
+  var disqus_title = "Simultaneous intervals for derivatives of smooths revisited";
+  //var disqus_identifier = "/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>21 March 2017</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/models/"><span class="label label-inverse">models</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/smooths/"><span class="label label-inverse">smooths</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/derivatives/"><span class="label label-inverse">derivatives</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/simultaneous-interval/"><span class="label label-inverse">simultaneous interval</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/confidence-interval/"><span class="label label-inverse">confidence interval</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/statistical-modelling/"><span class="label label-inverse">statistical modelling</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

@@ -1,0 +1,599 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Pangaea and R and open palaeo data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="Pangaea, pangaear, R packages, GAM, models, splines, smoothers, open data, palaeo" />
+
+
+<meta name="description" content="For a while now, I’ve been wanting to experiment with rOpenSci’s pangaear package (Chamberlain et al., 2016), which allows you to search, and download data from, the Pangaea, a major data repository for the earth and environmental sciences. Earlier in the year, as a member of the editorial board of Scientific Data, Springer Nature’s open data journal I was handling a data descriptor submission that described a new 2,200-year foraminiferal δ^18^O record from the Gulf of Taranto in the Ionian Sea (Taricco et al., 2016). The data descriptor was recently published and as part of the submission Carla Taricco deposited the data set in Pangaea. So, what better opportunity to test out pangaear? (Oh and to fit a GAM to the data while I’m at it!)
+
+
+Chamberlain, S., Woo, K., MacDonald, A., Zimmerman, N., and Simpson, G. (2016). Pangaear: Client for the ’pangaea’ database. Available at: https://CRAN.R-project.org/package=pangaear.
+
+
+Taricco, C., Alessio, S., Rubinetti, S., Vivaldo, G., and Mancuso, S. (2016). A foraminiferal \(\delta\)18O record covering the last 2,200 years. Scientific Data 3, 160042. doi:10.1038/sdata.2016.42.
+
+
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Pangaea and R and open palaeo data" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2016-12-16T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Pangaea and R and open palaeo data" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2016-12-16T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2016/12/16/pangaea-r-open-palaeo-data/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="For a while now, I’ve been wanting to experiment with rOpenSci’s pangaear package (Chamberlain et al., 2016), which allows you to search, and download data from, the Pangaea, a major data repository for the earth and environmental sciences. Earlier in the year, as a member of the editorial board of..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Pangaea and R and open palaeo data" />
+
+
+<meta name="twitter:description" content="For a while now, I’ve been wanting to experiment with rOpenSci’s pangaear package (Chamberlain et al., 2016), which allows you to search, and download data from, the Pangaea, a major data reposito..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="16 Dec 2016"/>
+<meta name="citation_date" content="16 Dec 2016"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Pangaea and R and open palaeo data"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2017/01/25/modelling-extremes-with-gams/">Modelling extremes using generalized additive models</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/">Simultaneous intervals for smooths revisited</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Pangaea and R and open palaeo data <small>(also GAM all the things!)</small></h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>For a while now, I’ve been wanting to experiment with rOpenSci’s <strong>pangaear</strong> package <span class="citation" data-cites="pangaear-024">(Chamberlain et al., 2016)</span>, which allows you to search, and download data from, the Pangaea, a major data repository for the earth and environmental sciences. Earlier in the year, as a member of the editorial board of <a href="http://www.nature.com/sdata/">Scientific Data</a>, Springer Nature’s open data journal I was handling a data descriptor submission that described a new 2,200-year foraminiferal δ^<sup>18</sup>^O record from the Gulf of Taranto in the Ionian Sea <span class="citation" data-cites="Taricco2016-pv">(Taricco et al., 2016)</span>. The data descriptor was recently <a href="http://doi.org/10.1038/sdata.2016.42">published</a> and as part of the submission Carla Taricco deposited the data set in Pangaea. So, what better opportunity to test out <strong>pangaear</strong>? (Oh and to fit a GAM to the data while I’m at it!)</p>
+<p>The post makes use of the following packages: <strong>pangaear</strong> (obviously), <strong>mgcv</strong> and <strong>ggplot2</strong> for modelling and plotting, and <strong>tibble</strong> because <strong>pangaear</strong> returns search results and data sets in tibbles that I need to manipulate before I can fit a GAM to the δ^<sup>18</sup>^O record.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"pangaear"</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"tibble"</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span></code></pre>
+</figure>
+<p>To download a data set from Pangaea you need to know the DOI of the deposit. If you don’t know the Pangaear DOI, you can search the data records held by Pangaea for specific terms. In <strong>pangaear</strong> searching is done using the <code>pg_search()</code> function. To find the data set I want, I’m going to search for records that have the string <code>"Taricco"</code> in the citation.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">recs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">pg_search</span><span class="p">(</span><span class="n">query</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"citation:Taricco"</span><span class="p">)</span><span class="w">
+</span><span class="n">recs</span><span class="o">$</span><span class="n">citation</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] "Versteegh, GJM; de Leeuw, JW; Taricco, C et al. (2007): Alkenone-derived UK'37 data and sea surface temperatures (SST) of sediment cores from the Gulf of Taranto (Italy)"
+[2] "Taricco, C; Alessio, S; Rubinetti, S et al. (2016): A foraminiferal d18O record of sediment core GT90-3 covering the last 2,200 years"                                    
+[3] "Versteegh, GJM; de Leeuw, JW; Taricco, C et al. (2007): Alkenone-derived UK'37 data and sea surface temperatures (SST) of sediment core GT89-3"                           
+[4] "Versteegh, GJM; de Leeuw, JW; Taricco, C et al. (2007): Alkenone-derived UK'37 data and sea surface temperatures (SST) of a combined sediment core"                       
+[5] "Versteegh, GJM; de Leeuw, JW; Taricco, C et al. (2007): Alkenone-derived UK'37 data and sea surface temperatures (SST) of sediment core GT91-1"                           
+[6] "Versteegh, GJM; de Leeuw, JW; Taricco, C et al. (2007): Alkenone-derived UK'37 data and sea surface temperatures (SST) of sediment core GT90-3"                           </code></pre>
+</figure>
+<p>Assuming that the query didn’t time out (Pangaea can be a little slow to respond on occasion, so you might find increasing the timeout on the query helps), <code>recs</code> shoud contain 6 records with <code>"Taricco"</code> in the citation. The one we want is the second entry.</p>
+<p>To download the data object(s) associated with a record in Pangaea, we use the <code>pg_data()</code> function, supplying it with a single DOI.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">pg_data</span><span class="p">(</span><span class="n">doi</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">recs</span><span class="o">$</span><span class="n">doi</span><span class="p">[</span><span class="m">2</span><span class="p">])</span><span class="w">       </span><span class="c1"># doi = "10.1594/PANGAEA.857573"</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Downloading 1 datasets from 10.1594/PANGAEA.857573</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Processing 1 files</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">res</span><span class="w">
+</span><span class="n">str</span><span class="p">(</span><span class="n">res</span><span class="p">[[</span><span class="m">1</span><span class="p">]],</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[[1]]
+&lt;Pangaea data&gt; 10.1594/PANGAEA.857573
+# A tibble: 560 × 4
+   `Depth [m]` `Age [a AD]` `Age [ka BP]` `G. ruber d18O [per mil PDB]`
+         &lt;dbl&gt;        &lt;dbl&gt;         &lt;dbl&gt;                         &lt;dbl&gt;
+1       1.4000      -188.20       2.13820                         0.742
+2       1.3975      -184.33       2.13433                         0.290
+3       1.3950      -180.46       2.13046                         0.706
+4       1.3925      -176.59       2.12659                         0.356
+5       1.3900      -172.72       2.12272                         0.558
+6       1.3875      -168.85       2.11885                         0.746
+7       1.3850      -164.98       2.11498                         0.346
+8       1.3825      -161.11       2.11111                         0.554
+9       1.3800      -157.24       2.10724                         0.510
+10      1.3775      -153.37       2.10337                         0.543
+# ... with 550 more rows
+
+List of 4
+ $ doi     : chr "10.1594/PANGAEA.857573"
+ $ citation:List of 1
+  ..- attr(*, "class")= chr "citation"
+ $ meta    :List of 1
+  ..- attr(*, "class")= chr "meta"
+ $ data    :Classes 'tbl_df', 'tbl' and 'data.frame':   560 obs. of  4 variables:
+ - attr(*, "class")= chr "pangaea"</code></pre>
+</figure>
+<p>In Pangaea, a DOI might refer to a collection of data objects, in which case the object returned by <code>pg_data()</code> would be a list with as many components as objects in the collection. In this instance there is but a single data object associated with the requested DOI, but for consistency it is returned in a list with a single component.</p>
+<p>Rather than work with the <code>pangaea</code> object directly, for modelling or plotting it is, for the moment at least, going to be simpler if we extract out the data object, which is stored in the <code>$data</code> component. We’ll also want to tidy up those variable/column names</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">foram</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">res</span><span class="p">[[</span><span class="m">1</span><span class="p">]]</span><span class="o">$</span><span class="n">data</span><span class="w">
+</span><span class="nf">names</span><span class="p">(</span><span class="n">foram</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Depth"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Age_AD"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Age_kaBP"</span><span class="p">,</span><span class="w"> </span><span class="s2">"d18O"</span><span class="p">)</span><span class="w">
+</span><span class="n">foram</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 560 × 4
+    Depth  Age_AD Age_kaBP  d18O
+    &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt; &lt;dbl&gt;
+1  1.4000 -188.20  2.13820 0.742
+2  1.3975 -184.33  2.13433 0.290
+3  1.3950 -180.46  2.13046 0.706
+4  1.3925 -176.59  2.12659 0.356
+5  1.3900 -172.72  2.12272 0.558
+6  1.3875 -168.85  2.11885 0.746
+7  1.3850 -164.98  2.11498 0.346
+8  1.3825 -161.11  2.11111 0.554
+9  1.3800 -157.24  2.10724 0.510
+10 1.3775 -153.37  2.10337 0.543
+# ... with 550 more rows</code></pre>
+</figure>
+<p>Now that’s done, we can take a look at the data set</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ylabel</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">delta</span><span class="o">^</span><span class="p">{</span><span class="m">18</span><span class="p">}</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">O</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"[‰ VPDB]"</span><span class="p">)</span><span class="w">
+</span><span class="n">xlabel</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"Age [ka BP]"</span><span class="w">
+
+</span><span class="n">ggplot</span><span class="p">(</span><span class="n">foram</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d18O</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Age_kaBP</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_path</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_x_reverse</span><span class="p">(</span><span class="n">sec.axis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sec_axis</span><span class="p">(</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1950</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">.</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">1000</span><span class="p">),</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Age [AD]"</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_y_reverse</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylabel</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xlabel</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-plot-data-1.png" alt="The δ^18^O record of Taricco et al (2016)" /><figcaption>The δ^<sup>18</sup>^O record of Taricco <em>et al</em> (2016)</figcaption>
+</figure>
+<p>Notice that the x-axis has been reversed on this plot so that as we move from left to right the observations become younger, as is standard for a time series. In the code block above I’ve used <code>sec_axis()</code> to add an AD scale to the x-axis. This is a new feature in version 2.2.0 of <strong>ggplot2</strong> which allows secondary axis that is a one-to-one transformation of the main scale. This isn’t quite right as the two scales don’t map in a fully one-to-one fashion; as there is no year 0AD (or 0&lt;abbrv, title = “Before Common Era”&gt;BCE</abbr>), the scale will be a year out for the BCE period.</p>
+<p>Note too that the y-axis has also been reversed, to match the published versions of the data. This is done in those publications because δ^<sup>18</sup>^O has an interpretation as temperature, with lower δ^<sup>18</sup>^O indicating higher temperatures. As is common for data from proxies that have a temperature interpretation, the values are plotted in a way that <em>up</em> on the plot means <em>warmer</em> and <em>down</em> means colder.</p>
+<p>To model the data in the same time ordered way using the year BP variable we need to create a variable that is the negative of <code>Age-kaBP</code>.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">foram</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">foram</span><span class="p">,</span><span class="w"> </span><span class="n">add_column</span><span class="p">(</span><span class="n">foram</span><span class="p">,</span><span class="w"> </span><span class="n">Age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">Age_kaBP</span><span class="p">))</span></code></pre>
+</figure>
+<p>Note that we don’t want to use the <code>Age_AD</code> scale for this as this has the problem of having a discontinuity at 0AD (which doesn’t exist).</p>
+<p>Now we can fit a GAM to the δ^<sup>18</sup>^O record</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">d18O</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Age</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">100</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ad"</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foram</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w"> </span><span class="n">select</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<p>In this instance I used an adaptive spline basis <code>bs = "ad"</code>, which allows the degree of wiggliness to vary along the fitted function. With a relatively large data set like this, which has over 500 observations, using an adaptive smoother can provide a better fit to the observations, and it is especially useful in situations where it is plausible that the response will vary more over some time periods than others. Adaptive smooths aren’t going to work well in short time series; there just isn’t the information available to estimate what in effect can be thought of as several separate splines over small chunks of the data. That said, I’ve had success with data sets with about 100–200 observations. Also note that fitting an adaptive smoother requires cranking the CPU over a lot more calculations; be aware of that if you throw a very large data set at it.</p>
+<p>Also note that the model was fitted using REML — in most cases this is the default you want to be using as GCV can undersmooth in some circumstances. The double penalty approach of <span class="citation" data-cites="Marra2011-sf">Marra and Wood (2011)</span> is used here too (<code>select = TRUE</code>), which in this instance is being used to apply a bit of shrinkage to the fitted trend; it’s good to be a little conservative at times.</p>
+<p>The model diagnostics look OK for this model and the check of sufficient dimensionality in the basis doesn’t indicate anything to worry about (partly because we used a large basis in the first place: <code>99 = k - 1 = 100 - 1</code>)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">gam.check</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="w">
+</span><span class="c1">## RStudio users might need</span><span class="w">
+</span><span class="c1">## layout(matrix(1:4, ncol = 2, byrow = TRUE))</span><span class="w">
+</span><span class="c1">## gam.check(m)</span><span class="w">
+</span><span class="c1">## layout(1)</span><span class="w">
+</span><span class="c1">## to see all the plots on one device</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Method: REML   Optimizer: outer newton
+full convergence after 26 iterations.
+Gradient range [-0.0003244869,0.000148452]
+(score -128.435 &amp; scale 0.03324845).
+Hessian positive definite, eigenvalue range [6.249446e-06,279.6116].
+Model rank =  100 / 100 
+
+Basis dimension (k) checking results. Low p-value (k-index&lt;1) may
+indicate that k is too low, especially if edf is close to k'.
+
+           k'    edf k-index p-value
+s(Age) 99.000 15.539   0.993    0.44</code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-gam-check-1.png" alt="Diagnostic plots for the fitted GAM" /><figcaption>Diagnostic plots for the fitted GAM</figcaption>
+</figure>
+<p>and the fitted trend is <em>inconsistent</em> with a null-model of no trend</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gaussian 
+Link function: identity 
+
+Formula:
+d18O ~ s(Age, k = 100, bs = "ad")
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) 0.455329   0.007705   59.09   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+         edf Ref.df     F p-value    
+s(Age) 15.54     99 3.357  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.373   Deviance explained =   39%
+-REML = -128.44  Scale est. = 0.033248  n = 560</code></pre>
+</figure>
+<p>There is a lot of variation about the fitted trend, but a model with about 15 degrees of freedom explains about 40% of the variance in the data set, which is pretty good.</p>
+<p>While we could use the provided <code>plot()</code> method for <code>"gam"</code> objects to draw the fitted function, I now find myself prefering plotting with <strong>ggplot2</strong>. To recreate the sort of plot that <code>plot.gam()</code> would produce, we first need to predict for a fine grid of values, here 200 values, over the observed time interval. <code>predict.gam()</code> is used to generate predictions and standard errors; the standard errors requested here use a new addition to <strong>mgcv</strong> which includes the extra uncertainty in the model because we are also estimating the smoothness parameters (the parameters that control the degree of wiggliness in the spline). This is achieved through the use of <code>unconditional = TRUE</code> in the call to <code>predict()</code>. The standard errors you get with the default, <code>unconditional = FALSE</code>, assume that the smoothness parameters, and therefore the amount of wiggliness, is known before fitting, which is rarely the case. This doesn’t make much difference in this example, but I thought I’d mention it as it is a relatively new addition to <strong>mgcv</strong>.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">foram</span><span class="p">,</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="n">seq</span><span class="p">(</span><span class="nf">min</span><span class="p">(</span><span class="n">Age_kaBP</span><span class="p">),</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">Age_kaBP</span><span class="p">),</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">200</span><span class="p">)))</span><span class="w">
+</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">as.data.frame</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">unconditional</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)))</span><span class="w">
+</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span><span class="w">
+                  </span><span class="n">Fitted</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w">
+                  </span><span class="n">Upper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">),</span><span class="w">
+                  </span><span class="n">Lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">),</span><span class="w">
+                  </span><span class="n">Age_kaBP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">Age</span><span class="p">)</span></code></pre>
+</figure>
+<p>The code above uses these standard errors to create an approximate 95% point-wise confidence on the fitted function, and prepares this in tidy format for plotting with <code>ggplot()</code>.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">foram</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">d18O</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Age_kaBP</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Age_kaBP</span><span class="p">,</span><span class="w"> </span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Lower</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Upper</span><span class="p">),</span><span class="w">
+                </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"grey"</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NA</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.7</span><span class="p">,</span><span class="w"> </span><span class="n">inherit.aes</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_path</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Age_kaBP</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Fitted</span><span class="p">),</span><span class="w"> </span><span class="n">inherit.aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w">
+              </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_x_reverse</span><span class="p">(</span><span class="n">sec.axis</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sec_axis</span><span class="p">(</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1950</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">.</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">1000</span><span class="p">),</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Age [AD]"</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_y_reverse</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylabel</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xlabel</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-final-plot-1.png" alt="Observed δ^18^O values with the fitted trend and 95% point-wise confidence interval superimposed" /><figcaption>Observed δ^<sup>18</sup>^O values with the fitted trend and 95% point-wise confidence interval superimposed</figcaption>
+</figure>
+<p><span class="citation" data-cites="Taricco2009-eh">Taricco et al. (2009)</span> used singular spectrum analysis (SSA), among other spectral methods, to decompose the δ^<sup>18</sup>^O time series into components of variability with a range of periodicities. A visual comparison with the SSA components and the fitted GAM trend, suggests that the GAM trend maps on to the sum of the long-term trend component plus the ~600 year and (potentially) the 350 year frequency components of the SSA. This does make we wonder a little about how real the higher frequency components identified in the SSA are? No matter how hard I tried (even setting the basis dimension of the GAM to <code>k = 500</code>) I couldn’t get it to be more wiggly than shown in the plots above). Figure 4 of <span class="citation" data-cites="Taricco2009-eh">Taricco et al. (2009)</span> also showed the spectral power for the 4 non-trend components from the SSA. The power associated with the 200-year and the 125-year components is substantially less than that of the two longer-frequency components. The significance of the SSA components was determined using a Monte Carlo approach <span class="citation" data-cites="Allen1996-gc">(Allen and Smith, 1996)</span>, where surrogate time series are generate using AR(1) noise. It’s reasonable to ask whether this is a reasonable null model for these data? It’s also reasonable to ask whether the GAM approach I used above has sufficient statistical power to detect higher-freqency components if they actually exist? This warrants further study.</p>
+<p>I started this post with some details on why I was prompted to look at this particular data set. Palaeo-scientists have a long record of sharing data — less so in some specific fields: yes, I’m looking at you (&amp; me), palaeolimnologists — but, and perhaps this is just me, I’m seeing more of an open-data culture within palaeoecology and palaeoclimatology. This is great to see, and avenues for publishing and hence generating traditional academic merit for the data we generate will only help foster this. With my “editorial board member” hat on, I would encourage people to consider writing a data paper and submitting it to Scientific Data or one of the other data journals that are springing up. But, if you can’t or don’t want to do that, depositing your data in an open repository like Pangaea brings with it many benefits and is something that we the palaeo community should be supportive of. I wouldn’t have been writing this post if Tarrico and co-authors hadn’t chosen to make their data openly available.</p>
+<p>And that brings me on to my final point for this post; having access to an excellent data repository like Pangaea from within a data analysis platform like R makes it so much easier to engaged with the literature and ask new and interesting questions. I’ve highlighted Pangaea here, but other initiatives are doing a great job of making palaeo data available and also deserve our recognition and support, like the <a href="http://www.neotomadb.org/">Neotoma</a> database; we might take access to these reources for granted, but implementing and maintaining web servers and APIs requires a lot of time, effort, and resources. Also, this post wouldn’t have been possible without the work of the wonderful <a href="https://ropensci.org/">rOpenSci</a> community that make available R packages to query the APIs of online repositories like Pangaea and Neotoma. Thank you!</p>
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references">
+<div id="ref-Allen1996-gc">
+<p>Allen, M. R., and Smith, L. A. (1996). Monte carlo SSA: Detecting irregular oscillations in the presence of colored noise. <em>Journal of climate</em> 9, 3373–3404. doi:<a href="https://doi.org/10.1175/1520-0442(1996)009&lt;3373:MCSDIO&gt;2.0.CO;2">10.1175/1520-0442(1996)009&lt;3373:MCSDIO&gt;2.0.CO;2</a>.</p>
+</div>
+<div id="ref-pangaear-024">
+<p>Chamberlain, S., Woo, K., MacDonald, A., Zimmerman, N., and Simpson, G. (2016). <em>Pangaear: Client for the ’pangaea’ database</em>. Available at: <a href="https://CRAN.R-project.org/package=pangaear">https://CRAN.R-project.org/package=pangaear</a>.</p>
+</div>
+<div id="ref-Marra2011-sf">
+<p>Marra, G., and Wood, S. N. (2011). Practical variable selection for generalized additive models. <em>Computational statistics &amp; data analysis</em> 55, 2372–2387. doi:<a href="https://doi.org/10.1016/j.csda.2011.02.004">10.1016/j.csda.2011.02.004</a>.</p>
+</div>
+<div id="ref-Taricco2016-pv">
+<p>Taricco, C., Alessio, S., Rubinetti, S., Vivaldo, G., and Mancuso, S. (2016). A foraminiferal <span class="math inline">\(\delta\)</span>18O record covering the last 2,200 years. <em>Scientific Data</em> 3, 160042. doi:<a href="https://doi.org/10.1038/sdata.2016.42">10.1038/sdata.2016.42</a>.</p>
+</div>
+<div id="ref-Taricco2009-eh">
+<p>Taricco, C., Ghil, M., Alessio, S., and Vivaldo, G. (2009). Two millennia of climate variability in the central mediterranean. <em>Climate of the Past</em> 5, 171–181. doi:<a href="https://doi.org/10.5194/cp-5-171-2009">10.5194/cp-5-171-2009</a>.</p>
+</div>
+</div>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2016/12/16/pangaea-r-open-palaeo-data/";
+  var disqus_title = "Pangaea and R and open palaeo data";
+  //var disqus_identifier = "/2016/12/16/pangaea-r-open-palaeo-data";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>16 December 2016</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/pangaea/"><span class="label label-inverse">Pangaea</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/pangaear/"><span class="label label-inverse">pangaear</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r-packages/"><span class="label label-inverse">R packages</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/models/"><span class="label label-inverse">models</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/splines/"><span class="label label-inverse">splines</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/smoothers/"><span class="label label-inverse">smoothers</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/open-data/"><span class="label label-inverse">open data</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/palaeo/"><span class="label label-inverse">palaeo</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

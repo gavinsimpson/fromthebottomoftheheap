@@ -1,0 +1,450 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>My aversion to pipes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="R, pipes, packages, debugging" />
+
+
+<meta name="description" content="At the risk of coming across as even more of a curmudgeonly old fart than people already think I am, I really do dislike the current vogue in R that is the pipe family of binary operators; e.g. %&gt;%. Introduced by Hadley Wickham and popularised and advanced via the magrittr package by Stefan Milton Bache, the basic idea brings the forward pipe of the F# language to R. At first, I was intrigued by the prospect and initial examples suggested this might be something I would find useful. But as time has progressed and I’ve seen the use of these pipes spread, I’ve grown to dislike the idea altogether. here I outline why.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="My aversion to pipes" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2015-06-03T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="My aversion to pipes" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2015-06-03T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2015/06/03/my-aversion-to-pipes/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="At the risk of coming across as even more of a curmudgeonly old fart than people already think I am, I really do dislike the current vogue in R that is the pipe family of binary operators; e.g. %&gt;%. Introduced by Hadley Wickham and popularised and advanced via the magrittr package..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="My aversion to pipes" />
+
+
+<meta name="twitter:description" content="At the risk of coming across as even more of a curmudgeonly old fart than people already think I am, I really do dislike the current vogue in R that is the pipe family of binary operators; e.g. %&..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="03 Jun 2015"/>
+<meta name="citation_date" content="03 Jun 2015"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="My aversion to pipes"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2015/07/10/tri-agency-open-access-policy/">The new Tri-agency open access policy</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2015/06/02/something-rotten/">Something is rotten in the state of Denmark</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>My aversion to pipes </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>At the risk of coming across as even more of a curmudgeonly old fart than people already think I am, I really do dislike the current vogue in R that is the pipe family of binary operators; e.g. <code>%&gt;%</code>. Introduced by Hadley Wickham and popularised and advanced via the <a href="http://cran.r-project.org/web/packages/magrittr/index.html"><strong>magrittr</strong> package</a> by Stefan Milton Bache, the basic idea brings the forward pipe of the F# language to R. At first, I was intrigued by the prospect and initial examples suggested this might be something I would find useful. But as time has progressed and I’ve seen the use of these pipes spread, I’ve grown to dislike the idea altogether. here I outline why.</p>
+<p>The forward pipe operator is designed, in R at least (I’m not familiar with F#), to avoid the sort of nested/inline R code of the type shown below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">the_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">head</span><span class="p">(</span><span class="n">transform</span><span class="p">(</span><span class="n">subset</span><span class="p">(</span><span class="n">read.csv</span><span class="p">(</span><span class="s1">'/path/to/data/file.csv'</span><span class="p">),</span><span class="w">
+                                  </span><span class="n">variable_a</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="p">),</span><span class="w">
+                           </span><span class="n">variable_c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable_a</span><span class="o">/</span><span class="n">variable_b</span><span class="p">),</span><span class="w">
+                 </span><span class="m">100</span><span class="p">)</span></code></pre>
+</figure>
+<p>replacing that awful mess with</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">the_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w">
+  </span><span class="n">read.csv</span><span class="p">(</span><span class="s1">'/path/to/data/file.csv'</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">subset</span><span class="p">(</span><span class="n">variable_a</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">transform</span><span class="p">(</span><span class="n">variable_c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable_a</span><span class="o">/</span><span class="n">variable_b</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">head</span><span class="p">(</span><span class="m">100</span><span class="p">)</span></code></pre>
+</figure>
+<p>And when compared against one another like that, who wouldn’t rejoice at the prospect of a pipe to banish such awful R code to distant memory? The problem with this comparison though is, <em>who writes code like that in the first code block</em>? I don’t think I’ve <em>ever</em> written code like that, even when I was a very green useR around the turn of the century.</p>
+<p>When you compare the pipe version with how I’d lay out the R code</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">the_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">read.csv</span><span class="p">(</span><span class="s1">'/path/to/data/file.csv'</span><span class="p">)</span><span class="w">
+</span><span class="n">the_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">subset</span><span class="p">(</span><span class="n">the_data</span><span class="p">,</span><span class="w"> </span><span class="n">variable_a</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">x</span><span class="p">)</span><span class="w">
+</span><span class="n">the_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">the_data</span><span class="p">,</span><span class="w"> </span><span class="n">variable_c</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable_a</span><span class="o">/</span><span class="n">variable_b</span><span class="p">)</span><span class="w">
+</span><span class="n">the_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">head</span><span class="p">(</span><span class="n">the_data</span><span class="p">,</span><span class="w"> </span><span class="m">100</span><span class="p">)</span><span class="w"> </span><span class="c1"># I'm perplexed as to why this would be a good thing to do?</span></code></pre>
+</figure>
+<p>the benefits of the pipe remain but they aren’t, at least in my opinion, as compelling. My version is verbose; I repeatedly overwrite <code>the_data</code> object with subsequent operations. Rather the writing <code>the_data</code> once in the pipe version, I’d write it 7 times! But that said, I could pass my version to a relative novice useR and they’d have a reasonable grasp of what the code did. I don’t think the same could be said for the pipe version.</p>
+<p>But all that really doesn’t matter does it. It’s personal preference as to how you choose to write your data analysis and manipulation R script code. If you find it easier to write code and then read it back using the pipe operator all power to you.</p>
+<p>Where I think it does make a difference is where you are</p>
+<ol type="1">
+<li>writing code to go into an R package for general consumption on say CRAN, or</li>
+<li>writing example material for your package in a vignette or similar document.</li>
+</ol>
+<p>I don’t claim that these are the only problem areas nor that these are universally accepted. I wager I’m in the majority position at the moment, but that is probably down to the relatively recent arrival of the pipe on the R scene.</p>
+<p>Why is the pipe a problem if you are writing code to go into a general purpose R package that you expect users to abuse with their own data in their own code? Two reasons. The pipe operator involves the <a href="http://adv-r.had.co.nz/Computing-on-the-language.html">standard non-standard evaluation</a> (NSE) paradigm. The pipe captures expressions on each side of the <code>%&gt;%</code> operator and then arranges for the thing on the left of <code>%&gt;%</code> to be injected into the expression on the right of <code>%&gt;%</code>, usually as the first argument but not always. This all involves capturing the expressions and evaluating them within the <code>%&gt;%()</code> function.</p>
+<p>OK, isn’t that what all functions using a formula do, or what <code>transform()</code>, <code>subset()</code>, <em>et al</em> do? Well yes, and this is where my spider sense starts tingling. Who among us hasn’t had those things fail on us when we dropped them into an <code>lapply()</code> inside an anonymous function? Or wrapped those function as part of a package function only for some user to execute your function in a way you didn’t envisage? Now Hadley assures us that there is a correct way to do NSE and he even has a package for that, <a href="http://cran.r-project.org/web/packages/lazyeval/"><strong>lazyeval</strong></a>. But still I have my reservations, despite Stefan’s attempts to allay my fears</p>
+<blockquote class="twitter-tweet" lang="en">
+<p lang="en" dir="ltr">
+<a href="https://twitter.com/ucfagls"><span class="citation" data-cites="ucfagls">(<span class="citeproc-not-found" data-reference-id="ucfagls"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/kevin_ushey"><span class="citation" data-cites="kevin_ushey">(<span class="citeproc-not-found" data-reference-id="kevin_ushey"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/JennyBryan"><span class="citation" data-cites="JennyBryan">(<span class="citeproc-not-found" data-reference-id="JennyBryan"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/noamross"><span class="citation" data-cites="noamross">(<span class="citeproc-not-found" data-reference-id="noamross"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/Voovarb"><span class="citation" data-cites="Voovarb">(<span class="citeproc-not-found" data-reference-id="Voovarb"><strong>???</strong></span>)</span></a> so far none have. You're welcome to reopen the github issue if you have examples.
+</p>
+— Stefan Milton Bache (<span class="citation" data-cites="stefanbache">(<span class="citeproc-not-found" data-reference-id="stefanbache"><strong>???</strong></span>)</span>) <a href="https://twitter.com/stefanbache/status/603924900135510016">May 28, 2015</a>
+</blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>OK, let’s assume Stefan and Hadley know what they are doing (and I invariably do) and the NSE used here really is safe. That still leaves the major problem I have with writing R code like this in package functions; how do you read it, parse it, and understand what it does? How do you track down a bug in the code and where it occurs if several steps are conflated into a single pipe chain? I’m not a pipe smoker so I’ll have to guess; you undo the chain and see where things break. Wouldn’t it have been easier to just write out the steps in the first place? That way the debugger can just step through the statements line by line as you’ve written them. I’m not alone in having concerns in this general area</p>
+<blockquote class="twitter-tweet" lang="en">
+<p lang="en" dir="ltr">
+<a href="https://twitter.com/daattali"><span class="citation" data-cites="daattali">(<span class="citeproc-not-found" data-reference-id="daattali"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/emhrt_"><span class="citation" data-cites="emhrt_">(<span class="citeproc-not-found" data-reference-id="emhrt_"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/ucfagls"><span class="citation" data-cites="ucfagls">(<span class="citeproc-not-found" data-reference-id="ucfagls"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/noamross"><span class="citation" data-cites="noamross">(<span class="citeproc-not-found" data-reference-id="noamross"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/recology_"><span class="citation" data-cites="recology_">(<span class="citeproc-not-found" data-reference-id="recology_"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/JennyBryan"><span class="citation" data-cites="JennyBryan">(<span class="citeproc-not-found" data-reference-id="JennyBryan"><strong>???</strong></span>)</span></a> <a href="https://twitter.com/Voovarb"><span class="citation" data-cites="Voovarb">(<span class="citeproc-not-found" data-reference-id="Voovarb"><strong>???</strong></span>)</span></a> my main worry is that it makes errors harder to understand
+</p>
+— Hadley Wickham (<span class="citation" data-cites="hadleywickham">(<span class="citeproc-not-found" data-reference-id="hadleywickham"><strong>???</strong></span>)</span>) <a href="https://twitter.com/hadleywickham/status/603883121197514752">May 28, 2015</a>
+</blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>I suppose a lot of this will come down to how well you grok pipes and how well you understand your actual code.</p>
+<p>OK, enough of that; on to problem area number 2. I was recently helping a <a href="http://stackoverflow.com/q/30489799/429846">StackOverflow user massage some output</a> from a <strong>vegan</strong> function into a format suitable for plotting with <strong>ggplot2</strong>. There, the aim was to go from this:</p>
+<pre><code>Group.1                S.obs     se.obs    S.chao1   se.chao1
+Cliona celata complex  499.7143  59.32867  850.6860  65.16366
+Cliona viridis         285.5000  51.68736  462.5465  45.57289
+Dysidea fragilis       358.6667  61.03096  701.7499  73.82693
+Phorbas fictitius      525.9167  24.66763  853.3261  57.73494</code></pre>
+<p>to this:</p>
+<pre><code>                Group.1   var        S       se
+1 Cliona celata complex chao1 850.6860 65.16366
+2 Cliona celata complex   obs 499.7143 59.32867
+3        Cliona viridis chao1 462.5465 45.57289
+4        Cliona viridis   obs 285.5000 51.68736
+5      Dysidea fragilis chao1 701.7499 73.82693
+6      Dysidea fragilis   obs 358.6667 61.03096
+7     Phorbas fictitius chao1 853.3261 57.73494
+8     Phorbas fictitius   obs 525.9167 24.66763</code></pre>
+<p>(or at least something pretty close it) so that the required <em>dynamite plot</em> (yes, yes, I know!) could be produced.</p>
+<p>A little fiddling with <strong>reshape2</strong> suggested this wasn’t something that it would handle gracefully (I may well be wrong here; I’m not familiar that particular package) and having recalled some details of Hadley’s <strong>tidyr</strong> package I felt that it would be more suited to the problem at hand. Not having used <strong>tidyr</strong> I proceeded to CRAN to grab the manual and look at any vignettes that might help me with understanding how to solve this particular problem. Thankfully, Hadley is a conscientious R package maintainer and there was a rather nice <a href="http://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html">HTML-rendered version of the vignette</a> right there on CRAN for me to peruse. The only downside to this was all the example code used pipes.</p>
+<p>The very first usage example is (or was, depending on when you are reading this)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="n">tidyr</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="n">dplyr</span><span class="p">)</span><span class="w">
+</span><span class="n">preg2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">preg</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w"> 
+  </span><span class="n">gather</span><span class="p">(</span><span class="n">treatment</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">treatmenta</span><span class="o">:</span><span class="n">treatmentb</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">mutate</span><span class="p">(</span><span class="n">treatment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gsub</span><span class="p">(</span><span class="s2">"treatment"</span><span class="p">,</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w"> </span><span class="n">treatment</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">arrange</span><span class="p">(</span><span class="n">name</span><span class="p">,</span><span class="w"> </span><span class="n">treatment</span><span class="p">)</span><span class="w">
+</span><span class="n">preg2</span></code></pre>
+</figure>
+<p>Innocuous enough I guess, until you realise that I"m also reading the manual which has usage that doesn’t involve pipes and that Hadley isn’t naming the arguments in the calls here. Now I am having to grok what is being passed, and where, by the pipes, whilst trying to match the usage shown in the example snippet with the arguments in the manual. I might be old-school but yes, I do read the manual.</p>
+<p>The point I’m trying to make here with my little anecdote is this; what point did the use of the pipe serve here? How am I as a user new to the package helped by Hadley also using the pipe? In my case I wasn’t; in fact it made it somewhat trickier to understand what went where, what the actual <strong>tidyr</strong> calls were etc. Now I fully understand that Hadley finds the pipe operator to be very expressive for data analysis, and who am I to argue with that? Where I would raise an issue is that if you are writing introductory example code, don’t force your users to have to grapple with two new concepts at once, at least not in the first few examples.</p>
+<p>I don’t want to beat on Hadley over this; it’s just that this was a prime example of where the use of the pipe was obfuscatory not revelatory, for me at least.</p>
+<p>So yes, I am a curmudgeonly old fart, but this old dog can learn new tricks. Convince me I’m wrong here cause I really do want to like the pipe; my Granddad smoked one and I have fond memories of the smell and, well, all the cool kids are using the pipe so it must be good, right?</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2015/06/03/my-aversion-to-pipes/";
+  var disqus_title = "My aversion to pipes";
+  //var disqus_identifier = "/2015/06/03/my-aversion-to-pipes";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>03 June 2015</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/pipes/"><span class="label label-inverse">pipes</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/packages/"><span class="label label-inverse">packages</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/debugging/"><span class="label label-inverse">debugging</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

@@ -1,0 +1,422 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>radian: a modern console for R</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="R, Software, Editor, Code, Shell, radian" />
+
+
+<meta name="description" content="Whenever I’m developing R code or writing data wrangling or analysis scripts for research projects that I work on I use Emacs and its add-on package Emacs Speaks Statistics (ESS). I’ve done so for nigh on a couple of decades now, ever since I switched full time to running Linux as my daily OS. For years this has served me well, though I wouldn’t call myself an Emacs expert; not even close! With a bit of help from some R Core coding standards document I got indentation working how I like it, I learned to contort my fingers in weird and wonderful ways to execute a small set of useful shortcuts, and I even committed some of those shortcuts to memory. More recently, however, my go-to methods for configuring Emacs+ESS were failing; indentation was all over the shop, the smart _ stopped working or didn’t work as it had for over a decade, syntax highlighting of R-related files, like .Rmd was hit and miss, and polymode was just a mystery to me. Configuring Emacs+ESS was becoming much more of a chore, and rather unhelpfully, my problems coincided with my having less and less time to devote to tinkering with my computer setups. Also, fiddling with this stuff just wasn’t fun any more. So, in a fit of pique following one to many reconfiguration sessions of Emacs+ESS, I went in search of some greener grass. During that search I came across radian, a neat, attractive, simple console for working with R.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="radian: a modern console for R" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2019-06-18T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="radian: a modern console for R" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2019-06-18T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2019/06/18/radian-console-for-r/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Whenever I’m developing R code or writing data wrangling or analysis scripts for research projects that I work on I use Emacs and its add-on package Emacs Speaks Statistics (ESS). I’ve done so for nigh on a couple of decades now, ever since I switched full time to running Linux..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="radian: a modern console for R" />
+
+
+<meta name="twitter:description" content="Whenever I’m developing R code or writing data wrangling or analysis scripts for research projects that I work on I use Emacs and its add-on package Emacs Speaks Statistics (ESS). I’ve done so for..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="18 Jun 2019"/>
+<meta name="citation_date" content="18 Jun 2019"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="radian: a modern console for R"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2019/10/25/pivoting-tidily/">Pivoting tidily</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2019/01/22/using-tibbles-and-example-checking/">Tibbles, checking examples, & character encodings</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>radian: a modern console for R </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>Whenever I’m developing R code or writing data wrangling or analysis scripts for research projects that I work on I use <em>Emacs</em> and its add-on package <a href="https://ess.r-project.org/"><em>Emacs Speaks Statistics</em></a> (<em>ESS</em>). I’ve done so for nigh on a couple of decades now, ever since I switched full time to running Linux as my daily OS. For years this has served me well, though I wouldn’t call myself an <em>Emacs</em> expert; not even close! With a bit of help from some R Core coding standards document I got indentation working how I like it, I learned to contort my fingers in weird and wonderful ways to execute a small set of useful shortcuts, and I even committed some of those shortcuts to memory. More recently, however, my go-to methods for configuring <em>Emacs+ESS</em> were failing; indentation was all over the shop, the smart <code>_</code> stopped working or didn’t work as it had for over a decade, syntax highlighting of R-related files, like <code>.Rmd</code> was hit and miss, and <em>polymode</em> was just a mystery to me. Configuring <em>Emacs+ESS</em> was becoming much more of a chore, and rather unhelpfully, my problems coincided with my having less and less time to devote to tinkering with my computer setups. Also, fiddling with this stuff just wasn’t fun any more. So, in a fit of pique following one to many reconfiguration sessions of <em>Emacs+ESS</em>, I went in search of some greener grass. During that search I came across <a href="https://github.com/randy3k/radian">radian</a>, a neat, attractive, simple console for working with R.</p>
+<p>Written by <a href="https://github.com/randy3k">Randy Lai</a>, <em>radian</em> is a cross-platform console for R that provides code completion, syntax highlighting, etc in a neat little package that runs in a shell or terminal, such as Bash. I’m someone who fires up multiple terminals every day to run some bit of R code, to show a student how to do something, to quickly check on argument names or such like, or prepare an answer to a question on <a href="https://stackoverflow.com">stackoverflow</a> or <a href="https://stats.stackexchange.com">crossvalidated</a>. Running R in a terminal after using an IDE/environment like <em>Emacs+ESS</em> or <em>RStudio</em> is an exercise in time travel; all those little helpful editing tools the IDE provides are missing and you’re coding like it was the 1980s all over again. <em>radian</em> changes all that.</p>
+<p><em>radian</em> is a Python application so to run it you’ll need a python stack installed. You’ll also need a relatively recent version of R (≥ 3.4.0). Using <code>pip</code>, the python package installer, installing <em>radian</em> is straightforward. Python v3 is recommended and on Fedora this mean I had to install using</p>
+<pre><code>pip-3 install --user radian</code></pre>
+<p>The <code>--user</code> flag does an user install, which sets the installation location to be inside your home directory. Once installed, you can start <em>radian</em> by simply typing the application name and hitting enter</p>
+<pre><code>radian</code></pre>
+<p>A nice configuration tip included in the <em>radian</em> <code>README.md</code> is to alias the <code>radian</code> command to <code>r</code>, so that running <code>R</code> runs the standard <em>R</em> console, while running <code>r</code> starts <em>radian</em>. On Fedora, you configure this alias in your <code>~/.bashrc</code> file</p>
+<pre><code>alias r=&quot;radian&quot;</code></pre>
+<p>Having started <em>radian</em> you’ll see something like this</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/radian-startup.png" alt="radian at start-up running in a bash shell on Fedora" /><figcaption><em>radian</em> at start-up running in a <em>bash</em> shell on Fedora</figcaption>
+</figure>
+<p><em>radian</em> starts up with a simple statement of the R version running in <em>radian</em> and the platform (OS) it’s running on; so is it just a less-verbose version of the standard R console? The <em>radian</em> prompt hints at the greater capabilities however.</p>
+<p>Code completion is a nice addition; yes, you have some form of code completion in the standard R console but in <em>radian</em> we have a more <em>RStudio</em> or <em>Emacs+ESS</em>-like experience with a drop-down menu for object, function, argument, and filename completion. To activate this you start typing, hit <kbd>Tab</kbd> and the relevant completions pops up. Hit <kbd>Tab</kbd> again or press the down cursor and you can scroll through the potential completions.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/radian-completion.png" alt="Code completion in radian" /><figcaption>Code completion in <em>radian</em></figcaption>
+</figure>
+<p>We also get nice syntax highlighting of R code using the colour schemes from <a href="https://help.farbox.com/pygments.html"><em>pygments</em></a>:</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/radian-syntax-highlighting.png" alt="Syntax highlighting in radian using the monokai theme" /><figcaption>Syntax highlighting in <em>radian</em> using the <em>monokai</em> theme</figcaption>
+</figure>
+<p>And, if you’re copying &amp; pasting code into the terminal or piping code in from a editor with an embedded terminal (that’s running <em>radian</em>) then you also get rather handy multiline editing. Pressing the up cursor <kbd>↑</kbd> will retrieve the previous set of commands pasted or piped into <em>radian</em>, and repeatedly pressin <kbd>↑</kbd> will scroll back through the history. If you want to edit a set of R calls, instead of pressing <kbd>↑</kbd> again, press <kbd>←</kbd> to enter the chunk of code and then you can move around among the lines using the cursor keys, editing as you see fit. Hitting enter will run the entire chunk of code for you, edits and all:</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/radian-multiline-editing.gif" alt="Multiline editing a ggplot call in radian" /><figcaption>Multiline editing a <em>ggplot</em> call in <em>radian</em></figcaption>
+</figure>
+<p>You can configure aspects of the behaviour of <em>radian</em> via <code>options()</code> in your <code>.Rprofile</code>. The options I’m currently using on the computer used for the screenshots in this post are:</p>
+<pre><code>options(radian.auto_indentation = FALSE)
+options(radian.color_scheme = &quot;monokai&quot;)</code></pre>
+<p>but on my laptop I’m currently using</p>
+<pre><code># auto match brackets and quotes
+options(radian.auto_match = TRUE)
+
+# auto indentation for new line and curly braces
+options(radian.auto_indentation = TRUE)
+options(radian.tab_size = 4)
+
+# timeout in seconds to cancel completion if it takes too long
+# set it to 0 to disable it
+options(radian.completion_timeout = 0.05)
+
+# insert new line between prompts
+options(radian.insert_new_line = FALSE)</code></pre>
+<p>The last option is something I’m not sure about yet; as you can see in the screenshots, there’s a new line between the prompts, which makes it super easy to read the R code you’ve entered, but with the font I’m currently using (<a href="https://github.com/be5invis/Iosevka">Iosevka</a>) things look a bit too spread out. Setting <code>radian.insert_new_line = FALSE</code>, as I have it on the laptop results in more standard behaviour but it can feel a little cramped. I’ll probably play with both options and see which I like best after a few more weeks of use.</p>
+<p>You can also define shortcuts. This is useful for entering the assignment operator <code>&lt;-</code>, which I have bound to <kbd>Alt</kbd> + <kbd>-</kbd> using</p>
+<pre><code>options(radian.escape_key_map = list(
+          list(key = &quot;-&quot;, value = &quot; &lt;- &quot;)
+        ))</code></pre>
+<p>where I’ve added spaces around the operator to mimic how the smart underscore works in <em>Emacs+ESS</em>.</p>
+<p>I’m really liking using <em>radian</em> for my throw-away R sessions that I typically do in a terminal. The only issue I’ve noticed is that it is a little slow to print tibbles, and clearly it’s not going to replace my current IDE — that’s not what it is designed for. That said, <em>radian</em> can be run inside any app that can run a terminal and I’ve had this running inside <a href="https://code.visualstudio.com/">VS Code</a> for example, which was nice.</p>
+<p>If you have any comments on <em>radian</em> or other R consoles, let me know what you think below; if you’ve used <em>radian</em> I’m especially interested in your experience with it.</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2019/06/18/radian-console-for-r/";
+  var disqus_title = "radian: a modern console for R";
+  //var disqus_identifier = "/2019/06/18/radian-console-for-r";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>18 June 2019</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/software/"><span class="label label-inverse">Software</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/editor/"><span class="label label-inverse">Editor</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/code/"><span class="label label-inverse">Code</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/shell/"><span class="label label-inverse">Shell</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/radian/"><span class="label label-inverse">radian</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

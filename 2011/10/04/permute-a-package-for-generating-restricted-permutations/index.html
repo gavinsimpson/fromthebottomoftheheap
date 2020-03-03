@@ -1,0 +1,463 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>permute: a package for generating restricted permutations</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="Ecology, Environmetrics, Ordination, Permutation tests, permute, R, vegan" />
+
+
+<meta name="description" content="Multivariate ordination methods are commonly used in ecology to investigate patterns in species composition in space or time. Constrained ordination methods such as redundancy analysis (RDA) and canonical correspondence analysis (CCA) are effectively just multiple regressions, but we lack the parametric theory to adequately test the statistical significance of terms in the model. Other techniques likewise lack the appropriate theory, such as the Mantel test, vector fitting into ordination space, among many others." />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="permute: a package for generating restricted permutations" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2011-10-04T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="permute: a package for generating restricted permutations" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2011-10-04T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2011/10/04/permute-a-package-for-generating-restricted-permutations/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Multivariate ordination methods are commonly used in ecology to investigate patterns in species composition in space or time. Constrained ordination methods such as redundancy analysis (RDA) and canonical correspondence analysis (CCA) are effectively just multiple regressions, but we lack the parametric theory to adequately test the statistical significance of terms..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="permute: a package for generating restricted permutations" />
+
+
+<meta name="twitter:description" content="Multivariate ordination methods are commonly used in ecology to investigate patterns in species composition in space or time. Constrained ordination methods such as redundancy analysis (RDA) and c..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="04 Oct 2011"/>
+<meta name="citation_date" content="04 Oct 2011"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="permute: a package for generating restricted permutations"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2011/10/18/generating-restricted-permutations-with-permute/">Generating restricted permutations with permute</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2011/07/23/passing-non-graphical-parameters-to-graphical-functions-using/">Passing non-graphical parameters to graphical functions using ...</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>permute: a package for generating restricted permutations </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+                              <div class="alert alert-error">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h3>Update!</h3>
+                <p><p>A new version of <b>permute</b> has been released and some of the functionality described in this post is out of date.</p>
+</p>
+              </div>
+
+              
+            <p>
+Multivariate ordination methods are commonly used in ecology to investigate patterns in species composition in space or time. Constrained ordination methods such as redundancy analysis (RDA) and canonical correspondence analysis (CCA) are effectively just multiple regressions, but we lack the parametric theory to adequately test the statistical significance of terms in the model. Other techniques likewise lack the appropriate theory, such as the Mantel test, vector fitting into ordination space, among many others.
+</p>
+<p>Instead, permutation tests are used to form an appropriate Null distribution for a test statistic against which we can evaluate the observed value of that statistic. In constrained ordination the test statistic is usually in the form of a pseudo <em>F</em> statistic, although one advantage of the permutation approach is that any suitable statistic can be used in the test. If the observed value of the test statistic is unusual in the context of the Null distribution derived by permuting the data, say in the top 5 or 1 percent, we conclude that the observed relationship is unlikely to have arisen by chance and is therefore significant.</p>
+<p>Simply shuffling the rows of the input data, a process also known as a randomisation test, is sufficient where the observations in the data are independent. If the observations are independent, under the Null model any row from the species data can be matched with any row from the predictor data, which justifies the use of randomisation as the basis for testing the significance of the model.</p>
+<p>In many cases, however, ecological data are not independent, having been collected sequentially in space (a transect) or time (time series). Designed experiments are commonplace, with replicates located within plots that are experimentally manipulated. Observations might also have been repeatedly made from within a number of sampling locations or plots, or from a spatial grid over the region of interest.</p>
+<p>The <a href="http://cran.r-project.org/web/packages/vegan/index.html" title="vegan page on CRAN"><strong>vegan</strong> package</a> has long had permutation tests, based on the function <code>permuted.index()</code>. This function allowed for simple randomisation, or randomisation within groups, defined by a factor supplied as argument <code>strata</code>.</p>
+<p><a href="http://www.pri.wur.nl/uk/products/canoco/" title="CANOCO Site">CANOCO</a> has long had support for these restricted permutations methods. I have been working sporadically for several years developing code initially in <strong>vegan</strong> and then under the banner of the <strong>permute</strong> package to implement similar functionality.</p>
+<p>In a series of posts over the coming weeks I will explain what <strong>permute</strong> can do and illustrate how to use the package. Over time, myself and the other <strong>vegan</strong> developers will start interfacing existing functions in the package that use permutations with the <strong>permute</strong> package so that gradually the scope of permutation tests in <strong>vegan</strong> will improve.</p>
+<p>To get you started though, here is a quick, simple example of doing a randomisation test using <strong>permute</strong>.</p>
+<p>We consider a small data set of mandible length measurements on specimens of the <a href="http://en.wikipedia.org/wiki/Golden_jackal" title="the Golden Jackal page on Wikipedia">golden jackal (<em>Canis aureus</em>)</a> from the British Museum of Natural History, London, UK. These data were collected as part of a study comparing prehistoric and modern canids (Higham et al. 1980), and were previously analysed by Manly (2007). There are ten measurements of mandible length on both male and female specimens. The data are available in the <code>jackal</code> data frame supplied with <strong>permute</strong>. Load the package and the data set</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">require</span><span class="p">(</span><span class="n">permute</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">data</span><span class="p">(</span><span class="n">jackal</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">jackal</span></code></pre>
+</figure>
+<p>The interest is in whether there is a difference in the mean mandible length between male and female golden jackals. The null hypothesis is that there is zero difference in mandible length between the two sexes or that females have larger mandibles. The alternative hypothesis is that males have larger mandibles. The usual statistical test of this hypothesis is a one-sided <em>t</em> test, which can be applied using <code>t.test()</code></p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; jack.t &lt;- t.test(Length ~ Sex, data = jackal, var.equal = TRUE,
++    alternative = "greater")
+&gt; jack.t
+
+    Two Sample t-test
+
+data:  Length by Sex 
+t = 3.4843, df = 18, p-value = 0.001324
+alternative hypothesis: true difference in means is greater than 0 
+95 percent confidence interval:
+ 2.411156      Inf 
+sample estimates:
+  mean in group Male mean in group Female 
+               113.4                108.6</code></pre>
+</figure>
+<p>A permutation-based test can be used to test the same Null hypothesis, but without some of the assumptions of the <em>t</em> test, most importantly the assumption that the data are a random sample from the population of golden jackals. With a permutation test, we are free to choose any suitable test statistic. We could use the <em>t</em> statistic, but the difference in means of the Female and Male groups will suffice. To implement this we build a function that will compute the difference of means for the Male and Female groups:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">meanDif</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">grp</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">grp</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"Male"</span><span class="p">])</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">grp</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"Female"</span><span class="p">])</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>This function can be used in a <code>for()</code> loop to generate the permutation distribution of the test statistic under the Null hypothesis. We will perform 4999 random permutations, so we allocate a vector of length 5000 to hold the resulting difference of means. Under the Null hypothesis, the observed difference of means is just one of the possible values so we count it as part of the Null distribution (hence the length of 5000). In the code chunk below, <code>Djackal</code> will contain the 5000 differences of means for the Null distribution, <code>N</code> holds the number of observations in the <code>jackal</code> data set. Then we seed the pseudo-random number generator to get reproducible results and initiate a loop to generate the Null distribution, of which more in a minute. The last line adds the observed difference of means to the Null distribution</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; Djackal &lt;- numeric(length = 5000)
+&gt; N &lt;- nrow(jackal)
+&gt; set.seed(42)
+&gt; for (i in seq_len(length(Djackal) - 1)) {
++     perm &lt;- shuffle(N)
++     Djackal[i] &lt;- with(jackal, meanDif(Length, Sex[perm]))
++ }
+&gt; Djackal[5000] &lt;- with(jackal, meanDif(Length, Sex))</code></pre>
+</figure>
+<p>The loop runs over the values {1,…4999} and generates a randomisation of the <code>N</code> rows in the <code>jackal</code> data frame using the <code>shuffle()</code> function. The second line in the loop computes the difference in mean mandible length for the permuted data. <code>shuffle()</code> is one of the key functions available in <strong>permute</strong>. When called, as here, with a single argument (the number of observations) it returns a random permutation of the integers {1, …, <code>N</code>}. In fact, it works very much as a wrapper for the base R function <code>sample()</code>:</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; set.seed(2)
+&gt; (r1 &lt;- shuffle(10))
+ [1]  2  7  5 10  6  8  1  3  4  9
+&gt; set.seed(2)
+&gt; (r2 &lt;- sample(1:10, 10, replace = FALSE))
+ [1]  2  7  5 10  6  8  1  3  4  9
+&gt; all.equal(r1, r2)
+[1] TRUE</code></pre>
+</figure>
+<p>In future posts I’ll talk more about <code>shuffle()</code> and some of the other key functions in <strong>permute</strong>. For now, we’ll rush ahead and look at the results of the permutation test. A histogram of the Null distribution showing the observed difference of means via a rug plot can be produced using</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; hist(Djackal, main = "",
++      xlab = expression("Mean difference (Male - Female) in mm"))
+&gt; rug(Djackal[5000], col = "red", lwd = 2)</code></pre>
+</figure>
+<p>The resulting figure looks like the one shown below</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/jackal_null_distr.png" title="Permutation Null distribution for difference of mean mandible length" alt="Permutation Null distribution for difference of mean mandible length" /><figcaption>Permutation Null distribution for difference of mean mandible length</figcaption>
+</figure>
+<p>The observed difference of mean mandible length is located in the extreme right tail of the Null distribution. The number of permuted difference of mean lengths that are equal to or greater than the observed difference is 12, yielding a permutational <em>p</em> value of 0.0024</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; (Dbig &lt;- sum(Djackal &gt;= Djackal[5000]))
+[1] 12
+&gt; Dbig/length(Djackal)
+[1] 0.0024</code></pre>
+</figure>
+<p>This is comparable with the <em>p</em> value determined via the <em>t</em>-test and indicates strong evidence against the null hypothesis of no difference in mean mandible lengths. This we can reject the Null hypothesis that male and female golden jackals have similarly sized mandibles.</p>
+<p>I hope that has whet your appetite? In future posts I’ll explain more about how <strong>permute</strong> works and explain how to use it to generate restricted permutations.</p>
+<h2 id="references">References</h2>
+<p>Higham C, Kijngam A, Manly B (1980). An analysis of prehistoric canid remains from Thailand. <em>Journal of Archaeological Science</em>, <strong>7</strong>, 149–165. Manly B (2007). <em>Randomization, bootstrap and Monte Carlo methods in biology</em>. 3rd edition. Chapman &amp; Hall/CRC, Boca Raton.</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2011/10/04/permute-a-package-for-generating-restricted-permutations/";
+  var disqus_title = "permute: a package for generating restricted permutations";
+  //var disqus_identifier = "/2011/10/04/permute-a-package-for-generating-restricted-permutations";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>04 October 2011</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/ecology/"><span class="label label-inverse">Ecology</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/environmetrics/"><span class="label label-inverse">Environmetrics</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/ordination/"><span class="label label-inverse">Ordination</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/permutation-tests/"><span class="label label-inverse">Permutation tests</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/permute/"><span class="label label-inverse">permute</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/vegan/"><span class="label label-inverse">vegan</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

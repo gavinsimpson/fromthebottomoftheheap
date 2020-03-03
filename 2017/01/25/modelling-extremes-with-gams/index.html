@@ -1,0 +1,620 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Modelling extremes using generalized additive models</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="mgcv, GAM, models, splines, smoothers, extremes, GEV, extreme values, statistical modelling" />
+
+
+<meta name="description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his mgcv package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with mgcv to get a feel for the gevlss() family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the VGAM package of Thomas Yee.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Modelling extremes using generalized additive models" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2017-01-25T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Modelling extremes using generalized additive models" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2017-01-25T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2017/01/25/modelling-extremes-with-gams/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Modelling extremes using generalized additive models" />
+
+
+<meta name="twitter:description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the an..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="25 Jan 2017"/>
+<meta name="citation_date" content="25 Jan 2017"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Modelling extremes using generalized additive models"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/">Simultaneous intervals for derivatives of smooths revisited</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2016/12/16/pangaea-r-open-palaeo-data/">Pangaea and R and open palaeo data</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Modelling extremes using generalized additive models <small></small></h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>Quite some years ago, whilst working on the EU Sixth Framework project <em>Euro-limpacs</em>, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his <strong>mgcv</strong> package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with <strong>mgcv</strong> to get a feel for the <code>gevlss()</code> family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the <strong>VGAM</strong> package of Thomas Yee.</p>
+<p>The analysis I wanted to recreate was reported in a 2007 paper by Thomas Yee and Alec Stephenson <span class="citation" data-cites="Yee2007-rz">(Yee and Stephenson, 2007)</span> and concerned a time series of annual maximum sea-level at Fremantle, Western Australia. This example is also used extensively in Stuart Coles excellent book on statistical modeling of extremes <span class="citation" data-cites="Coles2001-zz">(Coles, 2001)</span>. The data are available from the <strong>ismev</strong> support package for Coles’ book in the data set <code>fremantle</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## install.packages("ismev")               # if not installed!</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ismev"</span><span class="p">)</span><span class="w">
+</span><span class="n">head</span><span class="p">(</span><span class="n">fremantle</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">  Year SeaLevel   SOI
+1 1897     1.58 -0.67
+2 1898     1.71  0.57
+3 1899     1.40  0.16
+4 1900     1.34 -0.65
+5 1901     1.43  0.06
+7 1903     1.19  0.47</code></pre>
+</figure>
+<p>The data contain 86 observations of the annual maximum sea level (in meters) over the period 1897–1989. The aim of the analysis is to account for any change in the distribution of annual maxima over time and to investigate any relationship with the Southern Oscillation Index, a measure of meteorological phenomena which reflects the development and intensity of El Niño events, and those of its counterpart La Niña, in the south Pacific. The data are shown below using <strong>ggplot</strong></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"cowplot"</span><span class="p">)</span><span class="w">                      </span><span class="c1"># install.packages("cowplot") If not installed !</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">
+
+</span><span class="n">p1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ggplot</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SeaLevel</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">geom_smooth</span><span class="p">(</span><span class="n">se</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w">
+</span><span class="n">p2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ggplot</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SeaLevel</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">geom_smooth</span><span class="p">(</span><span class="n">se</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w">
+</span><span class="n">plot_grid</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">p2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-packages-and-plot-1.png" alt="Time series of annual sea-level maxima at Fremantle, Western Australia (top) and the relationship between annual sea-level maxima and the Southern Oscillation Index" /><figcaption>Time series of annual sea-level maxima at Fremantle, Western Australia (top) and the relationship between annual sea-level maxima and the Southern Oscillation Index</figcaption>
+</figure>
+<p>In extreme value analysis, one of the key components is to assess the behaviour of the very large, or small, events/observations, and often the focus is on those that are much more extreme than those in the observational record. This requires a considerably different approach to the usual statistical methods that focus on the mean of a distribution. Whilst we could approach the analysis of data like that in <code>fremantle</code> from the view point of traditional methods employing the Gaussian distribution, the events of interest, the extreme high sea-level events, are way off in the tails of a distribution fitted by considering (usually) just its mean (and variance). Even small uncertainties in estimation of the distribution can be amplified when we get out into the extreme tails of the Gaussian, complicating inference about extremes and inflating uncertainties.</p>
+<p>Extreme value theory has developed separate models and limiting distributions that replace central role that the Gaussian distribution plays in other areas of statistical modeling and inference. Consider again the sea-level data; the sea level would have been measured daily (or roughly daily) at Fremantle in order to produce the annual maximum series we wish to analyze. For a single year, we might denote these daily observations by <span class="math inline">\(Z_1, \ldots, Z_m\)</span> and we’ll assume that these are a random sample of sea-level values. The annual maximum is given by</p>
+<p><span class="math display">\[
+Y_m = \max \left\{ Z_1, \ldots, Z_m \right\}
+\]</span></p>
+<p><span class="math inline">\(Y_m\)</span> are commonly known as <em>block maxima</em> — the maxima of a block of random variables <span class="math inline">\(Z_m\)</span>. Extreme value theory considers the limiting distribution of <span class="math inline">\(Y_m\)</span> as <span class="math inline">\(m\)</span> tends to infinity. More simply, we want derive the distribution of annual maximum sea-level values as the number of annual maxima tends to infinity. The limiting distribution for <span class="math inline">\(Y_m\)</span> is restricted to the class of generalized extreme value distributions (GEV), which have the following form</p>
+<p><span class="math display">\[
+G(y) = \exp \left \{ - \left [ 1 + \xi \left ( \frac{y - \mu}{\sigma} \right ) \right ]_{+}^{-1/\xi} \right \}
+\]</span></p>
+<p>where <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma &gt; 0\)</span>, and <span class="math inline">\(\xi\)</span> are the location, (positive) scale, and shape parameters respectively of the distribution. The distribution has support on values <span class="math inline">\(y\)</span> where <span class="math inline">\(1 + \xi (y - \mu / \sigma) &gt; 0\)</span>, which is indicated by the subscript <span class="math inline">\(+\)</span> in the main equation above. <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\xi\)</span> can take any real value in the range <span class="math inline">\(-\infty\)</span>–<span class="math inline">\(+\infty\)</span>, whereas <span class="math inline">\(\sigma\)</span> the scale, or variance, parameter can be any positive real value.</p>
+<p>The GEV distribution encompasses the three potential extreme value distributions for block maxima:</p>
+<p>I. the <strong>Gumbel</strong> distribution, II. the <strong>Fréchet</strong> distribution, and III. the <strong>Weibul</strong> distribution.</p>
+<p>These are also known as the Type I, II, and III extreme value distributions. Though I won’t write out the equations for each of these distributions, they are all quite similar to the GEV distribution and have parameters <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, whilst the Fréchet and Weibull distributions also have a shape parameter <span class="math inline">\(\xi\)</span>. The distributions differ markedly at the extreme positive end of <span class="math inline">\(y\)</span>, <span class="math inline">\(y_{+}\)</span>; the Weibull is finite, but both the Fréchet and Gumbel distributions are infinite, being distinguished by having polynomially and exponentially decaying density respectively. Each of these distributions can be reached from the GEV</p>
+<ul>
+<li>the Gumbel is reached when <span class="math inline">\(\xi = 0\)</span>,</li>
+<li>the Fréchet when <span class="math inline">\(\xi\)</span> is <em>positive</em> (<span class="math inline">\(\xi &gt; 0\)</span>), and</li>
+<li>the Weibull when <span class="math inline">\(\xi\)</span> is <em>negative</em> (<span class="math inline">\(\xi &lt; 0\)</span>)</li>
+</ul>
+<p>Traditionally, researchers had to decide which type of tail behaviour they expected prior to fitting one of the three extreme value distributions. The clear advantage of the GEV is that the choice of distribution is now a parameter that can be included in the model fitting process leading to fewer <em>a priori</em> decisions needing to be made ahead of the analysis.</p>
+<p>As I mentioned above, the <code>gevlss()</code> family allows for separate linear predictors <span class="math inline">\(\eta\)</span> for each of the parameters <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, and <span class="math inline">\(\xi\)</span>, to depend on one or more covariates. When setting up this model, therefore, we need to specify not one formula, but three. These are supplied in a list, with only the first having a left hand side term for the response.</p>
+<p>The first model considered by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> allowed for a smooth trend in <code>Year</code> and a smooth effect of <code>SOI</code> in the linear predictors for <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> whilst <span class="math inline">\(\xi\)</span> was modeled as an intercept only linear predictor. The reason for the simple linear predictor for <span class="math inline">\(\xi\)</span> is that this parameter is exceedingly difficult to estimate from data; in a relatively small data set like the <code>fremantle</code> one there is very little information with which to inform <span class="math inline">\(\xi\)</span>.</p>
+<p>To specify this model in <code>gam()</code> we need to create a list of three formula objects as follows:</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">list</span>(SeaLevel <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(cYear) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(SOI),</a>
+<a class="sourceLine" id="cb1-2" title="2">     <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(cYear) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(SOI),</a>
+<a class="sourceLine" id="cb1-3" title="3">     <span class="op">~</span><span class="st"> </span><span class="dv">1</span>)</a></code></pre></div>
+<p>Key points to note here are</p>
+<ul>
+<li>The ordering of the formula components is <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, and <span class="math inline">\(\xi\)</span>,</li>
+<li>only the first formula, for <span class="math inline">\(\mu\)</span>, has a left hand side specifying the response variable, in this case <code>SeaLevel</code>,</li>
+<li>the second and third formulas are right-hand sided only and start with a <code>~</code>,</li>
+<li>intercept-only linear predictors are indicated by the formula <code>~ 1</code></li>
+</ul>
+<p>This model can be thought of as an extended GLM and as such, each linear predictor is associated with a link function. The default links for <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, and <span class="math inline">\(\xi\)</span> in the <code>gevlss()</code> family are <code>"identity"</code>, <code>"identity"</code> and <code>"logit"</code> respectively, although technically the linear predictor for <span class="math inline">\(\sigma\)</span>, <span class="math inline">\(\eta_{\sigma}\)</span>, is for the <em>log scale parameter</em> and hence the default identity link implies a fixed log link for <span class="math inline">\(\sigma\)</span>. Additionally, the <code>"logit"</code> link for <span class="math inline">\(\xi\)</span> is modified to restrict the range to -1 – 0.5. To match the model fitted by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span>, the identity link is used for all three parameters.</p>
+<p>Finally, note that the <strong>VGAM</strong> package requires the user to specify the degrees of freedom for each smooth term and the software searches for a smoothing parameter that achieves the required degrees of freedom. <strong>mgcv</strong> takes a different tack; the user specifies the dimension of the basis (the number of basis functions) to use for each smooth term and then <em>it</em> chooses smoothness parameters via penalized likelihood to maximize a log-marginal or log-restricted marginal likelihood. Assuming that the dimension of the basis is sufficiently rich to include the true but unknown smooth function, the <strong>mgcv</strong> approach avoids the user having to state <em>a priori</em> how wiggly each smooth term should be.</p>
+<p><span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> used three degrees of freedom splines for each smooth term. Here I leave the basis dimension at the (essentially arbitrary) default value of 10. It will be instructive to see what smoothness parameters are selected as optimal, how <strong>mgcv</strong> copes with estimating smoothness in a relatively complex setting, and how the estimated smooths compare with those assumed by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span>.</p>
+<p>One final tweak is required; the estimates of the intercept terms for <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> would imply extrapolation backwards in time 2,000 years. It can help numerical stability when fitting if we centre <code>Year</code> about say the middle of the time series, which we do now before proceeding</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">fremantle</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">cYear</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Year</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">median</span><span class="p">(</span><span class="n">Year</span><span class="p">))</span></code></pre>
+</figure>
+<p>With that out of the way, the model is fitted with relative ease as follows</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">SeaLevel</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">cYear</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">SOI</span><span class="p">),</span><span class="w">
+               </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">cYear</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">SOI</span><span class="p">),</span><span class="w">
+               </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
+          </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+          </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gevlss</span><span class="p">(</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">)))</span><span class="w">
+</span><span class="n">summary</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gevlss 
+Link function: identity identity identity 
+
+Formula:
+SeaLevel ~ s(cYear) + s(SOI)
+~s(cYear) + s(SOI)
+~1
+
+Parametric coefficients:
+              Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)    1.49567    0.01517  98.577   &lt;2e-16 ***
+(Intercept).1 -2.13680    0.08853 -24.135   &lt;2e-16 ***
+(Intercept).2 -0.25472    0.08851  -2.878    0.004 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+             edf Ref.df Chi.sq  p-value    
+s(cYear)   1.000  1.000 15.030 0.000106 ***
+s(SOI)     1.366  1.650 13.549 0.000554 ***
+s.1(cYear) 2.032  2.546  4.922 0.129164    
+s.1(SOI)   1.000  1.000  6.461 0.011026 *  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Deviance explained =   NA%
+-REML = -41.116  Scale est. = 1         n = 86</code></pre>
+</figure>
+<p>The <code>summary()</code> output is similar to that of standard GAMs, except the convention is to append <code>.N</code>, where <code>N</code> is a positive integer, to terms for (confusingly) the second and third linear predictors respectively. The parametric terms are listed first.</p>
+<p>Of interest here for this model is the estimate of <span class="math inline">\(\xi\)</span>, which is negative, -0.25 (with standard error 0.09 yielding approximate 95% confidence interval -0.43 – -0.08), indicating a Weibull-type distribution for the annual sea-level maxima. The values reported by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> are <span class="math inline">\(\hat{\xi}\)</span> = -0.27, with standard error 0.06.</p>
+<p>The smooth terms are listed next, and with the exception of the smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span>, all the estimated smooths have been penalized to (effectively) linear functions. The partial effect of each smooth can be plotted using the <code>plot()</code> method for <code>gam</code> models</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="w"> </span><span class="n">pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">seWithMean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-plot-m1-smooths-1.png" alt="Fitted smooths for model m1 which uses penalized splines for the smooths of Year and SOI in the linear predictors for the location and scale parameters of the GEV distribution" /><figcaption>Fitted smooths for model <code>m1</code> which uses penalized splines for the smooths of <code>Year</code> and <code>SOI</code> in the linear predictors for the location and scale parameters of the GEV distribution</figcaption>
+</figure>
+<p>As reported in <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span>, the fitted smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span> (lower left panel) is somewhat non-linear, with partial effect of decreasing variance in sea-levels through c. 1945 and increasing variance thereafter. <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> suggest that this smooth may be replaced by a piece-wise linear function with a knot round 1945. The authors also simplified the model by replacing the smooths for all the other variables with linear parametric terms. We will investigate this model next.</p>
+<p>I haven’t quite worked out how to get <code>gam()</code> to fit a piece-wise linear function yet, but the approach below is pretty close. The following model uses the new b-spline basis in <strong>mgcv</strong>, which allows a lot of control over how the basis is set up. In basic R, a piece-wise linear basis with interior knot at 1945 would be created using <code>splines::bs(Year, degree = 1, knots = 1945)</code>, but then as far as <code>gam()</code> is concerned, the resulting basis functions are simply two continuous covariates that are treated a linear parametric terms.</p>
+<p>We can use the new b-spline basis to achieve something similar to (the same as ?) <code>splines::bs</code> if we set the knot locations explicitly and use <code>m = 1</code> (for linear splines) and basis dimension <code>k = 3</code>. If you are setting the knots manually, then for the b-spline basis in <strong>mgcv</strong> you need to specify <code>k + m + 1</code> (5) knots and the middle <code>k - m + 1</code> (3) knots should include all the covariate values. I’m not sure what determines where the two exterior knots should be located; in the code below I just locate the at +/- 10 years from the extremes of the data. The knot locations then are specified as a list with component <code>cYear</code> (to match the covariate name), and as we’re modeling with the centred <code>Year</code>, I centre the knot locations using the middle year as before.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">knots</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">cYear</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="nf">min</span><span class="p">(</span><span class="n">Year</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">10</span><span class="p">,</span><span class="w"> </span><span class="m">0</span><span class="p">),</span><span class="w"> </span><span class="m">1945</span><span class="p">,</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">Year</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">10</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">median</span><span class="p">(</span><span class="n">Year</span><span class="p">)))</span></code></pre>
+</figure>
+<p>The GAM can then be specified as before with three formulas. The type of smooth for <code>cYear</code> in <span class="math inline">\(\eta_{\sigma}\)</span> is specified via <code>bs = "bs"</code> and the remaining parameters of the basis are as described above. The list of knots we just created is passed to the <code>knots</code> argument.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">SeaLevel</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">cYear</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w">
+               </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">cYear</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w">
+               </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
+          </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+          </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gevlss</span><span class="p">(</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">)),</span><span class="w">
+          </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">)</span><span class="w">
+
+</span><span class="n">summary</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gevlss 
+Link function: identity identity identity 
+
+Formula:
+SeaLevel ~ cYear + SOI
+~s(cYear, bs = "bs", m = 1, k = 3) + SOI
+~1
+
+Parametric coefficients:
+                Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)    1.5010226  0.0153061  98.067  &lt; 2e-16 ***
+cYear          0.0019503  0.0005139   3.795 0.000148 ***
+SOI            0.0682778  0.0175807   3.884 0.000103 ***
+(Intercept).1 -2.1230063  0.0882978 -24.044  &lt; 2e-16 ***
+SOI.1          0.2894395  0.1145038   2.528 0.011479 *  
+(Intercept).2 -0.2543328  0.0885032  -2.874 0.004057 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+             edf Ref.df Chi.sq p-value  
+s.1(cYear) 1.465      2  4.875   0.036 *
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Deviance explained =   NA%
+-REML = -39.611  Scale est. = 1         n = 86</code></pre>
+</figure>
+<p>The summary output indicates significant linear parametric effects of <code>cYear</code> and <code>SOI</code> in <span class="math inline">\(\eta_{\mu}\)</span>, and <code>SOI</code> in <span class="math inline">\(\eta_{\sigma}\)</span>. There is now some evidence of an effect of <code>SOI</code> on the variance of the block maxima, although we would be right to treat this result with caution as the piece-wise linear structure was only guessed at after fitting the more general smooth term, which was not statistically significant. <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> performed an informal deviance test between the two models, which we repeat here</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">lldif</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">unclass</span><span class="p">(</span><span class="n">logLik</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">logLik</span><span class="p">(</span><span class="n">m2</span><span class="p">))</span><span class="w">
+</span><span class="n">dfdif</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">df.residual</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">df.residual</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span><span class="w">
+</span><span class="n">pchisq</span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">lldif</span><span class="p">,</span><span class="w"> </span><span class="n">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dfdif</span><span class="p">,</span><span class="w"> </span><span class="n">lower.tail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 0.3693541
+attr(,"df")
+[1] 9.1958</code></pre>
+</figure>
+<p>the results of which match those published and suggest that the simpler model with the piece-wise linear smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span> is sufficient to describe the effect on the variance of the sea-level maxima.</p>
+<p>The fitted piece-wise linear smooth can be plotted using the <code>plot()</code> method as before. To get the linear terms plotted we need to use to <code>all.terms = TRUE</code> option</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span><span class="w"> </span><span class="n">pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">seWithMean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">all.terms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-plot-m2-smooths-1.png" alt="Fitted smooths and parametric terms for model m2 which uses a piece-wise linear spline for the effect of Year on the scale parameter" /><figcaption>Fitted smooths and parametric terms for model <code>m2</code> which uses a piece-wise linear spline for the effect of <code>Year</code> on the scale parameter</figcaption>
+</figure>
+<p>This plot is a little more clunky than the previous one as the linear terms are plotted via calls to <code>termplot()</code> and the way this is achieved in <code>plot.gam()</code> doesn’t allow for separate y-axis limits for the linear terms (<code>scale = 0</code>) and the <code>scheme</code> argument does not affect these plots either.</p>
+<p>If we wanted an entirely data-driven approach to fitting the smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span>, and wanted to crack that particular nut with an industrial-sized wrecking ball, we could use the adaptive spline basis by changing the basis type for the smooth to <code>bs = "ad"</code> as follows (note this takes a while to fit)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">SeaLevel</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">cYear</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w">
+               </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">cYear</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ad"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w">
+               </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
+          </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+          </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gevlss</span><span class="p">(</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">)))</span><span class="w">
+
+</span><span class="n">summary</span><span class="p">(</span><span class="n">m3</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gevlss 
+Link function: identity identity identity 
+
+Formula:
+SeaLevel ~ cYear + SOI
+~s(cYear, bs = "ad") + SOI
+~1
+
+Parametric coefficients:
+                Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)    1.5025023  0.0154310  97.369  &lt; 2e-16 ***
+cYear          0.0019770  0.0005175   3.820 0.000133 ***
+SOI            0.0689087  0.0175007   3.937 8.23e-05 ***
+(Intercept).1 -2.1203031  0.0899383 -23.575  &lt; 2e-16 ***
+SOI.1          0.2917915  0.1132973   2.575 0.010011 *  
+(Intercept).2 -0.2677254  0.0935770  -2.861 0.004223 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+             edf Ref.df Chi.sq p-value  
+s.1(cYear) 1.816  2.046   5.86  0.0563 .
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Deviance explained =   NA%
+-REML = -40.975  Scale est. = 1         n = 86</code></pre>
+</figure>
+<p>Again, there is some evidence of a trend in the variance of the sea-level maxima; the higher <em>p</em>-value here likely reflects the additional uncertainty arising from having to deduce the shape and varying wiggliness of the spline from the data directly. The resulting smooth is largely indistinguishable from the piece-wise linear one in <code>m2</code>, except for the smooth transition around 1945.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m3</span><span class="p">,</span><span class="w"> </span><span class="n">pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">seWithMean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">all.terms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-plot-m3-smooths-1.png" alt="Fitted smooths and parametric terms for model m3 which uses an adaptive spline for the effect of Year on the scale parameter" /><figcaption>Fitted smooths and parametric terms for model <code>m3</code> which uses an adaptive spline for the effect of <code>Year</code> on the scale parameter</figcaption>
+</figure>
+<p>My attempt to replicate the analysis of <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> was largely devoid of any troubles despite the <code>gevlss()</code> family being both new and described by Simon as “somewhat experimental”. The main difficulty was in trying to get a piece-wise linear spline within the <strong>mgcv</strong> framework, largely because doing it via <code>splines::bs()</code> makes it much more difficult to plot the partial effect of the overall function with the easily accessible tools that <strong>mgcv</strong> provides.</p>
+<p>One area where <strong>mgcv</strong> is lacking in relation to <strong>VGAM</strong> for fitting GEV models is in the array of support functions that go with the fitted models — <strong>VGAM</strong> has lots of plot types specific to extreme value models that help with interpreting and checking the fitted model. In a future post I may try to tackle some of this using <strong>mgcv</strong>, if I find the time.</p>
+<p>This is hopefully the first of several posts on modeling block maxima using <strong>mgcv</strong> and GAMs, so if you have any comments, suggests, corrections, let me know in the comments below.</p>
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references">
+<div id="ref-Coles2001-zz">
+<p>Coles, S. (2001). <em>An introduction to statistical modeling of extreme values:</em> Springer London doi:<a href="https://doi.org/10.1007/978-1-4471-3675-0">10.1007/978-1-4471-3675-0</a>.</p>
+</div>
+<div id="ref-Yee2007-rz">
+<p>Yee, T. W., and Stephenson, A. G. (2007). Vector generalized linear and additive extreme value models. <em>Extremes</em> 10, 1–19. doi:<a href="https://doi.org/10.1007/s10687-007-0032-4">10.1007/s10687-007-0032-4</a>.</p>
+</div>
+</div>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2017/01/25/modelling-extremes-with-gams/";
+  var disqus_title = "Modelling extremes using generalized additive models";
+  //var disqus_identifier = "/2017/01/25/modelling-extremes-with-gams";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>25 January 2017</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/mgcv/"><span class="label label-inverse">mgcv</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/models/"><span class="label label-inverse">models</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/splines/"><span class="label label-inverse">splines</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/smoothers/"><span class="label label-inverse">smoothers</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/extremes/"><span class="label label-inverse">extremes</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gev/"><span class="label label-inverse">GEV</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/extreme-values/"><span class="label label-inverse">extreme values</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/statistical-modelling/"><span class="label label-inverse">statistical modelling</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

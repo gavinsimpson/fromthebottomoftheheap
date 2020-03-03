@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Groups, facets, and stats</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Gavin L. Simpson" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="../my.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Groups, facets, and stats
+## Data Visualisation mini-course
+### Gavin L. Simpson
+### Institute of Environmental Change and Society
+### 22/04/2019
+
+---
+
+
+
+
+class: inverse
+background-image: url('./resources/chris-knight-458508-unsplash.jpg')
+background-size: cover
+
+# Start
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@chrisknight?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Chris Knight"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Chris Knight&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# Catch-up
+
+
+```r
+library('gapminder')
+library('ggplot2')
+
+## load some new data
+load(url('http://bit.ly/gss_data'))
+ls()
+```
+
+```
+## [1] "gss_sm"
+```
+
+```r
+p &lt;- ggplot(gapminder, aes(x = year, y = gdpPercap))
+```
+
+---
+
+background-image: url('./resources/helena-lopes-459331-unsplash.jpg')
+background-size: cover
+
+# Grouping
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@wildlittlethingsphoto?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Helena Lopes"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Helena Lopes&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# What went wrong?
+
+
+```r
+ggplot(gapminder, aes(x = year, y = gdpPercap)) + geom_line()
+```
+
+![](groups-facets-stats_files/figure-html/wrong-1-1.png)&lt;!-- --&gt;
+
+---
+
+# Tell `ggplot` about structure in the data
+
+
+```r
+ggplot(gapminder, aes(x = year, y = gdpPercap)) + geom_line(aes(group = country))
+```
+
+![](groups-facets-stats_files/figure-html/right-1-1.png)&lt;!-- --&gt;
+
+---
+
+# The `group` aesthetic
+
+Use the `group` aesthetic when structure in the data isn't already mapped to an aesthetic
+
+---
+
+class: inverse
+background-image: url('./resources/joshua-coleman-655076-unsplash.jpg')
+background-size: cover
+
+# Facets — small multiples
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@joshstyle?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from JOSHUA COLEMAN"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;JOSHUA COLEMAN&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# Small multiples
+
+A *small multiple* is a series of similar plots using the same scale and axes
+
+Multiple plots show different partitions of the data
+
+In *ggplot*, small multiple plots are created by *facetting*
+
+* `facet_wrap()`
+
+    One or more categorical variables used to partition the data
+
+    Individual plots are arrange in sequence over a number of rows and columns
+
+* `facet_grid()`
+
+    Data are partitioned by two sets of varables &amp; arranged into a grid
+
+    One set of variables forms partitions for the rows
+
+    Second set of variables forms partitions for the columns
+
+---
+
+# Small multiples — `facet_wrap()`
+
+The partition is specified using a formula: `~ f1 + f2`
+
+Use the `nrow` and `ncol` arguments to set the required dimensions
+
+
+```r
+p +
+  geom_line(aes(group = country)) +
+  facet_wrap(~ continent, nrow = 1)
+```
+
+![](groups-facets-stats_files/figure-html/facet-wrap-1.png)&lt;!-- --&gt;
+
+Most commonly used with a single partitioning variable
+
+---
+
+# Small multiples — `facet_wrap()`
+
+
+```r
+p +
+* geom_line(colour = 'grey70', aes(group = country)) +
+  geom_smooth(size = 1.1, method = 'loess', se = FALSE) +
+  scale_y_log10(labels = scales::dollar) +
+  facet_wrap(~ continent, nrow = 1) +
+  labs(x = 'Year', y = 'GDP per capita')
+```
+
+![](groups-facets-stats_files/figure-html/facet-wrap-complete-1.png)&lt;!-- --&gt;
+
+---
+
+# Small multiples — `facet_grid()`
+
+Partition is specified using a formula: `f1 ~ f2`
+
+
+```r
+ggplot(gss_sm, aes(x = age, y = childs)) + geom_point(alpha = 0.2) +
+  geom_smooth(method = 'gam', formula = y ~ s(x), 
+              method.args = list(family = poisson)) +
+* facet_grid(sex ~ race)
+```
+
+![](groups-facets-stats_files/figure-html/facet-grid-1.png)&lt;!-- --&gt;
+
+---
+
+# Small multiples — `scales`
+
+`scales` can be any of `"free_x"`, `"free_y"`, or `"free"`
+
+
+```r
+p +
+  geom_line(colour = 'grey70', aes(group = country)) +
+  geom_smooth(size = 1.1, method = 'loess', se = FALSE) +
+  scale_y_log10(labels = scales::dollar) +
+* facet_wrap(~ continent, nrow = 1, scales = 'free_y') +
+  labs(x = 'Year', y = 'GDP per capita')
+```
+
+![](groups-facets-stats_files/figure-html/facet-wrap-scale-free-1.png)&lt;!-- --&gt;
+
+---
+
+# Faceting time series
+
+
+```r
+ggplot(subset(gapminder, subset = country %in% c('United States','Canada')),
+       aes(x = year, y = lifeExp)) + geom_line() + labs(x = NULL) +
+* facet_grid(country ~ .)
+```
+
+![](groups-facets-stats_files/figure-html/facet-time-1.png)&lt;!-- --&gt;
+
+---
+
+class: inverse
+background-image: url('./resources/ashraf-ali-1222985-unsplash.jpg')
+background-size: cover
+
+# Stats
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@ashrafali_786?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Ashraf Ali"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Ashraf Ali&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# Stats
+
+Some geoms plot the data directly, other geoms manipulate the data before plotting
+
+The manipulation is done by a `stat_xxx()` function, or *stat*
+
+* Each *geom* has a default *stat*
+
+* Each *stat* has a default *geom*
+
+---
+
+# General Social Survey 2016
+
+The GSS is a long-running survey of American adults
+
+`gss_sm` is a small subset of the full GSS for 2016
+
+.smaller[
+
+```
+## # A tibble: 6 x 32
+##    year    id ballot   age childs  sibs degree race  sex   region income16
+##   &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;fct&gt;  &lt;fct&gt; &lt;fct&gt; &lt;fct&gt;  &lt;fct&gt;   
+## 1  2016     1      1    47      3     2 Bache… White Male  New E… $170000…
+## 2  2016     2      2    61      0     3 High … White Male  New E… $50000 …
+## 3  2016     3      3    72      2     3 Bache… White Male  New E… $75000 …
+## 4  2016     4      1    43      4     3 High … White Fema… New E… $170000…
+## 5  2016     5      3    55      2     2 Gradu… White Fema… New E… $170000…
+## 6  2016     6      2    53      2     2 Junio… White Fema… New E… $60000 …
+## # … with 21 more variables: relig &lt;fct&gt;, marital &lt;fct&gt;, padeg &lt;fct&gt;,
+## #   madeg &lt;fct&gt;, partyid &lt;fct&gt;, polviews &lt;fct&gt;, happy &lt;fct&gt;,
+## #   partners &lt;fct&gt;, grass &lt;fct&gt;, zodiac &lt;fct&gt;, pres12 &lt;dbl&gt;,
+## #   wtssall &lt;dbl&gt;, income_rc &lt;fct&gt;, agegrp &lt;fct&gt;, ageq &lt;fct&gt;,
+## #   siblings &lt;fct&gt;, kids &lt;fct&gt;, religion &lt;fct&gt;, bigregion &lt;fct&gt;,
+## #   partners_rc &lt;fct&gt;, obama &lt;dbl&gt;
+```
+]
+
+Also try `glimpse(gss_sm)`
+
+---
+
+# Stats — what happened here?
+
+
+```r
+ggplot(gss_sm, aes(x = bigregion)) + geom_bar()
+```
+
+![](groups-facets-stats_files/figure-html/stat-bar-1.png)&lt;!-- --&gt;
+
+---
+
+# `stat_count()`
+
+The default stat for `geom_bar()` is `stat_count()`
+
+It counts the number of observations in each group
+
+Stats create temporary variables that we can use — this is where `count` came from
+
+Temporary variables are named `..name..`
+
+`stat_count()` creates:
+
+* `..count..`
+
+* `..prop..`
+
+---
+
+# Stats — what happened here?
+
+
+```r
+ggplot(gss_sm, aes(x = bigregion)) + geom_bar(mapping = aes(y = ..prop..))
+```
+
+![](groups-facets-stats_files/figure-html/stat-bar-prop-1.png)&lt;!-- --&gt;
+
+---
+
+# Stats — grouping
+
+
+```r
+ggplot(gss_sm, aes(x = bigregion)) + 
+  geom_bar(mapping = aes(y = ..prop.., group = 1))
+```
+
+![](groups-facets-stats_files/figure-html/stat-bar-prop-2-1.png)&lt;!-- --&gt;
+
+---
+
+class: inverse
+background-image: url('./resources/isaac-smith-1182056-unsplash.jpg')
+background-size: cover
+
+# Histograms &amp; density plots
+
+.footnote[
+
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@isaacmsmith?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Isaac Smith"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Isaac Smith&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# `midwest`
+
+Demographic data on midwest counties of the USA
+
+.smaller[
+
+```
+## # A tibble: 437 x 28
+##      PID county state  area poptotal popdensity popwhite popblack
+##    &lt;int&gt; &lt;chr&gt;  &lt;chr&gt; &lt;dbl&gt;    &lt;int&gt;      &lt;dbl&gt;    &lt;int&gt;    &lt;int&gt;
+##  1   561 ADAMS  IL    0.052    66090      1271.    63917     1702
+##  2   562 ALEXA… IL    0.014    10626       759      7054     3496
+##  3   563 BOND   IL    0.022    14991       681.    14477      429
+##  4   564 BOONE  IL    0.017    30806      1812.    29344      127
+##  5   565 BROWN  IL    0.018     5836       324.     5264      547
+##  6   566 BUREAU IL    0.05     35688       714.    35157       50
+##  7   567 CALHO… IL    0.017     5322       313.     5298        1
+##  8   568 CARRO… IL    0.027    16805       622.    16519      111
+##  9   569 CASS   IL    0.024    13437       560.    13384       16
+## 10   570 CHAMP… IL    0.058   173025      2983.   146506    16559
+## # … with 427 more rows, and 20 more variables: popamerindian &lt;int&gt;,
+## #   popasian &lt;int&gt;, popother &lt;int&gt;, percwhite &lt;dbl&gt;, percblack &lt;dbl&gt;,
+## #   percamerindan &lt;dbl&gt;, percasian &lt;dbl&gt;, percother &lt;dbl&gt;,
+## #   popadults &lt;int&gt;, perchsd &lt;dbl&gt;, percollege &lt;dbl&gt;, percprof &lt;dbl&gt;,
+## #   poppovertyknown &lt;int&gt;, percpovertyknown &lt;dbl&gt;, percbelowpoverty &lt;dbl&gt;,
+## #   percchildbelowpovert &lt;dbl&gt;, percadultpoverty &lt;dbl&gt;,
+## #   percelderlypoverty &lt;dbl&gt;, inmetro &lt;int&gt;, category &lt;chr&gt;
+```
+]
+
+Also try `glimpse(midwest)`
+
+---
+
+# Histograms
+
+.row[
+
+.col-6[
+
+Histograms chop the data into segments known as *bins*
+
+Observations within each bin are counted and possibly converted to a *density*
+
+A histogram is a series of bars showing the count or density in each bin
+
+`geom_histogram()`
+
+]
+
+.col-6[
+
+
+```r
+ggplot(midwest, aes(x = area)) +
+  geom_histogram()
+```
+
+![](groups-facets-stats_files/figure-html/hist-1-1.png)&lt;!-- --&gt;
+
+]
+
+]
+
+---
+
+# Histograms
+
+
+```r
+ggplot(midwest, aes(x = area)) + geom_histogram()
+```
+
+```
+## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
+```
+
+![](groups-facets-stats_files/figure-html/hist-2-1.png)&lt;!-- --&gt;
+
+---
+
+# Histograms
+
+
+```r
+nbin &lt;- with(midwest, nclass.Sturges(area)) ## 10
+ggplot(midwest, aes(x = area)) + geom_histogram(bins = nbin)
+```
+
+![](groups-facets-stats_files/figure-html/hist-3-1.png)&lt;!-- --&gt;
+
+---
+
+# Histograms
+
+
+```r
+ggplot(subset(midwest, subset = state %in% c('OH','WI')),
+       aes(x = percollege, fill = state)) +
+  geom_histogram(bins = 20, alpha = 0.4)
+```
+
+![](groups-facets-stats_files/figure-html/hist-4-1.png)&lt;!-- --&gt;
+
+---
+
+# Density plots
+
+.row[
+
+.col-6[
+
+Density plots are a smooth form of histogram
+
+Density is estimated via a *kernel density estimator*
+
+`geom_density()`
+
+Default base geom is `geom_area()`
+
+`fill` and `colour` aesthetics
+
+]
+
+.col-6[
+
+
+```r
+ggplot(midwest, aes(x = area)) +
+  geom_density()
+```
+
+![](groups-facets-stats_files/figure-html/dens-1-1.png)&lt;!-- --&gt;
+
+]
+
+]
+
+---
+
+# Density plots
+
+
+```r
+ggplot(midwest, aes(x = area, fill = state)) +
+  geom_density(alpha = 0.4)
+```
+
+![](groups-facets-stats_files/figure-html/dens-2-1.png)&lt;!-- --&gt;
+
+---
+
+# Density plots — alternative
+
+
+```r
+ggplot(midwest, aes(x = area)) +
+  geom_line(stat = 'density')
+```
+
+![](groups-facets-stats_files/figure-html/dens-3-1.png)&lt;!-- --&gt;
+
+&lt;!-- ---
+
+class: inverse
+background-image: url('./resources/martin-adams-551630-unsplash.jpg')
+background-size: cover
+
+# Position
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@martinadams?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Martin Adams"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Martin Adams&lt;/span&gt;&lt;/a&gt;
+] --&gt;
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="../macros.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

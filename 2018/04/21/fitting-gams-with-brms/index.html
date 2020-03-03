@@ -1,0 +1,555 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Fitting GAMs with brms: part 1</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GAM, brms, bayesian" />
+
+
+<meta name="description" content="Regular readers will know that I have a somewhat unhealthy relationship with GAMs and the mgcv package. I use these models all the time in my research but recently we’ve been hitting the limits of the range of models that mgcv can fit. So I’ve been looking into alternative ways to fit the GAMs I want to fit but which can handle the kinds of data or distributions that have been cropping up in our work. The brms package (Bürkner, 2017) is an excellent resource for modellers, providing a high-level R front end to a vast array of model types, all fitted using Stan. brms is the perfect package to go beyond the limits of mgcv because brms even uses the smooth functions provided by mgcv, making the transition easier. In this post I take a look at how to fit a simple GAM in brms and compare it with the same model fitted using mgcv.
+
+
+Bürkner, P.-C. (2017). brms: An R package for bayesian multilevel models using Stan. Journal of Statistical Software 80, 1–28. doi:10.18637/jss.v080.i01.
+
+
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Fitting GAMs with brms: part 1" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2018-04-21T04:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Fitting GAMs with brms: part 1" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2018-04-21T04:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2018/04/21/fitting-gams-with-brms/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Regular readers will know that I have a somewhat unhealthy relationship with GAMs and the mgcv package. I use these models all the time in my research but recently we’ve been hitting the limits of the range of models that mgcv can fit. So I’ve been looking into alternative ways..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Fitting GAMs with brms: part 1" />
+
+
+<meta name="twitter:description" content="Regular readers will know that I have a somewhat unhealthy relationship with GAMs and the mgcv package. I use these models all the time in my research but recently we’ve been hitting the limits of..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="21 Apr 2018"/>
+<meta name="citation_date" content="21 Apr 2018"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Fitting GAMs with brms: part 1"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2018/10/15/summer-hiatus/">Summer hiatus</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2017/12/14/difference-splines-ii/">Comparing smooths in factor-smooth interactions II</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Fitting GAMs with brms: part 1 <small>a simple GAM</small></h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>Regular readers will know that I have a somewhat unhealthy relationship with GAMs and the <strong>mgcv</strong> package. I use these models all the time in my research but recently we’ve been hitting the limits of the range of models that <strong>mgcv</strong> can fit. So I’ve been looking into alternative ways to fit the GAMs I want to fit but which can handle the kinds of data or distributions that have been cropping up in our work. The <strong>brms</strong> package <span class="citation" data-cites="brms-2017">(Bürkner, 2017)</span> is an excellent resource for modellers, providing a high-level R front end to a vast array of model types, all fitted using <a href="http://mc-stan.org">Stan</a>. <strong>brms</strong> is the perfect package to go beyond the limits of <strong>mgcv</strong> because <strong>brms</strong> even uses the smooth functions provided by <strong>mgcv</strong>, making the transition easier. In this post I take a look at how to fit a simple GAM in <strong>brms</strong> and compare it with the same model fitted using <strong>mgcv</strong>.</p>
+<p>In this post we’ll use the following packages. If you don’t know <strong>schoenberg</strong>, it’s a package I’m writing to provide <code>ggplot</code> versions of plots that can be produced by <strong>mgcv</strong> from fitted GAM objects. <strong>schoenberg</strong> is in early development, but it currently works well enough to plot the models we fit here. If you’ve never come across this package before, you can install it from Github using <code>devtools::install_github('gavinsimpson/schoenberg')</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## packages</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'mgcv'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'brms'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'ggplot2'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'schoenberg'</span><span class="p">)</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span></code></pre>
+</figure>
+<p>To illustrate <strong>brms</strong>’s GAM-fitting chops, we’ll use the <code>mcycle</code> data set that comes with the <strong>MASS</strong> package. It contains a set of measurements of the acceleration force on a rider’s head during a simulated motorcycle collision and the time, in milliseconds, post collision. The data are loaded using <code>data()</code> and we take a look at the first few rows</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## load the example data mcycle</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">mcycle</span><span class="p">,</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'MASS'</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## show data</span><span class="w">
+</span><span class="n">head</span><span class="p">(</span><span class="n">mcycle</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">  times accel
+1   2.4   0.0
+2   2.6  -1.3
+3   3.2  -2.7
+4   3.6   0.0
+5   4.0  -2.7
+6   6.2  -2.7</code></pre>
+</figure>
+<p>The aim is to model the acceleration force (<code>accel</code>) as a function of time post collision (<code>times</code>). The plot below shows the data.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">mcycle</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">times</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">accel</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Miliseconds post impact"</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Acceleration (g)"</span><span class="p">,</span><span class="w">
+         </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Simulated Motorcycle Accident"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Measurements of head acceleration"</span><span class="p">)</span></code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/fitting-gams-with-brms-plot-data-1.png" /></p>
+<p>We’ll model acceleration as a <em>smooth</em> function of time using a GAM and the default thin plate regression spline basis. This can be done using the <code>gam()</code> function in <strong>mgcv</strong> and, for comparison with the fully bayesian model we’ll fit shortly, we use `method = “REML” to estimate the smoothness parameter for the spline in mixed model form using REML</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">accel</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">times</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mcycle</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span><span class="w">
+</span><span class="n">summary</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gaussian 
+Link function: identity 
+
+Formula:
+accel ~ s(times)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  -25.546      1.951  -13.09   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+           edf Ref.df    F p-value    
+s(times) 8.625  8.958 53.4  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.783   Deviance explained = 79.7%
+-REML = 616.14  Scale est. = 506.35    n = 133</code></pre>
+</figure>
+<p>As we can see from the model summary, the estimated smooth uses about 8.5 effective degrees of freedom and in the test of zero effect, the null hypothesis is strongly rejected. The fitted spline explains about 80% of the variance or deviance in the data.</p>
+<p>To plot the fitted smooth we could use the <code>plot()</code> method provided by <strong>mgcv</strong>, but this uses base graphics. Instead we can use the <code>draw()</code> method from <strong>schoenberg</strong>, which can currently handle most of the univariate smooths in <strong>mgcv</strong> plus 2-d tensor product smooths</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">draw</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span></code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/fitting-gams-with-brms-plot-mgcv-model-1.png" /></p>
+<p>The equivalent model can be estimated using a fully-bayesian approach via the <code>brm()</code> function in the <strong>brms</strong> package. In fact, <code>brm()</code> will use the smooth specification functions from <strong>mgcv</strong>, making our lives much easier. The major difference though is that you can’t use <code>te()</code> or <code>ti()</code> smooths in <code>brm()</code> models; you need to use <code>t2()</code> tensor product smooths instead. This is because the smooths in the model are going to be treated as random effects and the model is estimated as a GLMM, which exploits the duality of splines as random effects. In this representation, the wiggly parts of the spline basis are treated as a random effect and their associated variance parameter controls the degree of wiggliness of the fitted spline. The perfectly smooth parts of the basis are treated as a fixed effect. In this form, the GAM can be estimated using standard GLMM software; it’s what allows the <code>gamm4()</code> function to fit GAMMs using the <strong>lme4</strong> package for example. This is also the reason why we can’t use <code>te()</code> or <code>ti()</code> smooths; those smooths do not have nicely separable penalties which means they can’t be written in the form required to be fitted using typical mixed model software.</p>
+<p>The <code>brm()</code> version of the GAM is fitted using the code below. Note that I have changed a few things from their default values as</p>
+<ol type="1">
+<li>the model required more than the default number of MCMC samples — <code>iter = 4000</code>,</li>
+<li>the samples needed thinning to deal with some strong autocorrelation in the Markov chains — <code>thin = 10</code>,</li>
+<li>the <code>adapt.delta</code> parameter, a tuning parameter in the NUTS sampler for Hamiltonian Monte Carlo, potentially needed raising — there was a warning about a potential divergent transition but I should have looked to see if it was one or not; instead I just increased the tuning parameter to <code>0.99</code>,</li>
+<li>four chains fitted by default but I wanted these to be fitted using 4 CPU <code>cores</code>,</li>
+<li><code>seed</code> sets the internal random number generator seed, which allows reproducibility of models, and</li>
+<li>for this post I didn’t want to print out the progress of the sampler — <code>refresh = 0</code> — typically you won’t want to do this so you can see how sampling is progressing.</li>
+</ol>
+<p>The rest of the model is pretty similar to the <code>gam()</code> version we fitted earlier. The main difference is that I use the <code>bf()</code> function to create a special <strong>brms</strong> formula specifying the model. You don’t actually need to do this for such a simple model, but in a later post we’ll use this to fit distributional GAMs. Note that I’m leaving all the priors in the model at the default values. I’ll look at defining priors in a later post; for now I’m just going to use the default priors that <code>brm()</code> uses</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">brm</span><span class="p">(</span><span class="n">bf</span><span class="p">(</span><span class="n">accel</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">times</span><span class="p">)),</span><span class="w">
+          </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">mcycle</span><span class="p">,</span><span class="w"> </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gaussian</span><span class="p">(),</span><span class="w"> </span><span class="n">cores</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4</span><span class="p">,</span><span class="w"> </span><span class="n">seed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">17</span><span class="p">,</span><span class="w">
+          </span><span class="n">iter</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">4000</span><span class="p">,</span><span class="w"> </span><span class="n">warmup</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1000</span><span class="p">,</span><span class="w"> </span><span class="n">thin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span><span class="p">,</span><span class="w"> </span><span class="n">refresh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w">
+          </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">adapt_delta</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.99</span><span class="p">))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Compiling the C++ model</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Start sampling</code></pre>
+</figure>
+<p>Once the model has finished compiling and sampling we can output the model summary</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"> Family: gaussian 
+  Links: mu = identity; sigma = identity 
+Formula: accel ~ s(times) 
+   Data: mcycle (Number of observations: 133) 
+Samples: 4 chains, each with iter = 4000; warmup = 1000; thin = 10; 
+         total post-warmup samples = 1200
+    ICs: LOO = NA; WAIC = NA; R2 = NA
+ 
+Smooth Terms: 
+              Estimate Est.Error l-95% CI u-95% CI Eff.Sample Rhat
+sds(stimes_1)   722.44    198.12   450.17  1150.27       1180 1.00
+
+Population-Level Effects: 
+          Estimate Est.Error l-95% CI u-95% CI Eff.Sample Rhat
+Intercept   -25.54      2.02   -29.66   -21.50       1200 1.00
+stimes_1     16.10     38.20   -61.46    90.91       1171 1.00
+
+Family Specific Parameters: 
+      Estimate Est.Error l-95% CI u-95% CI Eff.Sample Rhat
+sigma    22.78      1.47    19.94    25.68       1200 1.00
+
+Samples were drawn using sampling(NUTS). For each parameter, Eff.Sample 
+is a crude measure of effective sample size, and Rhat is the potential 
+scale reduction factor on split chains (at convergence, Rhat = 1).</code></pre>
+</figure>
+<p>This outputs details of the model fitted plus parameter estimates (as posterior means), standard errors, (by default) 95% credible intervals and two other diagnostics:</p>
+<ol type="1">
+<li><code>Eff.Sample</code> is the effective sample size of the posterior samples in the model, and</li>
+<li><code>Rhat</code> is the <em>potential scale reduction factor</em> or Gelman-Rubin diagnostic and is a measure of how well the chains have converged and ideally should be equal to <code>1</code>.</li>
+</ol>
+<p>The summary includes two entries for the smooth of <code>times</code>:</p>
+<ol type="1">
+<li><code>sds(stimes_1)</code> is the variance parameter, which has the effect of controlling the wiggliness of the smooth — the larger this value the more wiggly the smooth. We can see that the credible interval doesn’t include 0 so there is evidence that a smooth is required over and above a linear parametric effect of <code>times</code>, details of which are given next,</li>
+<li><code>stimes_1</code> is the fixed effect part of the spline, which is the linear function that is perfectly smooth.</li>
+</ol>
+<p>The final parameter table includes information on the variance of the data about the conditional mean of the response.</p>
+<p>How does this model compare with the one fitted using <code>gam()</code>? We can use the <code>gam.vcomp()</code> function to compute the variance component representation of the smooth estimated via <code>gam()</code>. To make it comparable with the value shown for the <strong>brms</strong> model, we don’t undo the rescaling of the penalty matrix that <code>gam()</code> performs to help with numeric stability during model fitting.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">gam.vcomp</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="w"> </span><span class="n">rescale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Standard deviations and 0.95 confidence intervals:
+
+           std.dev     lower      upper
+s(times) 807.88726 480.66162 1357.88215
+scale     22.50229  19.85734   25.49954
+
+Rank: 2/2</code></pre>
+</figure>
+<p>This gives a posterior mean of 807.89 with 95% confidence interval of 480.66–1357.88, which compares well with posterior mean and credible interval of the <code>brm()</code> version of 722.44 (450.17 – 1150.27).</p>
+<p>The <code>marginal_smooths()</code> function is used to extract the marginal effect of the spline.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">msms</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">marginal_smooths</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span></code></pre>
+</figure>
+<p>This function extracts enough information about the estimated spline to plot it using the <code>plot()</code> method</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">msms</span><span class="p">)</span></code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/fitting-gams-with-brms-plot-marginal-smooths-1.png" /></p>
+<p>Given the similarity in the variance components of the two models it is not surprising the two estimated smooth also look similar. The <code>marginal_smooths()</code> function is effectively the equivalent of the <code>plot()</code> method for <strong>mgcv</strong>-based GAMs.</p>
+<p>There’s a lot that we can and should do to check the model fit. For now, we’ll look at two posterior predictive check plots that <strong>brms</strong>, via the <strong>bayesplot</strong> package <span class="citation" data-cites="bayesplot-2018">(Gabry and Mahr, 2018)</span>, makes very easy to produce using the <code>pp_check()</code> function.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">pp_check</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Using 10 posterior samples for ppc type 'dens_overlay' by default.</code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/fitting-gams-with-brms-pp-check-density-1.png" /></p>
+<p>The default produces a density plot overlay of the original response values (the thick black line) with 10 draws from the posterior distribution of the model. If the model is a good fit to the data, samples of data sampled from it at the observed values of the covariate(s) should be similar to one another.</p>
+<p>Another type of posterior predictive check plot is the empirical cumulative distribution function of the observations and random draws from the model posterior, which we can produce with <code>type = "ecdf_overlay"</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">pp_check</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ecdf_overlay"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Using 10 posterior samples for ppc type 'ecdf_overlay' by default.</code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/fitting-gams-with-brms-pp-check-ecdf-1.png" /></p>
+<p>Both plots show significant deviations between the the posterior simulations and the observed data. The poor posterior predictive check results are in large part due to the non-constant variance of the acceleration data conditional upon the covariate. Both models assumed that the observation are distributed Gaussian with means equal to the fitted values (estimated expectation of the response) with the same variance <span class="math inline">\(\sigma^2\)</span>. The observations appear to have different variances, which we can model with a distributional model, which allow all parameters of the distribution of the response to be modelled with linear predictors. We’ll take a look at these models in a future post.</p>
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references">
+<div id="ref-brms-2017">
+<p>Bürkner, P.-C. (2017). brms: An R package for bayesian multilevel models using Stan. <em>Journal of Statistical Software</em> 80, 1–28. doi:<a href="https://doi.org/10.18637/jss.v080.i01">10.18637/jss.v080.i01</a>.</p>
+</div>
+<div id="ref-bayesplot-2018">
+<p>Gabry, J., and Mahr, T. (2018). <em>Bayesplot: Plotting for bayesian models</em>. Available at: <a href="https://CRAN.R-project.org/package=bayesplot">https://CRAN.R-project.org/package=bayesplot</a>.</p>
+</div>
+</div>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2018/04/21/fitting-gams-with-brms/";
+  var disqus_title = "Fitting GAMs with brms: part 1";
+  //var disqus_identifier = "/2018/04/21/fitting-gams-with-brms";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>21 April 2018</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/brms/"><span class="label label-inverse">brms</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/bayesian/"><span class="label label-inverse">bayesian</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

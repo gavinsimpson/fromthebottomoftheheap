@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+  <head>
+    <title>Making a plot</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Gavin L. Simpson" />
+    <meta name="date" content="2019-07-04" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="../my.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# Making a plot
+## Data Visualisation mini-course
+### Gavin L. Simpson
+### 07/04/2019
+
+---
+
+
+
+class: inverse
+background-image: url('./resources/cody-davis-253928-unsplash.jpg')
+background-size: cover
+
+# Pop
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@codytdavis?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Cody Davis"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Cody Davis&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# Pop
+
+Can you see the green squares?
+
+.center[![:scale 50%](./resources/c02-fig7.jpg)]
+
+---
+
+# Pop
+
+&lt;img src="making-a-plot_files/figure-html/pop-1-1.png" height="550" /&gt;
+
+---
+
+# Preattentive pop-out
+
+Some shapes, colours, angles more easy to spot
+
+Can happen before (or almost before) before consciously looking at something
+
+.row[
+
+.col-6[
+
+.center[![](./resources/c02-fig8.jpg)]
+
+]
+
+.col-6[
+
+.center[![](./resources/c02-fig9.jpg)]
+
+]
+
+]
+
+.row[
+
+.col-6[
+
+.center[![](./resources/c02-fig10.jpg)]
+
+]
+
+.col-6[
+
+.center[![](./resources/c02-fig11.jpg)]
+
+]
+
+]
+
+
+---
+class: inverse
+background-image: url('./resources/isaac-smith-1182056-unsplash.jpg')
+background-size: cover
+
+# Making a plot
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@isaacmsmith?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Isaac Smith"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Isaac Smith&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# The anatomy of a plot
+
+Visualisation involves representing data by lines, shapes, colours, etc.
+
+Map data to visual channels &amp;mdash; some channels more effective than others
+
+*ggplot* provides a set of tools to
+
+* map data to visual elements,
+* specify the kind of plot, and
+* control the fine details of the final plot
+
+---
+
+# The anatomy of a *ggplot*
+
+A *ggplot* comprises several main elements
+
+1. Data
+2. Aesthetic mappings
+3. Geoms
+4. Co-ordinates &amp; scales
+5. Labels &amp; guides
+
+---
+
+# `ggplot()`
+
+Main function is `ggplot()`
+
+- specify `data`, the data frame containing the data
+- specify mappings of variables in `data` to *aesthetics* with `aes()`
+
+Add *layers* to plot vis `+`
+
+Geoms are the main layer-types we add to influence the plot
+
+Geoms by default inherit the `data` and *aesthetics* from the `ggplot()` call
+
+
+```r
+ggplot(data_frame, aes(x = var1, y = var2, colour = var3)) +
+    geom_&lt;type&gt;(....) +
+    geom_&lt;type&gt;(....)
+```
+
+---
+
+# Data
+
+Two main ways in which data tend to be recorded
+
+1. *wide*-format
+2. *long*-format
+
+In *long*-format:
+
+* every column is a variable
+* every row is an observation
+
+In *wide*-format
+
+* some variables are spread out over multiple columns
+
+*ggplot* requires data in *long* form
+
+---
+
+# Wide-format
+
+
+```
+## # A tibble: 142 x 13
+##    country `1952` `1957` `1962` `1967` `1972` `1977` `1982` `1987` `1992`
+##    &lt;fct&gt;    &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+##  1 Afghan…   28.8   30.3   32.0   34.0   36.1   38.4   39.9   40.8   41.7
+##  2 Albania   55.2   59.3   64.8   66.2   67.7   68.9   70.4   72     71.6
+##  3 Algeria   43.1   45.7   48.3   51.4   54.5   58.0   61.4   65.8   67.7
+##  4 Angola    30.0   32.0   34     36.0   37.9   39.5   39.9   39.9   40.6
+##  5 Argent…   62.5   64.4   65.1   65.6   67.1   68.5   69.9   70.8   71.9
+##  6 Austra…   69.1   70.3   70.9   71.1   71.9   73.5   74.7   76.3   77.6
+##  7 Austria   66.8   67.5   69.5   70.1   70.6   72.2   73.2   74.9   76.0
+##  8 Bahrain   50.9   53.8   56.9   59.9   63.3   65.6   69.1   70.8   72.6
+##  9 Bangla…   37.5   39.3   41.2   43.5   45.3   46.9   50.0   52.8   56.0
+## 10 Belgium   68     69.2   70.2   70.9   71.4   72.8   73.9   75.4   76.5
+## # … with 132 more rows, and 3 more variables: `1997` &lt;dbl&gt;, `2002` &lt;dbl&gt;,
+## #   `2007` &lt;dbl&gt;
+```
+
+---
+
+# Long-format
+
+
+```
+## # A tibble: 1,704 x 3
+##    country      year lifeExp
+##    &lt;fct&gt;       &lt;int&gt;   &lt;dbl&gt;
+##  1 Afghanistan  1952    28.8
+##  2 Afghanistan  1957    30.3
+##  3 Afghanistan  1962    32.0
+##  4 Afghanistan  1967    34.0
+##  5 Afghanistan  1972    36.1
+##  6 Afghanistan  1977    38.4
+##  7 Afghanistan  1982    39.9
+##  8 Afghanistan  1987    40.8
+##  9 Afghanistan  1992    41.7
+## 10 Afghanistan  1997    41.8
+## # … with 1,694 more rows
+```
+
+---
+
+# Long-format
+
+Data arranged in *key* and *value* pairs
+
+`year` is the *key*
+
+`lifeExp` is the *value*
+
+
+```
+## # A tibble: 5 x 3
+##   country      year lifeExp
+##   &lt;fct&gt;       &lt;int&gt;   &lt;dbl&gt;
+## 1 Afghanistan  1952    28.8
+## 2 Afghanistan  1957    30.3
+## 3 Afghanistan  1962    32.0
+## 4 Afghanistan  1967    34.0
+## 5 Afghanistan  1972    36.1
+```
+
+---
+
+# Long-format
+
+Can have multiple *key* and *value* columns
+
+
+```
+## # A tibble: 5 x 6
+##   country     continent  year lifeExp      pop gdpPercap
+##   &lt;fct&gt;       &lt;fct&gt;     &lt;int&gt;   &lt;dbl&gt;    &lt;int&gt;     &lt;dbl&gt;
+## 1 Afghanistan Asia       1952    28.8  8425333      779.
+## 2 Afghanistan Asia       1957    30.3  9240934      821.
+## 3 Afghanistan Asia       1962    32.0 10267083      853.
+## 4 Afghanistan Asia       1967    34.0 11537966      836.
+## 5 Afghanistan Asia       1972    36.1 13079460      740.
+```
+
+---
+class: inverse
+background-image: url('./resources/jeffrey-buchbinder-661201-unsplash.jpg')
+background-size: cover
+
+# RStudio tour
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@jbuchbinder?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Jeffrey Buchbinder"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Jeffrey Buchbinder&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# gapminder data set
+
+
+```r
+library('gapminder')                    # load package
+gapminder                               # print data frame
+```
+
+```
+## # A tibble: 1,704 x 6
+##    country     continent  year lifeExp      pop gdpPercap
+##    &lt;fct&gt;       &lt;fct&gt;     &lt;int&gt;   &lt;dbl&gt;    &lt;int&gt;     &lt;dbl&gt;
+##  1 Afghanistan Asia       1952    28.8  8425333      779.
+##  2 Afghanistan Asia       1957    30.3  9240934      821.
+##  3 Afghanistan Asia       1962    32.0 10267083      853.
+##  4 Afghanistan Asia       1967    34.0 11537966      836.
+##  5 Afghanistan Asia       1972    36.1 13079460      740.
+##  6 Afghanistan Asia       1977    38.4 14880372      786.
+##  7 Afghanistan Asia       1982    39.9 12881816      978.
+##  8 Afghanistan Asia       1987    40.8 13867957      852.
+##  9 Afghanistan Asia       1992    41.7 16317921      649.
+## 10 Afghanistan Asia       1997    41.8 22227415      635.
+## # … with 1,694 more rows
+```
+
+---
+
+# Our first plot
+
+Say we want to plot life expepctancy (`lifeExp`) against per capita GDP `gdpPercap`
+
+
+```r
+p &lt;- ggplot(data = gapminder)
+```
+
+We tell `ggplot()` *where* to look for variables, but haven't specified any mappings yet
+
+Assigned the ouput of the `ggplot()` call to the object `p` (could call `p` anything)
+
+&lt;kbd&gt;Alt + -&lt;/kbd&gt;
+
+or 
+
+&lt;kbd&gt;Option + -&lt;/kbd&gt;
+
+types the *assignment operator* `&lt;-`
+
+---
+
+# Our first plot
+
+We specify mappings between variables and aesthetics via the `mapping` argument
+
+Use the `aes()` function to specify the mappings
+
+
+```r
+p &lt;- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap, y = lifeExp))
+```
+
+This sets up a mapping between our two variables and the `x` and `y` aesthetics
+
+The `x` and `y` aesthetics are the `\(x\)` and `\(y\)` coordinates of the plot
+
+---
+
+# Our first plot
+
+We can draw the plot by `print()`ing the object `p`
+
+What do you think you'll get if you print `p`?
+
+
+```r
+p
+```
+
+---
+
+# Our first plot
+
+
+Only the *scale* for the x and y aesthetics is drawn
+
+
+```r
+p
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-4-1.png" height="400" /&gt;
+
+---
+
+# Adding a layer
+
+Need to tell `ggplot()` *how* we want the data drawn
+
+Need to choose a *geometric object* or *geom*
+
+*geoms* are functions with names `geom_&lt;type&gt;()`
+
+A *geom* adds a layer to an existing plot
+
+For a scatterplot, we represent the `\(x\)`, `\(y\)` pairs via points `geom_point()`
+
+---
+
+# Adding a layer
+
+
+```r
+p + geom_point()
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-5-1.png" height="400" /&gt;
+
+---
+
+# Putting it all together
+
+
+```r
+ggplot(data = gapminder,
+       mapping = aes(x = gdpPercap, y = lifeExp)) +
+    geom_point()
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-6-1.png" height="400" /&gt;
+
+---
+class: inverse
+background-image: url('./resources/fancycrave-264511-unsplash.jpg')
+background-size: cover
+
+# Your turn
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@fancycrave?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Fancycrave"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Fancycrave&lt;/span&gt;&lt;/a&gt;
+]
+
+
+**Create a scatterplot of *population* and *per captia GDP***
+
+---
+
+# Previously on…
+
+* *ggplot* provides a set of tools to
+    * map data to visual elements
+    * specify the kind of plot
+    * control fine details of the plot
+* A *ggplot* comprises several elements
+    1. Data — via the `data` argument
+    2. Aesthetic mappings — via the `aes()` argument
+    3. Geometric objects or *geoms*
+    4. Coordinates &amp; scales
+    5. Labels &amp; Guides
+* Preparing data — **tidy** or **long** data not **wide**
+* Created our first plot
+
+---
+
+# Previously on…
+
+
+```r
+library('gapminder')
+library('ggplot2')
+
+p &lt;- ggplot(data = gapminder,
+            mapping = aes(x = gdpPercap, y = lifeExp))
+
+p + geom_point()
+```
+
+```r
+ggplot(data = gapminder,
+       mapping = aes(x = gdpPercap, y = lifeExp)) +
+    geom_point()
+```
+
+---
+
+# geoms don't always draw the data
+
+
+```r
+p  &lt;- ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp))
+p + geom_smooth()
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-7-1.png" height="400" /&gt;
+
+---
+
+# `geom_smooth()` adds a smooth via a &lt;small&gt;GAM&lt;/small&gt; or &lt;small&gt;LOESS&lt;/small&gt;
+
+
+```r
+p  &lt;- ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp))
+p + geom_smooth()
+```
+
+```
+## `geom_smooth()` using method = 'gam' and formula 'y ~ s(x, bs = "cs")'
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-8-1.png" height="400" /&gt;
+
+---
+
+# Plots with multiple layers
+
+
+```r
+p  &lt;- ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp))
+p + geom_point() + geom_smooth()
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-9-1.png" height="400" /&gt;
+
+---
+
+# Geoms inherit data and mappings
+
+Didn't need to tell each geom what data or mappings to use
+
+Information is *inherited* from the main `ggplot()` object
+
+Can override this
+
+
+```r
+p  &lt;- ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp))
+p + geom_point() + geom_smooth()
+```
+
+---
+
+# `scale_&lt;aes&gt;_&lt;type&gt;()` control scales
+
+Tick labels modified via `labels` &amp;mdash; convenient functions in *scales* package
+
+
+```r
+p + geom_point() + geom_smooth() + scale_x_log10(labels = scales::dollar)
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-11-1.png" height="400" /&gt;
+
+---
+
+# Mapping vs setting aesthetics
+
+
+```r
+p  &lt;- ggplot(data = gapminder,
+             mapping = aes(x = gdpPercap, y = lifeExp, colour = continent))
+p + geom_point() + scale_x_log10()
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-12-1.png" height="400" /&gt;
+
+---
+
+# Setting aesthetics &amp;mdash; the wrong way
+
+
+```r
+p  &lt;- ggplot(data = gapminder,
+             mapping = aes(x = gdpPercap, y = lifeExp, colour = "purple"))
+p + geom_point() + scale_x_log10()
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-13-1.png" height="400" /&gt;
+
+---
+
+# Setting aesthetics &amp;mdash; the right way
+
+Mappings are in `aes()`, settings go *outside* `aes()`
+
+
+```r
+p  &lt;- ggplot(data = gapminder, mapping = aes(x = gdpPercap, y = lifeExp))
+p + geom_point(colour = "purple") + scale_x_log10()
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-14-1.png" height="400" /&gt;
+
+---
+
+# Setting aesthetics &amp;mdash; the right way
+
+Mappings are in `aes()`, settings go *outside* `aes()`
+
+`alpha` controls transparency, `size` controls how big things are
+
+.row[
+
+.col-6[
+
+```r
+ggplot(gapminder,
+       aes(x = gdpPercap,
+           y = lifeExp)) +
+    geom_point(alpha = 0.3) +
+    geom_smooth(method = 'lm',
+                colour = 'orange',
+                se = FALSE, size = 2) +
+    scale_x_log10()
+```
+]
+
+.col-6[
+
+![](making-a-plot_files/figure-html/gap-plot-16-1.png)&lt;!-- --&gt;
+
+]
+
+]
+
+---
+
+# `labs()` &amp;mdash; setting plot labels
+
+
+```r
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(alpha = 0.3) +
+    geom_smooth(method = 'lm', colour = 'orange', se = FALSE, size = 2) +
+    scale_x_log10() +
+    labs(x = 'GDP Per Capita',
+         y = 'Life Expectancy in Years',
+         title = 'Economic growth 7 life expectancy',
+         subtitle = 'Data points are country-years',
+         caption = 'Source: Gapminder')
+```
+
+---
+
+# `labs()` &amp;mdash; setting plot labels
+
+![](making-a-plot_files/figure-html/gap-plot-18-1.png)&lt;!-- --&gt;
+
+---
+
+# Reusing elements
+
+You can save time and effort by reusing plot elements
+
+
+```r
+my_labs &lt;- labs(x = 'GDP Per Capita',
+                y = 'Life Expectancy in Years',
+                title = 'Economic growth 7 life expectancy',
+                subtitle = 'Data points are country-years',
+                caption = 'Source: Gapminder')
+```
+
+.row[
+
+.col-6[
+
+Then resuse
+
+
+```r
+p + geom_point() + geom_smooth() +
+    scale_x_log10() + my_labs
+```
+]
+
+.col-6[
+
+![](making-a-plot_files/figure-html/use-labs-2-1.png)&lt;!-- --&gt;
+
+]
+
+]
+
+---
+
+# Matching aesthetics
+
+
+```r
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp, colour = continent,
+                      fill = continent)) +
+    geom_point() + geom_smooth(method = 'gam') +
+    scale_x_log10() + my_labs
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-19-1.png" height="400" /&gt;
+
+---
+
+# Mapping aesthetics per geom
+
+
+```r
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = continent)) + geom_smooth(method = 'gam') +
+    scale_x_log10() + my_labs
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-20-1.png" height="400" /&gt;
+
+---
+
+# Mapping continuous variables
+
+
+```r
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) +
+    scale_x_log10() + my_labs
+```
+
+&lt;img src="making-a-plot_files/figure-html/gap-plot-21-1.png" height="400" /&gt;
+
+---
+
+# `ggsave()` &amp;mdash; Saving your work
+
+Plots can be rendered to disk in a range of formats &amp;mdash; &lt;small&gt;PNG&lt;/small&gt;, &lt;small&gt;PDF&lt;/small&gt;, ...
+
+Type of file depends on the extension given in `filename`
+
+`ggsave()` saves the last `ggplot` object plotted
+
+
+```r
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) +
+    scale_x_log10() + my_labs
+```
+
+```r
+## save the last plot
+ggsave('my-plot.png')
+```
+
+```
+## Saving 7 x 7 in image
+```
+
+---
+
+# `ggsave()` &amp;mdash; Saving your work
+
+Plots can be rendered to disk in a range of formats &amp;mdash; &lt;small&gt;PNG&lt;/small&gt;, &lt;small&gt;PDF&lt;/small&gt;, ...
+
+Type of file depends on the extension given in `filename`
+
+`ggsave()` saves a specific `ggplot` object if given on
+
+
+```r
+my_plt &lt;- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) +
+    scale_x_log10() + my_labs
+
+## save a specific plot object
+ggsave('my-plot.pdf', plot = my_plt)
+```
+
+```
+## Saving 7 x 7 in image
+```
+
+---
+
+# `ggsave()` &amp;mdash; Specifying size
+
+`ggsave()` always saves objects in inches &amp; takes the size from the device if not specified
+
+Can set `width` and `height` to numeric values and select the units via `units`
+
+
+```r
+my_plt &lt;- ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) +
+    scale_x_log10() + my_labs
+
+## save a specific plot object
+ggsave('my-plot-cm.pdf', plot = my_plt, height = 10, width= 20, units = 'cm')
+```
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="../macros.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();</script>
+
+<script>
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>

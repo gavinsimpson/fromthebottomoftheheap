@@ -1,0 +1,562 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Additive modelling and the HadCRUT3v global mean temperature series</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="Climate Change, Science, Time series" />
+
+
+<meta name="description" content="Earlier, I looked at the HadCRUT3vgl data set using generalized least squares to investigate whether the trend in temperature since 1995 was statistically significant. Here I want to follow-up one of the points from the earlier posting; namely using a statistical technique that fits a local, and not global, model to the entire time series and see how that informs our knowledge of trends in the recent period. In this post, I’ll be using the mgcv and nlme packages plus some custom functions I wrote to produce diagnostics plots of gamm() time series models and to compute derivatives of fitted splines using the method of finite differences. The latter can be loaded into R from my github repository
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Additive modelling and the HadCRUT3v global mean temperature series" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2011-06-12T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Additive modelling and the HadCRUT3v global mean temperature series" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2011-06-12T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Earlier, I looked at the HadCRUT3vgl data set using generalized least squares to investigate whether the trend in temperature since 1995 was statistically significant. Here I want to follow-up one of the points from the earlier posting; namely using a statistical technique that fits a local, and not global, model..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Additive modelling and the HadCRUT3v global mean temperature series" />
+
+
+<meta name="twitter:description" content="Earlier, I looked at the HadCRUT3vgl data set using generalized least squares to investigate whether the trend in temperature since 1995 was statistically significant. Here I want to follow-up one..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="12 Jun 2011"/>
+<meta name="citation_date" content="12 Jun 2011"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Additive modelling and the HadCRUT3v global mean temperature series"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2011/06/14/embedding-a-time-series-with-time-delay-in-r-part-ii/">Embedding a time series with time delay in R &mdash; Part II</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2011/06/11/global-warming-since-1995-now-significant/">Global warming since 1995 'now significant'</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Additive modelling and the HadCRUT3v global mean temperature series </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+                              <div class="alert alert-error">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <h3>Update!</h3>
+                <p><p><strong>Updated</strong> The URL to the HadCRUT3v data set changed following the release of version 4 of the data set (12 January 2015).</p>
+</p>
+              </div>
+
+              
+            <p><a href="http://www.fromthebottomoftheheap.net/2011/06/11/global-warming-since-1995-now-significant/" title="Global warming since 1995 &#39;now significant&#39;">Earlier, I looked at the HadCRUT3vgl data</a> set using generalized least squares to investigate whether the trend in temperature since 1995 was statistically significant. Here I want to follow-up one of the points from the earlier posting; namely using a statistical technique that fits a local, and not global, model to the entire time series and see how that informs our knowledge of trends in the recent period. In this post, I’ll be using the <strong>mgcv</strong> and <strong>nlme</strong> packages plus some custom functions I wrote to produce diagnostics plots of <code>gamm()</code> time series models and to compute derivatives of fitted splines using the method of finite differences. The latter can be loaded into R from my <a href="http://github.com" title="github website">github</a> <a href="https://github.com/gavinsimpson/random_code" title="My github repository">repository</a></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## load the packages and code we need</span><span class="w">
+</span><span class="n">require</span><span class="p">(</span><span class="n">mgcv</span><span class="p">)</span><span class="w">
+</span><span class="n">require</span><span class="p">(</span><span class="n">nlme</span><span class="p">)</span><span class="w">
+</span><span class="c1">## load custom functions</span><span class="w">
+</span><span class="n">tmp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">()</span><span class="w">
+</span><span class="n">download.file</span><span class="p">(</span><span class="s2">"https://github.com/gavinsimpson/random_code/raw/master/derivFun.R"</span><span class="p">,</span><span class="w">
+              </span><span class="n">tmp</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"wget"</span><span class="p">)</span><span class="w">
+</span><span class="n">source</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span><span class="w">
+</span><span class="n">tmp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">()</span><span class="w">
+</span><span class="n">download.file</span><span class="p">(</span><span class="s2">"https://github.com/gavinsimpson/random_code/raw/master/tsDiagGamm.R"</span><span class="p">,</span><span class="w">
+              </span><span class="n">tmp</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"wget"</span><span class="p">)</span><span class="w">
+</span><span class="n">source</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span></code></pre>
+</figure>
+<p>(If the download code above doesn’t work for you — it does on my Linux machine — then download the files using your browser and <code>source()</code> in the usual way.) Next, load the data and process the file as per the earlier post (see <a href="https://www.fromthebottomoftheheap.net/2011/06/11/global-warming-since-1995-now-significant/" title="Global warming since 1995 &#39;now significant&#39;">here</a> for details). The last lines of code plot the data (note that I only intend to use the annual means in this posting — dealing with monthly data needs a few extra steps to model the seasonal variation in the data).</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## Global temperatures</span><span class="w">
+</span><span class="n">URL</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">url</span><span class="p">(</span><span class="s2">"http://www.cru.uea.ac.uk/cru/data/temperature/HadCRUT3v-gl.dat"</span><span class="p">)</span><span class="w">
+</span><span class="n">gtemp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">read.table</span><span class="p">(</span><span class="n">URL</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+</span><span class="c1">## Don't need the even rows</span><span class="w">
+</span><span class="n">gtemp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gtemp</span><span class="p">[</span><span class="o">-</span><span class="n">seq</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">nrow</span><span class="p">(</span><span class="n">gtemp</span><span class="p">),</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="c1">## set the Year as rownames</span><span class="w">
+</span><span class="n">rownames</span><span class="p">(</span><span class="n">gtemp</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gtemp</span><span class="p">[,</span><span class="m">1</span><span class="p">]</span><span class="w">
+</span><span class="c1">## Add colnames</span><span class="w">
+</span><span class="n">colnames</span><span class="p">(</span><span class="n">gtemp</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Year"</span><span class="p">,</span><span class="w"> </span><span class="nb">month.abb</span><span class="p">,</span><span class="w"> </span><span class="s2">"Annual"</span><span class="p">)</span><span class="w">
+</span><span class="c1">## Data for 2011 incomplete so work only with 1850-2010 data series</span><span class="w">
+</span><span class="n">gtemp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gtemp</span><span class="p">[</span><span class="o">-</span><span class="n">nrow</span><span class="p">(</span><span class="n">gtemp</span><span class="p">),</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="c1">## Plot the data</span><span class="w">
+</span><span class="n">ylab</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">Temperature</span><span class="o">~</span><span class="n">Anomaly</span><span class="o">~</span><span class="p">(</span><span class="m">1961-1990</span><span class="p">)</span><span class="o">~</span><span class="n">degree</span><span class="o">*</span><span class="n">C</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">Annual</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gtemp</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span></code></pre>
+</figure>
+<p>The resulting plot should look like this:</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/global_HadCRUT3v_time_series.png" title="Global mean temperature anomaly 1850-2010" alt="Global mean temperature anomaly 1850-2010" /><figcaption>Global mean temperature anomaly 1850-2010</figcaption>
+</figure>
+<p>Looking at the plot, we can see that the level of the global annual mean temperature record has varied substantially over the 160 years of observations. To fit a global, linear trend to the entire data would make little sense — clearly such a model would not provide a good fit to the data, failing to describe the relationship in temperature over time. Asking whether such a model is statistically significant is therefore moot. Instead, we want a model that can describe the changes in the underlying level. There are many such models, such as local linear smooths or loess smooths, but here I will use a thin-plate regression spline fitted using the <code>gamm()</code> function.</p>
+<p>Why use a function that can fit generalized additive mixed models (GAMMs)? The sorts of additive models that can be fitted using <code>gam()</code> (note the one “m”) can also be expressed as a linear mixed model, and the correlation structures I used in the earlier post can also be used in the <code>lme()</code> function, that fits linear mixed models. <code>gamm()</code> allows the two elements to be combined.</p>
+<p>The additive model (without any correlation structure at this stage) is fitted and summarised as follows</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; ## Fit a smoother for Year to the data
+&gt; m1 &lt;- gamm(Annual ~ s(Year, k = 20), data = gtemp)
+&gt; summary(m1$gam)
+
+Family: gaussian 
+Link function: identity 
+
+Formula:
+Annual ~ s(Year, k = 20)
+
+Parametric coefficients:
+             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept) -0.165404   0.006972  -23.72   &lt;2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+
+Approximate significance of smooth terms:
+          edf Ref.df     F p-value    
+s(Year) 11.94  11.94 101.3  &lt;2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+
+R-sq.(adj) =  0.883  Scale est. = 0.0077778  n = 161</code></pre>
+</figure>
+<p>This smoother explains 88% of the variance in the data, uses almost 12 degrees of freedom and is statistically significant, in the sense that the fitted smoother is different from a null model. We should not take this <em>p</em>-value at face value however, as these data are a time series and the standard errors on the fitted smoother are likely to be overly narrow. The ACF and partial ACF can be used to determine what types of time series model might be required for the residuals</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## look at autocorrelation in residuals:</span><span class="w">
+</span><span class="n">acf</span><span class="p">(</span><span class="n">resid</span><span class="p">(</span><span class="n">m1</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"normalized"</span><span class="p">))</span><span class="w">
+</span><span class="c1">## ...wait... look at the plot, only then do...</span><span class="w">
+</span><span class="n">pacf</span><span class="p">(</span><span class="n">resid</span><span class="p">(</span><span class="n">m1</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"normalized"</span><span class="p">))</span><span class="w">
+</span><span class="c1">## seems like like sharp cut-off in ACF and PACF - AR terms probably best</span></code></pre>
+</figure>
+<p>Given the form of the ACF and pACF plots, AR terms will probably be best, so we fit models with AR(1) and AR(2) terms. To do this, we add a <code>correlation</code> argument to the model calls</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## ...so fit the AR1</span><span class="w">
+</span><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Annual</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">30</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gtemp</span><span class="p">,</span><span class="w">
+           </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">))</span><span class="w">
+</span><span class="c1">## ...and fit the AR2</span><span class="w">
+</span><span class="n">m3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Annual</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">30</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gtemp</span><span class="p">,</span><span class="w">
+           </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span></code></pre>
+</figure>
+<p>We can use the <code>anova()</code> method for <code>"lme"</code> objects to assess whether the models with the correlation structures fit the data better than the original model</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; anova(m1$lme, m2$lme, m3$lme)
+       Model df       AIC       BIC   logLik   Test   L.Ratio p-value
+m1$lme     1  4 -273.6235 -261.2978 140.8117                         
+m2$lme     2  5 -299.7355 -284.3285 154.8678 1 vs 2 28.112063  &lt;.0001
+m3$lme     3  6 -298.7174 -280.2290 155.3587 2 vs 3  0.981852  0.3217</code></pre>
+</figure>
+<p>The AR(1) model provides the best fit to the data, being a significant improvement over the model without a correlation structure. AIC and BIC also both favour the AR(1) model over the AR(2) or the original model. The <code>plot()</code> method for <code>"gam"</code> objects can be used to view the fitted smoother; here I superimpose the residuals and alter the plotting character and size</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">residuals</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.75</span><span class="p">)</span></code></pre>
+</figure>
+<p>to produce this plot</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/fitted_gamm_ar1_smooth_plot.png" title="Fitted thin-plate spline with AR(1) residuals and approximate 95% point-wise confidence interval" alt="Fitted thin-plate spline with AR(1) residuals and approximate 95% point-wise confidence interval" /><figcaption>Fitted thin-plate spline with AR(1) residuals and approximate 95% point-wise confidence interval</figcaption>
+</figure>
+<p>Some diagnostic plots can be be produced using my <code>tsDiagGamm()</code> function (loaded earlier)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">gtemp</span><span class="p">,</span><span class="w"> </span><span class="n">tsDiagGamm</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span><span class="w"> </span><span class="n">timevar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">observed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Annual</span><span class="p">))</span></code></pre>
+</figure>
+<p>which produces this figure:</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/fitted_gamm_ar1_diagnostics.png" title="Diagnostic plots for the fitted model using AR(1) residuals fitted to the 1850–2010 global mean annual temperature data" alt="Diagnostic plots for the fitted model using AR(1) residuals fitted to the 1850–2010 global mean annual temperature data" /><figcaption>Diagnostic plots for the fitted model using AR(1) residuals fitted to the 1850–2010 global mean annual temperature data</figcaption>
+</figure>
+<p>There do not seem to be any causes for concern in the diagnostics. Finally, we can compare the fits of the original model and the model with AR(1) residuals. I use a general procedure to draw the fitted smooths on the original data, but predicting from each model at 200 equally spaced time points over the period of the data</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">Annual</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gtemp</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"p"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span><span class="w">
+</span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">gtemp</span><span class="p">,</span><span class="w">
+             </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="nf">min</span><span class="p">(</span><span class="n">Year</span><span class="p">),</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">Year</span><span class="p">),</span><span class="w">
+                        </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">200</span><span class="p">)))</span><span class="w">
+</span><span class="n">p1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m1</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">)</span><span class="w">
+</span><span class="n">p2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">p1</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">p2</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">)</span><span class="w">
+</span><span class="n">legend</span><span class="p">(</span><span class="s2">"topleft"</span><span class="p">,</span><span class="w">
+       </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Uncorrelated Errors"</span><span class="p">,</span><span class="s2">"AR(1) Errors"</span><span class="p">),</span><span class="w">
+       </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"red"</span><span class="p">,</span><span class="s2">"blue"</span><span class="p">),</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<p>We can see that the AR(1) model is smoother than the original model. The AR(1) has absorbed some of the variation explained by the spline (trend) in the original and highlights an important point when fitting additive models to non-independent data; the fitted model may be overly complex and over fitted to the data if we do not account for the violation of independence in the residuals.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/comparison_of_gamm_models.png" title="Comparison of fitted additive models" alt="Comparison of the two fitted additive models" /><figcaption>Comparison of the two fitted additive models</figcaption>
+</figure>
+<p>Having fitted a model, we can start to use it and interrogate it for a variety of purposes. One key question we might ask of the model is when were temperatures statistically significantly increasing (or decreasing for that matter)?</p>
+<p>An approach answering this question is to compute the first derivatives of the fitted trend. We don’t have an analytical form for the derivatives easily to hand, but we can use the method of finite differences to compute them. To produce derivatives via finite differences, we compute the values of the fitted trend at a grid of points over the entire data. We then shift the grid by a tiny amount and recompute the values of the trend at the new locations. The differences between the two sets of fitted values are the first differences of the trend and give a measure of the slope of the trend at any point in time.</p>
+<p>The computations are not too involved and have been incorporated into a <code>Deriv()</code> function. We evaluate the trend at 200 equally spaced points. This function has a <code>plot()</code> method that draws a time series of first derivatives with a confidence interval. Periods where zero is not included in confidence interval can be coloured to show important periods of change (red for decreasing, and blue for increasing). The <code>sizer</code> argument turns on/off the colouring and <code>alpha</code> determines the coverage for the confidence interval.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m2.d</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Deriv</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">200</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">m2.d</span><span class="p">,</span><span class="w"> </span><span class="n">sizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.01</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/derivatives_of_fitted_model.png" title="First derivatives of the additive model with AR(1) errors." alt="First derivatives of the additive model with AR(1) errors. A 99% point-wise confidence interval is shown. Periods where zero is not included in the confidence interval are periods of significant change are coloured red (decreasing) and blue (increasing)" /><figcaption>First derivatives of the additive model with AR(1) errors. A 99% point-wise confidence interval is shown. Periods where zero is not included in the confidence interval are periods of significant change are coloured red (decreasing) and blue (increasing)</figcaption>
+</figure>
+<p>We can manipulate the output from the <code>Deriv()</code> function to superimpose periods of significant change in temperature, as shown above on the first derivative plot, on the fitted trend:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">Annual</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gtemp</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"p"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">p2</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">)</span><span class="w">
+</span><span class="n">CI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">confint</span><span class="p">(</span><span class="n">m2.d</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.01</span><span class="p">)</span><span class="w">
+</span><span class="n">S</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">signifD</span><span class="p">(</span><span class="n">p2</span><span class="p">,</span><span class="w"> </span><span class="n">m2.d</span><span class="o">$</span><span class="n">Year</span><span class="o">$</span><span class="n">deriv</span><span class="p">,</span><span class="w"> </span><span class="n">CI</span><span class="o">$</span><span class="n">Year</span><span class="o">$</span><span class="n">upper</span><span class="p">,</span><span class="w"> </span><span class="n">CI</span><span class="o">$</span><span class="n">Year</span><span class="o">$</span><span class="n">lower</span><span class="p">,</span><span class="w">
+             </span><span class="n">eval</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">S</span><span class="o">$</span><span class="n">incr</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">)</span><span class="w">
+</span><span class="n">lines</span><span class="p">(</span><span class="n">S</span><span class="o">$</span><span class="n">decr</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span></code></pre>
+</figure>
+<p>The resulting figure is shown below:</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/fitted_additive_model_plus_derivatives.png" title="Fitted additive model with AR(1) errors and superimposed periods of significant change in temperature" alt="Fitted additive model with AR(1) errors and superimposed periods of significant change in temperature" /><figcaption>Fitted additive model with AR(1) errors and superimposed periods of significant change in temperature</figcaption>
+</figure>
+<p>The derivatives suggest two periods of significant increase in temperature (at the 99% level); during the inter-war years and post ~1975. The second period of significant increase in global annual mean temperature appears to persist until ~2005. After that time, we have insufficient data to distinguish the fitted increasing trend from a zero-trend post 2005. It would be wrong to interpret the lack of significant change during periods where the fitted trend is either increasing or decreasing as gospel truth that the globe did or did not warm/cool. All we can say is that <em>given this sample of data</em>, we are unable to detect any further periods of significant change in temperature other than the two periods indicated in blue. This is because our estimate of the trend is subject to uncertainty.</p>
+<p>Another observation worth making is that the fitted spline is based on the ML estimates of the coefficients that describe the spline. Each of these coefficients is subject to uncertainty, just as the regression coefficients in the <a href="https://www.fromthebottomoftheheap.net/2011/06/11/global-warming-since-1995-now-significant/" title="Global warming since 1995 ‘now significant’">previous posting</a>. The set of coefficients and their standard errors form a multivariate normal distribution, from which we can sample new values of the coefficients that are <em>consistent</em> with the fitted model but will describe slightly different splines through the data and consequently, slightly different trends.</p>
+<p>The <strong>MASS</strong> package contains function <code>mvrnorm()</code>, which allows us to draw samples from a multivariate normal distribution initialized using the model coefficients (<code>coef(m2$gam)</code>) and the variance-covariance matrix of the coefficients (<code>vcov(m2$gam)</code>). We set a seed for the random number generator to make the results reproducible, and take 1000 draws from this distribution</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## simulate from posterior distribution of beta</span><span class="w">
+</span><span class="n">Rbeta</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">mvrnorm</span><span class="p">(</span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1000</span><span class="p">,</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">),</span><span class="w"> </span><span class="n">vcov</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">))</span><span class="w">
+</span><span class="n">Xp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
+</span><span class="n">sim1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Xp</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">Rbeta</span><span class="p">)</span></code></pre>
+</figure>
+<p>The \( X_{p} \) matrix is a matrix such that when multiplied by the vector of model parameters it yields values of the linear predictor of the model. In other words, \( X_{p} \) defines the parametrisation of the spline, which when multiplied by the model coefficients yields the fitted values of the model. <code>Rbeta</code> contains a matrix of coefficients that sample the uncertainty in the model. A matrix multiplication of the \( X_{p} \) matrix with the coefficient matrix generates a matrix of fitted values of the trend, each column pertaining to a single version of the trend.</p>
+<p>Next, I select, at random, 25 of these trends to illustrate the sorts of variation in the fitted trends</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## plot the observation and 25 of the 1000 trends</span><span class="w">
+</span><span class="n">set.seed</span><span class="p">(</span><span class="m">321</span><span class="p">)</span><span class="w">
+</span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sample</span><span class="p">(</span><span class="m">1000</span><span class="p">,</span><span class="w"> </span><span class="m">25</span><span class="p">)</span><span class="w">
+</span><span class="n">ylim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">sim1</span><span class="p">[,</span><span class="n">want</span><span class="p">],</span><span class="w"> </span><span class="n">gtemp</span><span class="o">$</span><span class="n">Annual</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">Annual</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gtemp</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span><span class="w">
+</span><span class="n">matlines</span><span class="p">(</span><span class="n">pdat</span><span class="o">$</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">sim1</span><span class="p">[,</span><span class="n">want</span><span class="p">],</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NA</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/25_simulated_trends.png" title="Examples of trends, each consistent with the fitted model, that illustrate the variation in the fitted trend due to uncertainty in the model parameter estimates" alt="Examples of trends, each consistent with the fitted model, that illustrate the variation in the fitted trend due to uncertainty in the model parameter estimates" /><figcaption>Examples of trends, each consistent with the fitted model, that illustrate the variation in the fitted trend due to uncertainty in the model parameter estimates</figcaption>
+</figure>
+<p>What do simulated trends suggest for the most recent period that has been the interest of many? The following code focusses on the post 1990 data and shows 50 of the simulated trends</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">321</span><span class="p">)</span><span class="w">
+</span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sample</span><span class="p">(</span><span class="m">1000</span><span class="p">,</span><span class="w"> </span><span class="m">50</span><span class="p">)</span><span class="w">
+</span><span class="n">rwant</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="p">(</span><span class="n">Year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="m">2000</span><span class="p">))</span><span class="w">
+</span><span class="n">twant</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">gtemp</span><span class="p">,</span><span class="w"> </span><span class="n">which</span><span class="p">(</span><span class="n">Year</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="m">2000</span><span class="p">))</span><span class="w">
+</span><span class="n">ylim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">sim1</span><span class="p">[</span><span class="n">rwant</span><span class="p">,</span><span class="n">want</span><span class="p">],</span><span class="w"> </span><span class="n">gtemp</span><span class="o">$</span><span class="n">Annual</span><span class="p">[</span><span class="n">twant</span><span class="p">])</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">Annual</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gtemp</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">,</span><span class="w">
+     </span><span class="n">xlim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">1990</span><span class="p">,</span><span class="w"> </span><span class="m">2009</span><span class="p">),</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span><span class="w">
+</span><span class="n">matlines</span><span class="p">(</span><span class="n">pdat</span><span class="o">$</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">sim1</span><span class="p">[,</span><span class="n">want</span><span class="p">],</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NA</span><span class="p">)</span><span class="w">
+</span><span class="n">points</span><span class="p">(</span><span class="n">Annual</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gtemp</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="n">bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"yellow"</span><span class="p">,</span><span class="w">
+       </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1.5</span><span class="p">)</span></code></pre>
+</figure>
+<p>which produces the following figure</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulated_trends_recent_period.png" title="50 simulated trends from the fitted additive model for the period 1990–2010" alt="50 simulated trends from the fitted additive model for the period 1990–2010" /><figcaption>50 simulated trends from the fitted additive model for the period 1990–2010</figcaption>
+</figure>
+<p>A couple of the simulated trends are suggestive of a decreasingdecreasing trend over the period, whilst a number suggest that the temperature increase has stalled. However, the majority of the simulated trends suggest that the temperature increase continues throughout the recent period though perhaps with reduced slope, and this is consistent with the fitted trend which also increases throughout this period. The range of trends, particularly at the very end of the observation period reflects the large degree of uncertainty in the trend at the edge of the data; we simply do not have the data available to constrain our estimates of the trend at the end of the observation period.</p>
+<p>In summary, by using a model that is fitted to the entire period of data but which can adapt to local features of the time series provides a powerful means of estimating trends in temperature data. The thin-plate spline that describes the fitted trend is defined by a set of coefficients that we can use to explore the uncertainty in the model via simulation. Because the model can be expressed as a linear mixed model we can exploit the <code>lme()</code> function to fit correlation structures in the model residuals to account for the autocorrelation in the data.</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/";
+  var disqus_title = "Additive modelling and the HadCRUT3v global mean temperature series";
+  //var disqus_identifier = "/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>12 June 2011</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/climate-change/"><span class="label label-inverse">Climate Change</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/science/"><span class="label label-inverse">Science</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/time-series/"><span class="label label-inverse">Time series</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

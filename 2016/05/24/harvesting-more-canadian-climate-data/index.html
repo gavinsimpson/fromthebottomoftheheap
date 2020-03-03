@@ -1,0 +1,637 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Harvesting more Canadian climate data</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="API, data, climate, download, opendata" />
+
+
+<meta name="description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had changed URL and some of the GET parameters had also changed. In fixing those functions I also noted that the original code only downloaded hourly data and not all useful weather variables are recorded hourly; precipitation for example is only in the daily and monthly data formats. This post updates the earlier one, explaining what changed and how the code has been updated. As an added benefit, the functions can now handle downloading daily and monthly data files as well as the hourly files that the original could handle.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Harvesting more Canadian climate data" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2016-05-24T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Harvesting more Canadian climate data" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2016-05-24T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2016/05/24/harvesting-more-canadian-climate-data/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had changed URL and..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Harvesting more Canadian climate data" />
+
+
+<meta name="twitter:description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canad..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="24 May 2016"/>
+<meta name="citation_date" content="24 May 2016"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Harvesting more Canadian climate data"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2016/06/07/rootograms/">Rootograms</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2016/04/17/new-plot-default-for-betadisper/">A new default plot for multivariate dispersions</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Harvesting more Canadian climate data </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>A <a href="/2015/01/14/harvesting-canadian-climate-data/">while back I wrote</a> some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had changed URL and some of the GET parameters had also changed. In fixing those functions I also noted that the original code only downloaded hourly data and not all useful weather variables are recorded hourly; precipitation for example is only in the daily and monthly data formats. This post updates the earlier one, explaining what changed and how the code has been updated. As an added benefit, the functions can now handle downloading daily and monthly data files as well as the hourly files that the original could handle.</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/screenshot-gc-climate-website.jpeg" title="Screenshot of Government of Canada&#39;s climate website" alt="Screenshot of Government of Canada’s climate website" /><figcaption>Screenshot of Government of Canada’s climate website</figcaption>
+</figure>
+<p>The <code>genURLS()</code> function now has an extra argument <code>timeframe</code> which allows you to select which type of data to download, defaulting to hourly data:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">genURLS</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">start</span><span class="p">,</span><span class="w"> </span><span class="n">end</span><span class="p">,</span><span class="w"> </span><span class="n">timeframe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"hourly"</span><span class="p">,</span><span class="w"> </span><span class="s2">"daily"</span><span class="p">,</span><span class="w"> </span><span class="s2">"monthly"</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">years</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="n">start</span><span class="p">,</span><span class="w"> </span><span class="n">end</span><span class="p">,</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+    </span><span class="n">nyears</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">years</span><span class="p">)</span><span class="w">
+    </span><span class="n">timeframe</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">match.arg</span><span class="p">(</span><span class="n">timeframe</span><span class="p">)</span><span class="w">
+    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isTRUE</span><span class="p">(</span><span class="n">all.equal</span><span class="p">(</span><span class="n">timeframe</span><span class="p">,</span><span class="w"> </span><span class="s2">"hourly"</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">years</span><span class="w"> </span><span class="o">&lt;-</span><span class="w">  </span><span class="nf">rep</span><span class="p">(</span><span class="n">years</span><span class="p">,</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w">
+        </span><span class="n">months</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">12</span><span class="p">,</span><span class="w"> </span><span class="n">times</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nyears</span><span class="p">)</span><span class="w">
+        </span><span class="n">ids</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">nyears</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w">
+    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isTRUE</span><span class="p">(</span><span class="n">all.equal</span><span class="p">(</span><span class="n">timeframe</span><span class="p">,</span><span class="w"> </span><span class="s2">"daily"</span><span class="p">)))</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">months</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1</span><span class="w">                      </span><span class="c1"># this is essentially arbitrary &amp; ignored if daily</span><span class="w">
+        </span><span class="n">ids</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">id</span><span class="p">,</span><span class="w"> </span><span class="n">nyears</span><span class="p">)</span><span class="w">
+    </span><span class="p">}</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">years</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">start</span><span class="w">                   </span><span class="c1"># again arbitrary, for monthly it just gives you all data</span><span class="w">
+        </span><span class="n">months</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1</span><span class="w">                      </span><span class="c1"># and this is also ignored</span><span class="w">
+        </span><span class="n">ids</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">id</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+    </span><span class="n">timeframe</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">match</span><span class="p">(</span><span class="n">timeframe</span><span class="p">,</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"hourly"</span><span class="p">,</span><span class="w"> </span><span class="s2">"daily"</span><span class="p">,</span><span class="w"> </span><span class="s2">"monthly"</span><span class="p">))</span><span class="w">
+    </span><span class="n">URLS</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">paste0</span><span class="p">(</span><span class="s2">"http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID="</span><span class="p">,</span><span class="w"> </span><span class="n">id</span><span class="p">,</span><span class="w">
+                   </span><span class="s2">"&amp;Year="</span><span class="p">,</span><span class="w"> </span><span class="n">years</span><span class="p">,</span><span class="w">
+                   </span><span class="s2">"&amp;Month="</span><span class="p">,</span><span class="w"> </span><span class="n">months</span><span class="p">,</span><span class="w">
+                   </span><span class="s2">"&amp;Day=14"</span><span class="p">,</span><span class="w">
+                   </span><span class="s2">"&amp;format=csv"</span><span class="p">,</span><span class="w">
+                   </span><span class="s2">"&amp;timeframe="</span><span class="p">,</span><span class="w"> </span><span class="n">timeframe</span><span class="p">,</span><span class="w">
+                   </span><span class="s2">"&amp;submit=%20Download+Data"</span><span class="c1">## need this stoopid thing as of 11-May-2016</span><span class="w">
+                   </span><span class="p">)</span><span class="w">
+    </span><span class="nf">list</span><span class="p">(</span><span class="n">urls</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">URLS</span><span class="p">,</span><span class="w"> </span><span class="n">ids</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ids</span><span class="p">,</span><span class="w"> </span><span class="n">years</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">years</span><span class="p">,</span><span class="w"> </span><span class="n">months</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">months</span><span class="p">,</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">URLS</span><span class="p">)))</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>If we wanted all the data for 2014 for the Regina RCS station then we could generate the URLs we’d need to visit as follows</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">regina</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">genURLS</span><span class="p">(</span><span class="m">28011</span><span class="p">,</span><span class="w"> </span><span class="m">2014</span><span class="p">,</span><span class="w"> </span><span class="m">2014</span><span class="p">)</span><span class="w">
+</span><span class="nf">length</span><span class="p">(</span><span class="n">regina</span><span class="o">$</span><span class="n">urls</span><span class="p">)</span><span class="w">
+</span><span class="n">head</span><span class="p">(</span><span class="n">regina</span><span class="o">$</span><span class="n">urls</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] 12
+[1] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=1&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
+[2] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=2&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
+[3] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=3&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
+[4] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=4&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
+[5] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=5&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
+[6] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=6&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"</code></pre>
+</figure>
+<p>The function that downloads and reads in the data was <code>getData()</code>.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">getData</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">stations</span><span class="p">,</span><span class="w"> </span><span class="n">folder</span><span class="p">,</span><span class="w"> </span><span class="n">timeframe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"hourly"</span><span class="p">,</span><span class="w"> </span><span class="s2">"daily"</span><span class="p">,</span><span class="w"> </span><span class="s2">"monthly"</span><span class="p">),</span><span class="w"> </span><span class="n">verbose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">delete</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="n">timeframe</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">match.arg</span><span class="p">(</span><span class="n">timeframe</span><span class="p">)</span><span class="w">
+    </span><span class="c1">## form URLS</span><span class="w">
+    </span><span class="n">urls</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lapply</span><span class="p">(</span><span class="nf">seq_len</span><span class="p">(</span><span class="n">NROW</span><span class="p">(</span><span class="n">stations</span><span class="p">)),</span><span class="w">
+                   </span><span class="k">function</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">stations</span><span class="p">,</span><span class="w"> </span><span class="n">timeframe</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+                       </span><span class="n">genURLS</span><span class="p">(</span><span class="n">stations</span><span class="o">$</span><span class="n">StationID</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w">
+                               </span><span class="n">stations</span><span class="o">$</span><span class="n">start</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w">
+                               </span><span class="n">stations</span><span class="o">$</span><span class="n">end</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">timeframe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">timeframe</span><span class="p">)</span><span class="w">
+                   </span><span class="p">},</span><span class="w"> </span><span class="n">stations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stations</span><span class="p">,</span><span class="w"> </span><span class="n">timeframe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">timeframe</span><span class="p">)</span><span class="w">
+
+    </span><span class="c1">## check the folder exists and try to create it if not</span><span class="w">
+    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">file.exists</span><span class="p">(</span><span class="n">folder</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">warning</span><span class="p">(</span><span class="n">paste</span><span class="p">(</span><span class="s2">"Directory:"</span><span class="p">,</span><span class="w"> </span><span class="n">folder</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"doesn't exist. Will create it"</span><span class="p">))</span><span class="w">
+        </span><span class="n">fc</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">try</span><span class="p">(</span><span class="n">dir.create</span><span class="p">(</span><span class="n">folder</span><span class="p">))</span><span class="w">
+        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inherits</span><span class="p">(</span><span class="n">fc</span><span class="p">,</span><span class="w"> </span><span class="s2">"try-error"</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="n">stop</span><span class="p">(</span><span class="s2">"Failed to create directory '"</span><span class="p">,</span><span class="w"> </span><span class="n">folder</span><span class="p">,</span><span class="w">
+                 </span><span class="s2">"'. Check path and permissions."</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">)</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+
+    </span><span class="c1">## Extract the data from the URLs generation</span><span class="w">
+    </span><span class="n">URLS</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">unlist</span><span class="p">(</span><span class="n">lapply</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span><span class="w"> </span><span class="s1">'[['</span><span class="p">,</span><span class="w"> </span><span class="s2">"urls"</span><span class="p">))</span><span class="w">
+    </span><span class="n">sites</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">unlist</span><span class="p">(</span><span class="n">lapply</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span><span class="w"> </span><span class="s1">'[['</span><span class="p">,</span><span class="w"> </span><span class="s2">"ids"</span><span class="p">))</span><span class="w">
+    </span><span class="n">years</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">unlist</span><span class="p">(</span><span class="n">lapply</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span><span class="w"> </span><span class="s1">'[['</span><span class="p">,</span><span class="w"> </span><span class="s2">"years"</span><span class="p">))</span><span class="w">
+    </span><span class="n">months</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">unlist</span><span class="p">(</span><span class="n">lapply</span><span class="p">(</span><span class="n">urls</span><span class="p">,</span><span class="w"> </span><span class="s1">'[['</span><span class="p">,</span><span class="w"> </span><span class="s2">"months"</span><span class="p">))</span><span class="w">
+
+    </span><span class="c1">## filenames to use to save the data</span><span class="w">
+    </span><span class="n">fnames</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">paste</span><span class="p">(</span><span class="n">sites</span><span class="p">,</span><span class="w"> </span><span class="n">years</span><span class="p">,</span><span class="w"> </span><span class="n">months</span><span class="p">,</span><span class="w"> </span><span class="s2">"data.csv"</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"-"</span><span class="p">)</span><span class="w">
+    </span><span class="n">fnames</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">file.path</span><span class="p">(</span><span class="n">folder</span><span class="p">,</span><span class="w"> </span><span class="n">fnames</span><span class="p">)</span><span class="w">
+
+    </span><span class="n">nfiles</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">fnames</span><span class="p">)</span><span class="w">
+
+    </span><span class="c1">## set up a progress bar if being verbose</span><span class="w">
+    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isTRUE</span><span class="p">(</span><span class="n">verbose</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">pb</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">txtProgressBar</span><span class="p">(</span><span class="n">min</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nfiles</span><span class="p">,</span><span class="w"> </span><span class="n">style</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
+        </span><span class="nf">on.exit</span><span class="p">(</span><span class="n">close</span><span class="p">(</span><span class="n">pb</span><span class="p">))</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+
+    </span><span class="n">out</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">vector</span><span class="p">(</span><span class="n">mode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"list"</span><span class="p">,</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nfiles</span><span class="p">)</span><span class="w">
+    </span><span class="n">hourlyNames</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Date/Time"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Year"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Month"</span><span class="p">,</span><span class="s2">"Day"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Time"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Data Quality"</span><span class="p">,</span><span class="w">
+                     </span><span class="s2">"Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Temp Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Dew Point Temp (degC)"</span><span class="p">,</span><span class="w">
+                     </span><span class="s2">"Dew Point Temp Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Rel Hum (%)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Rel Hum Flag"</span><span class="p">,</span><span class="w">
+                     </span><span class="s2">"Wind Dir (10s deg)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Wind Dir Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Wind Spd (km/h)"</span><span class="p">,</span><span class="w">
+                     </span><span class="s2">"Wind Spd Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Visibility (km)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Visibility Flag"</span><span class="p">,</span><span class="w">
+                     </span><span class="s2">"Stn Press (kPa)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Stn Press Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Hmdx"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Hmdx Flag"</span><span class="p">,</span><span class="w">
+                     </span><span class="s2">"Wind Chill"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Wind Chill Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Weather"</span><span class="p">)</span><span class="w">
+    </span><span class="n">dailyNames</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Date/Time"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Year"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Month"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Day"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Data Quality"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Max Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Max Temp Flag"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"Min Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Min Temp Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Mean Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Mean Temp Flag"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"Heat Deg Days (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Heat Deg Days Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Cool Deg Days (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Cool Deg Days Flag"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"Total Rain (mm)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Total Rain Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Total Snow (cm)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Total Snow Flag"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"Total Precip (mm)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Total Precip Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Snow on Grnd (cm)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Snow on Grnd Flag"</span><span class="p">,</span><span class="w">
+                    </span><span class="s2">"Dir of Max Gust (10s deg)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Dir of Max Gust Flag"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Spd of Max Gust (10s deg)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Spd of Max Gust Flag"</span><span class="p">)</span><span class="w">
+    </span><span class="n">monthlyNames</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Date/Time"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Year"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Month"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Mean Max Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Mean Max Temp Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Mean Min Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Mean Min Temp Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Mean Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Mean Temp Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Extr Max Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Extr Max Temp Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Extr Min Temp (degC)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Extr Min Temp Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Total Rain (mm)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Total Rain Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Total Snow (cm)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Total Snow Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Total Precip (mm)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Total Precip Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Snow Grnd Last Day (cm)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Snow Grnd Last Day Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Dir of Max Gust (10s deg)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Dir of Max Gust Flag"</span><span class="p">,</span><span class="w">
+                      </span><span class="s2">"Spd of Max Gust (10s deg)"</span><span class="p">,</span><span class="w"> </span><span class="s2">"Spd of Max Gust Flag"</span><span class="p">)</span><span class="w">
+
+    </span><span class="n">cnames</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">switch</span><span class="p">(</span><span class="n">timeframe</span><span class="p">,</span><span class="w"> </span><span class="n">hourly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">hourlyNames</span><span class="p">,</span><span class="w"> </span><span class="n">daily</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dailyNames</span><span class="p">,</span><span class="w"> </span><span class="n">monthly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">monthlyNames</span><span class="p">)</span><span class="w">
+    </span><span class="n">TIMEFRAME</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">match</span><span class="p">(</span><span class="n">timeframe</span><span class="p">,</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"hourly"</span><span class="p">,</span><span class="w"> </span><span class="s2">"daily"</span><span class="p">,</span><span class="w"> </span><span class="s2">"monthly"</span><span class="p">))</span><span class="w">
+    </span><span class="n">SKIP</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">16</span><span class="p">,</span><span class="w"> </span><span class="m">25</span><span class="p">,</span><span class="w"> </span><span class="m">18</span><span class="p">)[</span><span class="n">TIMEFRAME</span><span class="p">]</span><span class="w">
+
+    </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nf">seq_len</span><span class="p">(</span><span class="n">nfiles</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="n">curfile</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">fnames</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w">
+
+        </span><span class="c1">## Have we downloaded the file before?</span><span class="w">
+        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="o">!</span><span class="n">file.exists</span><span class="p">(</span><span class="n">curfile</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">    </span><span class="c1"># No: download it</span><span class="w">
+            </span><span class="n">dload</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">try</span><span class="p">(</span><span class="n">download.file</span><span class="p">(</span><span class="n">URLS</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">destfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">curfile</span><span class="p">,</span><span class="w"> </span><span class="n">quiet</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w">
+            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inherits</span><span class="p">(</span><span class="n">dload</span><span class="p">,</span><span class="w"> </span><span class="s2">"try-error"</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1"># If problem, store failed URL...</span><span class="w">
+                </span><span class="n">out</span><span class="p">[[</span><span class="n">i</span><span class="p">]]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">URLS</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w">
+                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isTRUE</span><span class="p">(</span><span class="n">verbose</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="n">setTxtProgressBar</span><span class="p">(</span><span class="n">pb</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="c1"># update progress bar...</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+        </span><span class="k">next</span><span class="w">                             </span><span class="c1"># bail out of current iteration</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+
+        </span><span class="c1">## Must have downloaded, try to read file</span><span class="w">
+        </span><span class="c1">## skip first SKIP rows of header stuff</span><span class="w">
+        </span><span class="c1">## encoding must be latin1 or will fail - may still be problems with character set</span><span class="w">
+        </span><span class="n">cdata</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">try</span><span class="p">(</span><span class="n">read.csv</span><span class="p">(</span><span class="n">curfile</span><span class="p">,</span><span class="w"> </span><span class="n">skip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SKIP</span><span class="p">,</span><span class="w"> </span><span class="n">encoding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"latin1"</span><span class="p">,</span><span class="w"> </span><span class="n">stringsAsFactors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">),</span><span class="w"> </span><span class="n">silent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+
+        </span><span class="c1">## Did we have a problem reading the data?</span><span class="w">
+        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inherits</span><span class="p">(</span><span class="n">cdata</span><span class="p">,</span><span class="w"> </span><span class="s2">"try-error"</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1"># yes handle read problem</span><span class="w">
+            </span><span class="c1">## try to fix the problem with dodgy characters</span><span class="w">
+            </span><span class="n">cdata</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">readLines</span><span class="p">(</span><span class="n">curfile</span><span class="p">)</span><span class="w"> </span><span class="c1"># read all lines in file</span><span class="w">
+            </span><span class="n">cdata</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">iconv</span><span class="p">(</span><span class="n">cdata</span><span class="p">,</span><span class="w"> </span><span class="n">from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"latin1"</span><span class="p">,</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"UTF-8"</span><span class="p">)</span><span class="w">
+            </span><span class="n">writeLines</span><span class="p">(</span><span class="n">cdata</span><span class="p">,</span><span class="w"> </span><span class="n">curfile</span><span class="p">)</span><span class="w">          </span><span class="c1"># write the data back to the file</span><span class="w">
+            </span><span class="c1">## try to read the file again, if still an error, bail out</span><span class="w">
+            </span><span class="n">cdata</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">try</span><span class="p">(</span><span class="n">read.csv</span><span class="p">(</span><span class="n">curfile</span><span class="p">,</span><span class="w"> </span><span class="n">skip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SKIP</span><span class="p">,</span><span class="w"> </span><span class="n">encoding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"UTF-8"</span><span class="p">,</span><span class="w"> </span><span class="n">stringsAsFactors</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">),</span><span class="w"> </span><span class="n">silent</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+            </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">inherits</span><span class="p">(</span><span class="n">cdata</span><span class="p">,</span><span class="w"> </span><span class="s2">"try-error"</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1"># yes, still!, handle read problem</span><span class="w">
+                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">delete</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="n">file.remove</span><span class="p">(</span><span class="n">curfile</span><span class="p">)</span><span class="w"> </span><span class="c1"># remove file if a problem &amp; deleting</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+                </span><span class="n">out</span><span class="p">[[</span><span class="n">i</span><span class="p">]]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">URLS</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w">    </span><span class="c1"># record failed URL...</span><span class="w">
+                </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isTRUE</span><span class="p">(</span><span class="n">verbose</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
+                    </span><span class="n">setTxtProgressBar</span><span class="p">(</span><span class="n">pb</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="c1"># update progress bar...</span><span class="w">
+                </span><span class="p">}</span><span class="w">
+                </span><span class="k">next</span><span class="w">                  </span><span class="c1"># bail out of current iteration</span><span class="w">
+            </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+
+        </span><span class="c1">## Must have (eventually) read file OK, add station data</span><span class="w">
+        </span><span class="n">cdata</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cbind.data.frame</span><span class="p">(</span><span class="n">StationID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">sites</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">NROW</span><span class="p">(</span><span class="n">cdata</span><span class="p">)),</span><span class="w">
+                                  </span><span class="n">cdata</span><span class="p">)</span><span class="w">
+        </span><span class="nf">names</span><span class="p">(</span><span class="n">cdata</span><span class="p">)[</span><span class="m">-1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cnames</span><span class="w">
+        </span><span class="n">out</span><span class="p">[[</span><span class="n">i</span><span class="p">]]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cdata</span><span class="w">
+
+        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">isTRUE</span><span class="p">(</span><span class="n">verbose</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1"># Update the progress bar</span><span class="w">
+            </span><span class="n">setTxtProgressBar</span><span class="p">(</span><span class="n">pb</span><span class="p">,</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">i</span><span class="p">)</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+
+    </span><span class="n">out</span><span class="w">                                 </span><span class="c1"># return</span><span class="w">
+</span><span class="p">}</span></code></pre>
+</figure>
+<p>The main infelicity is that you have to supply the <code>getData()</code> with a data frame containing the station IDs and start and end years respectively for the data you want to collect. This suited my needs as we wanted to grab data from 10 stations with different start and end years as required to track station movements. It’s not as convenient if you only want to grab the data for a single station, however.</p>
+<p><code>getData()</code> gains the same <code>timeframe</code> argument as <code>genURLS()</code>. In addition, to handle the, quite frankly odd!, choice of characters used in the various flag columns, I now do conversion of the file encoding from <code>latin1</code> to <code>UTF-8</code> using the <code>iconv()</code> function. Whether this works portably or not remains to be seen — I’m not that familiar with file encodings. If it doesn’t work, an option would be to determine what the user’s locale is and from that change the encoding to the native encoding.</p>
+<p>One thing you’ll note quickly if you start downloading data using this function is that the web script the Government of Canada is using on their climate website will quite happily generate a fully-formed file containing no actual data (but with all the headers, hourly time stamps, etc) if you ask it for data outside the window of observations for a given station. There are no errors, just lots of mostly empty files, bar the header and labels.</p>
+<p>One other thing to note is that <code>getData()</code> returns the downloaded data as a list and no attempt is made to flatten the individual components to a single large data frame. That’s because it allows for any failed data downloads (or reads) and records the failed URL instead of the data. This gives you a chance to manually check those URLs to see what the problem might be before re-running the job, which because we saved all the CSVs will run very quickly from that local cache.</p>
+<p>The use of <code>data.frame</code>s internally is showing signs of being a bit of a bottleneck performance-wise; <code>rbind()</code>-ing many stations or files of data takes a long time. I plan on changing the code to use <code>tbl_df</code>s now that Hadley has moved that functionality to the <strong>tibble</strong> package. I am reliably informed that <code>bind_rows()</code> is much quicker.</p>
+<p>The eagle-eyed among you will notice the dreaded <code>stringsAsFactors = FALSE</code> in the definition of <code>getData()</code>. I’m beginning to see why people that work with messy data find the default <code>stringsAsFactors = TRUE</code> down right abhorrent!</p>
+<p>To see <code>getData()</code> in action, we’ll run a quick job, downloading the 2014 data for two stations</p>
+<ul>
+<li>Regina INTL A (51441)</li>
+<li>Indian Head CDA (2925)</li>
+</ul>
+<p>First we create a data frame of station information</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">stations</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">StationID</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">51441</span><span class="p">,</span><span class="w"> </span><span class="m">2925</span><span class="p">),</span><span class="w">
+                       </span><span class="n">start</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">2014</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
+                       </span><span class="n">end</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">2014</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">))</span></code></pre>
+</figure>
+<p>Then we pass this to <code>getData()</code> with the path to the folder we wish to cache downloaded CSVs in</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">met</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">getData</span><span class="p">(</span><span class="n">stations</span><span class="p">,</span><span class="w"> </span><span class="n">folder</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"./csv"</span><span class="p">,</span><span class="w"> </span><span class="n">verbose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning in getData(stations, folder = "./csv", verbose = FALSE):
+Directory: ./csv doesn't exist. Will create it</code></pre>
+</figure>
+<p>This will take a few minutes to run, even for just 24 files, as the site is not the quickest to respond to requests (or perhaps they are now throttling my workstation’s IP?). Note I turned off the printing of the progress bar here, only because this doesn’t play nicely with <strong>knitr</strong>’s capturing of the output. In real use, you’ll want to leave the progress bar on (which it is by default) so you see how long you have to wait till the job is done.</p>
+<p>Once this has finished, we can quickly determine if there were any failures</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="nf">any</span><span class="p">(</span><span class="n">failed</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sapply</span><span class="p">(</span><span class="n">met</span><span class="p">,</span><span class="w"> </span><span class="n">is.character</span><span class="p">))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] FALSE</code></pre>
+</figure>
+<p>If any had failed, the <code>failed</code> logical vector could be used to index into <code>met</code> to extract the URLs that encountered problems, e.g.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">unlist</span><span class="p">(</span><span class="n">met</span><span class="p">[</span><span class="n">failed</span><span class="p">])</span></code></pre>
+</figure>
+<p>If there were no problems, then the components of <code>met</code> can be bound into a data frame using <code>rbind()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">met</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">do.call</span><span class="p">(</span><span class="s2">"rbind"</span><span class="p">,</span><span class="w"> </span><span class="n">met</span><span class="p">)</span></code></pre>
+</figure>
+<p>The data now looks like this</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">head</span><span class="p">(</span><span class="n">met</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">  StationID        Date/Time Year Month Day  Time Data Quality Temp (degC)
+1     51441 2014-01-01 00:00 2014     1   1 00:00       \u0087       -23.3
+2     51441 2014-01-01 01:00 2014     1   1 01:00       \u0087       -23.1
+3     51441 2014-01-01 02:00 2014     1   1 02:00       \u0087       -22.8
+4     51441 2014-01-01 03:00 2014     1   1 03:00       \u0087       -23.3
+5     51441 2014-01-01 04:00 2014     1   1 04:00       \u0087       -24.3
+6     51441 2014-01-01 05:00 2014     1   1 05:00       \u0087       -24.3
+  Temp Flag Dew Point Temp (degC) Dew Point Temp Flag Rel Hum (%)
+1                           -26.3                              77
+2                           -26.1                              77
+3                           -25.8                              77
+4                           -26.3                              77
+5                           -27.1                              78
+6                           -27.0                              79
+  Rel Hum Flag Wind Dir (10s deg) Wind Dir Flag Wind Spd (km/h)
+1                              13          &lt;NA&gt;              22
+2                              12          &lt;NA&gt;              26
+3                              12          &lt;NA&gt;              22
+4                              13          &lt;NA&gt;              18
+5                              13          &lt;NA&gt;              14
+6                               9          &lt;NA&gt;               6
+  Wind Spd Flag Visibility (km) Visibility Flag Stn Press (kPa)
+1                          19.3            &lt;NA&gt;           95.38
+2                          24.1            &lt;NA&gt;           95.38
+3                          24.1            &lt;NA&gt;           95.39
+4                          24.1            &lt;NA&gt;           95.47
+5                          24.1            &lt;NA&gt;           95.56
+6                          24.1            &lt;NA&gt;           95.60
+  Stn Press Flag Hmdx Hmdx Flag Wind Chill Wind Chill Flag
+1                  NA        NA        -35              NA
+2                  NA        NA        -36              NA
+3                  NA        NA        -35              NA
+4                  NA        NA        -34              NA
+5                  NA        NA        -34              NA
+6                  NA        NA        -30              NA
+            Weather
+1 Snow,Blowing Snow
+2 Snow,Blowing Snow
+3 Snow,Blowing Snow
+4 Snow,Blowing Snow
+5              Snow
+6              &lt;NA&gt;</code></pre>
+</figure>
+<p>Yep, still a bit of a mess; some post processing is required if you want tidy <code>names</code> etc. The columns names are hardcoded but retain the messy names as given to them by the Government of Canada’s webmaster. Cleaning up afterwards is remains advised.</p>
+<p>A final note, I could have run this over all the cores in my workstation or even on all the computers in my small computer cluster but I didn’t, instead choosing to run on a single core overnight to get the data we needed. Please be a good netizen if you do use the functions I’ve discussed here as other people will no doubt want to access the Government of Canada’s website. Don’t flood the site with requests!</p>
+<p>If you have any suggestions for improvements or changes, let me know in the comments. The latest versions of the <code>genURLS()</code> and <code>getData()</code> functions can be found in this Github <a href="https://gist.github.com/gavinsimpson/8c13e3c5f905fd67cf85">gist</a>.</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2016/05/24/harvesting-more-canadian-climate-data/";
+  var disqus_title = "Harvesting more Canadian climate data";
+  //var disqus_identifier = "/2016/05/24/harvesting-more-canadian-climate-data";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>24 May 2016</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/api/"><span class="label label-inverse">API</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/data/"><span class="label label-inverse">data</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/climate/"><span class="label label-inverse">climate</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/download/"><span class="label label-inverse">download</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/opendata/"><span class="label label-inverse">opendata</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

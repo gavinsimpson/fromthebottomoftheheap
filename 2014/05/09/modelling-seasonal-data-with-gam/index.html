@@ -1,0 +1,679 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Modelling seasonal data with GAMs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GAM, Time series, modelling, Central England Temperature" />
+
+
+<meta name="description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Modelling seasonal data with GAMs" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2014-05-09T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Modelling seasonal data with GAMs" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2014-05-09T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2014/05/09/modelling-seasonal-data-with-gam/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Modelling seasonal data with GAMs" />
+
+
+<meta name="twitter:description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="09 May 2014"/>
+<meta name="citation_date" content="09 May 2014"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Modelling seasonal data with GAMs"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2014/05/15/identifying-periods-of-change-with-gams/">Identifying periods of change in time series with GAMs</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2014/03/25/file-synchronisation-with-unison/">File synchronisation with Unison</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Modelling seasonal data with GAMs </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>In previous posts (<a href="/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/">here</a> and <a href="/2011/07/21/smoothing-temporally-correlated-data/">here</a>) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.</p>
+<p>First an equation. If we think about a time series where observations were made on a number of occasions within any given year over a number of years, we may want to model the following features of the data</p>
+<ol type="1">
+<li>any trend or long term change in the level of the time series, and</li>
+<li>any seasonal or within-year variation, and</li>
+<li>any variation or interaction in the trend and seasonal features of the data,</li>
+</ol>
+<p>I’m not going to cover point 3 in this post, but it is a relatively simple extension to what I will discuss here. So, considering points 1 and 2 only, we need an equation that describes this model</p>
+<p>\[ y = \beta_0 + f_{\mathrm{seasonal}}(x_1) + f_{\mathrm{trend}}(x_2) + \varepsilon, \quad \varepsilon \sim N(0, \sigma^2\mathbf{\Lambda}) \]</p>
+<p>where \(\beta_0\) is the intercept, \(f_{\mathrm{seasonal}}\) and \(f_{\mathrm{trend}}\) are smooth functions for the seasonal and trend features we’re interested in, and \(x_1\) and \(x_2\) are to covariate data providing some form of time indicators for the within-year and between year times. We can knock off the distributional assumptions and the intercept and this would be very close to the formula we need to stick into a call to <code>gam()</code> from the <strong>mgcv</strong> package. In pseudo code we’d have something like</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x2</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span></code></pre>
+</figure>
+<p>Before we can begin modelling though, we need to identify the data we’ll use for \(x_1\) and \(x_2\). I tend to use the date of observation converted to a numeric variable for my between year data, \(x_2\), <em>if</em> the observation dates can easily be represented in R’s <code>Date</code> class. This class counts the number of days from an <em>epoch</em>, Jan 1st, 1970, with negative values indicating days before this date. Seeing as we’ll probably need a nicely formatted axis for any plots we do and it is easy to convert the <code>Date</code> object into a numeric (integer), this will do nicely. One thing to point out is that the numeric representation can get into some large values which might affect the stability of the model fitting; in such cases you can just divide this number by 100 or 1000 or some such value as this time value is only used to indicate relative position in time of the observations.</p>
+<p>For the within-year or seasonal time variable you could use the month of observation as a decimal value, which is particularly useful if you only have monthly or less frequent data. For more frequent observations I use the day of the year as my time variable. This information is also easily derived from a <code>Date</code> variable using the <code>"%j"</code> date format.</p>
+<h2 id="data-preparation">Data preparation</h2>
+<p>Having identified what data we’ll use, we can get to some analysis. In this post I’m going to use data from the <a href="http://www.metoffice.gov.uk/hadobs/hadcet/">Central England Temperature</a> (CET) time series, one of the longest such records available. The CET data are available for daily observations, and the methods I describe here will certainly handle such data, but to save computing time and memory (you’ll need quite a big chunk of RAM to fit a <code>gamm()</code> to the daily series) I’m just going to use the monthly data series.</p>
+<p>The CET data are available from the <a href="http://www.metoffice.gov.uk/">UK Met Office</a> website and do require a little massaging to get them into a format appropriate for our use</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">CET</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">url</span><span class="p">(</span><span class="s2">"http://www.metoffice.gov.uk/hadobs/hadcet/cetml1659on.dat"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">writeLines</span><span class="p">(</span><span class="n">readLines</span><span class="p">(</span><span class="n">CET</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span><span class="p">))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">MONTHLY MEAN CENTRAL ENGLAND TEMPERATURE (DEGREES C)                                     
+1659-1973 MANLEY (Q.J.R.METEOROL.SOC., 1974)                                             
+1974ON PARKER ET AL. (INT.J.CLIM., 1992)                                                 
+PARKER AND HORTON (INT.J.CLIM., 2005)                                                    
+                                                                                         
+                                                                                         
+           JAN   FEB   MAR   APR   MAY   JUN   JUL   AUG   SEP   OCT   NOV   DEC     YEAR
+ 1659      3.0   4.0   6.0   7.0  11.0  13.0  16.0  16.0  13.0  10.0   5.0   2.0     8.83
+ 1660      0.0   4.0   6.0   9.0  11.0  14.0  15.0  16.0  13.0  10.0   6.0   5.0     9.08
+ 1661      5.0   5.0   6.0   8.0  11.0  14.0  15.0  15.0  13.0  11.0   8.0   6.0     9.75</code></pre>
+</figure>
+<p>There are 6 lines of header info and then the data are in a matrix with rows representing the year and the columns the months, with one extra column containing the derived annual mean temperature. Missing values are also indicated by either a <code>-99.99</code> or <code>-99.9</code>, which we’ll need to take account of. To read the data in and partly process it I use</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">read.table</span><span class="p">(</span><span class="n">CET</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w"> </span><span class="n">skip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">6</span><span class="p">,</span><span class="w"> </span><span class="n">header</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">                   </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">na.string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-99.99</span><span class="p">,</span><span class="w"> </span><span class="m">-99.9</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="n">cet</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="nb">month.abb</span><span class="p">,</span><span class="w"> </span><span class="s2">"Annual"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## remove last row of incomplete data</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cet</span><span class="p">[</span><span class="o">-</span><span class="n">nrow</span><span class="p">(</span><span class="n">cet</span><span class="p">),</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## get rid of the annual too - store for plotting</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">rn</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">as.numeric</span><span class="p">(</span><span class="n">rownames</span><span class="p">(</span><span class="n">cet</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Years</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rn</span><span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">:</span><span class="n">rn</span><span class="p">[</span><span class="nf">length</span><span class="p">(</span><span class="n">rn</span><span class="p">)]</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">annCET</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">[,</span><span class="w"> </span><span class="n">ncol</span><span class="p">(</span><span class="n">cet</span><span class="p">)],</span><span class="w">
+</span><span class="o">+</span><span class="w">                      </span><span class="n">Year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Years</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cet</span><span class="p">[,</span><span class="w"> </span><span class="o">-</span><span class="n">ncol</span><span class="p">(</span><span class="n">cet</span><span class="p">)]</span></code></pre>
+</figure>
+<p>I used <code>fill = TRUE</code> because the final row of the file contains values for the current year, which may be incomplete. I throw this year of data away as it makes the processing easier later but that’s me just being lazy! What I end up with at this point is a data frame looking like this</p>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">     Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+1659   3   4   6   7  11  13  16  16  13  10   5   2
+1660   0   4   6   9  11  14  15  16  13  10   6   5
+1661   5   5   6   8  11  14  15  15  13  11   8   6
+1662   5   6   6   8  11  15  15  15  13  11   6   3
+1663   1   1   5   7  10  14  15  15  13  10   7   5
+1664   4   5   5   8  11  15  16  16  13   9   6   4</code></pre>
+</figure>
+<p>For use in <code>gam()</code> we need the data in long format, with variables for the temperature, and the two time variables. We also need to create some dates. As these are monthly data, I fake a day by setting it to the 15th of the month.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="c1">## stack the data</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">stack</span><span class="p">(</span><span class="n">cet</span><span class="p">)[,</span><span class="m">2</span><span class="o">:</span><span class="m">1</span><span class="p">]</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="n">cet</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Month"</span><span class="p">,</span><span class="s2">"Temperature"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## add in Year and nMonth for numeric month and a proper Date class</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">Year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Year</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">Years</span><span class="p">,</span><span class="w"> </span><span class="n">times</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)),</span><span class="w">
+</span><span class="o">+</span><span class="w">                  </span><span class="n">nMonth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">12</span><span class="p">,</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">Years</span><span class="p">)),</span><span class="w">
+</span><span class="o">+</span><span class="w">                  </span><span class="n">Date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">as.Date</span><span class="p">(</span><span class="n">paste</span><span class="p">(</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">Month</span><span class="p">,</span><span class="w"> </span><span class="s2">"15"</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"-"</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">                  </span><span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"%Y-%b-%d"</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## sort into temporal order</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cet</span><span class="p">[</span><span class="n">with</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="p">(</span><span class="n">Date</span><span class="p">)),</span><span class="w"> </span><span class="p">]</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> 
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## Add in a Time variable</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">Time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">as.numeric</span><span class="p">(</span><span class="n">Date</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">1000</span><span class="p">)</span></code></pre>
+</figure>
+<p>The first line stacks the columns of the data frame creating a 2-column data frame containing the month identifier and the temperature data respectively. After adding some names to the data frame, I add</p>
+<ul>
+<li>a <code>Year</code> variable by repeating the rownames of the <code>cet</code> data frame 12 times, once per month,</li>
+<li>a numeric month variable <code>nMonth</code> by repeating the values <code>1:12</code> as many times as there are years in the data set, which will be used for the within-year or seasonal variable, and</li>
+<li>a <code>Date</code> variable concocted from the <code>Year</code> and <code>Month</code> data.</li>
+</ul>
+<p>The code is a bit tricky as I create a local <code>Year</code> variable whilst assigning the <code>Year</code> variable of the transformed <code>cet</code> data frame (spot the assignment in the first line of the call to <code>transform()</code>).</p>
+<p>Next I make sure the data are in the correct temporal order; this is useful for plotting only. Finally, a <code>Time</code> variable is created which we’ll use for the trend or between-year variable; I scale by 1000 as discussed above. Once this is done, the data look like this</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">head</span><span class="p">(</span><span class="n">cet</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">str</span><span class="p">(</span><span class="n">cet</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">     Month Temperature Year nMonth       Date   Time
+1      Jan           3 1659      1 1659-01-15 -113.6
+356    Feb           4 1659      2 1659-02-15 -113.5
+711    Mar           6 1659      3 1659-03-15 -113.5
+1066   Apr           7 1659      4 1659-04-15 -113.5
+1421   May          11 1659      5 1659-05-15 -113.5
+1776   Jun          13 1659      6 1659-06-15 -113.4</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">'data.frame':   4260 obs. of  6 variables:
+ $ Month      : Factor w/ 12 levels "Apr","Aug","Dec",..: 5 4 8 1 9 7 6 2 12 11 ...
+ $ Temperature: num  3 4 6 7 11 13 16 16 13 10 ...
+ $ Year       : int  1659 1659 1659 1659 1659 1659 1659 1659 1659 1659 ...
+ $ nMonth     : int  1 2 3 4 5 6 7 8 9 10 ...
+ $ Date       : Date, format: "1659-01-15" "1659-02-15" ...
+ $ Time       : num  -114 -114 -114 -113 -113 ...</code></pre>
+</figure>
+<p>and we are good to go. First though, the obligatory time series plot (of the annual data only)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">degree</span><span class="o">*</span><span class="n">C</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">annCET</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"CET"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cet.png" alt="CET annual average temperature time series" /><figcaption>CET annual average temperature time series</figcaption>
+</figure>
+<p>If you plot the full data, you get a mess<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> — try it if you want</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span></code></pre>
+</figure>
+<p>There looks to be some trend in the data and we expect seasonal variation in temperature, as despite plenty of evidence to the contrary, the UK does have a summer and it can snow there from time to time.</p>
+<h2 id="a-model-with-uncorrelated-errors">A model with uncorrelated errors</h2>
+<p>To start our trip down the modelling rabbit hole, I fit an obviously wrong model where I assume the observations are all independent. This serves two purposes;</p>
+<ol type="1">
+<li>We get to run the data through the modelling function <code>gamm()</code> so we see how this goes and can spot errors before we set the thing off with estimating the smooths <em>and</em> the correlation matrix (which can take a lot of time with big data sets), and</li>
+<li>It is worth hammering home the point that you can easily fit noise in the data if you forget to tell the software that the data aren’t independent observations!</li>
+</ol>
+<p>Load <strong>mgcv</strong> and fit the naive model</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">require</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Loading required package: mgcv
+Loading required package: nlme
+This is mgcv 1.7-29. For overview type 'help("mgcv-package")'.</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">           </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">)</span></code></pre>
+</figure>
+<p>which takes about a second on my 2013 Intel Xeon.</p>
+<p>The important thing to note there is the extra arguments passed to the first <code>s()</code> term in the model. <code>k</code> specifies the dimensions of the basis used for the spline. Here I set it to the maximum possible for <code>nMonth</code>, which is 12,the number of unique values. <code>bs</code> allows you to specify the basis type for the smooth term; <code>"cc"</code> indicates a <em>cyclic</em> cubic spline, which we want for the seasonal term as there should be no discontinuity between January and December.</p>
+<h3 id="cyclic-cubic-spline-basis">Cyclic cubic spline basis</h3>
+<p>So what’s a cyclic cubic spline? Well, first let’s look at the standard cubic spline basis</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cubic-spline-example.png" alt="Cubic spline basis functions" /><figcaption>Cubic spline basis functions</figcaption>
+</figure>
+<p>The left-hand plot shows a single basis function centred on a knot at 0.5. The x-axis here is arbitrary, but it would represent the observed covariate data, \(x_2\) say. The vertical dashed lines show the locations of the 5 interior knots plus the two boundary knots. The more knots we have the more complex the fitted spline can be. A cubic spline basis function for a given knot takes a value 1 at its knot location and a value of 0 at all other knots. The figure shows only a single basis function, but there are equivalent functions positioned at each of the other 6 knots.</p>
+<p>When we fit the model, <strong>mgcv</strong> is estimating a coefficient for each of these basis functions. The final spline is given by a weighted sum of the basis functions with the estimated coefficients used as the weights. This is illustrated in the right-hand figure, where I have arbitrarily chosen some coefficient values, and which scale each basis function. The “fitted” spline is shown by the thick black line. The values of this spline are determined by adding up the values of all the basis functions under each point on spline.</p>
+<p>A key point to note here is that there is a large discontinuity in the value taken by the spline (the thick black line) at the ends of the data, at each end of the x-axis on the plot. If <code>x</code> represented something like day of year, or month, that discontinuity would be a bad thing if, as is the case here, the variable of interest (temperature) behaved cyclically.</p>
+<p>This is where the cyclic cubic spline basis comes in. This basis has an additional constraint, which states that there should be no discontinuity at the end points of the spline. In other words, we force the ends of the cyclic spline to join up. This is illustrated below</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cyclic-cubic-spline-example.png" alt="Cyclic cubic spline basis functions" /><figcaption>Cyclic cubic spline basis functions</figcaption>
+</figure>
+<p>This time, to make it clearer, the left hand panel shows a cubic cyclic spline basis function located at a <code>x</code> = 0.167. If you were to wrap the x-axis into a loop by joining the end points the basis function would meet nicely and smoothly at the join. The basis function still takes a value of 1 at its knot and 0 at the other knots, just as before, and there are matching basis functions for each of the knots, they’re just not shown in this panel.</p>
+<p>The right hand panel shows how the “fitted” spline is derived as a weighted sum of the basis functions underneath any point on the spline. Because the basis functions all smoothly join at the end points of <code>x</code>, so does the fitted cyclic cubic spline.</p>
+<p>Similar constraints can be put on other spline types. <strong>mgcv</strong> has cyclic <em>p</em> splines as well as the cyclic cubic splines I showed here for example.</p>
+<h3 id="back-to-our-model">Back to our model</h3>
+<p>With that out of the way we can look at our model fit</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">summary</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">gam</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gaussian 
+Link function: identity 
+
+Formula:
+Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   9.2226     0.0212     435   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+           edf Ref.df      F p-value    
+s(nMonth) 9.71  10.00 4664.1  &lt;2e-16 ***
+s(Time)   8.15   8.15   29.7  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.917  Scale est. = 1.9117    n = 4260</code></pre>
+</figure>
+<p>which looks fine but is totally spurious because we didn’t account for the dependence in the data. Plotting the model terms is illustrative of what can go wrong if you forget to do this</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model.png" alt="Smooth terms for the naive model assuming uncorrelated errors" /><figcaption>Smooth terms for the naive model assuming uncorrelated errors</figcaption>
+</figure>
+<p>The figure shows the two splines; the one on the left is the seasonal term, the cyclic cubic spline (note how the ends join nicely!), and the one on the right is the trend term (note how ridiculously wiggly this is!) The splines are on very different scales (<code>scale = 0</code>) which illustrates the relative degrees of variation in the seasonal and trend term; there is about 1-1.5 degree rise in temperature over the period, but within a given year there is about 12 degrees variation in temperature, <em>on average</em>. Obviously, the actual data vary around these values and that is the unexplained variance.</p>
+<p>We should look at the residuals of this model too, here using the (partial) autocorrelation function</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">acf</span><span class="p">(</span><span class="n">resid</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">lme</span><span class="p">),</span><span class="w"> </span><span class="n">lag.max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">36</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ACF"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pacf</span><span class="p">(</span><span class="n">resid</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">lme</span><span class="p">),</span><span class="w"> </span><span class="n">lag.max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">36</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pACF"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model-residuals.png" alt="ACF and pACF of the residuals from the naive model" /><figcaption>ACF and pACF of the residuals from the naive model</figcaption>
+</figure>
+<p>As expected, the is substantial residual autocorrelation in the data that even the wiggly trend term couldn’t account for. The shapes of the ACF and the <em>p</em>ACF suggest an AR(<em>p</em>) model might be needed…</p>
+<h2 id="models-with-correlated-errors">Models with correlated errors</h2>
+<p>It looks like some low-order AR model is needed, so I fit three models; and AR(1), an AR(2), and an AR(3). I turn on verbose output and so have to reset some other things too in the <code>ctrl</code> object. Note that these take about 5–6 seconds each to converge on my Xeon workstation.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">ctrl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">niterEM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">msVerbose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">optimMethod</span><span class="o">=</span><span class="s2">"L-BFGS-B"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> 
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## AR(1)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">            </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="o">|</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">            </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> 
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## AR(2)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">            </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="o">|</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">            </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> 
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## AR(3)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">            </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="o">|</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">            </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)</span></code></pre>
+</figure>
+<p>It is important to note what the <code>correlation</code> argument is doing here: <code>corARMA(form = ~ 1|Year, p = x)</code> means fit an ARMA process to the residuals, where <code>p</code> indicates the order for the AR part of the ARMA model, and <code>form = ~ 1|Year</code> means that the ARMA is nested <em>within</em> each year. This speeds up fitting no end, but is potentially risky as we don’t consider residual variation from year to year.</p>
+<p>We should probably do a lot more model checking, but for now, I cut to the chase and see which of the candidate models fits the data best. This is done via a generalized likelihood ratio test via the <code>anova()</code> method for <code>"lme"</code> objects. This is a valid comparison because the models are nested; we can go from the AR(3) to the AR(1) by setting some of the AR coefficients to 0. Technically, the models are also varying in terms of the coefficient estimates for the splines terms; we probably ought to fix those at some values whilst we choose the AR structure, but I ignore that here.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">anova</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">m1</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">m2</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">m3</span><span class="o">$</span><span class="n">lme</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">       Model df   AIC   BIC logLik   Test L.Ratio p-value
+m$lme      1  5 14941 14973  -7466                       
+m1$lme     2  6 14657 14695  -7323 1 vs 2  286.35  &lt;.0001
+m2$lme     3  7 14631 14676  -7309 2 vs 3   27.88  &lt;.0001
+m3$lme     4  8 14631 14682  -7307 3 vs 4    2.52  0.1123</code></pre>
+</figure>
+<p>The AR(1) provides a substantial increase in <em>fit</em> over the naive model, and the AR(2) provides a further significant increase in the fit. There is very little improvement in moving to the AR(3) however.</p>
+<p>Plotting the AR(2) model terms shows how over-fitted the naive model with uncorrelated errors was in terms of the trend term, which is now much smoother and more in keeping with our expectations</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-ar2-model-terms.png" alt="Smooth terms for the best fitting GAM model with AR(2)" /><figcaption>Smooth terms for the best fitting GAM model with AR(2)</figcaption>
+</figure>
+<p>Looking now at the normalized residuals (which take into account the covariance matrix of the residuals), we see no important or significant residual autocorrelation suggesting that the AR(2) model is sufficient and we can, to some degree, draw inference from this model.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">resid</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"normalized"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">acf</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">lag.max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">36</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ACF - AR(2) errors"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pacf</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">lag.max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">36</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pACF- AR(2) errors"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-acf-residuals-ar2-model.png" alt="ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix" /><figcaption>ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix</figcaption>
+</figure>
+<h2 id="extracting-individual-model-terms">Extracting individual model terms</h2>
+<p>The fitted GAM model object contains a lot of information that can be used to interrogate the model. For the purposes of this post I’m interested in the trend terms, so I can extract information about the contributions to the fitted values of our chosen model by getting <strong>mgcv</strong> to spit out this information using <code>predict()</code> and <code>type = "terms"</code>. In the code below, I do this for each of the four models we’ve fitted, predicting for 200 evenly-spaced values over the range of the date. Note <code>want</code> picks out the 200 values from the observed data as these are evenly spaced. For more complex data you may need to be a bit more clever about how you choose these values.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">nrow</span><span class="p">(</span><span class="n">cet</span><span class="p">),</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">200</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">              </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Time</span><span class="p">[</span><span class="n">want</span><span class="p">],</span><span class="w"> </span><span class="n">Date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Date</span><span class="p">[</span><span class="n">want</span><span class="p">],</span><span class="w">
+</span><span class="o">+</span><span class="w">                         </span><span class="n">nMonth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nMonth</span><span class="p">[</span><span class="n">want</span><span class="p">]))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> 
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## predict trend contributions</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w">  </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m1</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m3</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> 
+</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## combine with the predictions data, including fitted and SEs</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">                   </span><span class="n">p</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w">  </span><span class="n">se</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w">
+</span><span class="o">+</span><span class="w">                   </span><span class="n">p1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p1</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">se1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p1</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w">
+</span><span class="o">+</span><span class="w">                   </span><span class="n">p2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p2</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">se2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p2</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w">
+</span><span class="o">+</span><span class="w">                   </span><span class="n">p3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p3</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">se3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p3</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">])</span></code></pre>
+</figure>
+<p>Note that it doesn’t matter what months get select in the 200 values as the month effect is handle by the other spline term; here we get the contribution for the trend which is based on the <code>Time</code> variable only. This would need to done be differently if you allowed the seasonal and trend splines to <em>interact</em>; I’ll look at this is a future post at some point.</p>
+<p>Now I am ready to plot the estimated trends for the four models fitted</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">mar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">5</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">0.1</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">p2</span><span class="p">,</span><span class="w"> </span><span class="n">p3</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylim</span><span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">floor</span><span class="p">(</span><span class="n">ylim</span><span class="p">[</span><span class="m">1</span><span class="p">])</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylim</span><span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">ceiling</span><span class="p">(</span><span class="n">ylim</span><span class="p">[</span><span class="m">2</span><span class="p">])</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">degree</span><span class="o">*</span><span class="n">C</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">centred</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">Temperature</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p</span><span class="w">  </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p1</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p2</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p3</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">legend</span><span class="p">(</span><span class="s2">"topleft"</span><span class="p">,</span><span class="w">
+</span><span class="o">+</span><span class="w">        </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Uncorrelated Errors"</span><span class="p">,</span><span class="w"> </span><span class="n">paste0</span><span class="p">(</span><span class="s2">"AR("</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="s2">") Errors"</span><span class="p">)),</span><span class="w">
+</span><span class="o">+</span><span class="w">        </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"black"</span><span class="p">,</span><span class="s2">"red"</span><span class="p">,</span><span class="s2">"blue"</span><span class="p">,</span><span class="s2">"forestgreen"</span><span class="p">),</span><span class="w">
+</span><span class="o">+</span><span class="w">        </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">1</span><span class="p">))</span><span class="w">
+</span><span class="o">&gt;</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">op</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-model-trends.png" alt="Comparison of the fitted trend components for the four models considered" /><figcaption>Comparison of the fitted trend components for the four models considered</figcaption>
+</figure>
+<p>This plot nicely illustrates the reduction in wiggliness of the estimated trend in the AR(2) and AR(3) models, and how similar the two higher-order AR models are in terms of their trend estimates.</p>
+<p>I’ll leave things at this point; in the next post I’ll look at how we can look at where the estimated trend is changing in a statistically significant fashion by interrogating the fitted GAM in deeper and more devious ways.</p>
+<h2 id="disclaimer">Disclaimer</h2>
+<p>Don’t over interpret the model fits here; they were done to illustrate how to get <strong>mgcv</strong> to fit models to seasonal data. If you were doing this in anger for a real analysis then we’d want to look in a lot more detail at unmodelled features such as changes in the seasonal temperature with the trend and do a lot more in terms of model diagnostics. Such things are beyond the scope of this particular post, but I will pick some of these issues up in later postings as time permits.</p>
+<p>Note also that the precision with which the data are reported early on in the series is less than that for more recent decades. This potentially might affect the variance of the series; the data might seem less variable earlier on because they are not recorded to the same level of precision as later values. We could investigate this and also other peculiarities of this particular data set and how it was collated by going back to the references cited in the raw data file and adjusting the model to account for any idiosyncrasies.</p>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>It’s not a mess really; the problem is that there are so many years of data that the years are all squished up tight and, coupled with the magnitude of the seasonal variation, this leads to an irregular black band obscuring everything unless you have a very wide graphics device.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2014/05/09/modelling-seasonal-data-with-gam/";
+  var disqus_title = "Modelling seasonal data with GAMs";
+  //var disqus_identifier = "/2014/05/09/modelling-seasonal-data-with-gam";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>09 May 2014</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/time-series/"><span class="label label-inverse">Time series</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/modelling/"><span class="label label-inverse">modelling</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/central-england-temperature/"><span class="label label-inverse">Central England Temperature</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

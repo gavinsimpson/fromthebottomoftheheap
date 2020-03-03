@@ -1,0 +1,523 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Comparing smooths in factor-smooth interactions II</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GAM, smooths, factor-smooth interactions, mgcv, difference smooths" />
+
+
+<meta name="description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by factor. Using the \(Xp\) matrix approach, we previously saw that we can post-process the model to generate estimates for pairwise differences of smooths. However, the by variable approach of estimating a separate smooth for each level of the factor my be quite inefficient in terms of degrees of freedom used by the model. This is especially so in situations where the estimated curves are quite similar but wiggly; why estimate many separate wiggly smooths when one, plus some simple difference smooths, will do the job just as well? In this post I look at an alternative to estimating separate smooths using an ordered factor for the by variable.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Comparing smooths in factor-smooth interactions II" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2017-12-14T10:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Comparing smooths in factor-smooth interactions II" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2017-12-14T10:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2017/12/14/difference-splines-ii/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by factor. Using the \(Xp\)..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Comparing smooths in factor-smooth interactions II" />
+
+
+<meta name="twitter:description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor va..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="14 Dec 2017"/>
+<meta name="citation_date" content="14 Dec 2017"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Comparing smooths in factor-smooth interactions II"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2018/04/21/fitting-gams-with-brms/">Fitting GAMs with brms: part 1</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2017/10/19/first-steps-with-mrf-smooths/">First steps with MRF smooths</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Comparing smooths in factor-smooth interactions II <small>ordered factors</small></h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>In a <a href="https://www.fromthebottomoftheheap.net/2017/10/10/difference-splines-i/">previous post</a> I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using <code>s()</code>’s <code>by</code> argument. When a common-or-garden factor variable is passed to <code>by</code>, <code>gam()</code> estimates a separate smooth for each <em>level</em> of the <code>by</code> factor. Using the <span class="math inline">\(Xp\)</span> matrix approach, we previously saw that we can post-process the model to generate estimates for pairwise differences of smooths. However, the <code>by</code> variable approach of estimating a separate smooth for each level of the factor my be quite inefficient in terms of degrees of freedom used by the model. This is especially so in situations where the estimated curves are quite similar but wiggly; why estimate many separate wiggly smooths when one, plus some simple difference smooths, will do the job just as well? In this post I look at an alternative to estimating separate smooths using an <em>ordered</em> factor for the <code>by</code> variable.</p>
+<p>When an <em>ordered</em> factor is passed to <code>by</code>, <strong>mgcv</strong> does something quite different to the model I described previously, although the end results should be similar. What <strong>mgcv</strong> does in the <em>ordered</em> factor case is to fit <span class="math inline">\(L-1\)</span> <em>difference smooths</em>, where <span class="math inline">\(l = 1, \dots, L\)</span> are the levels of the factor and <span class="math inline">\(L\)</span> the number of levels. These smooths model the difference between the smooth estimated for the reference level and the <span class="math inline">\(l\)</span>th level of the factor. Additionally, the <code>by</code> variable smooth doesn’t itself estimate the smoother for the reference level; so we are required to add a second smooth to the model that estimates that particular smooth.</p>
+<p>In pseudo code our model would be something like, for ordered factor <code>of</code>,</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1">model &lt;-<span class="st"> </span><span class="kw">gam</span>(y <span class="op">~</span><span class="st"> </span>of <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(x) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(x, <span class="dt">by =</span> of), <span class="dt">data =</span> df)</a></code></pre></div>
+<p>As with any <code>by</code> factor smooth we are required to include a parametric term for the factor because the individual smooths are centered for identifiability reasons. The first <code>s(x)</code> in the model is the smooth effect of <code>x</code> on the <em>reference</em> level of the ordered factor <code>of</code>. The second smoother, <code>s(x, by = of)</code> is the set of <span class="math inline">\(L-1\)</span> <em>difference</em> smooths, which model the smooth differences between the reference level smoother and those of the individual levels (excluding the reference one).</p>
+<p>Note that this model still estimates a separator smoother for each level of the ordered factor, it just does it in a different way. The smoother for the reference level is estimated via contribution from <code>s(x)</code> <em>only</em>, whilst the smoothers for the other levels are formed from the additive combination of <code>s(x)</code> and the relevant difference smoother from the set created by <code>s(x, by = of)</code>. This is analogous to the situation we have when estimating an ANOVA using the default contrasts and <code>lm()</code>; the intercept is then an estimate of the mean response for the reference level of the factor, and the remaining model coefficients estimate the <em>differences</em> between the mean response of the reference level and that of the other factor levels.</p>
+<p>This <em>ordered-factor-smooth interaction</em> is most directly applicable to situations where you have a reference category and you are interested in difference between that category and the other levels. If you are interested in pair-wise comparison of smooths you could use the ordered factor approach — it may be more parsimonious than estimating separate smoothers for each level — but you will still need to post-process the results in a manner similar to that described in the previous post<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</p>
+<p>To illustrate the ordered factor difference smooths, I’ll reuse the example from the <em>Geochimica</em> <a href="http://doi.org/10.1016/j.gca.2010.12.026">paper</a> I wrote with my colleagues at UCL, Neil Rose, Handong Yang, and Simon Turner <span class="citation" data-cites="Rose2012-pl">(Rose et al., 2012)</span>, and which formed the basis for the previous post.</p>
+<p>Neil, Handong, and Simon had collected sediment cores from several Scottish lochs and measured metal concentrations, especially of lead (Pb) and mercury (Hg), in sediment slices covering the last 200 years. The aim of the study was to investigate sediment profiles of these metals in three regions of Scotland; north east, north west, and south west. A pair of lochs in each region was selected, one in a catchment with visibly eroding peat/soil, and the other in a catchment without erosion. The different regions represented variations in historical deposition levels, whilst the hypothesis was that cores from eroded and non-eroded catchments would show differential responses to reductions in emissions of Pb and Hg to the atmosphere. The difference, it was hypothesized, was that the eroding soil acts as a secondary source of pollutants to the lake. You can read more about it in the <a href="http://doi.org/10.1016/j.gca.2010.12.026">paper</a> — if you’re interested but don’t have access to the journal, send me an email and I’ll pass on a pdf.</p>
+<p>Below I make use of the following packages</p>
+<ul>
+<li><strong>readr</strong></li>
+<li><strong>dplyr</strong></li>
+<li><strong>ggplot2</strong>, and</li>
+<li><strong>mgcv</strong></li>
+</ul>
+<p>You’ll more than likely have these installed, but if you get errors about missing packages when you run the code chunk below, install any missing packages and run the chunk again</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s1">'readr'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'dplyr'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'ggplot2'</span><span class="p">)</span><span class="w">
+</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'mgcv'</span><span class="p">)</span></code></pre>
+</figure>
+<p>Next, load the data set and convert the <code>SiteCode</code> variable to a factor</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">uri</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s1">'https://gist.githubusercontent.com/gavinsimpson/eb4ff24fa9924a588e6ee60dfae8746f/raw/geochimica-metals.csv'</span><span class="w">
+</span><span class="n">metals</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">read_csv</span><span class="p">(</span><span class="n">uri</span><span class="p">,</span><span class="w"> </span><span class="n">skip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">col_types</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s1">'ciccd'</span><span class="p">))</span><span class="w">
+</span><span class="n">metals</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">mutate</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span><span class="w"> </span><span class="n">SiteCode</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factor</span><span class="p">(</span><span class="n">SiteCode</span><span class="p">))</span></code></pre>
+</figure>
+<p>This is a subset of the data used in <span class="citation" data-cites="Rose2012-pl">Rose et al. (2012)</span> — the Hg concentrations in the sediments for just three of the lochs are included here in the interests of simplicity. The data set contains 5 variables</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">metals</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 44 x 5
+   SiteCode  Date SoilType Region        Hg
+     &lt;fctr&gt; &lt;int&gt;    &lt;chr&gt;  &lt;chr&gt;     &lt;dbl&gt;
+ 1     CHNA  2000     thin     NW  3.843399
+ 2     CHNA  1990     thin     NW  5.424618
+ 3     CHNA  1980     thin     NW  8.819730
+ 4     CHNA  1970     thin     NW 11.417457
+ 5     CHNA  1960     thin     NW 16.513540
+ 6     CHNA  1950     thin     NW 16.512047
+ 7     CHNA  1940     thin     NW 11.188840
+ 8     CHNA  1930     thin     NW 11.622222
+ 9     CHNA  1920     thin     NW 13.645853
+10     CHNA  1910     thin     NW 11.181711
+# ... with 34 more rows</code></pre>
+</figure>
+<ul>
+<li><code>SiteCode</code> is a factor indexing the three lochs, with levels <code>CHNA</code>, <code>FION</code>, and <code>NODH</code>,</li>
+<li><code>Date</code> is a numeric variable of sediment age per sample,</li>
+<li><code>SoilType</code> and <code>Region</code> are additional factors for the (natural) experimental design, and</li>
+<li><code>Hg</code> is the response variable of interest, and contains the Hg concentration of each sediment sample.</li>
+</ul>
+<p>Neil gave me permission to make these data available openly should you want to try this approach out for yourself. If you make use of the data for other purposes, please cite the source publication <span class="citation" data-cites="Rose2012-pl">(Rose et al., 2012)</span> and recognize the contribution of the data creators; Handong Yang, Simon Turner, and Neil Rose.</p>
+<p>To proceed, we need to create an ordered factor. Here I’m going to use the <code>SoilType</code> variable as that is easier to relate to conditions of the soil (rather than the Site Code I used in the previous post). I set the <code>non-eroded</code> level to be the reference and as such the GAM will estimate a full smooth for that level and then smooth differences between the <code>non-eroded</code>, and each of the <code>eroded</code> and <code>thin</code> lakes.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">metals</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">mutate</span><span class="p">(</span><span class="n">metals</span><span class="p">,</span><span class="w">
+                 </span><span class="n">oSoilType</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ordered</span><span class="p">(</span><span class="n">SoilType</span><span class="p">,</span><span class="w"> </span><span class="n">levels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s1">'non-eroded'</span><span class="p">,</span><span class="s1">'eroded'</span><span class="p">,</span><span class="s1">'thin'</span><span class="p">)))</span></code></pre>
+</figure>
+<p>The ordered-factor GAM is fitted to the three lochs using the following</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">Hg</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">oSoilType</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Date</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">oSoilType</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">metals</span><span class="p">,</span><span class="w">
+         </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'REML'</span><span class="p">)</span></code></pre>
+</figure>
+<p>and the resulting smooths can be drawn using the <code>plot()</code> method</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">shade</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">seWithMean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/difference-smooths-ii-plot-smooths-1.png" alt="Estimated smooth trend for the non-eroded site (top, left), and difference smooths reflecting estimated differences between the non-eroded site and the eroded site (top, right) and thin soil site (bottom, left), respectively." /><figcaption>Estimated smooth trend for the non-eroded site (top, left), and difference smooths reflecting estimated differences between the non-eroded site and the eroded site (top, right) and thin soil site (bottom, left), respectively.</figcaption>
+</figure>
+<p>The smooth in the top left is the reference smooth trend for the <code>non-eroded</code> site. The other two smooths are the difference smooths between the <code>non-eroded</code> and <code>eroded</code> sites (top right).</p>
+<p>It is immediately clear that the difference between the non-eroded and eroded sites is not significant under this model. The estimated difference is linear, which suggests the trend in the eroded site is stronger than the one estimated for the non-eroded site. However, this difference is not so large as to be an identifiably different trend.</p>
+<p>The difference smooth for the thin soil site is considerably different to that estimated for the non-eroded site; the principal difference being the much reduced trend in the thin soil site, as indicated by the difference smooth acting in opposition to the estimated trend for the non-eroded site.</p>
+<p>A nice feature of the ordered factor approach is that inference on these difference can be performed formally and directly using the <code>summary()</code> output of the estimated GAM</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gaussian 
+Link function: identity 
+
+Formula:
+Hg ~ oSoilType + s(Date) + s(Date, by = oSoilType)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)  13.2231     0.6789  19.478  &lt; 2e-16 ***
+oSoilType.L  -1.6948     1.1608  -1.460  0.15399    
+oSoilType.Q  -4.2847     1.1990  -3.573  0.00114 ** 
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+                          edf Ref.df      F  p-value    
+s(Date)                 4.843  5.914 10.862 2.67e-07 ***
+s(Date):oSoilTypeeroded 1.000  1.000  0.471    0.498    
+s(Date):oSoilTypethin   3.047  3.779 10.091 1.84e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =   0.76   Deviance explained = 82.1%
+-REML =  126.5  Scale est. = 20.144    n = 44</code></pre>
+</figure>
+<p>The impression we formed about the differences in trends are reinforced with actual test statistics; this is a clear advantage of the ordered-factor approach <em>if</em> your problem suits this <em>different from reference</em> situation.</p>
+<p>One feature to note, because we used an ordered factor, the parametric term for <code>oSoilType</code> uses polynomial contrasts: the <code>.L</code> and <code>.Q</code> refer to the linear and quadratic terms used to represent the factor. This is not as easy to identify differences in mean Hg concentration. If you want to retain that readily interpreted parameterisation, use the <code>SoilType</code> factor for the parametric part:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">Hg</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">SoilType</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Date</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">oSoilType</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">metals</span><span class="p">,</span><span class="w">
+         </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'REML'</span><span class="p">)</span><span class="w">
+</span><span class="n">summary</span><span class="p">(</span><span class="n">m</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gaussian 
+Link function: identity 
+
+Formula:
+Hg ~ SoilType + s(Date) + s(Date, by = oSoilType)
+
+Parametric coefficients:
+                   Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)          16.722      1.213  13.788 4.88e-15 ***
+SoilTypenon-eroded   -4.049      1.684  -2.405 0.022115 *  
+SoilTypethin         -6.446      1.681  -3.835 0.000553 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+                          edf Ref.df      F  p-value    
+s(Date)                 4.843  5.914 10.862 2.67e-07 ***
+s(Date):oSoilTypeeroded 1.000  1.000  0.471    0.498    
+s(Date):oSoilTypethin   3.047  3.779 10.091 1.84e-05 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =   0.76   Deviance explained = 82.1%
+-REML = 125.95  Scale est. = 20.144    n = 44</code></pre>
+</figure>
+<p>Now the output in the parametric terms section is easier to interpret yet we retain the behavior of the reference smooth plus difference smooths part of the fitted GAM.</p>
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references">
+<div id="ref-Rose2012-pl">
+<p>Rose, N. L., Yang, H., Turner, S. D., and Simpson, G. L. (2012). An assessment of the mechanisms for the transfer of lead and mercury from atmospherically contaminated organic soils to lake sediments with particular reference to scotland, UK. <em>Geochimica et cosmochimica acta</em> 82, 113–135. doi:<a href="https://doi.org/10.1016/j.gca.2010.12.026">10.1016/j.gca.2010.12.026</a>.</p>
+</div>
+</div>
+<section class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Except now you need to be sure to include the right set of basis functions that correspond to the pair of levels you want to compare. <em>You can’t do that with the function I included in that post; it requires something a bit more sophisticated, but the principles are the same</em>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+</ol>
+</section>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2017/12/14/difference-splines-ii/";
+  var disqus_title = "Comparing smooths in factor-smooth interactions II";
+  //var disqus_identifier = "/2017/12/14/difference-splines-ii";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>14 December 2017</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/smooths/"><span class="label label-inverse">smooths</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/factor-smooth-interactions/"><span class="label label-inverse">factor-smooth interactions</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/mgcv/"><span class="label label-inverse">mgcv</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/difference-smooths/"><span class="label label-inverse">difference smooths</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

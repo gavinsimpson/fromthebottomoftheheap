@@ -1,0 +1,426 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>A new default plot for multivariate dispersions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="Base graphics, Plot, R, Package, Vegan" />
+
+
+<meta name="description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity of variances. In improving the default plot and allowing customisation of plot features, I was reminded of how much I dislike programming plot functions that use base graphics. But don’t worry, this isn’t going to degenerate into a ggplot love-in nor a David Robinson-esque dig at Jeff Leek.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="A new default plot for multivariate dispersions" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2016-04-17T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="A new default plot for multivariate dispersions" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2016-04-17T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2016/04/17/new-plot-default-for-betadisper/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity of variances. In improving the default plot and..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="A new default plot for multivariate dispersions" />
+
+
+<meta name="twitter:description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti A..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="17 Apr 2016"/>
+<meta name="citation_date" content="17 Apr 2016"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="A new default plot for multivariate dispersions"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2016/05/24/harvesting-more-canadian-climate-data/">Harvesting more Canadian climate data</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2016/04/10/loess-revisited/">LOESS revisited</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>A new default plot for multivariate dispersions <small>tribulations of base graphics programming</small></h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the <code>plot</code> method for <code>betadisper()</code> in the <strong>vegan</strong> package. <code>betadisper()</code> is an implementation of Marti Anderson’s <span class="smallcaps">Permdisp</span> method, a multivariate analogue of Levene’s test for homogeneity of variances. In improving the default plot and allowing customisation of plot features, I was reminded of how much I dislike programming plot functions that use base graphics. But don’t worry, this isn’t going to degenerate into a <strong>ggplot</strong> love-in nor a <a href="http://varianceexplained.org/r/why-I-use-ggplot2/">David Robinson-esque dig</a> at <a href="http://simplystatistics.org/2016/02/11/why-i-dont-use-ggplot2/">Jeff Leek</a>.</p>
+<p>The original <code>plot</code> method for <code>betadisper()</code> hardcoded all the linetypes, colours etc for features on the plot. I didn’t mind this on bit; ordination plots are difficult to programme, and, to get anything half-way publishable, the user will usually need to build a plot up from component parts using the low-level tools we provide. Also, it’s kind of a theme in <strong>vegan</strong> to provide a useful, but not neccessarily pretty, default plot for our <code>plot</code> methods, whilst allowing for all manner of customisation via lower level methods like <code>points()</code> and <code>lines()</code>, plus custom tools such as <code>ordiellipse()</code> and <code>ordiarrows()</code>.</p>
+<p>However, in practice users it seems aren’t always satisfied with this situation and expect default plots to be, well, <em>more</em>.</p>
+<p>In its original incarnation, <code>plot.betadisper()</code> showed data points and group centroids embedded in a principal coordinates-derived Euclidean space, with convex hulls enclosing each group’s data points and line segments joining data points with their respective centroid. Centroids were in red, segments blue, and hulls black, all of which were hard-coded. More egregiously, the plot didn’t provide any indication of which group was which. I was OK with this as the principal coordinates plot was only really meant as a visualisation of what the method did; other plots and analyses that we provided in <strong>vegan</strong> were needed to assess significance of differences in dispersions etc.</p>
+<p>There was nothing stopping me, however, from providing a more featureful version with full user control over the various aspects of the plot. Nothing that is except a deep reluctance to write — in the first place — and then subsequently maintain a function with a gabillion tortuously named arguments to differentiate the half dozen settings of <code>cex</code> <em>et al</em> for different features.</p>
+<p>There’s a real trade off between flexibility and complexity in <code>plot</code> methods like this. The situation is much easier to manage with lower-level functions to draw the individual features of the plot; invariably each lower-level tool requires a smaller subset of parameters, and if you code your function well, you can usually achieve all you need by passing <code>...</code> on to the low-level base graphics functions your function uses. You can’t do this with a <code>plot</code> method that combines several lower-level features into a single plot; if you want to allow the user to independently control the colour of three separate plot features you’re going to need three different variations on the argument <code>col</code>. Multiply that by all the parameters you want to allow the user to tweak, and you have the recipe for a mess. Either that, or you need to accept lists of parameters for each feature, which aren’t exactly intuitive for casual users.</p>
+<p>With the new <code>plot.betadisper()</code> method I took a compromise position, allowing some additional flexibility whilst limiting the argument bloat that is an unfortunate side effect of high-level base graphics <code>plot</code> methods.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## you'll need the development version of vegan from github for this</span><span class="w">
+</span><span class="c1">## devtools::install_github("vegandevs/vegan")</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s2">"vegan"</span><span class="p">)</span><span class="w">
+</span><span class="n">args</span><span class="p">(</span><span class="n">vegan</span><span class="o">:::</span><span class="n">plot.betadisper</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">function (x, axes = c(1, 2), cex = 0.7, pch = seq_len(ng), col = NULL, 
+    lty = "solid", lwd = 1, hull = TRUE, ellipse = FALSE, ellipse.type = c("sd", 
+        "se"), ellipse.conf = NULL, segments = TRUE, seg.col = "grey", 
+    seg.lty = lty, seg.lwd = lwd, label = TRUE, label.cex = 1, 
+    ylab, xlab, main, sub, ...) 
+NULL</code></pre>
+</figure>
+<p>Michael Friendly <a href="https://github.com/vegandevs/vegan/pull/165">supplied code</a> to allow some of the original plotting parameters to take vectors, one per group to facilitate their differentiation. I extended this to allow couple more standard parameters to be set by the user. Rather than have separate settings for convex hulls and confidence ellipses, both use the same general parameters. Only the line segments between data points and their centroid get any special treatment, in the main because they add quite of lot of components to the plot and being able to style them to sit in the background is quite useful.</p>
+<p>We’ll look at the new plot using the main example in <code>?betadisper</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">data</span><span class="p">(</span><span class="n">varespec</span><span class="p">)</span><span class="w">                  </span><span class="c1"># load example data </span><span class="w">
+</span><span class="n">dis</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">vegdist</span><span class="p">(</span><span class="n">varespec</span><span class="p">)</span><span class="w">        </span><span class="c1"># Bray-Curtis distances between samples</span><span class="w">
+
+</span><span class="c1">## First 16 sites grazed, remaining 8 sites ungrazed</span><span class="w">
+</span><span class="n">groups</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">factor</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="nf">rep</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">16</span><span class="p">),</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">8</span><span class="p">)),</span><span class="w"> </span><span class="n">labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"grazed"</span><span class="p">,</span><span class="s2">"ungrazed"</span><span class="p">))</span><span class="w">
+
+</span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">betadisper</span><span class="p">(</span><span class="n">dis</span><span class="p">,</span><span class="w"> </span><span class="n">groups</span><span class="p">)</span><span class="w">  </span><span class="c1"># Calculate multivariate dispersions</span></code></pre>
+</figure>
+<p>Given <code>mod</code> the <code>plot</code> method produces a labelled plot with convex hulls and line segments</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/new-plot-default-for-betadisper-default-plot-1.png" alt="The new default plot produced by plot.betadisper()" /><figcaption>The new default plot produced by <code>plot.betadisper()</code></figcaption>
+</figure>
+<p>Also at the <a href="https://github.com/vegandevs/vegan/issues/166">suggestion</a> of Michael Friendly, I added code to draw confidence ellipses, of which there are several flavours</p>
+<ul>
+<li>standard deviation ellipses</li>
+<li>standard error ellipses</li>
+</ul>
+<p>with the default being to draw a 1 standard deviations ellipse (<code>ellipse.conf</code> controls how many standard deviations or errors are drawn, or which 1 - α confidence ellipse is drawn.)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">hull</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">ellipse</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/new-plot-default-for-betadisper-plot-with-confidence-intervals-1.png" alt="An alternate plot produced by plot.betadisper() showing 1 standard deviation ellipses about the group medians." /><figcaption>An alternate plot produced by <code>plot.betadisper()</code> showing 1 standard deviation ellipses about the group medians.</figcaption>
+</figure>
+<p>As a default plot, the new version is lot nicer and affords the user a reasonable level of flexibility to customise the plot without the number of arguments exploding uncontrollably. The code used to produce this is now a good deal more complex and because I grafted it on to the existing code it probably isn’t a clean or efficient as it could be.</p>
+<p>The new function also reaffirms my dislike of providing high-level plot functions for a package that uses base graphics. As a means for producing plots, I like base graphics, for certain things. However, I’m also comfortable building plots up from low-level parts and can easily write code to quickly produce the plot I want. Clearly, from the emails and questions I receive, not all the users of <code>betadisper()</code> are so able or inclined. Providing a reasonable level of customisation to a higher level plot using base graphics is an exercise in tediousness and inelegance. It doesn’t look <em>nice</em> to add dozens of arguments just to enable the user to tweak a dozen tiny features of the plot. I also find it demotivating writing code like this and the accompanying documentation.</p>
+<p>In this regard, <strong>ggplot</strong> is a much better system for producing customisable higher-level plots. All of the code for handling grouping, colours, line types etc is built into aesthetics and geoms, and a theme or customised palette or scale (such as the increasingly popular one supplied by the <strong>viridis</strong> package) allows a concise and principled way of changing the look and feel of a plot that tranfers across <em>all</em> plots created using <strong>ggplot</strong>. If you want to customise <code>plot.betadisper</code>’s output, you need to learn the half dozen particular arguments that I chose to implement. Yet once learned are these skills useful elsewhere? If you’re lucky, you can expect some semblance of consistency across a package, but beyond that, the user ends up having to learn the particulars of the plotting functions in each of the packages they end up using.</p>
+<p>This is wasted effort and a considerable obstacle to overcome as a new R user. It’s taken me a while — largely because on its own <strong>ggplot</strong> lacks features needed for every-day use by an academic — to realise this, but I’m glad I have. If anything, whilst I am pleased with the changes made to <code>plot.betadisper()</code>, my resolve to spend more time working on <strong>ggvegan</strong> over the summer has strengthened as a direct result of writing this base graphics code.</p>
+<p>I never expected to find myself writing that…</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2016/04/17/new-plot-default-for-betadisper/";
+  var disqus_title = "A new default plot for multivariate dispersions";
+  //var disqus_identifier = "/2016/04/17/new-plot-default-for-betadisper";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>17 April 2016</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/base-graphics/"><span class="label label-inverse">Base graphics</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/plot/"><span class="label label-inverse">Plot</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/package/"><span class="label label-inverse">Package</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/vegan/"><span class="label label-inverse">Vegan</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+

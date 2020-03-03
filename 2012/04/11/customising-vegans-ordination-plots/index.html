@@ -1,0 +1,530 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Customising vegan's ordination plots</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="Biplot, ordination, PCA, Principal component analysis, R, vegan" />
+
+
+<meta name="description" content="As a developer on the [vegan](http://vegan.r-forge.r-project.org) package for R, one of the most FAQs is how to customise [ordination](http://en.wikipedia.org/wiki/Ordination_(statistics) "Ordination") diagrams, usually to colour the sample points according to an external grouping variable. Now, just because we get asked how to do this a lot is not really a reflection on the quality of the `plot()` methods available in vegan.
+
+
+Ordination diagrams are difficult beasts to handle with plotting code without having an unwieldy number of arguments etc. There are potentially five sets of scores that need to be plotted so the number of arguments could quickly get out of hand if we allowed the user to pass all the relevant graphical parameters to the various sets of scores. We've provided a basic `plot()` method that is set up with useful defaults that works for all the ordination methods in vegan. This method is really there to allow the quick visualisation of the fitted ordination; I use vegan on almost a daily basis and none of my presentation or publication figures use the default plot method at all. However, we have provided all the tools needed to draw custom ordination plots within vegan. How you use them also provides a useful guide to building up base graphics plots from lower-level plotting functions. In this post I intend to show two examples of building up a simple [PCA](http://en.wikipedia.org/wiki/Principal_component_analysis "Principal component analysis") [biplot](http://en.wikipedia.org/wiki/Biplot "Biplot") from the basic building blocks available in vegan and R's base graphics." />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Customising vegan's ordination plots" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2012-04-11T00:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Customising vegan's ordination plots" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2012-04-11T00:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="As a developer on the [vegan](http://vegan.r-forge.r-project.org) package for R, one of the most FAQs is how to customise [ordination](http://en.wikipedia.org/wiki/Ordination_(statistics) "Ordination") diagrams, usually to colour the sample points according to an external grouping variable. Now, just because we get asked how to do this a lot is not really a reflection..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Customising vegan's ordination plots" />
+
+
+<meta name="twitter:description" content="As a developer on the [vegan](http://vegan.r-forge.r-project.org) package for R, one of the most FAQs is how to customise [ordination](http://en.wikipedia.org/wiki/Ordination_(statistics) "Ordinat..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="11 Apr 2012"/>
+<meta name="citation_date" content="11 Apr 2012"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Customising vegan's ordination plots"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2012/04/23/quantitative-palaeolimnology-my-book-chapters-are-finally-out/">Quantitative palaeolimnology: my book chapters are finally out!</a></span>
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2012/04/10/thoughts-on-the-propose-rcuk-policy-on-open-access-to-research-outputs/">Thoughts on the proposed RCUK policy on Open Access to research outputs</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Customising vegan's ordination plots </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>
+As a developer on the <a href="http://vegan.r-forge.r-project.org">vegan</a> package for R, one of the most FAQs is how to customise <a href="http://en.wikipedia.org/wiki/Ordination_(statistics)" title="Ordination">ordination</a> diagrams, usually to colour the sample points according to an external grouping variable. Now, just because we get asked how to do this a lot is not really a reflection on the quality of the <code>plot()</code> methods available in vegan.
+</p>
+<p>
+Ordination diagrams are difficult beasts to handle with plotting code without having an unwieldy number of arguments etc. There are potentially five sets of scores that need to be plotted so the number of arguments could quickly get out of hand if we allowed the user to pass all the relevant graphical parameters to the various sets of scores. We’ve provided a basic <code>plot()</code> method that is set up with useful defaults that works for all the ordination methods in vegan. This method is really there to allow the quick visualisation of the fitted ordination; I use vegan on almost a daily basis and none of my presentation or publication figures use the default plot method at all. However, we have provided all the tools needed to draw custom ordination plots within vegan. How you use them also provides a useful guide to building up base graphics plots from lower-level plotting functions. In this post I intend to show two examples of building up a simple <a href="http://en.wikipedia.org/wiki/Principal_component_analysis" title="Principal component analysis">PCA</a> <a href="http://en.wikipedia.org/wiki/Biplot" title="Biplot">biplot</a> from the basic building blocks available in vegan and R’s base graphics.
+</p>
+<p>To get going, start R and load the vegan package. For this example I will use the classic Dutch Dune Meadow data set which I also load. A simple PCA of the species data is then fitted and stored in <code>mod</code>. To finish the basic example, I use the basic <code>plot()</code> method to plot the PCA biplot. Note that I’m using symmetric scaling here; I tend to prefer this scaling for general diagrams as it preserves many of the features of biplots without focusing on one or other sets of scores. (Here I’m also using it to illustrate how to select a scaling when you are building the plot from scratch.)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## load vegan</span><span class="w">
+</span><span class="n">require</span><span class="p">(</span><span class="s2">"vegan"</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## load the Dune data</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">dune</span><span class="p">,</span><span class="w"> </span><span class="n">dune.env</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## PCA of the Dune data</span><span class="w">
+</span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rda</span><span class="p">(</span><span class="n">dune</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## plot the PCA</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span></code></pre>
+</figure>
+<p>The resulting PCA biplot is shown below</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/custom_ordination_basic_plot_method.png" alt="Basic plot() method for ordinations in vegan" /><figcaption>Basic plot() method for ordinations in vegan</figcaption>
+</figure>
+<h2 id="building-a-biplot-using-vegan-methods">Building a biplot using vegan methods</h2>
+<p>The first example of a customised biplot I will show uses low-level plotting methods provided by vegan. These include <code>points()</code> and <code>text()</code> methods for objects of class <code>"cca"</code>. (The <code>"cca"</code> object is one of the base ordination classes in vegan; its name is a bit unfortunate as it is the base representation for PCA, CA, RDA etc… objects — read more about this object via <code>?cca.object</code>.) I am going to plot the basic PCA biplot, but colour the sites according to the land-use variable <code>dune.env$Use</code>, which has three levels</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; with(dune.env, levels(Use))
+[1] "Hayfield" "Haypastu" "Pasture"</code></pre>
+</figure>
+<p>Start by defining an object holding the desired ordination scaling and a vector of colours with which to do the plotting</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">scl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="c1">## scaling = 3</span><span class="w">
+</span><span class="n">colvec</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"red2"</span><span class="p">,</span><span class="w"> </span><span class="s2">"green4"</span><span class="p">,</span><span class="w"> </span><span class="s2">"mediumblue"</span><span class="p">)</span></code></pre>
+</figure>
+<p>The basic <code>plot()</code> method can be coerced into setting up the basic plot axes, limits etc for us by using <code>type = "n"</code>, so we use that short cut and pass along our desired scaling</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scl</span><span class="p">)</span></code></pre>
+</figure>
+<p>The next step is to add the site scores. Here I use the <code>points()</code> method rather than draw the site scores using their sample ID (as is the default in the <code>plot()</code> method).</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">points</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"sites"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">[</span><span class="n">Use</span><span class="p">],</span><span class="w">
+                      </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scl</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">[</span><span class="n">Use</span><span class="p">]))</span></code></pre>
+</figure>
+<p>The key point to note in the code chunk above is how I colour each site according to its land-use. I index into the vector of colours created earlier using the factor <code>Use</code>. <code>Use</code> is essentially a vector of 1s, 2s, and 3s (there are three levels remember). The <code>colvec[Use]</code> evaluates to a vector the same length as the number of sites, where each element is one of the pre-specified colours</p>
+<figure class="highlight">
+<pre><code class="language-rout" data-lang="rout">&gt; head(with(dune.env, colvec[Use]))
+[1] "green4"     "green4"     "green4"     "mediumblue"
+[5] "green4"     "green4"</code></pre>
+</figure>
+<p>The <code>display</code> argument selects the type of scores to plot. The remainder of the arguments are the scaling for the scores (so they match the base plot) and arguments to style the plotted points. Next I add the species scores, but this time I want to label them with (abbreviated) species names. For this I use the <code>text()</code> method with argument <code>display = "species"</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">text</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"species"</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scl</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkcyan"</span><span class="p">)</span></code></pre>
+</figure>
+<p>To finish the plot I add a legend. It is important to get the ordering and labelling of the colours correct here. When I drew the site scores I used the <code>Use</code> factor to index the vector of plotting colours. To ensure we get the correct ordering in the legend, it is best to extract the levels as the lables, which is what I do below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="p">(</span><span class="s2">"topright"</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">levels</span><span class="p">(</span><span class="n">Use</span><span class="p">),</span><span class="w"> </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w">
+                      </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">pt.bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">))</span></code></pre>
+</figure>
+<p>If you want to provide custom labels, look at the levels of the factor and provide them to <code>legend()</code> in the correct order. The biplot should now look like the one below</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/custom_ordination_vegan_version.png" alt="Customised ordination built from vegan lower-level plot methods" /><figcaption>Customised ordination built from vegan lower-level plot methods</figcaption>
+</figure>
+<h2 id="building-a-biplot-using-base-graphics-directly">Building a biplot using base graphics directly</h2>
+<p>If you want the ultimate level of control over the plots then you will want to build the plot up from scratch using lower-level plotting functions provided by base graphics. In this second example I’ll recreate the plot I made above but from the ground up using basic plotting functions. First, start by extracting the scores needed from the ordination object. Here the scaling required for the plot needs to be provided and the sets of scores specified</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">str</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<p>This results in a list with two components;<code>sites</code> and <code>species</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">scrs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">scores</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"sites"</span><span class="p">,</span><span class="w"> </span><span class="s2">"species"</span><span class="p">),</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scl</span><span class="p">)</span></code></pre>
+</figure>
+<p>Each component is a matrix with two columns containing the scores on the first and second principal components respectively. If you want to extract scores on different axes provide the <code>choices</code> argument to the <code>scores()</code> function with a numeric vector of the axes you wish to extract. Do note that the code below assumes only two axes are extracted. Next compute the axis limits, which need to cover the range of the site and species scores on the first (x-axis) and second (y-axis) principal components</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">xlim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">species</span><span class="p">[,</span><span class="m">1</span><span class="p">],</span><span class="w"> </span><span class="n">sites</span><span class="p">[,</span><span class="m">1</span><span class="p">]))</span><span class="w">
+</span><span class="n">ylim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">species</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">sites</span><span class="p">[,</span><span class="m">2</span><span class="p">]))</span></code></pre>
+</figure>
+<p>Now everything is ready to do some actual plotting. Start preparing the plot device be starting a new plot with <code>plot.new()</code> and then set up the coordination system via a call to <code>plot.window()</code> supplying the axis limits created above. A crucial aspect of the call to <code>plot.window()</code> is the graphical parameter <code>asp</code> which controls the aspect ratio of the plot. Here we set the aspect ratio equal to 1 to preserve the relationships between scores on the different axes and the distance interpretation of the biplot</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plot.new</span><span class="p">()</span><span class="w">
+</span><span class="n">plot.window</span><span class="p">(</span><span class="n">xlim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xlim</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">,</span><span class="w"> </span><span class="n">asp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+</figure>
+<p>The reference guides (dotted lines going through the point (0,0) are added first so as to not lie on top of any of the site or species scores. Two calls to the <code>abline()</code> function are used</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">abline</span><span class="p">(</span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dotted"</span><span class="p">)</span><span class="w">
+</span><span class="n">abline</span><span class="p">(</span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dotted"</span><span class="p">)</span></code></pre>
+</figure>
+<p>The next two lines of code use the default methods for <code>points()</code> and <code>text()</code> rather than the <code>"cca"</code> methods used above</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">points</span><span class="p">(</span><span class="n">scrs</span><span class="o">$</span><span class="n">sites</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">[</span><span class="n">Use</span><span class="p">],</span><span class="w">
+                      </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">[</span><span class="n">Use</span><span class="p">]))</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">(</span><span class="n">species</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rownames</span><span class="p">(</span><span class="n">species</span><span class="p">),</span><span class="w">
+                </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkcyan"</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">))</span></code></pre>
+</figure>
+<p>The legend is added in same way as before</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="p">(</span><span class="s2">"topright"</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">levels</span><span class="p">(</span><span class="n">Use</span><span class="p">),</span><span class="w"> </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w">
+                      </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">pt.bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">))</span></code></pre>
+</figure>
+<p>All that remains is to add the plot furniture; the axes, axis labels and the plot frame</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">axis</span><span class="p">(</span><span class="n">side</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="n">axis</span><span class="p">(</span><span class="n">side</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">title</span><span class="p">(</span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"PC 1"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"PC 2"</span><span class="p">)</span><span class="w">
+</span><span class="n">box</span><span class="p">()</span></code></pre>
+</figure>
+<p>The fruits of our labours are shown below</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/custom_ordination_base_graphics_version.png" alt="PCA ordination built up directly from base graphics elements" /><figcaption>PCA ordination built up directly from base graphics elements</figcaption>
+</figure>
+<p>I don’t claim these are perfect; many of the labels lie on top of one another for example. Vegan has some functions to help with this but I’ll leave exemplifying those for another post. The full code for the two examples is shown below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## load vegan</span><span class="w">
+</span><span class="n">require</span><span class="p">(</span><span class="s2">"vegan"</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## load the Dune data</span><span class="w">
+</span><span class="n">data</span><span class="p">(</span><span class="n">dune</span><span class="p">,</span><span class="w"> </span><span class="n">dune.env</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## PCA of the Dune data</span><span class="w">
+</span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rda</span><span class="p">(</span><span class="n">dune</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## plot the PCA</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## build the plot up via vegan methods</span><span class="w">
+</span><span class="n">scl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="c1">## scaling == 3</span><span class="w">
+</span><span class="n">colvec</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"red2"</span><span class="p">,</span><span class="w"> </span><span class="s2">"green4"</span><span class="p">,</span><span class="w"> </span><span class="s2">"mediumblue"</span><span class="p">)</span><span class="w">
+</span><span class="n">plot</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scl</span><span class="p">)</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">points</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"sites"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">[</span><span class="n">Use</span><span class="p">],</span><span class="w">
+                      </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scl</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">[</span><span class="n">Use</span><span class="p">]))</span><span class="w">
+</span><span class="n">text</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"species"</span><span class="p">,</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scl</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkcyan"</span><span class="p">)</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="p">(</span><span class="s2">"topright"</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">levels</span><span class="p">(</span><span class="n">Use</span><span class="p">),</span><span class="w"> </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w">
+                      </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">pt.bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">))</span><span class="w">
+
+</span><span class="c1">## or via base graphics methods</span><span class="w">
+</span><span class="n">scrs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">scores</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"sites"</span><span class="p">,</span><span class="w"> </span><span class="s2">"species"</span><span class="p">),</span><span class="w"> </span><span class="n">scaling</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scl</span><span class="p">)</span><span class="w">
+</span><span class="n">str</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+
+</span><span class="n">xlim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">species</span><span class="p">[,</span><span class="m">1</span><span class="p">],</span><span class="w"> </span><span class="n">sites</span><span class="p">[,</span><span class="m">1</span><span class="p">]))</span><span class="w">
+</span><span class="n">ylim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">species</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">sites</span><span class="p">[,</span><span class="m">2</span><span class="p">]))</span><span class="w">
+
+</span><span class="n">plot.new</span><span class="p">()</span><span class="w">
+</span><span class="n">plot.window</span><span class="p">(</span><span class="n">xlim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">xlim</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">,</span><span class="w"> </span><span class="n">asp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="n">abline</span><span class="p">(</span><span class="n">h</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dotted"</span><span class="p">)</span><span class="w">
+</span><span class="n">abline</span><span class="p">(</span><span class="n">v</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dotted"</span><span class="p">)</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">points</span><span class="p">(</span><span class="n">scrs</span><span class="o">$</span><span class="n">sites</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">[</span><span class="n">Use</span><span class="p">],</span><span class="w">
+                      </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">[</span><span class="n">Use</span><span class="p">]))</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">scrs</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">(</span><span class="n">species</span><span class="p">,</span><span class="w"> </span><span class="n">labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rownames</span><span class="p">(</span><span class="n">species</span><span class="p">),</span><span class="w">
+                </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"darkcyan"</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">))</span><span class="w">
+</span><span class="n">axis</span><span class="p">(</span><span class="m">1</span><span class="p">)</span><span class="w">
+</span><span class="n">axis</span><span class="p">(</span><span class="m">2</span><span class="p">)</span><span class="w">
+</span><span class="n">title</span><span class="p">(</span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"PC 1"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"PC 2"</span><span class="p">)</span><span class="w">
+</span><span class="n">with</span><span class="p">(</span><span class="n">dune.env</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="p">(</span><span class="s2">"topright"</span><span class="p">,</span><span class="w"> </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">levels</span><span class="p">(</span><span class="n">Use</span><span class="p">),</span><span class="w"> </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w">
+                      </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">21</span><span class="p">,</span><span class="w"> </span><span class="n">pt.bg</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">colvec</span><span class="p">))</span><span class="w">
+</span><span class="n">box</span><span class="p">()</span></code></pre>
+</figure>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2012/04/11/customising-vegans-ordination-plots/";
+  var disqus_title = "Customising vegan&#39;s ordination plots";
+  //var disqus_identifier = "/2012/04/11/customising-vegans-ordination-plots";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>11 April 2012</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/biplot/"><span class="label label-inverse">Biplot</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/ordination/"><span class="label label-inverse">ordination</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/pca/"><span class="label label-inverse">PCA</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/principal-component-analysis/"><span class="label label-inverse">Principal component analysis</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/vegan/"><span class="label label-inverse">vegan</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My google+ profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_382_google_plus.png" /> <a href="https://plus.google.com/u/0/112304471169355632211">ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="&#35;365papers 2016" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_087_log_book.png" /> <a href="https://www.fromthebottomoftheheap.net/publications/365papers/index.html">&#35;365papers</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-7900310-7']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+
+    
+    
+
+
+  </body>
+</html>
+
+
