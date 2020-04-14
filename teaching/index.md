@@ -41,8 +41,7 @@ include
 
 * [Advanced community data analysis using the vegan package in R](https://github.com/gavinsimpson/esa-advanced-vegan)
 
-    This workshop was given for several years at ESA meetings, most recently in
-    2017.
+    This workshop was given for several years at ESA meetings, most recently in 2017.
 
 * [Applied statistics and R for palaeoecologists & paleaolimnologists](https://github.com/gavinsimpson/adelaide-2017)
 
