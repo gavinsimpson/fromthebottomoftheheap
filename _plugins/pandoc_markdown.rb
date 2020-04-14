@@ -63,7 +63,7 @@ module Jekyll
           extensions = config_option('extensions', [])
           format = config_option('format', 'html5')
 
-          PandocRuby.new(content, *extensions).send("to_#{format}")
+          PandocRuby.new(content, *extensions, from: 'markdown+smart').send("to_#{format}")
         end
 
         def config_option(key, default=nil)
