@@ -1,0 +1,523 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Rendering your README with GitHub Actions</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GitHub, GitHub Actions, Continuous Integration, R package, workflow" />
+
+
+<meta name="description" content="There’s one thing that has bugged me for a while about developing R packages. We have all these nice, modern tools we have for tracking our code, producing web sites from the roxygen documentation, an so on. Yet for every code commit I make to the master branch of a package repo, there’s often two or more additional steps I need to take to keep the package README.md and pkgdown site in sync with the code. Don’t get me wrong; it’s amazing that we have these tools available to help users get to grips with our R packages. It’s just that there’s a lot of extra things to remember to do to keep everything up to date. The development of free-to-use services such as Travis CI or Appveyor have been very useful as they can automate many of these repetitive tasks. A more recent newcomer to the field is GitHub Actions. The other day I was grappling with getting a GitHub Actions workflow to render a README.Rmd file to README.md on GitHub, so that I didn’t have to do it locally all the time. After a lot of trial and error, this is how I got it working.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Rendering your README with GitHub Actions" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2020-04-30T14:30:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Rendering your README with GitHub Actions" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2020-04-30T14:30:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2020/04/30/rendering-your-readme-with-github-actions/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="There’s one thing that has bugged me for a while about developing R packages. We have all these nice, modern tools we have for tracking our code, producing web sites from the roxygen documentation, an so on. Yet for every code commit I make to the master branch of a..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Rendering your README with GitHub Actions" />
+
+
+<meta name="twitter:description" content="There’s one thing that has bugged me for a while about developing R packages. We have all these nice, modern tools we have for tracking our code, producing web sites from the roxygen documentation..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="30 Apr 2020"/>
+<meta name="citation_date" content="30 Apr 2020"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Rendering your README with GitHub Actions"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2020/02/26/what-three-years-evaluating-discovery-grants-taught-me/">What evaluating Discovery Grants for the last three years has taught me</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Rendering your README with GitHub Actions </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>There’s one thing that has bugged me for a while about developing R packages. We have all these nice, modern tools we have for tracking our code, producing web sites from the <strong>roxygen</strong> documentation, an so on. Yet for every code commit I make to the master branch of a package repo, there’s often two or more additional steps I need to take to keep the package <code>README.md</code> and <em>pkgdown</em> site in sync with the code. Don’t get me wrong; it’s amazing that we have these tools available to help users get to grips with our R packages. It’s just that there’s a lot of extra things to remember to do to keep everything up to date. The development of free-to-use services such as Travis CI or Appveyor have been very useful as they can automate many of these repetitive tasks. A more recent newcomer to the field is <a href="https://github.com/features/actions">GitHub Actions</a>. The other day I was grappling with getting a GitHub Actions workflow to render a <code>README.Rmd</code> file to <code>README.md</code> on GitHub, so that I didn’t have to do it locally all the time. After a lot of trial and error, this is how I got it working.</p>
+<p>The general use case I am imagining here is the package author that has a <code>README.Rmd</code> file that contains R code chunks, which they want to render to <code>README.md</code> so it will get displayed nicely on GitHub. You might want to do this to provide a simple overview of how to use some key functionality of your package or show off a plot or two that can be generated by the package. It’s pretty easy to render this locally with a <code>Makefile</code> or by simply invoking the correct R incantation directly in the terminal. However, wouldn’t it be great if we could automate this!</p>
+<p>The first step in getting this working was to recognise that the R Infrastructure organisation has been working to make R-related GitHub Actions workflows available to users. This effort has been lead by Jim Hester and Jim has very helpfully provided a workflow example YAML file showing how one might go about rendering a <code>README.Rmd</code> file to <code>README.md</code> using the <strong>rmarkdown</strong> package.</p>
+<p>Also, the <strong>usethis</strong> package has made it incredibly easy to get started using GitHub Actions; <strong>usethis</strong> provides <code>use_github_actions()</code> to set your package up to start using GitHub Actions to check your package builds without errors. There’s also a <code>use_github-action()</code> function that can add workflows from the <code>r-lib/actions</code> repo to your package.</p>
+<p>If you don’t have <strong>usethis</strong> installed, install it (<code>install.packages("usethis")</code>), then you can set your R package repo up to run <code>R CMD check</code> on your package on GitHub’s servers by running</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">usethis</span><span class="o">::</span><span class="n">use_github_actions</span><span class="p">()</span></code></pre>
+</figure>
+<p>in an R session in the package root folder. Running this will produce something like this</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">usethis</span><span class="o">::</span><span class="n">use_github_actions</span><span class="p">()</span><span class="w">
+</span><span class="err">✔</span><span class="w"> </span><span class="n">Setting</span><span class="w"> </span><span class="n">active</span><span class="w"> </span><span class="n">project</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s1">'/home/gavin/work/git/gratia/gratia'</span><span class="w">
+</span><span class="err">✔</span><span class="w"> </span><span class="n">Creating</span><span class="w"> </span><span class="s1">'.github/'</span><span class="w">
+</span><span class="err">✔</span><span class="w"> </span><span class="n">Adding</span><span class="w"> </span><span class="s1">'*.html'</span><span class="w"> </span><span class="n">to</span><span class="w"> </span><span class="s1">'.github/.gitignore'</span><span class="w">
+</span><span class="err">✔</span><span class="w"> </span><span class="n">Creating</span><span class="w"> </span><span class="s1">'.github/workflows/'</span><span class="w">
+</span><span class="err">✔</span><span class="w"> </span><span class="n">Writing</span><span class="w"> </span><span class="s1">'.github/workflows/R-CMD-check.yaml'</span><span class="w">
+</span><span class="err">●</span><span class="w"> </span><span class="n">Copy</span><span class="w"> </span><span class="n">and</span><span class="w"> </span><span class="n">paste</span><span class="w"> </span><span class="n">the</span><span class="w"> </span><span class="n">following</span><span class="w"> </span><span class="n">lines</span><span class="w"> </span><span class="n">into</span><span class="w"> </span><span class="s1">'/home/gavin/work/git/gratia/gratia/README.md'</span><span class="o">:</span><span class="w">
+  </span><span class="o">&lt;!--</span><span class="w"> </span><span class="n">badges</span><span class="o">:</span><span class="w"> </span><span class="n">start</span><span class="w"> </span><span class="o">--&gt;</span><span class="w">
+  </span><span class="p">[</span><span class="o">!</span><span class="p">[</span><span class="n">R</span><span class="w"> </span><span class="n">build</span><span class="w"> </span><span class="n">status</span><span class="p">](</span><span class="n">https</span><span class="o">://</span><span class="n">github.com</span><span class="o">/</span><span class="n">gavinsimpson</span><span class="o">/</span><span class="n">gratia</span><span class="o">/</span><span class="n">workflows</span><span class="o">/</span><span class="n">R</span><span class="o">-</span><span class="n">CMD</span><span class="o">-</span><span class="n">check</span><span class="o">/</span><span class="n">badge.svg</span><span class="p">)](</span><span class="n">https</span><span class="o">://</span><span class="n">github.com</span><span class="o">/</span><span class="n">gavinsimpson</span><span class="o">/</span><span class="n">gratia</span><span class="o">/</span><span class="n">actions</span><span class="p">)</span><span class="w">
+  </span><span class="o">&lt;!--</span><span class="w"> </span><span class="n">badges</span><span class="o">:</span><span class="w"> </span><span class="n">end</span><span class="w"> </span><span class="o">--&gt;</span></code></pre>
+</figure>
+<p>which outlines the steps <strong>usethis</strong> has taken on your behalf. The last line prints out some text that you can paste into the <code>README.Rmd</code> to show a status badge for the GitHub Action; in this case it will show whether or not your package passed <code>R CMD check</code> without error.</p>
+<p>This also nicely illustrates how you might set things up by hand of course, especially if you don’t want to run <code>R CMD check</code> on each push.</p>
+<p>GitHub Actions workflows are configurations that describe the steps in the workflow and are stored in YAML files. These files should be located in a <code>.github/workflows</code> folder in the package root. If all you want to do is render a <code>README.Rmd</code> to <code>README.md</code> you could just as easily create this folder yourself. I’m not sure why <strong>usethis</strong> also creates a <code>.gitignore</code> containing <code>'*.html'</code> in the <code>.github</code> folder, but if this is needed for what you’re doing, go ahead and create it too.</p>
+<p>To get set-up quickly to render <code>README.Rmd</code> to markdown, you can now use <code>use_github_action("render-readme.yaml")</code>. This will copy the <code>render-readme.yaml</code> file from <a href="https://github.com/r-lib/actions/tree/master/examples">r-lib/actions/examples</a> to <code>.github/workflows/render-readme.yaml</code>. Alternatively, you can <code>touch .github/workflows/render-readme.yaml</code> and add what you need by hand.</p>
+<p>This is what the contents of <code>render-readme.yaml</code> look like, at the time of writing, if you used <strong>usethis</strong> to create it:</p>
+<figure class="highlight">
+<pre><code class="language-yaml" data-lang="yaml"><span class="na">on</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">paths</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">README.Rmd</span>
+
+<span class="na">name</span><span class="pi">:</span> <span class="s">Render README</span>
+
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">render</span><span class="pi">:</span>
+    <span class="na">name</span><span class="pi">:</span> <span class="s">Render README</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">macOS-latest</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v2</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">r-lib/actions/setup-r@v1</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">r-lib/actions/setup-pandoc@v1</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Install rmarkdown</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">Rscript -e 'install.packages("rmarkdown")'</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Render README</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">Rscript -e 'rmarkdown::render("README.Rmd")'</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Commit results</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">git commit README.md -m 'Re-build README.Rmd' || echo "No changes to commit"</span>
+          <span class="s">git push origin || echo "No changes to commit"</span></code></pre>
+</figure>
+<p>The first bit under <code>on:</code> controls when the workflow is triggered. The way the example workflow is set up means it will only be triggered <em>if</em> a file matching the path <code>README.Rmd</code> is included in the commit when pushed to the repo. It’s also worth noting that <em>until the workflow is actually triggered</em>, it won’t show up in the <em>Actions</em> tab in your repo on GitHub — this caused me no end of grief until I figured our this GitHub Actions <em>feature</em>. To trigger this workflow, you need to edit <code>README.Rmd</code>, add and commit those changes using <code>git</code>, and then push the changes to GitHub.</p>
+<p>That didn’t suit my use case however; what if I change the package code in such a way that any output or plots produced by code in the <code>README.Rmd</code> would also change? In this case, I would have to needlessly tweak something in <code>README.Rmd</code> and push that change just to trigger rendering.</p>
+<p>There’s probably a better way to do this — such as setting <code>paths:</code> to a wildcard that would match <em>any</em> <code>.R</code> file in the <code>R</code> folder so the workflow would be triggered on any change to the package code — but to just get something up and running I changed the <code>on:</code> part to read:</p>
+<figure class="highlight">
+<pre><code class="language-yaml" data-lang="yaml"><span class="na">on</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span> <span class="s">master</span></code></pre>
+</figure>
+<p>which indicates that the workflow should run for any push to the <em>master</em> branch of the repo.</p>
+<p>The top-level <code>name:</code> element is how your workflow will be listed in the Actions tab in your repo. Set this to something short but descriptive so it is easy to filter the various outputs from workflows that are run on the GitHub Actions service.</p>
+<p>All workflows contain one or more <em>jobs</em>, listed under the <code>jobs:</code> element. In the example YAML file, there is a single job listed as <code>render:</code>, which has a name, <code>Render README</code>.</p>
+<p>The <code>runs-on</code> element indicates what system the job will be run on; here is is a Mac OS system. I’m not sure why the <em>r-lib/actions</em> example workflows all run on Mac OS systems? Anyway, they work, so no need to change that unless you need something specific.</p>
+<p>The <code>steps:</code> section is where the stages of the job are defined.</p>
+<figure class="highlight">
+<pre><code class="language-yaml" data-lang="yaml">    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v2</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">r-lib/actions/setup-r@v1</span>
+      <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">r-lib/actions/setup-pandoc@v1</span></code></pre>
+</figure>
+<p>Each of the <code>uses:</code> elements pulls in some pre-existing worfklow steps that you can build to upon to bootstrap the solution you need. For example, the <code>actions/checkout@v2</code> workflow contains everything you need to checkout your repo and make it available to the current job. This is pretty fundamental; unless the GitHub Actions service can get at the code in your repo, it won’t be able to do anything useful whatsoever.</p>
+<p>The next two <code>uses:</code> are workflows provide by <em>r-lib/actions</em> that set up a working R installation (<code>r-lib/actions/setup-r@v1</code>) and the <strong>Pandoc</strong> library used by <strong>rmarkdown</strong> (<code>r-lib/actions/setup-pandoc@v1</code>).</p>
+<p>After the <code>uses:</code> declarations, the YAML file includes a series of steps that describe commands that are run on the service. This is where the real action takes place.</p>
+<figure class="highlight">
+<pre><code class="language-yaml" data-lang="yaml">      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Install rmarkdown</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">Rscript -e 'install.packages("rmarkdown")'</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Render README</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">Rscript -e 'rmarkdown::render("README.Rmd")'</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Commit results</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">git commit README.md -m 'Re-build README.Rmd' || echo "No changes to commit"</span>
+          <span class="s">git push origin || echo "No changes to commit"</span></code></pre>
+</figure>
+<p>Here we see three sets of commands that will be run</p>
+<ol type="1">
+<li>the first installs the <strong>rmarkdown</strong> package,</li>
+<li>the second runs <code>rmarkdown::render()</code> on <code>README.Rmd</code> to render it, and</li>
+<li>the third commits the rendered <code>README.md</code> file and pushes it to your repo, or echos a comment if no changes are needed.</li>
+</ol>
+<p>Notice how the <code>run:</code> element for the last step has a <code>|</code> after <code>run:</code>. This indicates that this particular step involves multiple lines of commands to be executed one after another.</p>
+<p>If you’ve not come across <code>Rscript</code> before, it’s a way to use R like a scripting language, non-interactively. Here we’re using the <code>-e</code> flag to tell Rscript what R code to run, rather than passing it a <code>.R</code> to run.</p>
+<p>Out of the box, these steps aren’t going to be very useful for R package maintainers if the <code>README.Rmd</code> uses anything other than the base R installation and recommended packages. At the very least you are going to want to also install the R package you are documenting in the <code>README.Rmd</code>, plus any other packages you need for the <code>Rmd</code> that might not be dependencies of the package in the repo.</p>
+<p>In my case, I just needed to install the <strong>gratia</strong> package alongside <strong>rmarkdown</strong>, so I changed that <code>run:</code> element to be</p>
+<figure class="highlight">
+<pre><code class="language-yaml" data-lang="yaml">      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Install rmarkdown</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">Rscript -e 'install.packages(c("rmarkdown", "gratia"))'</span></code></pre>
+</figure>
+<p>I also decided to change the <code>rmarkdown::render()</code> call; by default this will generate HTML output by rendering the <code>.Rmd</code> first to <code>.md</code> and thence to <code>.html</code>. As we don’t need this latter step, I changed the <code>output_format</code> argument of <code>render()</code> to be <code>"md_document"</code>, so that element now looks like this</p>
+<figure class="highlight">
+<pre><code class="language-yaml" data-lang="yaml">      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Render README</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="s">Rscript -e 'rmarkdown::render("README.Rmd", output_format = "md_document")'</span></code></pre>
+</figure>
+<p>Doing this means I don’t also generate a <code>README.html</code> file (which might be why the <code>.gitignore</code> was created by <strong>usethis</strong> earlier?); keeping the <code>.gitignore</code> can’t hurt given that it only excludes any <code>.html</code> files from a commit, so I left it alone.</p>
+<p>I also modified the <em>commit</em> step too. The default assumes you already have a <code>README.md</code> in the repo and that this is the only file you want to add to the commit. If you render any plots in the <code>.Rmd</code>, then you’ll also want to add those to the commit. So, I added an explicit <code>git add</code> line prior to the commit, and also simplified the latter</p>
+<figure class="highlight">
+<pre><code class="language-yaml" data-lang="yaml">      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">Commit results</span>
+        <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+          <span class="s">git add README.md man/figures/README-*</span>
+          <span class="s">git commit -m 'Re-build README.Rmd' || echo "No changes to commit"</span>
+          <span class="s">git push origin || echo "No changes to commit"</span></code></pre>
+</figure>
+<p>As you can see, I used a wildcard to catch any figures created by the render. In the <code>README.Rmd</code> I used a setup chunk to set the <code>fig.path</code> <strong>knitr</strong> option so that any plots were generated in the <code>man/figures</code> folder and had the prefix <code>README-</code> prepended to the file name:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">knitr</span><span class="o">::</span><span class="n">opts_chunk</span><span class="o">$</span><span class="n">set</span><span class="p">(</span><span class="w">
+  </span><span class="n">fig.path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"man/figures/README-"</span><span class="w">
+</span><span class="p">)</span></code></pre>
+</figure>
+<p>The <code>man/figures</code> folder is a useful place to store figures generated like this as they’ll be carried along with your R package and available on CRAN, where the <code>README.md</code> file is also displayed if present. This folder is also used if you generate and include figures in the package documentation using <strong>roxygen</strong>, for example.</p>
+<p>I used the prefix <code>README-</code> so that I could limit what I was adding in the <code>git add</code> step of the workflow. I’m always a bit nervous when staging files for a commit and never use <code>git commit -a</code> for example. This way I have a reasonable means of only adding plots that were created by rendering <code>README.Rmd</code>.</p>
+<p>After these changes (and a few others as I was troubleshooting some issues) my workflow to render <code>README.Rmd</code> files looks like this</p>
+<figure class="highlight">
+<pre><code class="language-yaml" data-lang="yaml"><span class="na">name</span><span class="pi">:</span> <span class="s">render readme</span>
+
+<span class="c1"># Controls when the action will run</span>
+<span class="na">on</span><span class="pi">:</span>
+  <span class="na">push</span><span class="pi">:</span>
+    <span class="na">branches</span><span class="pi">:</span> <span class="s">master</span>
+
+<span class="na">jobs</span><span class="pi">:</span>
+  <span class="na">render</span><span class="pi">:</span>
+    <span class="c1"># The type of runner that the job will run on</span>
+    <span class="na">runs-on</span><span class="pi">:</span> <span class="s">macOS-latest</span>
+
+    <span class="na">steps</span><span class="pi">:</span>
+    <span class="c1"># Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it</span>
+    <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">actions/checkout@v2</span>
+    <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">r-lib/actions/setup-r@v1</span>
+    <span class="pi">-</span> <span class="na">uses</span><span class="pi">:</span> <span class="s">r-lib/actions/setup-pandoc@v1</span>
+
+    <span class="c1"># install packages needed</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">install required packages</span>
+      <span class="na">run</span><span class="pi">:</span> <span class="s">Rscript -e 'install.packages(c("rmarkdown","gratia"))'</span>
+
+    <span class="c1"># Render READEME.md using rmarkdown</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">render README</span>
+      <span class="na">run</span><span class="pi">:</span> <span class="s">Rscript -e 'rmarkdown::render("README.Rmd", output_format = "md_document")'</span>
+
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">commit rendered README</span>
+      <span class="na">run</span><span class="pi">:</span> <span class="pi">|</span>
+        <span class="s">git add README.md man/figures/README-*</span>
+        <span class="s">git commit -m "Re-build README.md" || echo "No changes to commit"</span>
+        <span class="s">git push origin master || echo "No changes to commit"</span></code></pre>
+</figure>
+<p>This is a first pass at getting something working; it’s just occurred to me that the <code>git add</code> line probably needs to be linked with the <code>git commit</code> line so it only tries to commit if files were staged with <code>git add</code>.</p>
+<p>It would also be good to try to cache the installed packages so the workflow doesn’t need to install everything for <strong>rmarkdown</strong> and <strong>gratia</strong> every time it is run. There’s an example of caching packages in the <strong>pkgdown</strong> action <a href="https://github.com/r-lib/actions/blob/master/examples/pkgdown.yaml">r-lib/actions/examples/pkgdown.yaml</a>. However, I was running into issues related to the R 4.0.0 release and packages in the cache not getting refreshed even though they were out of date. So I removed that step from my <code>pkgdown.yaml</code> workflow, and as a result didn’t try to implement it for rendering <code>README.Rmd</code> files. Yet anyway…</p>
+<p>For reference the workflow takes between two and three minutes to run on GitHub, even without package caching, which isn’t too bad, but rendering the <code>README.Rmd</code> locally takes only a few seconds, so there’s lots to be gained here by figuring out a reliable caching mechanism.</p>
+<p>If you have implemented something similar for a GitHub Actions workflow, let me know in the comments below; this is all quite new to me and I’m interested in how other people might have tackled this. Now that I have this working reliably I only need to remember to <code>git pull</code> from GitHub more often to get the changes to <code>README.md</code>. The next issue I want to look at is getting the right <code>paths:</code> settings so the <code>README.Rmd</code> is rendered only when relevant files are changed in the package, not on every push to the repo.</p>
+<p>Lastly, a big <strong>thank you</strong> to Jim Hester and everyone else who’s contributed to the R-related GitHub Actions workflows. This is an amazingly useful service for the R Community, and I for one am incredibly thankful that we have such helpful and knowledgeable people among us that are doing all this great work to make developing R packages that much easier.</p>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2020/04/30/rendering-your-readme-with-github-actions/";
+  var disqus_title = "Rendering your README with GitHub Actions";
+  //var disqus_identifier = "/2020/04/30/rendering-your-readme-with-github-actions";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>30 April 2020</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/github/"><span class="label label-inverse">GitHub</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/github-actions/"><span class="label label-inverse">GitHub Actions</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/continuous-integration/"><span class="label label-inverse">Continuous Integration</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/r-package/"><span class="label label-inverse">R package</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/workflow/"><span class="label label-inverse">workflow</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-7900310-7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-7900310-7');
+</script>
+
+
+    
+    
+
+
+  </body>
+</html>
+
+
