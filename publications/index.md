@@ -14,6 +14,8 @@ Below is a list of my research publications covering papers in peer-reviewed jou
 
 Articles with a <i class="icon-file"></i> icon have a preprint or reprint available: click the icon to download this as a PDF.
 
+ 1. Velez, M.I., Salgado, S., Brenner, M., Hooghiemstra, H., Escobar, J.H., Boom, A., Bird, B., Curtis, J.H., Temoltzin-Loranca, Y., Fernanda Patino, L., Gonzalez-Arango, C., Metcalfe, S.E., **Simpson, G.L.**, & Velazquez, C. (in review) Responses of high-elevation neotropical lakes to long-term pre-hispanic occupation and European arrival. *Anthropocene*.
+
  1. Haig, H.A., Hayes, N.M., **Simpson, G.L.**, Yi, Y., Wissel, B., Hodder, K.R., Leavitt, P.R. (in revision 2019-10-22) Relative importance of seasonal-, and interannual-scale hydrological variability in a chain of seven sub-humid lakes measured using water isotopes (&delta;^2^H, &delta;^18^O). *Journal of Hydrology*
 
  1. Heisler, L.M., **Simpson, G.L.**, Poulin, R.G., Wellicome, T.I., & Hall, B.D. (in review: 2019-06-17) [Habitat specificity is not universal proxy for sensitivity to habitat conversion among rodents on the Canadian Prairies](https://doi.org/10.1101/678268). *Ecological Applications*. <a href="https://www.biorxiv.org/content/biorxiv/early/2019/06/21/678268.full-text.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint PDF" data-placement="top" data-animation="true"></i></a>
