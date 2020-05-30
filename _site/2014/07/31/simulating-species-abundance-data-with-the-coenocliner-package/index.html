@@ -262,13 +262,13 @@ Parameters:
 </figure>
 <p>Note that parameter \(h\) is not specified in the second set as this parameter, the height of the response curve at the gradient optima, applies globally — in the case of two gradients, \(h\) refers to the height of the bell-shaped curve at the bivariate optimum.</p>
 <p>Notice also how parameters are specified at the species level. To evaluate the response curve at the supplied gradient locations each set of parameters needs to be repeated for each gradient location. Thankfully <code>coenocline()</code> takes care of this detail for us.</p>
-<p>Additional parameters that may be needed for the response model but which are not specified at the species level are supplied as a list with named components to argument <code>extraParams</code>. An example is the correlation between Gaussian response curves in case of two gradients. This, unfortunately, means that a single correlation between response curves applies to all species<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, and is caused by a poor choice of implementation. Thankfully this is relatively easy to fix, which will be done for version 0.2-0 along with a fix for a similar issue relating to the statement of additional parameters for the error distribution used (see below).</p>
+<p>Additional parameters that may be needed for the response model but which are not specified at the species level are supplied as a list with named components to argument <code>extraParams</code>. An example is the correlation between Gaussian response curves in case of two gradients. This, unfortunately, means that a single correlation between response curves applies to all species<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, and is caused by a poor choice of implementation. Thankfully this is relatively easy to fix, which will be done for version 0.2-0 along with a fix for a similar issue relating to the statement of additional parameters for the error distribution used (see below).</p>
 <p>To simulate realistic count data we need to sample <em>with error</em> from the parameterised species response curves. Which of the distributions (listed earlier) is used is specified via argument <code>countModel</code>; available options are</p>
 <figure class="highlight">
 <pre><code class="language-text" data-lang="text">[1] "poisson"      "negbin"       "bernoulli"    "binary"      
 [5] "binomial"     "betabinomial" "ZIP"          "ZINB"        </code></pre>
 </figure>
-<p>Some of these distributions (all bar <code>"poisson"</code> and <code>"bernoulli"</code>) require additional arguments, such as the \(\) parameter for (one parameterisation of) the negative binomial distribution. These arguments are supplied as a list with named components. Again, due to the same implementation snafu as for <code>extraParams</code>, such parameters act globally for all species<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>.</p>
+<p>Some of these distributions (all bar <code>"poisson"</code> and <code>"bernoulli"</code>) require additional arguments, such as the \(\) parameter for (one parameterisation of) the negative binomial distribution. These arguments are supplied as a list with named components. Again, due to the same implementation snafu as for <code>extraParams</code>, such parameters act globally for all species<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
 <p>The final argument is <em>expectation</em>, which defaults to <code>FALSE</code>. When set to <code>TRUE</code>, simulating species counts or occurrences with error is skipped and the values of the parameterised response curve evaluated at the gradient locations are returned. This option is handy if you want to look at or plot the species response curves used in a simulation.</p>
 <h2 id="example-usage">Example usage</h2>
 <p>In the next few sections the basic usage of <code>coenocline()</code> is illustrated.</p>
@@ -311,15 +311,15 @@ Parameters:
 [5,] 4.008 1.208e-17 1.144e-11 1.6203 2.194e-33 3.900e-35
 [6,] 5.282 4.435e-17 3.254e-11 2.0655 1.299e-32 2.308e-34</code></pre>
 </figure>
-<p>A quick way to visualise the parameterised species response is to use <code>matplot()</code><a href="#fn3" class="footnote-ref" id="fnref3"><sup>3</sup></a></p>
+<p>A quick way to visualise the parameterised species response is to use <code>matplot()</code><a href="#fn3" class="footnote-ref" id="fnref3" role="doc-noteref"><sup>3</sup></a></p>
 <figure class="highlight">
 <pre><code class="language-r" data-lang="r"><span class="n">matplot</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pH"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-expectations.png" alt="Figure 1: Gaussian species response curves along a hypothetical pH gradient" /><figcaption>Figure 1: Gaussian species response curves along a hypothetical pH gradient</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-expectations.png" alt="" /><figcaption>Figure 1: Gaussian species response curves along a hypothetical pH gradient</figcaption>
 </figure>
 <p>The resultant plot is shown in Figure 1.</p>
-<p>As this looks OK, we can simulate some count data. The simplest model for doing so is to make random draws from a Poisson distribution with the mean, \(\), for each species set to value of the response curve evaluated at each gradient location. Hence the values in <code>mu</code> that we just created can be thought of as the expected count per species at each of the gradient locations we are interested in. To simulate Poisson count data, use <code>expectation = FALSE</code> or remove this argument from the call. To be more explicit, we should also state <code>countModel = "poisson"</code><a href="#fn4" class="footnote-ref" id="fnref4"><sup>4</sup></a>.</p>
+<p>As this looks OK, we can simulate some count data. The simplest model for doing so is to make random draws from a Poisson distribution with the mean, \(\), for each species set to value of the response curve evaluated at each gradient location. Hence the values in <code>mu</code> that we just created can be thought of as the expected count per species at each of the gradient locations we are interested in. To simulate Poisson count data, use <code>expectation = FALSE</code> or remove this argument from the call. To be more explicit, we should also state <code>countModel = "poisson"</code><a href="#fn4" class="footnote-ref" id="fnref4" role="doc-noteref"><sup>4</sup></a>.</p>
 <figure class="highlight">
 <pre><code class="language-r" data-lang="r"><span class="n">simp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coenocline</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">responseModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gaussian"</span><span class="p">,</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pars</span><span class="p">,</span><span class="w">
                    </span><span class="n">countModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"poisson"</span><span class="p">)</span></code></pre>
@@ -330,11 +330,11 @@ Parameters:
         </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pH"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-simulations.png" alt="Figure 2: Simulated species abundances with Poisson errors from Gaussian response curves along a hypothetical pH gradient" /><figcaption>Figure 2: Simulated species abundances with Poisson errors from Gaussian response curves along a hypothetical pH gradient</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-simulations.png" alt="" /><figcaption>Figure 2: Simulated species abundances with Poisson errors from Gaussian response curves along a hypothetical pH gradient</figcaption>
 </figure>
 <p>The resultant plot is shown in Figure 2 above.</p>
 <p>Whilst the simulated counts look reasonable and follow the response curves in Figure  there is a problem; the variation around the expected curves is too small. This is due to the error variance implied by the Poisson distribution encapsulating only that variance which would arise due to repeated sampling at the gradient locations. Most species abundance data exhibit much larger degrees of variation than that shown in Figure .</p>
-<p>A solution to this is to sample from a distribution that incorporates additional variance or <em>overdispersion</em>. A natural partner to the Poisson that includes overdispersion is the negative binomial. To simulate count data using the negative binomial distribution we must alter <code>countModel</code> and supply the overdispersion parameter <span class="math inline">\(\alpha\)</span> to use<a href="#fn5" class="footnote-ref" id="fnref5"><sup>5</sup></a> via <code>countParams</code>.</p>
+<p>A solution to this is to sample from a distribution that incorporates additional variance or <em>overdispersion</em>. A natural partner to the Poisson that includes overdispersion is the negative binomial. To simulate count data using the negative binomial distribution we must alter <code>countModel</code> and supply the overdispersion parameter <span class="math inline">\(\alpha\)</span> to use<a href="#fn5" class="footnote-ref" id="fnref5" role="doc-noteref"><sup>5</sup></a> via <code>countParams</code>.</p>
 <figure class="highlight">
 <pre><code class="language-r" data-lang="r"><span class="n">simnb</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">coenocline</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">responseModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gaussian"</span><span class="p">,</span><span class="w"> </span><span class="n">params</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pars</span><span class="p">,</span><span class="w">
                     </span><span class="n">countModel</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"negbin"</span><span class="p">,</span><span class="w"> </span><span class="n">countParams</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">))</span></code></pre>
@@ -345,7 +345,7 @@ Parameters:
         </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pH"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-nb-simulations.png" alt="Figure 3: Simulated species abundance with negative binomial errors from Gaussian response curves along a hypothetical pH gradient" /><figcaption>Figure 3: Simulated species abundance with negative binomial errors from Gaussian response curves along a hypothetical pH gradient</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example1-plot-nb-simulations.png" alt="" /><figcaption>Figure 3: Simulated species abundance with negative binomial errors from Gaussian response curves along a hypothetical pH gradient</figcaption>
 </figure>
 <h3 id="generalised-beta-responses-along-a-single-gradient">Generalised beta responses along a single gradient</h3>
 <p>In this example, I recreate figure 2 in <span class="citation" data-cites="Minchin1987">Minchin (1987)</span> and then simulate species abundances from the species response curves. The species parameters for the generalised beta response for the six species in <span class="citation" data-cites="Minchin1987">Minchin (1987)</span> are</p>
@@ -381,7 +381,7 @@ Parameters:
 <pre><code class="language-r" data-lang="r"><span class="n">matplot</span><span class="p">(</span><span class="n">locs</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"solid"</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w"> </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Gradient"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example2-beta-plot-expectations.png" alt="Figure 4: Generalised beta function species response curves along a hypothetical environmental gradient recreating Figure 2 in Minchin (1987)." /><figcaption>Figure 4: Generalised beta function species response curves along a hypothetical environmental gradient recreating Figure 2 in Minchin (1987).</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example2-beta-plot-expectations.png" alt="" /><figcaption>Figure 4: Generalised beta function species response curves along a hypothetical environmental gradient recreating Figure 2 in Minchin (1987).</figcaption>
 </figure>
 <p>Figure 4 is a good facsimile of figure 2 in <span class="citation" data-cites="Minchin1987">Minchin (1987)</span>.</p>
 <h3 id="gaussian-response-along-two-gradients">Gaussian response along two gradients</h3>
@@ -442,7 +442,7 @@ Parameters:
 </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example3-persp-plots.png" alt="Figure 5: Bivariate Gaussian species responses for four selected species." /><figcaption>Figure 5: Bivariate Gaussian species responses for four selected species.</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example3-persp-plots.png" alt="" /><figcaption>Figure 5: Bivariate Gaussian species responses for four selected species.</figcaption>
 </figure>
 <p>The selected species response curves are shown in Figure 5.</p>
 <p>Simulated counts for each species can be produced by removing <code>expectation = TRUE</code> from the call and choosing an error distribution to make random draws from. For example, for negative binomial errors with dispersion \(= 1\) we can use</p>
@@ -464,9 +464,9 @@ Parameters:
 </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example3-persp-plots2.png" alt="Figure 6: Simulated counts using negative binomial errors from bivariate Gaussian species responses for four selected species." /><figcaption>Figure 6: Simulated counts using negative binomial errors from bivariate Gaussian species responses for four selected species.</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simulating-species-abundance-data-with-the-coenocliner-package-example3-persp-plots2.png" alt="" /><figcaption>Figure 6: Simulated counts using negative binomial errors from bivariate Gaussian species responses for four selected species.</figcaption>
 </figure>
-<div id="refs" class="references">
+<div id="refs" class="references" role="doc-bibliography">
 <div id="ref-Allaby1998">
 <p>Allaby, M. (1998). <em>A dictionary of ecology</em>. second. Oxford University Press.</p>
 </div>
@@ -474,14 +474,14 @@ Parameters:
 <p>Minchin, P. R. (1987). Simulation of multidimensional community patterns: Towards a comprehensive model. <em>Vegetatio</em> 71, 145–156.</p>
 </div>
 </div>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>This is not strictly true as you can work out how the species parameters are replicated relative to gradient values and hence pass a vector of the correct length with the species-specific values included. Study the outputs from <code>expand()</code> when supplied gradient locations and parameters to work out how to specify <code>extraParams</code> appropriately<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p>Again, this is not strictly true as you can work out how the species parameters are replicated relative to gradient values and hence pass a vector of the correct length with the species-specific values included. Study the outputs from <code>expand()</code> when supplied gradient locations and parameters to work out how to specify <code>countParams</code> appropriately<a href="#fnref2" class="footnote-back">↩</a></p></li>
-<li id="fn3"><p>until such a time as the <strong>coenocliner</strong> has a <code>plot</code> method…<a href="#fnref3" class="footnote-back">↩</a></p></li>
-<li id="fn4"><p><code>countModel = "poisson"</code> is the default so this can be excluded from the call.<a href="#fnref4" class="footnote-back">↩</a></p></li>
-<li id="fn5"><p>Recall that this is only easily specifiable globally in version 0.1-0 of <strong>coenocliner</strong>.<a href="#fnref5" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>This is not strictly true as you can work out how the species parameters are replicated relative to gradient values and hence pass a vector of the correct length with the species-specific values included. Study the outputs from <code>expand()</code> when supplied gradient locations and parameters to work out how to specify <code>extraParams</code> appropriately<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>Again, this is not strictly true as you can work out how the species parameters are replicated relative to gradient values and hence pass a vector of the correct length with the species-specific values included. Study the outputs from <code>expand()</code> when supplied gradient locations and parameters to work out how to specify <code>countParams</code> appropriately<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn3" role="doc-endnote"><p>until such a time as the <strong>coenocliner</strong> has a <code>plot</code> method…<a href="#fnref3" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn4" role="doc-endnote"><p><code>countModel = "poisson"</code> is the default so this can be excluded from the call.<a href="#fnref4" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn5" role="doc-endnote"><p>Recall that this is only easily specifiable globally in version 0.1-0 of <strong>coenocliner</strong>.<a href="#fnref5" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 

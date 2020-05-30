@@ -311,9 +311,9 @@ PARKER AND HORTON (INT.J.CLIM., 2005)
 </span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"CET"</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cet.png" alt="CET annual average temperature time series" /><figcaption>CET annual average temperature time series</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cet.png" alt="" /><figcaption>CET annual average temperature time series</figcaption>
 </figure>
-<p>If you plot the full data, you get a mess<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> — try it if you want</p>
+<p>If you plot the full data, you get a mess<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> — try it if you want</p>
 <figure class="highlight">
 <pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w">
 </span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span></code></pre>
@@ -343,14 +343,14 @@ This is mgcv 1.7-29. For overview type 'help("mgcv-package")'.</code></pre>
 <h3 id="cyclic-cubic-spline-basis">Cyclic cubic spline basis</h3>
 <p>So what’s a cyclic cubic spline? Well, first let’s look at the standard cubic spline basis</p>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cubic-spline-example.png" alt="Cubic spline basis functions" /><figcaption>Cubic spline basis functions</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cubic-spline-example.png" alt="" /><figcaption>Cubic spline basis functions</figcaption>
 </figure>
 <p>The left-hand plot shows a single basis function centred on a knot at 0.5. The x-axis here is arbitrary, but it would represent the observed covariate data, \(x_2\) say. The vertical dashed lines show the locations of the 5 interior knots plus the two boundary knots. The more knots we have the more complex the fitted spline can be. A cubic spline basis function for a given knot takes a value 1 at its knot location and a value of 0 at all other knots. The figure shows only a single basis function, but there are equivalent functions positioned at each of the other 6 knots.</p>
 <p>When we fit the model, <strong>mgcv</strong> is estimating a coefficient for each of these basis functions. The final spline is given by a weighted sum of the basis functions with the estimated coefficients used as the weights. This is illustrated in the right-hand figure, where I have arbitrarily chosen some coefficient values, and which scale each basis function. The “fitted” spline is shown by the thick black line. The values of this spline are determined by adding up the values of all the basis functions under each point on spline.</p>
 <p>A key point to note here is that there is a large discontinuity in the value taken by the spline (the thick black line) at the ends of the data, at each end of the x-axis on the plot. If <code>x</code> represented something like day of year, or month, that discontinuity would be a bad thing if, as is the case here, the variable of interest (temperature) behaved cyclically.</p>
 <p>This is where the cyclic cubic spline basis comes in. This basis has an additional constraint, which states that there should be no discontinuity at the end points of the spline. In other words, we force the ends of the cyclic spline to join up. This is illustrated below</p>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cyclic-cubic-spline-example.png" alt="Cyclic cubic spline basis functions" /><figcaption>Cyclic cubic spline basis functions</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cyclic-cubic-spline-example.png" alt="" /><figcaption>Cyclic cubic spline basis functions</figcaption>
 </figure>
 <p>This time, to make it clearer, the left hand panel shows a cubic cyclic spline basis function located at a <code>x</code> = 0.167. If you were to wrap the x-axis into a loop by joining the end points the basis function would meet nicely and smoothly at the join. The basis function still takes a value of 1 at its knot and 0 at the other knots, just as before, and there are matching basis functions for each of the knots, they’re just not shown in this panel.</p>
 <p>The right hand panel shows how the “fitted” spline is derived as a weighted sum of the basis functions underneath any point on the spline. Because the basis functions all smoothly join at the end points of <code>x</code>, so does the fitted cyclic cubic spline.</p>
@@ -389,7 +389,7 @@ R-sq.(adj) =  0.917  Scale est. = 1.9117    n = 4260</code></pre>
 </span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model.png" alt="Smooth terms for the naive model assuming uncorrelated errors" /><figcaption>Smooth terms for the naive model assuming uncorrelated errors</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model.png" alt="" /><figcaption>Smooth terms for the naive model assuming uncorrelated errors</figcaption>
 </figure>
 <p>The figure shows the two splines; the one on the left is the seasonal term, the cyclic cubic spline (note how the ends join nicely!), and the one on the right is the trend term (note how ridiculously wiggly this is!) The splines are on very different scales (<code>scale = 0</code>) which illustrates the relative degrees of variation in the seasonal and trend term; there is about 1-1.5 degree rise in temperature over the period, but within a given year there is about 12 degrees variation in temperature, <em>on average</em>. Obviously, the actual data vary around these values and that is the unexplained variance.</p>
 <p>We should look at the residuals of this model too, here using the (partial) autocorrelation function</p>
@@ -400,7 +400,7 @@ R-sq.(adj) =  0.917  Scale est. = 1.9117    n = 4260</code></pre>
 </span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model-residuals.png" alt="ACF and pACF of the residuals from the naive model" /><figcaption>ACF and pACF of the residuals from the naive model</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model-residuals.png" alt="" /><figcaption>ACF and pACF of the residuals from the naive model</figcaption>
 </figure>
 <p>As expected, the is substantial residual autocorrelation in the data that even the wiggly trend term couldn’t account for. The shapes of the ACF and the <em>p</em>ACF suggest an AR(<em>p</em>) model might be needed…</p>
 <h2 id="models-with-correlated-errors">Models with correlated errors</h2>
@@ -443,7 +443,7 @@ m3$lme     4  8 14631 14682  -7307 3 vs 4    2.52  0.1123</code></pre>
 </span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-ar2-model-terms.png" alt="Smooth terms for the best fitting GAM model with AR(2)" /><figcaption>Smooth terms for the best fitting GAM model with AR(2)</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-ar2-model-terms.png" alt="" /><figcaption>Smooth terms for the best fitting GAM model with AR(2)</figcaption>
 </figure>
 <p>Looking now at the normalized residuals (which take into account the covariance matrix of the residuals), we see no important or significant residual autocorrelation suggesting that the AR(2) model is sufficient and we can, to some degree, draw inference from this model.</p>
 <figure class="highlight">
@@ -454,7 +454,7 @@ m3$lme     4  8 14631 14682  -7307 3 vs 4    2.52  0.1123</code></pre>
 </span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-acf-residuals-ar2-model.png" alt="ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix" /><figcaption>ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-acf-residuals-ar2-model.png" alt="" /><figcaption>ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix</figcaption>
 </figure>
 <h2 id="extracting-individual-model-terms">Extracting individual model terms</h2>
 <p>The fitted GAM model object contains a lot of information that can be used to interrogate the model. For the purposes of this post I’m interested in the trend terms, so I can extract information about the contributions to the fitted values of our chosen model by getting <strong>mgcv</strong> to spit out this information using <code>predict()</code> and <code>type = "terms"</code>. In the code below, I do this for each of the four models we’ve fitted, predicting for 200 evenly-spaced values over the range of the date. Note <code>want</code> picks out the 200 values from the observed data as these are evenly spaced. For more complex data you may need to be a bit more clever about how you choose these values.</p>
@@ -498,17 +498,17 @@ m3$lme     4  8 14631 14682  -7307 3 vs 4    2.52  0.1123</code></pre>
 </span><span class="o">&gt;</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">op</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-model-trends.png" alt="Comparison of the fitted trend components for the four models considered" /><figcaption>Comparison of the fitted trend components for the four models considered</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-model-trends.png" alt="" /><figcaption>Comparison of the fitted trend components for the four models considered</figcaption>
 </figure>
 <p>This plot nicely illustrates the reduction in wiggliness of the estimated trend in the AR(2) and AR(3) models, and how similar the two higher-order AR models are in terms of their trend estimates.</p>
 <p>I’ll leave things at this point; in the next post I’ll look at how we can look at where the estimated trend is changing in a statistically significant fashion by interrogating the fitted GAM in deeper and more devious ways.</p>
 <h2 id="disclaimer">Disclaimer</h2>
 <p>Don’t over interpret the model fits here; they were done to illustrate how to get <strong>mgcv</strong> to fit models to seasonal data. If you were doing this in anger for a real analysis then we’d want to look in a lot more detail at unmodelled features such as changes in the seasonal temperature with the trend and do a lot more in terms of model diagnostics. Such things are beyond the scope of this particular post, but I will pick some of these issues up in later postings as time permits.</p>
 <p>Note also that the precision with which the data are reported early on in the series is less than that for more recent decades. This potentially might affect the variance of the series; the data might seem less variable earlier on because they are not recorded to the same level of precision as later values. We could investigate this and also other peculiarities of this particular data set and how it was collated by going back to the references cited in the raw data file and adjusting the model to account for any idiosyncrasies.</p>
-<section class="footnotes">
+<section class="footnotes" role="doc-endnotes">
 <hr />
 <ol>
-<li id="fn1"><p>It’s not a mess really; the problem is that there are so many years of data that the years are all squished up tight and, coupled with the magnitude of the seasonal variation, this leads to an irregular black band obscuring everything unless you have a very wide graphics device.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1" role="doc-endnote"><p>It’s not a mess really; the problem is that there are so many years of data that the years are all squished up tight and, coupled with the magnitude of the seasonal variation, this leads to an irregular black band obscuring everything unless you have a very wide graphics device.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
 
