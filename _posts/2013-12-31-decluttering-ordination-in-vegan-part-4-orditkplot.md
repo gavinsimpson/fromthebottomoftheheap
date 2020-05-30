@@ -62,7 +62,7 @@ Hopefully you will now have a new window on screen that looks like
 
 You can now move labels around on the plot and edit labels. These features are illustrated in the video below, in which I spend a few minutes editing the base plot so that there is no overlap in the labels.
 
-<iframe src="http://player.vimeo.com/video/82920329?color=f43d00" width="500" height="544" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="margin-left: auto; margin-right: auto; display: block; margin-top: 10px; margin-bottom: 10px;"></iframe>
+<iframe src="https://player.vimeo.com/video/82920329?color=f43d00" width="500" height="544" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="margin-left: auto; margin-right: auto; display: block; margin-top: 10px; margin-bottom: 10px;"></iframe>
 
   * To move a label around, lift-click on the label and drag it to a new location. You'll notice that the label is highlighted with a yellow background, and
     that as you move the label around, it is tethered to its score point by a thin line. This last feature allows you to move labels temporarily well out of the way whilst editing and not have to remember which labels belong to which points!
