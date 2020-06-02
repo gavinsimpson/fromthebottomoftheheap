@@ -1,7 +1,7 @@
 --- 
 title: "gratia 0.4.1 released"
 date: 2020-05-31 13:00:00
-subtitle: ""
+subtitle: false
 status: publish
 layout: post
 published: true
