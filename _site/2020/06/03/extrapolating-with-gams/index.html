@@ -1,0 +1,723 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <meta charset="utf-8">
+    <title>Extrapolating with B splines and GAMs</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GAM, splines, B splines, mgcv, extrapolation, penalty" />
+
+
+<meta name="description" content="An issue that often crops up when modelling with generlaized additive models (GAMs), especially with time series or spatial data, is how to extrapolate beyond the range of the data used to train the model? The issue arises because GAMs use splines to learn from the data using basis functions. The splines themselves are built from basis functions that are typically setup in terms of the data used to fit the model. If there are no basis functions beyond the range of the input data, what exactly is being used if we want to extrapolate? A related issue is that of the wiggliness penalty; depending on the type of basis used, the penalty could extend over the entire real line (-∞–∞), or only over the range of the input data. In this post I want to take a practical look the extrapolation behaviour of splines in GAMs fitted with the mgcv package for R. In particular I want to illustrate how flexible the B spline basis is.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Extrapolating with B splines and GAMs" />
+<meta property="dc:creator" content="Gavin Simpson" />
+<meta property="dc:date" content="2020-06-03T13:00:00-06:00" />
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Extrapolating with B splines and GAMs" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+<meta property="http://ogp.me/ns/article#published_time" content="2020-06-03T13:00:00-06:00" />
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2020/06/03/extrapolating-with-gams/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="An issue that often crops up when modelling with generlaized additive models (GAMs), especially with time series or spatial data, is how to extrapolate beyond the range of the data used to train the model? The issue arises because GAMs use splines to learn from the data using basis functions...." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Extrapolating with B splines and GAMs" />
+
+<meta name="twitter:image" content="https://www.fromthebottomoftheheap.net/assets/img/posts/extrapolating-with-b-splines-and-gams-plot-b-spline-with-mixed-penalties-1.png" />
+
+
+<meta name="twitter:description" content="An issue that often crops up when modelling with generlaized additive models (GAMs), especially with time series or spatial data, is how to extrapolate beyond the range of the data used to train t..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+<meta name="citation_publication_date" content="03 Jun 2020"/>
+<meta name="citation_date" content="03 Jun 2020"/>
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Extrapolating with B splines and GAMs"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2020/05/31/new-gratia-release/">gratia 0.4.1 released</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Extrapolating with B splines and GAMs </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>An issue that often crops up when modelling with generlaized additive models (GAMs), especially with time series or spatial data, is how to extrapolate beyond the range of the data used to train the model? The issue arises because GAMs use splines to learn from the data using basis functions. The splines themselves are built from basis functions that are typically setup in terms of the data used to fit the model. If there are no basis functions beyond the range of the input data, what exactly is being used if we want to extrapolate? A related issue is that of the wiggliness penalty; depending on the type of basis used, the penalty could extend over the entire real line (-∞–∞), or only over the range of the input data. In this post I want to take a practical look the extrapolation behaviour of splines in GAMs fitted with the <strong>mgcv</strong> package for R. In particular I want to illustrate how flexible the B spline basis is.</p>
+<p>A lot of what I discuss in the post draws heavily on the help page in <strong>mgcv</strong> for the B spline basis — <code>?mgcv::b.spline</code> — and a recent email discussion with Alex Hayes, Dave Miller, and Eric Pedersen, though what I write here reflects my own input to that discussion.</p>
+<p>I was initially minded to look into this again after reading a <a href="https://arxiv.org/abs/2004.11408">new preprint</a> on low-rank approximations to a Gaussian processe <span class="citation" data-cites="Riutort-Mayol2020-ih">(GP; Riutort-Mayol et al., 2020)</span>, where, among other things, the authors compare the behaviour of the exact GP model with their low-rank version and with a thin plate regression spline (TPRS). The TPRS is the sort of thing you’d get by default with <strong>mgcv</strong> and <code>s()</code>, but as the other models were all fully Bayesian, the TPRS model was fitted using <code>brm()</code> from the <strong>brms</strong> package so that all the models were comparable, ultimately being fitted in <strong>Stan</strong>. The TPRS model didn’t do a very good job of fitting the test observations when extrapolating beyond the limits of the data. I wondered if we could do any better with the B spline basis in <strong>mgcv</strong> as I knew it had extra flexibility for short extrapolation beyond the data, but I’d never really looked into how it worked or what the respective behaviour was.</p>
+<p>If you want to recreate elements of the rest of the post, you’ll need the following packages installed:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## Packages</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'ggplot2'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'tibble'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'tidyr'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'dplyr'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'mgcv'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'gratia'</span><span class="p">)</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'patchwork'</span><span class="p">)</span><span class="w">
+
+</span><span class="c1">## remotes::install_github("clauswilke/colorblindr")</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'colorblindr'</span><span class="p">)</span><span class="w">
+</span><span class="c1">## remotes::install_github("clauswilke/relayer")</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'relayer'</span><span class="p">)</span></code></pre>
+</figure>
+<p>The last two are used for plotting and the <strong>relayer</strong> package in particular is needed as I’m going to be using two separate colour scales on the plots. If you don’t have these installed, you can install them using the <strong>remotes</strong> package and the code in commented lines above.</p>
+<p>The example data set used in the comparsion had been posted to the preprint’s GitHub repo, so it was easy to grab them and start playing with. To load the data into R we can use</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">load</span><span class="p">(</span><span class="n">url</span><span class="p">(</span><span class="s2">"https://bit.ly/gprocdata"</span><span class="p">))</span><span class="w">
+</span><span class="n">ls</span><span class="p">()</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] "f_true"</code></pre>
+</figure>
+<p>where the Bitly short link just links to the <code>.Rdata</code> file stored on GitHub. This creates an object, <code>f_true</code>, in the workspace. We’ll look at the true function in a minute. Following the preprint, a data set of noisy observations is simulated from the true function by adding Gaussian noise (μ = 0, σ = 0.2)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">seed</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">1234</span><span class="w">
+</span><span class="n">set.seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span><span class="w">
+</span><span class="n">gp_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tibble</span><span class="p">(</span><span class="n">truth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">unname</span><span class="p">(</span><span class="n">f_true</span><span class="p">),</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="m">-1</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.002</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">mutate</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">truth</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">rnorm</span><span class="p">(</span><span class="nf">length</span><span class="p">(</span><span class="n">truth</span><span class="p">),</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">0.2</span><span class="p">))</span></code></pre>
+</figure>
+<p>From that noisy set, we sample 250 observations at random, and indicate some of the observations as being in a test set that we won’t use when fitting GAMs</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span><span class="w">
+</span><span class="n">r_samp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sample_n</span><span class="p">(</span><span class="n">gp_data</span><span class="p">,</span><span class="w"> </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">250</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">arrange</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">mutate</span><span class="p">(</span><span class="n">data_set</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">case_when</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="m">-0.8</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"test"</span><span class="p">,</span><span class="w">
+                                </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">0.8</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"test"</span><span class="p">,</span><span class="w">
+                                </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">-0.45</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="m">-0.36</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"test"</span><span class="p">,</span><span class="w">
+                                </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">-0.05</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="m">0.05</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"test"</span><span class="p">,</span><span class="w">
+                                </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="m">0.45</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="m">0.6</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"test"</span><span class="p">,</span><span class="w">
+                                </span><span class="kc">TRUE</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"train"</span><span class="p">))</span></code></pre>
+</figure>
+<p>Finally we visualize the true function and the noisy observations we sampled from it</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data_set</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">truth</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NULL</span><span class="p">),</span><span class="w"> </span><span class="n">show.legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.5</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_brewer</span><span class="p">(</span><span class="n">palette</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Set1"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Data set"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/extrapolating-with-b-splines-and-gams-plot-noisy-data-1.svg" alt="" /><figcaption>The true function and noisy observations drawn from it. The blue dots are the training observations that we’ll use to fit models, while the red dots are test observations used to investigate how the models interpolate and extrapolate.</figcaption>
+</figure>
+<p>The red points are the test observations and will be used to look at the behaviour of the splines under interpolating and extrapolating conditions.</p>
+<h2 id="thin-plate-splines">Thin Plate splines</h2>
+<p>Firstly, we’ll look at how the thin plate splines behave under extrapolation, recreating the behaviour from the preprint. I start by fitting two GAMs where we use 50 basis functions (<code>k = 50</code>) from the TPRS basis (<code>bs = "tp"</code>). The argument <code>m</code> controls the order of the derivative penalty; the default is <code>m = 2</code>, for a second derivative penalty (penalising the curvature fo the spline). For the second model, we use <code>m = 1</code>, indicating a penalty on the first derivative of the TPRS, which penalises deviations from a flat function. Note that we filter the sample of noisy data to include only the training observations.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m_tprs2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"tp"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
+               </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span><span class="w">
+</span><span class="c1">## first order penalty</span><span class="w">
+</span><span class="n">m_tprs1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"tp"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
+               </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span></code></pre>
+</figure>
+<p>I won’t worry about looking at model diagnostics in this post, and instead skip to the looking at how these two models behave when we predict beyond the limits of the training data.</p>
+<p>Next I define some new observations to predict at from the two models</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">new_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tibble</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="m">-1.5</span><span class="p">,</span><span class="w"> </span><span class="m">1.5</span><span class="p">,</span><span class="w"> </span><span class="n">by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.002</span><span class="p">))</span></code></pre>
+</figure>
+<p>Remember the training data covered the interval -0.8–0.8, so we’re extrapolating quite far proportionally from the support of the training data. Now we can predict from the two models</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">p_tprs2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_tprs2</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_tprs_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_tprs_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+</span><span class="n">p_tprs1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_tprs1</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_tprs_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_tprs_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span></code></pre>
+</figure>
+<p>Note we have named the two columns of data with some information that we’ll need for plotting, so the underscores are important.</p>
+<p>Next we do some data wrangling to get the predictions into a tidy format suitable for plotting</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">crit</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">qnorm</span><span class="p">((</span><span class="m">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="m">0.89</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">lower.tail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w">
+</span><span class="n">new_data_tprs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bind_cols</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">p_tprs2</span><span class="p">,</span><span class="w"> </span><span class="n">p_tprs1</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_longer</span><span class="p">(</span><span class="n">fit_tprs_2</span><span class="o">:</span><span class="n">se_tprs_1</span><span class="p">,</span><span class="w"> </span><span class="n">names_sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'_'</span><span class="p">,</span><span class="w">
+                 </span><span class="n">names_to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s1">'variable'</span><span class="p">,</span><span class="w"> </span><span class="s1">'spline'</span><span class="p">,</span><span class="w"> </span><span class="s1">'order'</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_wider</span><span class="p">(</span><span class="n">names_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable</span><span class="p">,</span><span class="w"> </span><span class="n">values_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">mutate</span><span class="p">(</span><span class="n">upr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">crit</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">),</span><span class="w"> </span><span class="n">lwr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">crit</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">))</span></code></pre>
+</figure>
+<p>The basic idea here is that we cast the data to a very general long-and-thin version and pull out variables indicating the type of value (<code>fit</code> = fitted and <code>se</code> = standard error), the type of spline, and the order of the penalty, by splitting on the underscore in each of the input columns. Then we cast the long-and-thin data frame to a slightly wider version where we have access to the <code>fit</code> and <code>se</code> variables, before calculating a 89% credible interval on the predicted values.</p>
+<p>Now we can plot the data plus the predicted values</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_tprs</span><span class="p">,</span><span class="w">
+                </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w">
+                              </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">),</span><span class="w">
+                </span><span class="n">inherit.aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data_set</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_tprs</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">colour2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">),</span><span class="w">
+              </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename_geom_aes</span><span class="p">(</span><span class="n">new_aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"colour"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_brewer</span><span class="p">(</span><span class="n">palette</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Set1"</span><span class="p">,</span><span class="w"> </span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour"</span><span class="p">,</span><span class="w">
+                        </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Data set"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_OkabeIto</span><span class="p">(</span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Penalty"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_fill_OkabeIto</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Penalty"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">coord_cartesian</span><span class="p">(</span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Extrapolating with thin plate splines"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"How behaviour varies with derivative penalties of different order"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/extrapolating-with-b-splines-and-gams-plot-tprs-predictions-1.svg" alt="" /><figcaption>Posterior predictive means for the two thin plate regression spline models showing the interpolation and extrapolation behaviour with first and second derivative penalties.</figcaption>
+</figure>
+<p>With the default, second derivative penalty we see that under extrapolation, the spline exhibits linear behaviour. For the first deriavtive penalty model, the behaviour is to predict a constant value. The credible intervals are also unrealistically narrow in the case of the TPRS model with the first derivative penalty. Neither does a particularly good job of estimating any of the test samples outside the range of <em>x</em> in the training data. The models do better when interpolating, except for the section around <em>x</em> = 0.5.</p>
+<h2 id="b-splines">B splines</h2>
+<p>OK. What about B splines? With the B spline constructor in <strong>mgcv</strong> we have a lot of control over how we set up the basis and the wiggliness penalty. We’ll look at more of these options later, but first, we’ll look at the default behaviour where the penalty only operates over the range of the training observations.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m_bs_default</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">)),</span><span class="w">
+                    </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
+*no* information about some basis coefficients</code></pre>
+</figure>
+<p>Here we asked for a cubic B spline with a second order penalty — this is your common or garden cubic B spline where the wigglines penalty over covers the range of <em>x</em> in the training data. Ignore the warning; this is just because we have many functions and some aren’t supported by any of the data because of the holes due to the test observations.</p>
+<p>If we want to have the penalty extend some way beyond the range of <em>x</em>, we need to pass in a set of end points over which knots will be defined. We need to specify the two extreme end points that enclose the region we want to predict over, and two interior knots that cover the range of the data, plus a little. We specify these knots below</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">knots</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="w"> </span><span class="m">-0.9</span><span class="p">,</span><span class="w"> </span><span class="m">0.9</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">))</span></code></pre>
+</figure>
+<p>and then pass <code>knots</code> to the <code>knots</code> argument when fitting the model</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m_bs_extrap</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">)),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+                   </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
+*no* information about some basis coefficients</code></pre>
+</figure>
+<p>The only difference here is how we have specified we want the penalty to extend away from the limits of the training observations. You’ll get another warning here. This will always happen when you set outer knots beyond the range of the data; it is harmless.</p>
+<p>We can visualize the differences in the bases using <code>basis()</code> from the <strong>gratia</strong> package</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">bs_default</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">basis</span><span class="p">(</span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">)),</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">,</span><span class="w">
+                    </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="m">-0.8</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="m">0.8</span><span class="p">))</span><span class="w">
+</span><span class="n">bs_extrap</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">basis</span><span class="p">(</span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">)),</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">,</span><span class="w">
+                   </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data</span><span class="p">)</span><span class="w">
+</span><span class="n">lims</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lims</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-1.5</span><span class="p">,</span><span class="w"> </span><span class="m">1.5</span><span class="p">))</span><span class="w">
+</span><span class="n">vlines</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">geom_vline</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">tibble</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-0.8</span><span class="p">,</span><span class="w"> </span><span class="m">0.8</span><span class="p">)),</span><span class="w">
+                     </span><span class="n">aes</span><span class="p">(</span><span class="n">xintercept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">),</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dashed"</span><span class="p">)</span><span class="w">
+</span><span class="p">(</span><span class="n">draw</span><span class="p">(</span><span class="n">bs_default</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">lims</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">vlines</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">draw</span><span class="p">(</span><span class="n">bs_extrap</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">lims</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">vlines</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">plot_annotation</span><span class="p">(</span><span class="n">tag_levels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'A'</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/extrapolating-with-b-splines-and-gams-visualize-bases-1.svg" alt="" /><figcaption>Cubic B spline bases with knots covering the range of training observations (A) and with outer knots covering the range of the training data plus the region where we want to extrapolate. Using the outer knots has the effect of extending the wigliness penalty over the region we want to predict for. The dashed lines are drawn at <em>x</em> = -0.8 and <em>x</em> = 0.8, the limits of the training observations.</figcaption>
+</figure>
+<p>Technically, the basis functions in the top panel would extend a little into the prediction region, but <code>basis()</code> can’t yet handle using one data set to set up the basis and another at which to evaluate it. Because we have basis functions extending over the interval for prediction, the wiggliness penalty can apply in this region too.</p>
+<p>Now we predict from both the models as before and repeat the data wrangling</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">p_bs_default</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_bs_default</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_bs_default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_bs_default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+</span><span class="n">p_bs_extrap</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_bs_extrap</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_bs_extrap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_bs_extrap</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+
+</span><span class="n">new_data_bs_eg</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bind_cols</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs_default</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs_extrap</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_longer</span><span class="p">(</span><span class="n">fit_bs_default</span><span class="o">:</span><span class="n">se_bs_extrap</span><span class="p">,</span><span class="w"> </span><span class="n">names_sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'_'</span><span class="p">,</span><span class="w">
+                 </span><span class="n">names_to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s1">'variable'</span><span class="p">,</span><span class="w"> </span><span class="s1">'spline'</span><span class="p">,</span><span class="w"> </span><span class="s1">'penalty'</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_wider</span><span class="p">(</span><span class="n">names_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable</span><span class="p">,</span><span class="w"> </span><span class="n">values_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">mutate</span><span class="p">(</span><span class="n">upr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">crit</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">),</span><span class="w"> </span><span class="n">lwr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">crit</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">))</span></code></pre>
+</figure>
+<p>The only difference here is that I encoded in the variable names whether we used the default penalty or the one extended beyond the limits of the data. We plot the fits with</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_bs_eg</span><span class="p">,</span><span class="w">
+                </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">penalty</span><span class="p">),</span><span class="w">
+                </span><span class="n">inherit.aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data_set</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_bs_eg</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">colour2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">penalty</span><span class="p">),</span><span class="w">
+              </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename_geom_aes</span><span class="p">(</span><span class="n">new_aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"colour"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_brewer</span><span class="p">(</span><span class="n">palette</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Set1"</span><span class="p">,</span><span class="w"> </span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Data set"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_OkabeIto</span><span class="p">(</span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Penalty"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_fill_OkabeIto</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Penalty"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">coord_cartesian</span><span class="p">(</span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Extrapolating with B splines"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"How behaviour varies when the penalty extends beyond the data"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/extrapolating-with-b-splines-and-gams-plot-bs-eg-predictions-1.svg" alt="" /><figcaption>Posterior predictive means for the two B spline models showing the interpolation and extrapolation behaviour when the penalty over covers the range of the data and when it extends byond that range.</figcaption>
+</figure>
+<p>As both these models used second derivative penalties, they both extrapolate linearlly beyond the range of the training observations. Importantly however, we get very different behaviour of the credible intervals, especially at the low end of <em>x</em>, where the wide interval is a better representation of the uncertainty that we have in the extrapolated predictions. This is better behaviour, as at least we’re being honest about the uncertainty when extrapolating.</p>
+<h2 id="comparing-different-bases">Comparing different bases</h2>
+<p>So far, so uninteresting. Before we get to the good stuff and demonstrate other features of the B spline basis in <em>mgcv</em>, let’s just quickly compare the TPRS and B spline models with a Gaussian process smooth that is designed to closesly match the data generating function. Note that this GP is fitted using <strong>mgcv</strong> where we have to specify the length scale, and as such isn’t meant to be directly comparable with either the exact or the low-rank GP models of <span class="citation" data-cites="Riutort-Mayol2020-ih">Riutort-Mayol et al. (2020)</span>.</p>
+<p>In <strong>mgcv</strong> a GP can be fit using <code>bs = "gp"</code>. When we do this, the meaning of the <code>m</code> argument changes. Here we are asking for a Matérn covariance function with ν = 3/2 and length scale of 0.15. These values were chosen to match those of the true function.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m_gp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"gp"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">0.15</span><span class="p">)),</span><span class="w">
+            </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span></code></pre>
+</figure>
+<p>Again we have some wrangling to do to pull all these together into an object we can plot easily</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">p_bs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_bs_extrap</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+</span><span class="n">p_tprs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_tprs2</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_tprs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_tprs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+</span><span class="n">p_gp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_gp</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_gp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_gp</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+
+</span><span class="n">new_data_bases</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bind_cols</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">p_tprs</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs</span><span class="p">,</span><span class="w"> </span><span class="n">p_gp</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_longer</span><span class="p">(</span><span class="n">fit_tprs</span><span class="o">:</span><span class="n">se_gp</span><span class="p">,</span><span class="w"> </span><span class="n">names_sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'_'</span><span class="p">,</span><span class="w">
+                 </span><span class="n">names_to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s1">'variable'</span><span class="p">,</span><span class="w"> </span><span class="s1">'spline'</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_wider</span><span class="p">(</span><span class="n">names_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable</span><span class="p">,</span><span class="w"> </span><span class="n">values_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">mutate</span><span class="p">(</span><span class="n">upr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">),</span><span class="w"> </span><span class="n">lwr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">))</span></code></pre>
+</figure>
+<p>And finally we plot using</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_bases</span><span class="p">,</span><span class="w">
+                </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">spline</span><span class="p">),</span><span class="w">
+                </span><span class="n">inherit.aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data_set</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_bases</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">colour2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">spline</span><span class="p">),</span><span class="w">
+              </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename_geom_aes</span><span class="p">(</span><span class="n">new_aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"colour"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_brewer</span><span class="p">(</span><span class="n">palette</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Set1"</span><span class="p">,</span><span class="w"> </span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Data set"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_OkabeIto</span><span class="p">(</span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Basis"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_fill_OkabeIto</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Basis"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">coord_cartesian</span><span class="p">(</span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Extrapolating with splines"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"How behaviour varies with different basis types"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning: Ignoring unknown aesthetics: colour2</code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/extrapolating-with-b-splines-and-gams-plot-mixed-spline-predictions-1.svg" alt="" /><figcaption>Posterior predictive means for three GAMs; a thin plate spline with 2nd derivative penalty, a B spline with 2nd derivative penalty extended over the interval for prediction, and a Gaussian process with a Matérn(ν = 3/2) covariance function with length scale = 0.15</figcaption>
+</figure>
+<p>Clearly the GP gets closer to the test data when extrapolating, but that’s not really a fair comparison as I told the model what the correct length scale was! We could try to estimate that from the data, by fitting models over a grid of likely values for the length scale parameter and using the model with the lowest REML score, but I won’t show how to do that here; I have example code in the supplements for <span class="citation" data-cites="Simpson2018-frontiers">Simpson (2018)</span> showing how to do this is you’re keen.</p>
+<h2 id="more-with-b-splines">More with B splines</h2>
+<p>We’re not restricted to using the second derivative penalty with B splines; we can use third, second, first or even zeroth order penalties with cubic B splines. How does their behaviour vary when interpolating and extrapolating?</p>
+<p>For convenience I’ll just fit all three models with a common format, even though we’ve already seen and fitted the first model with the second derivative penalty. Notice how we specify the order of the derivative penalty by passing a second value to the argument <code>m</code>; <code>m = 1</code> is a first derivative penalty, <code>m = 0</code> a zeroth derivative penalty, etc.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m_bs_2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">)),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">)</span><span class="w">
+</span><span class="n">m_bs_1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">)),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">)</span><span class="w">
+</span><span class="n">m_bs_0</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">0</span><span class="p">)),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">)</span></code></pre>
+</figure>
+<p>Again we repeat the data wrangling need to get something we can plot</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">p_bs_2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_bs_2</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_bs_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_bs_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+</span><span class="n">p_bs_1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_bs_1</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_bs_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_bs_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+</span><span class="n">p_bs_0</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_bs_0</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_bs_0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_bs_0</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+
+</span><span class="n">new_data_order</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bind_cols</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs_2</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs_1</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs_0</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_longer</span><span class="p">(</span><span class="n">fit_bs_2</span><span class="o">:</span><span class="n">se_bs_0</span><span class="p">,</span><span class="w"> </span><span class="n">names_sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'_'</span><span class="p">,</span><span class="w">
+                 </span><span class="n">names_to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s1">'variable'</span><span class="p">,</span><span class="w"> </span><span class="s1">'spline'</span><span class="p">,</span><span class="w"> </span><span class="s1">'order'</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_wider</span><span class="p">(</span><span class="n">names_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable</span><span class="p">,</span><span class="w"> </span><span class="n">values_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">mutate</span><span class="p">(</span><span class="n">upr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">),</span><span class="w"> </span><span class="n">lwr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">))</span></code></pre>
+</figure>
+<p>Note again how I’m defining the names of the columns containing fitted values and their standard errors to make it easy to pull out this data during the <code>pivot_longer()</code> step.</p>
+<p>We plot the predicted values with</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_order</span><span class="p">,</span><span class="w">
+                </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">),</span><span class="w">
+                </span><span class="n">inherit.aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data_set</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_order</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">colour2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">order</span><span class="p">),</span><span class="w">
+              </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename_geom_aes</span><span class="p">(</span><span class="n">new_aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"colour"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_brewer</span><span class="p">(</span><span class="n">palette</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Set1"</span><span class="p">,</span><span class="w"> </span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Data set"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_OkabeIto</span><span class="p">(</span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Penalty"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_fill_OkabeIto</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Penalty"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">coord_cartesian</span><span class="p">(</span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Extrapolating with B splines"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"How behaviour varies with penalties of different order"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/extrapolating-with-b-splines-and-gams-plot-b-spline-diff-penalties-1.svg" alt="" /><figcaption>Posterior predictive means for three GAMs using B splines with different orders of derivative penalty, all covering the region where we want to predict for the test samples; a B spline with 2nd derivative penalty, a B spline with 1st derivative penalty, and a B spline with zeroth derivative penalty.</figcaption>
+</figure>
+<p>The plot shows the different penalties leading to quite a wide range of behaviour. The spline with the zeroth order penalty interpolates poorly, seemingly heading towards the overall mean of the data during each of the test section within the range of <em>x</em>. When extrapolating, we again see this “mean reversion” behaviour, which means it does well when extrapolating for large values of <em>x</em>, but it does extremely poorly at the low end of <em>x</em>. The credible intervals for this model are also unrealistically narrow, like those of the TPRS model with 1st derivative penalty that we saw earlier on.</p>
+<p>The model with the first derivatve penalty has reaonable behaviour; it extrapolates as largely a flat function continuing from the min and maximum values of <em>x</em>, as with the TPRS fit with a first derivative penalty we saw above, but the credible intervals are much more realistic for the B spline than for the TPRS. Note also that the intervals for the B spline with the first derivative penalty don’t explode as quickly as those for the B spline fit with the second derivative penalty.</p>
+<h2 id="multiple-penalties">Multiple penalties</h2>
+<p>One final trick that the B spline basis in <strong>mgcv</strong> has up its sleve is that you can combine multiple penalties in a single spline. We could fit cubic B splines with one, two, three, or even four penalties. The additional penalties are specified by passing more values to <code>m</code>: <code>m = c(3, 2, 1)</code> would be a cubic B spline with both a second derivative and a first derivative penalty, while <code>m = c(3, 2, 1, 0)</code> would get you a cubic spline with all three penalties. You can mix and match as much as you like with a couple of exceptions:</p>
+<ul>
+<li>you can only have one penalty for each order, so no, you can’t penalise one of the derivative more stringly by adding more than one penalty for it; <code>m = c(3, 2, 2, 1)</code> for example <em>isn’t</em> allowed, and</li>
+<li>you can only have values for <code>m[i]</code> (where <code>i</code> &gt; 1) that exist for the given order of B spline, i.e. where <code>m[i] ≤ m[1]</code>.</li>
+</ul>
+<p>In the code below I fit two additional models with mixtures of penalties, and then compare these with the default second derivative penalty (fitted earlier). In each case, I’m again using the <code>knots</code> argument to extend the penalties over the range we might want to predict over.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m_bs_21</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">)),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+                </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
+*no* information about some basis coefficients</code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m_bs_210</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="m">0</span><span class="p">)),</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
+                </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">filter</span><span class="p">(</span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">data_set</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"train"</span><span class="p">),</span><span class="w"> </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
+*no* information about some basis coefficients</code></pre>
+</figure>
+<p>Again, we do the same wrangling, this time encoding the mixtures of orders in the column names</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">p_bs_21</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_bs_21</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_bs_21</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_bs_21</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+</span><span class="n">p_bs_210</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">as_tibble</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m_bs_210</span><span class="p">,</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename</span><span class="p">(</span><span class="n">fit_bs_210</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">se_bs_210</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">se.fit</span><span class="p">)</span><span class="w">
+
+</span><span class="n">new_data_multi</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bind_cols</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs_2</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs_21</span><span class="p">,</span><span class="w"> </span><span class="n">p_bs_210</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_longer</span><span class="p">(</span><span class="n">fit_bs_2</span><span class="o">:</span><span class="n">se_bs_210</span><span class="p">,</span><span class="w"> </span><span class="n">names_sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'_'</span><span class="p">,</span><span class="w">
+                 </span><span class="n">names_to</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s1">'variable'</span><span class="p">,</span><span class="w"> </span><span class="s1">'spline'</span><span class="p">,</span><span class="w"> </span><span class="s1">'order'</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">pivot_wider</span><span class="p">(</span><span class="n">names_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">variable</span><span class="p">,</span><span class="w"> </span><span class="n">values_from</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">value</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">mutate</span><span class="p">(</span><span class="n">upr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">),</span><span class="w"> </span><span class="n">lwr_ci</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se</span><span class="p">),</span><span class="w">
+           </span><span class="n">penalty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">case_when</span><span class="p">(</span><span class="n">order</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"2"</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"2"</span><span class="p">,</span><span class="w">
+                               </span><span class="n">order</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"21"</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"2, 1"</span><span class="p">,</span><span class="w">
+                               </span><span class="n">order</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s2">"210"</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="s2">"2, 1, 0"</span><span class="p">))</span></code></pre>
+</figure>
+<p>The last step here uses <code>case_when()</code> to write out nicer formatting for the penalties, so we get a nicer legend on the plot, which we produce with</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">y</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_multi</span><span class="p">,</span><span class="w">
+                </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">upr_ci</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">penalty</span><span class="p">),</span><span class="w">
+                </span><span class="n">inherit.aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">r_samp</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">data_set</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data_multi</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">colour2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">penalty</span><span class="p">),</span><span class="w">
+              </span><span class="n">size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">rename_geom_aes</span><span class="p">(</span><span class="n">new_aes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"colour"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_brewer</span><span class="p">(</span><span class="n">palette</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Set1"</span><span class="p">,</span><span class="w"> </span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Data set"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_colour_OkabeIto</span><span class="p">(</span><span class="n">aesthetics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"colour2"</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Penalty"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">scale_fill_OkabeIto</span><span class="p">(</span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Penalty"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">coord_cartesian</span><span class="p">(</span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-2</span><span class="p">,</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Extrapolating with B splines"</span><span class="p">,</span><span class="w">
+         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"How behaviour changes when combining multiple penalties"</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/extrapolating-with-b-splines-and-gams-plot-b-spline-with-mixed-penalties-1.svg" alt="" /><figcaption>Posterior predictive means for three GAMs using B splines with mixtures of derivative penalties, all covering the region where we want to predict for the test samples; a B spline with single 2nd derivative penalty, a B spline with a 2nd and 1st derivative penalties, and a B spline with 2<sup>nd</sup>, 1<sup>st</sup> and 0<sup>th</sup> derivative penalties.</figcaption>
+</figure>
+<p>By mixing the penalties, we mix some of the behaviour features. For example, the weird interpolation behaviour of the B spline with zeroth derivative penalty is essentially removed when combined with second and first derivative penalties.</p>
+<p>Given the data, the predictions that essentially predict constant functions beyond the range of the data, but with wide credible intervals are probably the most realistic; in each case where we used a B spline that included a first derivative penalty has at least covered most of the test observation beyond the range of <em>x</em>.</p>
+<p>However, in none of the fits do we get behaviour that get close to fitting the test observations beyond the training of <em>x</em> in the training data, even when using a Gaussian process that supposedly matches at least the general form of the true function.</p>
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references" role="doc-bibliography">
+<div id="ref-Riutort-Mayol2020-ih">
+<p>Riutort-Mayol, G., Bürkner, P.-C., Andersen, M. R., Solin, A., and Vehtari, A. (2020). Practical hilbert space approximate bayesian gaussian processes for probabilistic programming. Available at: <a href="http://arxiv.org/abs/2004.11408">http://arxiv.org/abs/2004.11408</a>.</p>
+</div>
+<div id="ref-Simpson2018-frontiers">
+<p>Simpson, G. L. (2018). Modelling palaeoecological time series using generalised additive models. <em>Frontiers in Ecology and Evolution</em> 6, 149. doi:<a href="https://doi.org/10.3389/fevo.2018.00149">10.3389/fevo.2018.00149</a>.</p>
+</div>
+</div>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2020/06/03/extrapolating-with-gams/";
+  var disqus_title = "Extrapolating with B splines and GAMs";
+  //var disqus_identifier = "/2020/06/03/extrapolating-with-gams";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>03 June 2020</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/splines/"><span class="label label-inverse">splines</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/b-splines/"><span class="label label-inverse">B splines</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/mgcv/"><span class="label label-inverse">mgcv</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/extrapolation/"><span class="label label-inverse">extrapolation</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/penalty/"><span class="label label-inverse">penalty</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2020 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-7900310-7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-7900310-7');
+</script>
+
+
+    
+    
+
+
+  </body>
+</html>
+
+
