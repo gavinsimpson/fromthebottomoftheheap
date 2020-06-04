@@ -3,7 +3,7 @@
     <title type="html" xml:lang="en">From the bottom of the heap</title>
     <link type="application/atom+xml" href="https://www.fromthebottomoftheheap.net/feed.xml" rel="self"/>
     <link type="text/plain" href="https://www.fromthebottomoftheheap.net" rel="alternate"/>
-    <updated>2020-06-03T19:42:02-06:00</updated>
+    <updated>2020-06-04T15:54:22-06:00</updated>
     <id>https://www.fromthebottomoftheheap.net/</id>
     <author>
         <name>Gavin L. Simpson</name>
@@ -37,7 +37,7 @@ An issue that often crops up when modelling with generlaized additive models (GA
 A lot of what I discuss in the post draws heavily on the help page in &lt;strong&gt;mgcv&lt;/strong&gt; for the B spline basis — &lt;code&gt;?mgcv::b.spline&lt;/code&gt; — and a recent email discussion with Alex Hayes, Dave Miller, and Eric Pedersen, though what I write here reflects my own input to that discussion.
 &lt;/p&gt;
 &lt;p&gt;
-I was initially minded to look into this again after reading a &lt;a href=&quot;https://arxiv.org/abs/2004.11408&quot;&gt;new preprint&lt;/a&gt; on low-rank approximations to a Gaussian processe &lt;span class=&quot;citation&quot; data-cites=&quot;Riutort-Mayol2020-ih&quot;&gt;(GP; Riutort-Mayol et al., 2020)&lt;/span&gt;, where, among other things, the authors compare the behaviour of the exact GP model with their low-rank version and with a thin plate regression spline (TPRS). The TPRS is the sort of thing you’d get by default with &lt;strong&gt;mgcv&lt;/strong&gt; and &lt;code&gt;s()&lt;/code&gt;, but as the other models were all fully Bayesian, the TPRS model was fitted using &lt;code&gt;brm()&lt;/code&gt; from the &lt;strong&gt;brms&lt;/strong&gt; package so that all the models were comparable, ultimately being fitted in &lt;strong&gt;Stan&lt;/strong&gt;. The TPRS model didn’t do a very good job of fitting the test observations when extrapolating beyond the limits of the data. I wondered if we could do any better with the B spline basis in &lt;strong&gt;mgcv&lt;/strong&gt; as I knew it had extra flexibility for short extrapolation beyond the data, but I’d never really looked into how it worked or what the respective behaviour was.
+I was initially minded to look into this again after reading a &lt;a href=&quot;https://arxiv.org/abs/2004.11408&quot;&gt;new preprint&lt;/a&gt; on low-rank approximations to a Gaussian process &lt;span class=&quot;citation&quot; data-cites=&quot;Riutort-Mayol2020-ih&quot;&gt;(GP; Riutort-Mayol et al., 2020)&lt;/span&gt;, where, among other things, the authors compare the behaviour of the exact GP model with their low-rank version and with a thin plate regression spline (TPRS). The TPRS is the sort of thing you’d get by default with &lt;strong&gt;mgcv&lt;/strong&gt; and &lt;code&gt;s()&lt;/code&gt;, but as the other models were all fully Bayesian, the TPRS model was fitted using &lt;code&gt;brm()&lt;/code&gt; from the &lt;strong&gt;brms&lt;/strong&gt; package so that all the models were comparable, ultimately being fitted in &lt;strong&gt;Stan&lt;/strong&gt;. The TPRS model didn’t do a very good job of fitting the test observations when extrapolating beyond the limits of the data. I wondered if we could do any better with the B spline basis in &lt;strong&gt;mgcv&lt;/strong&gt; as I knew it had extra flexibility for short extrapolation beyond the data, but I’d never really looked into how it worked or what the respective behaviour was.
 &lt;/p&gt;
 &lt;p&gt;
 If you want to recreate elements of the rest of the post, you’ll need the following packages installed:
@@ -296,7 +296,7 @@ As both these models used second derivative penalties, they both extrapolate lin
 Comparing different bases
 &lt;/h2&gt;
 &lt;p&gt;
-So far, so uninteresting. Before we get to the good stuff and demonstrate other features of the B spline basis in &lt;em&gt;mgcv&lt;/em&gt;, let’s just quickly compare the TPRS and B spline models with a Gaussian process smooth that is designed to closesly match the data generating function. Note that this GP is fitted using &lt;strong&gt;mgcv&lt;/strong&gt; where we have to specify the length scale, and as such isn’t meant to be directly comparable with either the exact or the low-rank GP models of &lt;span class=&quot;citation&quot; data-cites=&quot;Riutort-Mayol2020-ih&quot;&gt;Riutort-Mayol et al. (2020)&lt;/span&gt;.
+So far, so uninteresting. Before we get to the good stuff and demonstrate other features of the B spline basis in &lt;em&gt;mgcv&lt;/em&gt;, let’s just quickly compare the TPRS and B spline models with a Gaussian process smooth that is designed to closely match the data generating function. Note that this GP is fitted using &lt;strong&gt;mgcv&lt;/strong&gt; where we have to specify the length scale, and as such isn’t meant to be directly comparable with either the exact or the low-rank GP models of &lt;span class=&quot;citation&quot; data-cites=&quot;Riutort-Mayol2020-ih&quot;&gt;Riutort-Mayol et al. (2020)&lt;/span&gt;.
 &lt;/p&gt;
 &lt;p&gt;
 In &lt;strong&gt;mgcv&lt;/strong&gt; a GP can be fit using &lt;code&gt;bs = “gp”&lt;/code&gt;. When we do this, the meaning of the &lt;code&gt;m&lt;/code&gt; argument changes. Here we are asking for a Matérn covariance function with ν = 3/2 and length scale of 0.15. These values were chosen to match those of the true function.
