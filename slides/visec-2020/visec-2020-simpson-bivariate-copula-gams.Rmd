@@ -1,0 +1,451 @@
+---
+title: "Estimating the time-varying correlation between time series using copula distributional models"
+author: "Gavin Simpson"
+date: "vISEC2020 • June 22-26 2020"
+output:
+  xaringan::moon_reader:
+    css: ['default', 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css', 'my.css']
+    lib_dir: libs
+    nature:
+      titleSlideClass: ['inverse','middle','left',my-title-slide]
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: "macros.js"
+      ratio: '16:9'
+      slideNumberFormat: |
+        <div class="progress-bar-container">
+          <div class="progress-bar" style="width: calc(%current% / %total% * 100%);">
+          </div>
+        </div>
+---
+class: inverse middle center big-subsection
+
+```{r setup, include=FALSE, cache=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(cache = TRUE, dev = 'svg', echo = FALSE, message = FALSE, warning = FALSE,
+                      fig.height=6, fig.width = 1.777777*6)
+
+library("copula")
+library("ggplot2")
+library("dplyr")
+library("tibble")
+library('tidyr')
+library('mgcv')
+library('forcats')
+library('mvnfast')
+library('purrr')
+library('gganimate')
+library('gratia')
+library('readr')
+library('cowplot')
+theme_set(theme_minimal())
+library('readxl')
+library('GJRM')
+
+## constats
+anim_width <- 1000
+anim_height <- anim_width / 1.77777777
+anim_dev <- 'png'
+anim_res <- 150
+```
+
+# Correlation
+
+???
+
+Correlation: one of the first things we learn in undergraduate applied statistics
+
+Correlation is an intuitive way to think how the values of one variable vary with another
+
+How does the correlation between random variable change over time?
+
+---
+class: inverse middle center large-subsection
+
+# Bivariate Copula Distributional GAM
+
+???
+
+Here I'll briefly explain how we've approached this question using a bivariate copula distributional GAM
+
+---
+class: inverse middle center huge-subsection
+
+# Bivariate
+
+---
+class: inverse middle center huge-subsection
+
+# Copulas
+
+---
+
+# Copulas
+
+Function representing a joint distribution as a mapping from the CDFs of its marginals
+
+Defines a general way to think about *dependence* between random variables
+
+Starting to be used in ecology:
+
+* Popovic, Hui, Warton, 2018. *J. Multivar. Anal.* **165**, 86–100. [doi: 10/dzx9](http://doi.org/dzx9)
+* Anderson *et al* 2019. *Ecol. Evol.* **44**, 182. [doi: 10/dzzb](http://doi.org/dzzb)
+
+---
+
+## Copulas
+
+```{r copula-examples}
+## Example of different copulas with Gaussian marginals
+tau <- 0.7
+th.n <- iTau(normalCopula(), tau = tau)
+th.t <- iTau(tCopula(df = 3), tau = tau)
+th.c <- iTau(claytonCopula(), tau = tau)
+th.g <- iTau(gumbelCopula(), tau = tau)
+
+## sample from objects
+set.seed(271)
+n <- 10000
+N01m <- list(list(mean = 0, sd = 1), list(mean = 0, sd = 1))
+X.n <- rMvdc(n, mvdc = mvdc(normalCopula(th.n),    c("norm", "norm"), N01m))
+X.t <- rMvdc(n, mvdc = mvdc(tCopula(th.t, df = 3), c("norm", "norm"), N01m))
+X.c <- rMvdc(n, mvdc = mvdc(claytonCopula(th.c),   c("norm", "norm"), N01m))
+X.g <- rMvdc(n, mvdc = mvdc(gumbelCopula(th.g),    c("norm", "norm"), N01m))
+
+## put into something I can plot with ggplot
+cop_names <- c("Normal", "t", "Clayton", "Gumbel")
+cops <- tibble(x1 = c(X.n[, 1], X.t[, 1], X.c[, 1], X.g[, 1]),
+               x2 = c(X.n[, 2], X.t[, 2], X.c[, 2], X.g[, 2]),
+               copula = factor(rep(cop_names, each = n), levels = cop_names))
+
+## colours
+pal <- c(Normal = "#0077bb", t = "#009988", Clayton = "#cc3311", Gumbel = "#ee3377")
+ggplot(cops, aes(x = x1, y = x2, colour = copula)) +
+    geom_point(alpha = 0.3) +
+    facet_wrap(~ copula, nrow = 1) +
+    scale_colour_manual(values = pal, guide = FALSE) +
+    theme_minimal(base_size = 16, base_family = 'Fira Sans') +
+    theme(strip.text = element_text(size = rel(1), face = "bold", hjust = 0),
+          plot.title = element_text(face = "bold")) +
+    labs(caption = "Kendall's τ = 0.7")
+```
+
+---
+class: inverse middle center big-subsection
+
+# Distributional Regression
+
+---
+
+# Model effects beyond the mean
+
+Complex data often can't be modelled as conditional means + a mean-variance relationship
+
+Distributional regression models have linear predictors for all parameters of the conditional distribution
+
+$$\mathbf{y} | \vartheta^{k}$$
+
+For a Gaussian response
+
+$$\begin{align}
+\mu_i & = \beta^{\mu}_0 + \boldsymbol{x}_i^{\mathsf{T}}\boldsymbol{\beta}^{\mu}_j \\
+\log(\sigma_i) & = \beta^{\sigma}_0 + \boldsymbol{x}_i^{\mathsf{T}}\boldsymbol{\beta}^{\sigma}_j
+\end{align}$$
+
+---
+class: inverse middle center massive-subsection
+
+# GAMs
+
+---
+
+```{r smooth-fun-animation, results = FALSE}
+f <- function(x) {
+    x^11 * (10 * (1 - x))^6 + ((10 * (10 * x)^3) * (1 - x)^10)
+}
+
+draw_beta <- function(n, k, mu = 1, sigma = 1) {
+    rmvn(n = n, mu = rep(mu, k), sigma = diag(rep(sigma, k)))
+}
+
+weight_basis <- function(bf, x, n = 1, k, ...) {
+    beta <- draw_beta(n = n, k = k, ...)
+    out <- sweep(bf, 2L, beta, '*')
+    colnames(out) <- paste0('f', seq_along(beta))
+    out <- as_tibble(out)
+    out <- add_column(out, x = x)
+    out <- pivot_longer(out, -x, names_to = 'bf', values_to = 'y')
+    out
+}
+
+random_bases <- function(bf, x, draws = 10, k, ...) {
+    out <- rerun(draws, weight_basis(bf, x = x, k = k, ...))
+    out <- bind_rows(out)
+    out <- add_column(out, draw = rep(seq_len(draws), each = length(x) * k),
+                      .before = 1L)
+    class(out) <- c("random_bases", class(out))
+    out
+}
+
+plot.random_bases <- function(x, facet = FALSE) {
+    plt <- ggplot(x, aes(x = x, y = y, colour = bf)) +
+        geom_line(lwd = 1, alpha = 0.75) +
+        guides(colour = FALSE)
+    if (facet) {
+        plt + facet_wrap(~ draw)
+    }
+    plt
+}
+
+normalize <- function(x) {
+    rx <- range(x)
+    z <- (x - rx[1]) / (rx[2] - rx[1])
+    z
+}
+
+set.seed(1)
+N <- 500
+data <- tibble(x     = runif(N),
+               ytrue = f(x),
+               ycent = ytrue - mean(ytrue),
+               yobs  = ycent + rnorm(N, sd = 0.5))
+
+k <- 10
+knots <- with(data, list(x = seq(min(x), max(x), length = k)))
+sm <- smoothCon(s(x, k = k, bs = "cr"), data = data, knots = knots)[[1]]$X
+colnames(sm) <- levs <- paste0("f", seq_len(k))
+basis <- pivot_longer(cbind(sm, data), -(x:yobs), names_to = 'bf')
+basis
+
+set.seed(2)
+bfuns <- random_bases(sm, data$x, draws = 20, k = k)
+```
+
+# Maximise penalised log-likelihood &#8680; &beta;
+
+```{r basis-functions-anim}
+sm2 <- smoothCon(s(x, k = k, bs = "cr"), data = data, knots = knots)[[1]]$X
+beta <- coef(lm(ycent ~ sm2 - 1, data = data))
+wtbasis <- sweep(sm2, 2L, beta, FUN = "*")
+colnames(wtbasis) <- colnames(sm2) <- paste0("F", seq_len(k))
+## create stacked unweighted and weighted basis
+basis <- as_tibble(rbind(sm2, wtbasis)) %>%
+    add_column(x = rep(data$x, times = 2),
+               type = rep(c('unweighted', 'weighted'), each = nrow(sm2)),
+               .before = 1L)
+##data <- cbind(data, fitted = rowSums(scbasis))
+wtbasis <- as_tibble(rbind(sm2, wtbasis)) %>%
+    add_column(x      = rep(data$x, times = 2),
+               fitted = rowSums(.),
+               type   = rep(c('unweighted', 'weighted'), each = nrow(sm2))) %>%
+    pivot_longer(-(x:type), names_to = 'bf')
+basis <- pivot_longer(basis, -(x:type), names_to = 'bf')
+
+p3 <- ggplot(data, aes(x = x, y = ycent)) +
+    geom_point(aes(y = yobs), alpha = 0.2) +
+    geom_line(data = basis,
+              mapping = aes(x = x, y = value, colour = bf),
+              lwd = 1, alpha = 0.5) +
+    geom_line(data = wtbasis,
+              mapping = aes(x = x, y = fitted), lwd = 1, colour = 'black', alpha = 0.75) +
+    guides(colour = FALSE) +
+    labs(y = 'f(x)', x = 'x') +
+    theme_minimal(base_size = 16, base_family = 'Fira Sans')
+
+crs_fit <- animate(p3 + transition_states(type, transition_length = 4, state_length = 2) + 
+                   ease_aes('cubic-in-out'),
+                   nframes = 100, height = anim_height, width = anim_width, res = anim_res,
+                   dev = anim_dev)
+
+anim_save('./resources/gam-crs-animation.gif', crs_fit)
+```
+
+.center[![](resources/gam-crs-animation.gif)]
+
+???
+
+Fitting a GAM involves finding the weights for the basis functions that produce a spline that fits the data best, subject to some constraints
+
+---
+class: inverse middle center large-subsection
+
+# Bivariate + Copula + Distributional + GAM
+
+---
+class: inverse middle center big-subsection
+
+# Example
+
+---
+
+# Lake 227
+
+```{r lake227-example-code}
+## Load data from ~/work/data/ela/lake227
+lake227 <- read_excel('~/work/data/ela/lake227/CONC227.xlsx')
+## Peter higlighted Fuco, Allox, Lutzeax, Pheo_b, Bcarot
+vars <- c('YEAR', 'CHLA', 'BCAROT')
+lake227 <- lake227[, vars]
+names(lake227) <- c('Year', 'Chlorophylla', 'BetaCarotene')
+## take data from 1943 onwards
+lake227 <- subset(lake227, Year >= 1943)
+lake227 <- as_tibble(lake227)
+## to long format for modelling
+lake227 <- mutate(lake227, cYear = (Year - mean(Year)) / 1000)
+
+mu_chla    <- Chlorophylla ~ s(Year, k = 10)
+mu_beta    <- BetaCarotene ~ s(Year, k = 10)
+sigma_chla <- ~ 1 # s(Year, k = 6)
+sigma_beta <- ~ 1 # s(Year, k = 6)
+theta      <- ~ s(Year, k = 6)
+fml_gauss_cop <- list(mu_chla, mu_beta, sigma_chla, sigma_beta, theta)
+
+m_gauss_cop <- gjrm(fml_gauss_cop, data = lake227, margins = c("GA", "GA"), Model = "B",
+                    BivD = "N", gamlssfit = TRUE)
+
+set.seed(123)
+sum_gauss_cop <- summary(m_gauss_cop, nsim = 1000)
+lake227_new <- select(lake227, Chlorophylla, BetaCarotene, Year) %>%
+    mutate(theta     = m_gauss_cop$theta[,1],
+           theta_lwr = sum_gauss_cop$CItheta[,1],
+           theta_upr = sum_gauss_cop$CItheta[,2],
+           tau     = m_gauss_cop$tau[,1],
+           tau_lwr = sum_gauss_cop$CItau[,1],
+           tau_upr = sum_gauss_cop$CItau[,2],
+           mu_c      = predict(m_gauss_cop, eq = 1),
+           mu_c_lwr  = exp(mu_c - (1.96 * predict(m_gauss_cop, eq = 1, se.fit = TRUE)$se.fit)),
+           mu_c_upr  = exp(mu_c + (1.96 * predict(m_gauss_cop, eq = 1, se.fit = TRUE)$se.fit)),
+           mu_c      = exp(mu_c),
+           mu_b      = predict(m_gauss_cop, eq = 2),
+           mu_b_lwr  = exp(mu_b - (1.96 * predict(m_gauss_cop, eq = 2, se.fit = TRUE)$se.fit)),
+           mu_b_upr  = exp(mu_b + (1.96 * predict(m_gauss_cop, eq = 2, se.fit = TRUE)$se.fit)),
+           mu_b      = exp(mu_b)
+           )
+
+p_theta <- ggplot(lake227_new, aes(x = Year, y = theta)) +
+    geom_ribbon(aes(ymin = theta_lwr, ymax = theta_upr), alpha = 0.2) +
+    geom_line(col = 'red', lwd = 1, alpha = 0.5) +
+    labs(y = expression(theta)) +
+    theme_minimal(base_size = 18, base_family = 'Fira Sans')
+```
+
+Algal pigments well preserved in lake sediments
+
+* Reflect phytoplankton standing crops in lakes
+* Chlorophyll-*a* tracks planktonic sources
+* &beta;-carotene tracks planktonic & benthic sources
+
+```{r plot-lake-227-data, fig.height=3.5, fig.width = 1.777777*6}
+plt_chla <- ggplot(lake227, aes(x = Year, y = Chlorophylla)) +
+    geom_line(color = "black", alpha = 0.25) +
+    geom_point() +
+    labs(y = expression(nmole ~ g^{-1}),
+         title = expression("Chlorophyll" ~ italic(a))) +
+    theme_minimal(base_size = 20, base_family = 'Fira Sans')
+
+plt_beta <- ggplot(lake227, aes(x = Year, y = BetaCarotene)) +
+    geom_line(color = "black", alpha = 0.25) +
+    geom_point() +
+    labs(y = expression(nmole ~ g^{-1}),
+         title = expression(beta ~ "carotene")) +
+    theme_minimal(base_size = 20, base_family = 'Fira Sans')
+
+plot_grid(plt_chla, plt_beta, nrow = 1, align = 'hv', axis = 'lr')
+```
+
+---
+
+# Lake 227
+
+Gaussian copula with Gamma univariate marginal responses
+
+.small[
+$$\begin{align}
+F(y_{\mathsf{Chl a}_{i}}, y_{\mathsf{\beta caro}_{i}} | \vartheta^{k} ) & = \mathcal{C}(F_{\mathsf{Chl a}_{i}}(y_{\mathsf{Chl a}_{i}} | \mu_{\mathsf{Chl a}_{i}}, \sigma_{\mathsf{Chl a}_{i}}), F_{\mathsf{\beta caro}_{i}}(y_{\mathsf{\beta caro}_{i}} | \mu_{\mathsf{\beta caro}_{i}}, \sigma_{\mathsf{\beta caro}_{i}}), \theta) \\
+y_{\mathsf{Chl a}_{i}} & \sim \mathsf{Gamma}(\mu_{\mathsf{Chl a}_{i}}, \sigma_{\mathsf{Chl a}_{i}}) \\
+y_{\mathsf{\beta caro}_{i}} & \sim \mathsf{Gamma}(\mu_{\mathsf{\beta caro}_{i}}, \sigma_{\mathsf{\beta caro}_{i}})
+\end{align}$$
+]
+
+$$\begin{align}
+\log(\mu_{\mathsf{Chl a}_{i}}) & = \beta^{\mu_{\mathsf{Chl a}}}_0 + f^{\mu_{\mathsf{Chl a}}}(\text{Year}_i) \\
+\log(\mu_{\mathsf{\beta caro}_{i}}) & = \beta^{\mu_{\mathsf{\beta caro}}}_0 + f^{\mu_{\mathsf{\beta caro}}}(\text{Year}_i) \\
+\log(\sigma_{\mathsf{Chl a}_{i}}) & = \beta^{\sigma_{\mathsf{Chl a}}}_0 \\
+\log(\sigma_{\mathsf{\beta caro}_{i}}) & = \beta^{\sigma_{\mathsf{\beta caro}}}_0 \\
+g(\theta_i)   & = \beta^{\theta}_0 + f^{\theta}(\text{Year}_i)
+\end{align}$$
+
+---
+
+# Lake 227 Model Fitting
+
+Fitted with `gjrm()` from **GJRM ** package
+
+Marra, G., Radice, R., 2017. *Comput. Stat. Data Anal.* **112**, 99–113. [doi: 10/dzzc](http://doi.org/dzzc)
+
+---
+
+# Lake 227 &mdash; &mu;
+
+Fitted mean functions for each response
+
+```{r plot-lake-227-mu, fig.height = 4, fig.width = 1.777777*6}
+p_mu_chla <- ggplot(lake227_new, aes(x = Year, y = Chlorophylla)) +
+    geom_point() +
+    geom_ribbon(aes(ymin = mu_c_lwr, ymax = mu_c_upr), alpha = 0.2) +
+    geom_line(aes(y = mu_c), col = 'red', lwd = 1, alpha = 0.5) +
+    labs(y = expression(nmole ~ g^{-1}),
+         title = expression("Chlorophyll" ~ italic(a))) +
+    theme_minimal(base_size = 20, base_family = 'Fira Sans')
+p_mu_beta <- ggplot(lake227_new, aes(x = Year, y = BetaCarotene)) +
+    geom_point() +
+    geom_ribbon(aes(ymin = mu_b_lwr, ymax = mu_b_upr), alpha = 0.2) +
+    geom_line(aes(y = mu_b), col = 'red', lwd = 1, alpha = 0.5) +
+    labs(y = expression(nmole ~ g^{-1}),
+         title = expression(beta ~ "carotene")) +
+    theme_minimal(base_size = 20, base_family = 'Fira Sans')
+plot_grid(p_mu_chla, p_mu_beta, ncol = 2, align = 'hv', axis = 'lr')
+```
+
+---
+
+# Lake 227 &mdash; Kendall's &tau;
+
+Estimate $\theta$ but can transform to Kendall's &tau;
+
+```{r plot-lake-227-tau, fig.height = 5, fig.width = 1.777777*6}
+p_tau <- ggplot(lake227_new, aes(x = Year, y = tau)) +
+    geom_ribbon(aes(ymin = tau_lwr, ymax = tau_upr), alpha = 0.2) +
+    geom_line(col = 'red', lwd = 1, alpha = 0.5) +
+    labs(y = expression("Kendall's" ~ tau)) +
+    theme_minimal(base_size = 20, base_family = 'Fira Sans')
+p_tau
+```
+
+---
+
+# Acknowledgements
+
+### Funding
+
+.row[
+
+.col-6[
+.center[![:scale 70%](./resources/NSERC_C.svg)]
+]
+
+.col-6[
+.center[![:scale 70%](./resources/fgsr-logo.jpg)]
+]
+
+]
+
+### Data
+
+Lake 227 data from Peter Leavitt (U Regina)
+
+### Slides
+
+* HTML Slide deck [bit.ly/visec-copula-gam](http://bit.ly/visec-copula-gam) &copy; Simpson (2020) [![Creative Commons Licence](https://i.creativecommons.org/l/by/4.0/88x31.png)](http://creativecommons.org/licenses/by/4.0/)
+* RMarkdown [Source](https://github.com/gavinsimpson/visec-2020-copula-gam)
