@@ -16,8 +16,8 @@ tags:
 - Science
 category: science
 active: blog
-excerpt: "[![English: Open Access logo and text](http://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Open_Access_PLoS.svg/300px-Open_Access_PLoS.svg.png 'Open Access logo and text (Source: www.plos.org)')](http://commons.wikipedia.org/wiki/File:Open_Access_PLoS.svg)\n\n
-There has been a lot of discussion on the interweb about the support for legislation in the US by the major academic publishers that would place stifling restrictions on access to Government-funded science outputs published in their journals. In effect, the [Research Works Act](http://en.wikipedia.org/wiki/Research_Works_Act 'Research Works Act at Wikipedia') would hand these same wealthy publishers a licence to print money on the back of tax payer-funded research and the tax payer-funded efforts of the scientists required to peer review the manuscripts."
+excerpt: "[![English: Open Access logo and text](https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Open_Access_PLoS.svg/300px-Open_Access_PLoS.svg.png 'Open Access logo and text (Source: www.plos.org)')](https://commons.wikipedia.org/wiki/File:Open_Access_PLoS.svg)\n\n
+There has been a lot of discussion on the interweb about the support for legislation in the US by the major academic publishers that would place stifling restrictions on access to Government-funded science outputs published in their journals. In effect, the [Research Works Act](https://en.wikipedia.org/wiki/Research_Works_Act 'Research Works Act at Wikipedia') would hand these same wealthy publishers a licence to print money on the back of tax payer-funded research and the tax payer-funded efforts of the scientists required to peer review the manuscripts."
 ---
 
 {{ page.excerpt | markdownify  }}

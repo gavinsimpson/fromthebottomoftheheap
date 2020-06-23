@@ -35,5 +35,5 @@ The slides from my presentation are available via
 [Figshare](http://doi.org/10.6084/m9.figshare.1354040).
 
 <div style="margin-left: auto; margin-right: auto; width: 700px; height: 601px;">
-   <iframe src="http://wl.figshare.com/articles/1354040/embed?show_title=1" frameborder="0" width="700" height="601"></iframe>
+   <iframe src="https://wl.figshare.com/articles/1354040/embed?show_title=1" frameborder="0" width="700" height="601"></iframe>
 </div>
