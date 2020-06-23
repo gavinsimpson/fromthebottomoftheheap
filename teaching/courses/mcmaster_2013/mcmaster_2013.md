@@ -1,5 +1,6 @@
 ---
 title: Introduction to R for the Geosciences
+date: 2013-05-01 00:00:00
 status: publish
 layout: page
 published: true
