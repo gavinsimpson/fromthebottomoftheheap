@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Estimating ecological resilience from poorly behaved time series</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Gavin L. Simpson &amp; Stefano Mezzini" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="slides.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: inverse, middle, left, my-title-slide, title-slide
+
+# Estimating ecological resilience from poorly behaved time series
+### Gavin L. Simpson &amp; Stefano Mezzini
+### July 20th, 2020
+
+---
+
+class: inverse middle center big-subsection
+
+
+
+# Big Data
+
+???
+
+Big data - at least biggish data - has become a feature of limnological research
+
+Big Data presents us with challenges and through this talk today I want to use a small data case study to highlight where as a field I think we are missing the opportunity afford by big data because of the way limnologists often approach analysing those data
+
+---
+class: inverse middle center big-subsection
+
+# Mean
+
+???
+
+The mean
+
+When we analyse data we mostly focus on this property of our data
+
+With summary statistics we often talk about the average of a set of values
+
+Or in a statistical model we might estimate expected change in the response for some change in one or more covariates
+
+Or we may be interested in estimating the trend in a data series where the trend described how the expected value of y changes over time
+
+
+---
+class: inverse middle center big-subsection
+
+# Variance
+
+???
+
+There are other important properties of data however and in the short case study I want to talk about the variance &amp; how we can use statistical models to investigate changes in the variance of ecosystems over time
+
+---
+
+# Variance
+
+Intuitive &amp; key descriptor of ecosystem state
+
+.row[
+.col-6[
+.center[
+&lt;img src="/home/gavin/work/presentations/2020/aquatic-virtual-summit/resources/scheffer-2012-high-resilience.jpg" width="828" /&gt;
+]
+]
+
+.col-6[
+.center[
+&lt;img src="/home/gavin/work/presentations/2020/aquatic-virtual-summit/resources/scheffer-2012-low-resilience.jpg" width="828" /&gt;
+]
+]
+.col-12[
+.small[Source: Scheffer *et al* Science (2012)]
+]
+]
+
+???
+
+The variance is an important measure of ecosystem state
+
+Ecologists have linked variance with coexistence of populations and variance can be interpreted in terms of resilience theory
+
+Here I'm showing two cartoons;
+
+A: in the high resilience state the ecosystem returns rapidly to the equilibrium following perturbation and hence has low variance
+
+B: in the low resilience state, where the basin of attraction has become shallower, the ecosystem takes lnoger to return to equilibrium following peturbation and hence exhibits high variance
+
+Variance, however, is much harder to estimate from data
+
+---
+
+# Moving windows &amp;mdash; don't do this!
+
+.row[
+.col-6[
+
+Moving window approach:
+
+1. detrend
+2. choose window size
+3. estimate variance
+4. move window 1 time step
+5. repeat 3. &amp; 4. until done
+6. look for trend
+
+]
+
+.col-6[
+.center[
+&lt;img src="/home/gavin/work/presentations/2020/aquatic-virtual-summit/resources/dakos-rolling-window-figure-modified.png" width="1071" /&gt;
+]
+.small[Modified from Dakos *et al* (2012) PLOS One]
+]
+]
+
+???
+
+One way to estimate the variance of a series is by using a moving window
+
+Here the anlyst first detrends the time series
+
+Choose an appropriate window size
+
+Starting from the beginning of the series calculate the variance of the observations in the window
+
+Move the window laong one time step and repeat 3 and 4 until you get to the end of the series
+
+A trend in the resulting variance time series is estimated using Kendall's rank correlation tau
+
+In this example the interest was in the end of the series so they right-aligned the window meaning they had to observ half the series before they could calculate the variance
+
+---
+
+# Problems
+
+*Ad hoc*
+
+* How to detrend (method, compexity of trend, ...)
+* What window width?
+
+Ideally regularly spaced data
+
+* What to do about gaps, missing data, irregularly spaced data?
+
+Statistical testing hard
+
+* Kendall's `\(\tau\)` assumes independence
+* Surrogate time series assumes regular sampling, sensitive to choice of ARMA
+
+???
+
+The whole approach is *ad hoc* with many knobs to twiddle &amp;mdash; how do you detrend the series? what width of windo should be used?
+
+Suited to regularly spaced data so you have the same number of observations in each window, but what about series with data gaps, missing observations, or data that are irregularly spaced?
+
+Statistical inference is very hard; Kendall's tau assumes the data are independence but they can't be because of the moving window. Sometime surrogate time series are used to assess significance of the trend in variance; Surrogate time series are series generated with known properties that don't have a change in variance, but these approaches rely on classical techniques like ARMA models which only work for regularly spaced data and the test is sensitive to choice of orders in the ARMA
+
+---
+class: inverse middle center big-subsection
+
+# Lake 227
+
+???
+
+Today I want to illustrate how we can use modern statistical models to continously estimate the variance of multivariate time series using data from Lake 227 in the Experimental Lakes Area, Canada
+
+---
+
+# Lake 227
+
+.row[
+.col-6[
+* Experimentally manipulated
+* Annual sediment samples 1943&amp;ndash;1990
+]
+.col-6[
+* Analysed for fossil pigments
+]
+]
+
+Cottingham *et al* (2000) **Ecology Letters** showed via a Levene's test that **variances** pre- &amp; post-intervention were different
+
+???
+
+The lake was experimentally manipulated to investigate responses to increased nutrients
+
+The lake is annually laminated and Peter Leavitt, URegina, measured the sub-fossil pigment concentrations for each year between 1943 and 1990
+
+Kathy Cottingham, Jim Rusak, and Peter Leavitt previously analysed these data by separating them into control and treated sections and compared the variances of the two periods with a Levene's test, euivalent of a t-test but for differences of variances not means
+
+They showed that the algal community was more variable in the treated period than in the pre-manipulation period
+
+---
+
+# Lake 227
+
+![](simpson-aquatic-virtual-summit_files/figure-html/lake-227-pigment-data-1.svg)&lt;!-- --&gt;
+
+???
+
+Today I will focus only on the main algal groups:
+
+* diatoms &amp; chrysophytes through Fucoxanthin,
+* cryptophytes through Alloxanthin,
+* cyanobacteria and chlorophytes through Lutein-Zeaxanthin &amp; pheophytin b, and
+* total algae through beta carotene
+
+---
+class: inverse middle center big-subsection
+
+# Challenge
+
+???
+
+The challenge is to estimate how the mean **and** the variance changed continuously throughout the experimental manipulation
+
+---
+
+# Parameters beyond the mean
+
+![](simpson-aquatic-virtual-summit_files/figure-html/gaussian-distributions-plt-1.svg)&lt;!-- --&gt;
+
+???
+
+To do this we'll need models for the variance of a data set
+
+If we think of the Gaussian distribution that distribution has two parameters, the mean and the variance
+
+In linear regression we model the mean of the response at different values of the covariates, and assume the variance is constant at a value estimated from the residuals
+
+In the left panel I'm showing how the Gaussian distribution changes as we alter the mean while keeping the variance fixed, while in the right panel I keep the mean fixed but vary the variance &amp;mdash; the parameters are independent
+
+---
+
+# Distributional models
+
+.medium[
+`$$y_{i} | \boldsymbol{x}_i \sim \mathcal{D}(\vartheta_{1}(\boldsymbol{x}_i), \ldots, \vartheta_{K}(\boldsymbol{x}_i))$$`
+]
+
+For the Gaussian distribution
+
+* `\(\vartheta_{1}(\boldsymbol{x}_i) = \mu(\boldsymbol{x}_i)\)`
+
+* `\(\vartheta_{1}(\boldsymbol{x}_i) = \sigma(\boldsymbol{x}_i)\)`
+
+???
+
+Instead of treating the variance as a nuisance parameter, we could model both the variance **and** the mean as functions of the covariates
+
+This is done using what is called a *distributional model*
+
+In this model we say that the response values y_i, given the values of one or more covariates x_i follow some distribution with parameters theta, which are themselves functions of one or more covariates
+
+For the Gaussian distribution theta 1 would be the mean and theta 2 the variance (or standard deviation)
+
+We do not need to restrict ourselves to the Gaussian distribution however
+
+---
+
+# The Gamma distribution
+
+![](simpson-aquatic-virtual-summit_files/figure-html/gamma-dist-1.svg)&lt;!-- --&gt;
+
+???
+
+The gamma distribution would be more appropriate for describing the pigment data as it allows for positive continous values, where those values are skewed, with some large values
+
+Here I'm showing different types of gamma distribution that vary in the mean and their variance and we should note that unlike the Gaussian distribution, we cannot change the mean without also changing the variance of the gamma distribution
+
+---
+
+# Lake 227 sedimentary pigments
+
+Fitted gamma distributional model using **brms** and **Stan**
+`\begin{align*}
+y_t    &amp; \sim \mathcal{G}(\mu = \eta_{1,t}, \alpha = \eta_{2,t}) \\
+\eta_{1,t} &amp; = \exp(f_{1,\text{pigment}}(\text{Year}_t)) \\
+\eta_{2,t} &amp; = \exp(f_{2,\text{pigment}}(\text{Year}_t))
+\end{align*}`
+
+???
+
+To estimate how the mean and the variance of the pigment data changed during the experimental manipulation, I fitted a gamma distributional model using the brms package and the Stan Bayesian software
+
+We assmue the responses are conditionally distributed gamma, and we model the mean and the shape parameter of the distribution with linear predictors
+
+Each linear predictor includes a smooth function of Year for each pigment
+
+After fitting we calculate the variance at each time point using the estimated values of the mean and the shape parameters using the posterior distribution of the response to generate credible intervals
+
+---
+
+# Results &amp;mdash; pigment means
+
+
+
+![](simpson-aquatic-virtual-summit_files/figure-html/lake-227-fitted-mean-1.svg)&lt;!-- --&gt;
+
+???
+
+This plot shows the estimated mean concentration for the five pigments estimated from the model, and which shows the increase in algal abundance during the experimental manipulation
+
+---
+
+# Results &amp;mdash; pigment variances
+
+![](simpson-aquatic-virtual-summit_files/figure-html/lake-227-fitted-sigma-1.svg)&lt;!-- --&gt;
+
+???
+
+In this plot are showing the estimated variance throughout the time series
+
+We clearly see the increased variance in the algal communities that Cottingham et al observed, but now we can provide a continuous estimate of the variance over time rather than having to split the data into two and compare the variance of the two time periods
+
+---
+class: inverse middle center big-subsection
+
+# Big Data
+
+???
+
+This virtual summit is focused on the challenges and opportunities of big data in limnology
+
+We have seen an explosion in big data products in limnology through projects like GLEON and LAGOS to name just two initiatives
+
+---
+class: inverse middle center big-subsection
+
+# Small Data
+
+???
+
+While we have made progress on the big-data side of things, we have made less progress as a field in how we analyse these big data once they have been collected or collated
+
+In many respects, these are problems of small data too; unless as a field we rethink the way we analyse big limnological data we risk wasting the opportunity that these data affords us
+
+Collectively, we need to think about how to effectively extract information from Big Data? And how to do this using robust, defensible methods that are reproducible and repeatable
+
+---
+class: inverse middle center big-subsection
+
+# How?
+
+???
+
+How might we achieve this?
+
+---
+
+# Solutions&amp;hellip;?
+
+1. Suitable statistical models not *ad hoc* metrics
+
+2. Not everything is linear of Gaussian
+
+    * Extremes (changes in lake water temperature, or black swan events)
+	
+	* Time to event (see Stefano's talk on ice phenology)
+	
+	* Non-linear trends
+
+3. Hierarchical models &amp;mdash; model all the data at once
+
+    * Helps with spatial bias
+
+4. Machine learning is *not* a panacae
+
+???
+
+The small case study I presented speaks to many of the issues with current data analytic practices
+
+We should be using appropriate statistical models not ad hoc metrics that make inference almost impossible for all but the ideal data set
+
+We need to accept that most data sets we want to work with are not Gaussian and not exhibit linear responses to or relationships with covariates
+
+Data on extremes, such a series of lake minimum and maximum temperatures do not follow a Gaussian distribution
+
+Time to event and duration data don't either &amp;mdash; as an example see Stefano's talk on trends in lake ice phenology from earlier in the session
+
+And as I hopefully showed here, trends or response are often non-linear; we could use GAMs and smoothers instead os assuming everything is linear
+
+Avoid modelling each time series or site separately; instead take a hierarchical approach. This allows us to model how our data varies spatially and provides a means of summarizing and comparing all sites rather than having to interrogate hundreds or thousands of models post hoc with little hope of doing valid inference
+
+And finally, beware the allure of machine learning; yes they might seem appealing but these methods need careful fitting and understanding of how they identify patterns. It is very easy to shoot yourself in the foot, produce incorrect results with these methods, which ultimately leads to poor science
+
+---
+
+# Acknowledgments
+
+### Data
+
+Peter Leavitt (URegina) for the Lake 227 pigment data
+
+### Funding
+
+.row[
+.col-6[
+.center[![:scale 70%](./resources/fgsr-logo.jpg)]
+]
+
+.col-6[
+.center[![:scale 70%](./resources/NSERC_C.svg)]
+]
+]
+
+### Slides
+
+* HTML Slide deck [bit.ly/adv-vegan](https://bit.ly/adv-vegan) &amp;copy; Simpson (2020) [![Creative Commons Licence](https://i.creativecommons.org/l/by/4.0/88x31.png)](http://creativecommons.org/licenses/by/4.0/)
+* RMarkdown [Source](https://github.com/gavinsimpson/advanced-vegan-webinar-july-2020)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="macros.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
