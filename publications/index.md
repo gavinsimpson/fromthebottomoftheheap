@@ -14,6 +14,8 @@ Below is a list of my research publications covering papers in peer-reviewed jou
 
 Articles with a <i class="icon-file"></i> icon have a preprint or reprint available: click the icon to download this as a PDF.
 
+ 1. Bergbusch, N., Hayes, N., **Simpson, G.L.**, Leavitt, P.R. (submitted) Unexpected shift from phytoplankton to periphyton in small eutrophic streams of the Northern Great Plains due to wastewater influx. *Limnology and Oceanography*.
+
  1. Velez, M.I., Salgado, S., Brenner, M., Hooghiemstra, H., Escobar, J.H., Boom, A., Bird, B., Curtis, J.H., Temoltzin-Loranca, Y., Fernanda Patino, L., Gonzalez-Arango, C., Metcalfe, S.E., **Simpson, G.L.**, & Velazquez, C. (in review) Responses of high-elevation neotropical lakes to long-term pre-hispanic occupation and European arrival. *Anthropocene*.
 
  1. Haig, H.A., Hayes, N.M., **Simpson, G.L.**, Yi, Y., Wissel, B., Hodder, K.R., Leavitt, P.R. (revisions submitted 2020-06-01) Relative importance of seasonal-, and interannual-scale hydrological variability in a chain of seven sub-humid lakes measured using water isotopes (&delta;^2^H, &delta;^18^O). *Journal of Hydrology*
