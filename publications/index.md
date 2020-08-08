@@ -25,7 +25,7 @@ Articles with a <i class="icon-file"></i> icon have a preprint or reprint availa
 
  1. Heisler, L.M., **Simpson, G.L.**, Poulin, R.G., Wellicome, T.I., & Hall, B.D. (in revision) [Habitat specificity is not universal proxy for sensitivity to habitat conversion among rodents on the Canadian Prairies](https://doi.org/10.1101/678268). *Ecological Applications*. <a href="https://www.biorxiv.org/content/biorxiv/early/2019/06/21/678268.full-text.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint PDF" data-placement="top" data-animation="true"></i></a>
 
- 1. Hayes, N.M., Haig, H.A., **Simpson, G.L.**, & Leavitt, P.R. (in press) [Effects of lake warming on the seasonal risk of toxic cyanobacteria exposure](https://doi.org/10.1002/lol2.10164). *Limnology & Oceanography Letters*.  {% include cc-by-icon.html %}
+ 1. Hayes, N.M., Haig, H.A., **Simpson, G.L.**, & Leavitt, P.R. (2020) [Effects of lake warming on the seasonal risk of toxic cyanobacteria exposure](https://doi.org/10.1002/lol2.10164). *Limnology & Oceanography Letters*.  {% include cc-by-icon.html %}
 
  1. Haig, H.A., Hayes, N.M., **Simpson, G.L.**, Yi, Y., Wissel, B., Hodder, K.R., Leavitt, P.R. (2020) [Comparison of isotopic mass balance and instrumental techniques as estimates of basin hydology in seven connected lakes over 12 years](https://doi.org/10.1016/j.hydroa.2019.100046). *Journal of Hydrology X* **6**: 100046 <a href="{{ site.url }}/assets/reprints/haig-et-al-j-hydrology-x-2020.pdf"><i class="icon-file addToolTip" data-original-title="Download reprint PDF" data-placement="top" data-animation="true"></i></a>  {% include cc-by-icon.html %}
 
