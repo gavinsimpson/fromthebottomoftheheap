@@ -8,9 +8,15 @@ tags: []
 active: lab
 ---
 
-## Postdoctoral Teaching and Research Fellow: Living Data Project for ecology, evolution and environmental science
+## Current opportunities
 
-### Review of applications will begin July 31, 2020
+Currently there are no open positions in the lab, but I'm always interested in talking with potential graduate students or postdoctoral fellows about opportunities for funding and research ideas, so do please [get in touch](mailto:gavin.simpson@uregina.ca).
+
+## Past opportunities
+
+### Postdoctoral Teaching and Research Fellow: Living Data Project for ecology, evolution and environmental science
+
+#### Review of applications will begin July 31, 2020
 
 The Faculty of Science seeks a full-time postdoctoral teaching and research fellow to join the NSERC CREATE Living Data Project at the University of Regina. The Living Data Project is a national initiative, led by the [Canadian Institute of Ecology and Evolution](http://www.ciee-icee.ca/) (CIEE), to
 
@@ -34,5 +40,3 @@ Applicants should submit
 to: Dr. Kerri Finlay (kerri.finlay@uregina.ca), and/or Dr. Gavin Simpson (gavin.simpson@uregina.ca). Review of applications will begin July 31, 2020 and the position will remain open until filled, with the appointment anticipated to begin no later than September 1, 2020. The appointment is initially for one year, and following a successful performance review the candidate may be reappointed for a second year ending August 31, 2022. The successful applicant will receive a salary of $50,000 per year plus benefits.
 
 The University of Regina hires on the basis of merit and is committed to employment equity. The position is subject to final budgetary approval. The University of Regina is committed to an inclusive workplace that reflects the richness of the communities that we serve. The University welcomes applications from all qualified individuals, including individuals within the University’s employment equity categories of women, persons with disabilities, members of visible minorities, Indigenous persons, individuals of diverse gender and sexual orientation and all groups protected by the Human Rights Code.
-
-<!-- Currently there are no open positions in the lab, but I'm always interested in talking with potential graduate students or postdoctoral fellows about opportunities for funding and research ideas, so do please [get in touch](mailto:gavin.simpson@uregina.ca). -->
