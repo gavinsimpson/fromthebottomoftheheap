@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Smooth operator — using generalised additive models to quantify trends in noisy spatiotemporal data</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Gavin Simpson" />
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="slides.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: inverse, middle, left, my-title-slide, title-slide
+
+# Smooth operator — using generalised additive models to quantify trends in noisy spatiotemporal data
+### Gavin Simpson
+### HIFMB • University of Oldenburg • November 3, 2020
+
+---
+
+class: inverse middle center subsection
+
+
+
+# Use statistics to learn from data in presence of noise
+
+???
+
+One way to describe statistics is the principled process by which we learn from data in the presence of noise and uncertainty
+
+---
+class: inverse
+background-image: url('./resources/franki-chamaki-z4H9MYmWIMA-unsplash.jpg')
+background-size: cover
+
+# 
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@franki?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Franki Chamaki"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Franki Chamaki&lt;/span&gt;&lt;/a&gt;
+]
+
+???
+
+We learn from data because it can highlight our preconceptions and biases
+
+---
+
+# Learning from data
+
+![](research-talk_files/figure-html/lm-plot-1.svg)&lt;!-- --&gt;
+
+???
+
+Learning from data could be a simple as fitting a linear regression model...
+
+---
+class: inverse
+background-image: url('./resources/deep-learning-turned-up-to-11.jpg')
+background-size: contain
+
+# 
+
+???
+
+Or as complex as fitting a sophisticated multi-layered neural network trained on huge datasets or corpora
+
+---
+
+# Learning involves trade-offs
+
+.row[
+.col-6[
+.center[![:scale 75%](resources/low-bias-low-variance.jpg)]
+]
+
+.col-6[
+.center[![:scale 75%](resources/interpretable-black-box.jpg)]
+]
+]
+
+???
+
+Learning from data involves trade offs
+
+We can have models that fit our data well &amp;mdash; low bias &amp;mdash; but which are highly variable, or
+
+We can fit models that have lower variance, but these tend to have higher bias, i.e. fit the data less well
+
+A linear regression model is very interpretable but unless the underlying relationship is linear it will have poor fit
+
+Deep learning may fit data incredibly well but the model is very difficult to interpret and understand
+
+---
+
+# Generalized Additive Models
+
+&lt;br /&gt;
+
+![](resources/tradeoff-slider.png)
+
+.references[Source: [GAMs in R by Noam Ross](https://noamross.github.io/gams-in-r-course/)]
+
+???
+
+GAMs are an intermediate-complexity model
+
+* can learn from data without needing to be informed by the user
+* remain interpretable because we can visualize the fitted features
+
+
+
+---
+
+# HadCRUT4 time series
+
+![](research-talk_files/figure-html/hadcrut-temp-example-1.svg)&lt;!-- --&gt;
+
+---
+
+# Polynomials
+
+![](research-talk_files/figure-html/hadcrut-temp-polynomial-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center subsection
+
+# GAMs use splines
+
+---
+
+# Splines formed from basis functions
+
+![](research-talk_files/figure-html/basis-functions-1.svg)&lt;!-- --&gt;
+
+???
+
+Splines are built up from basis functions
+
+Here I'm showing a cubic regression spline basis with 10 knots/functions
+
+We weight each basis function to get a spline. Here all the basisi functions have the same weight so they would fit a horizontal line
+
+---
+
+# Weight basis functions &amp;#8680; spline
+
+
+
+.center[![](resources/basis-fun-anim.gif)]
+
+???
+
+But if we choose different weights we get more wiggly spline
+
+Each of the splines I showed you earlier are all generated from the same basis functions but using different weights
+
+---
+
+# How do GAMs learn from data?
+
+![](research-talk_files/figure-html/example-data-figure-1.svg)&lt;!-- --&gt;
+
+???
+
+How does this help us learn from data?
+
+Here I'm showing a simulated data set, where the data are drawn from the orange functions, with noise. We want to learn the orange function from the data
+
+---
+
+# Maximise penalised log-likelihood &amp;#8680; &amp;beta;
+
+
+
+.center[![](resources/gam-crs-animation.gif)]
+
+???
+
+Fitting a GAM involves finding the weights for the basis functions that produce a spline that fits the data best, subject to some constraints
+
+---
+class: inverse middle center subsection
+
+# Avoid overfitting our sample
+
+---
+class: inverse middle center subsection
+
+# Use a wiggliness penalty &amp;mdash; avoid fitting too wiggly models
+
+---
+
+# HadCRUT4 time series
+
+![](research-talk_files/figure-html/hadcrut-temp-penalty-1.svg)&lt;!-- --&gt;
+---
+
+# Fitted GAM
+
+![](research-talk_files/figure-html/hadcrutemp-fitted-gam-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center big-subsection
+
+# Vignettes
+
+
+---
+class: inverse middle center big-subsection
+
+# Vignette 1
+
+---
+class: inverse middle center subsection
+
+# Statistical estimation of ecosystem variance
+
+---
+class: inverse middle center big-subsection
+
+# Mean
+
+???
+
+The mean
+
+When we analyze data we mostly focus on this property of our data
+
+With summary statistics we often talk about the average of a set of values
+
+Or in a statistical model we might estimate expected change in the response for some change in one or more covariates
+
+Or we may be interested in estimating the trend in a data series where the trend described how the expected value of y changes over time
+
+
+---
+class: inverse middle center big-subsection
+
+# Variance
+
+???
+
+There are other important properties of data however and in the short case study I want to talk about the variance &amp; how we can use statistical models to investigate changes in the variance of ecosystems over time
+
+---
+
+# Variance
+
+Intuitive &amp; key descriptor of ecosystem state
+
+.row[
+.col-6[
+.center[
+&lt;img src="./resources/scheffer-2012-high-resilience.jpg" width="828" /&gt;
+]
+]
+
+.col-6[
+.center[
+&lt;img src="./resources/scheffer-2012-low-resilience.jpg" width="828" /&gt;
+]
+]
+.col-12[
+.small[Source: Scheffer *et al* Science (2012)]
+]
+]
+
+???
+
+The variance is an important measure of ecosystem state
+
+Ecologists have linked variance with coexistence of populations and variance can be interpreted in terms of resilience theory
+
+Here I'm showing two cartoons;
+
+A: in the high resilience state the ecosystem returns rapidly to the equilibrium following perturbation and hence has low variance
+
+B: in the low resilience state, where the basin of attraction has become shallower, the ecosystem takes longer to return to equilibrium following perturbation and hence exhibits high variance
+
+Variance, however, is much harder to estimate from data
+
+---
+
+# Moving windows &amp;mdash; don't do this!
+
+.row[
+.col-6[
+
+Moving window approach:
+
+1. detrend
+2. choose window size
+3. estimate variance
+4. move window 1 time step
+5. repeat 3. &amp; 4. until done
+6. look for trend
+
+]
+
+.col-6[
+.center[
+&lt;img src="./resources/dakos-rolling-window-figure-modified.png" width="1071" /&gt;
+]
+.small[Modified from Dakos *et al* (2012) PLOS One]
+]
+]
+
+???
+
+One way to estimate the variance of a series is by using a moving window
+
+Here the analyst first detrends the time series
+
+Choose an appropriate window size
+
+Starting from the beginning of the series calculate the variance of the observations in the window
+
+Move the window along one time step and repeat 3 and 4 until you get to the end of the series
+
+A trend in the resulting variance time series is estimated using Kendall's rank correlation tau
+
+In this example the interest was in the end of the series so they right-aligned the window meaning they had to observe half the series before they could calculate the variance
+
+---
+
+# Problems
+
+*Ad hoc*
+
+* How to detrend (method, complexity of trend, ...)
+* What window width?
+
+Ideally regularly spaced data
+
+* What to do about gaps, missing data, irregularly spaced data?
+
+Statistical testing hard
+
+* Kendall's `\(\tau\)` assumes independence
+* Surrogate time series assumes regular sampling, sensitive to choice of ARMA
+
+???
+
+The whole approach is *ad hoc* with many knobs to twiddle &amp;mdash; how do you detrend the series? what width of window should be used?
+
+Suited to regularly spaced data so you have the same number of observations in each window, but what about series with data gaps, missing observations, or data that are irregularly spaced?
+
+Statistical inference is very hard; Kendall's tau assumes the data are independence but they can't be because of the moving window. Sometime surrogate time series are used to assess significance of the trend in variance; Surrogate time series are series generated with known properties that don't have a change in variance, but these approaches rely on classical techniques like ARMA models which only work for regularly spaced data and the test is sensitive to choice of orders in the ARMA
+
+---
+class: inverse middle center big-subsection
+
+# Lake 227
+
+???
+
+Today I want to illustrate how we can use modern statistical models to continuously estimate the variance of multivariate time series using data from Lake 227 in the Experimental Lakes Area, Canada
+
+---
+
+# Lake 227
+
+.row[
+.col-6[
+* Experimentally manipulated
+* Annual sediment samples 1943&amp;ndash;1990
+]
+.col-6[
+* Analyzed for fossil pigments
+]
+]
+
+Cottingham *et al* (2000) **Ecology Letters** showed via a Levene's test that **variances** pre- &amp; post-intervention were different
+
+???
+
+The lake was experimentally manipulated to investigate responses to increased nutrients
+
+The lake is annually laminated and Peter Leavitt, URegina, measured the sub-fossil pigment concentrations for each year between 1943 and 1990
+
+Kathy Cottingham, Jim Rusak, and Peter Leavitt previously analyzed these data by separating them into control and treated sections and compared the variances of the two periods with a Levene's test, equivalent of a t-test but for differences of variances not means
+
+They showed that the algal community was more variable in the treated period than in the pre-manipulation period
+
+---
+
+# Lake 227
+
+![](research-talk_files/figure-html/lake-227-pigment-data-1.svg)&lt;!-- --&gt;
+
+???
+
+Today I will focus only on the main algal groups:
+
+* diatoms &amp; chrysophytes through Fucoxanthin,
+* cryptophytes through Alloxanthin,
+* cyanobacteria and chlorophytes through Lutein-Zeaxanthin &amp; pheophytin b, and
+* total algae through beta carotene
+
+---
+class: inverse middle center big-subsection
+
+# Challenge
+
+???
+
+The challenge is to estimate how the mean **and** the variance changed continuously throughout the experimental manipulation
+
+---
+
+# Parameters beyond the mean
+
+![](research-talk_files/figure-html/gaussian-distributions-plt-1.svg)&lt;!-- --&gt;
+
+???
+
+To do this we'll need models for the variance of a data set
+
+If we think of the Gaussian distribution that distribution has two parameters, the mean and the variance
+
+In linear regression we model the mean of the response at different values of the covariates, and assume the variance is constant at a value estimated from the residuals
+
+In the left panel I'm showing how the Gaussian distribution changes as we alter the mean while keeping the variance fixed, while in the right panel I keep the mean fixed but vary the variance &amp;mdash; the parameters are independent
+
+---
+
+# Distributional models
+
+.medium[
+`$$y_{i} | \boldsymbol{x}_i \sim \mathcal{D}(\vartheta_{1}(\boldsymbol{x}_i), \ldots, \vartheta_{K}(\boldsymbol{x}_i))$$`
+]
+
+For the Gaussian distribution
+
+* `\(\vartheta_{1}(\boldsymbol{x}_i) = \mu(\boldsymbol{x}_i)\)`
+
+* `\(\vartheta_{2}(\boldsymbol{x}_i) = \sigma(\boldsymbol{x}_i)\)`
+
+???
+
+Instead of treating the variance as a nuisance parameter, we could model both the variance **and** the mean as functions of the covariates
+
+This is done using what is called a *distributional model*
+
+In this model we say that the response values y_i, given the values of one or more covariates x_i follow some distribution with parameters theta, which are themselves functions of one or more covariates
+
+For the Gaussian distribution theta 1 would be the mean and theta 2 the variance (or standard deviation)
+
+We do not need to restrict ourselves to the Gaussian distribution however
+
+---
+
+# The Gamma distribution
+
+![](research-talk_files/figure-html/gamma-dist-1.svg)&lt;!-- --&gt;
+
+???
+
+The gamma distribution would be more appropriate for describing the pigment data as it allows for positive continuous values, where those values are skewed, with some large values
+
+Here I'm showing different types of gamma distribution that vary in the mean and their variance and we should note that unlike the Gaussian distribution, we cannot change the mean without also changing the variance of the gamma distribution
+
+---
+
+# Lake 227 sedimentary pigments
+
+Fitted gamma distributional model using **brms** and **Stan**
+`\begin{align*}
+y_t    &amp; \sim \mathcal{G}(\mu = \eta_{1,t}, \alpha = \eta_{2,t}) \\
+\eta_{1,t} &amp; = \exp(f_{1,\text{pigment}}(\text{Year}_t)) \\
+\eta_{2,t} &amp; = \exp(f_{2,\text{pigment}}(\text{Year}_t))
+\end{align*}`
+
+???
+
+To estimate how the mean and the variance of the pigment data changed during the experimental manipulation, I fitted a gamma distributional model using the brms package and the Stan Bayesian software
+
+We assume the responses are conditionally distributed gamma, and we model the mean and the shape parameter of the distribution with linear predictors
+
+Each linear predictor includes a smooth function of Year for each pigment
+
+After fitting we calculate the variance at each time point using the estimated values of the mean and the shape parameters using the posterior distribution of the response to generate credible intervals
+
+---
+
+# Results &amp;mdash; pigment means
+
+
+
+![](research-talk_files/figure-html/lake-227-fitted-mean-1.svg)&lt;!-- --&gt;
+
+???
+
+This plot shows the estimated mean concentration for the five pigments estimated from the model, and which shows the increase in algal abundance during the experimental manipulation
+
+---
+
+# Results &amp;mdash; pigment variances
+
+![](research-talk_files/figure-html/lake-227-fitted-sigma-1.svg)&lt;!-- --&gt;
+
+???
+
+In this plot are showing the estimated variance throughout the time series
+
+We clearly see the increased variance in the algal communities that Cottingham et al observed, but now we can provide a continuous estimate of the variance over time rather than having to split the data into two and compare the variance of the two time periods
+
+---
+
+# Summary
+
+* Using distributional GAMs we now have a means to robustly estimate the variance of an system and how that variance changes over time
+
+* Use models such as these to begin to quantify an important ecological metric from a principled statsitical view point
+
+---
+class: inverse middle center big-subsection
+
+# Vignette 2
+
+---
+class: inverse middle center subsection
+
+# Climate change affecting lake temperatures?
+
+---
+
+
+
+# 
+
+.references[
+Data: Woolway *et al* (2019) *Climate Change* **155**, 81&amp;ndash;94 [doi: 10/c7z9](http://doi.org/c7z9)
+]
+
+![](research-talk_files/figure-html/plot-blelham-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center subsection
+
+# Why worry about minimum temperatures?
+
+---
+
+# Why worry about minimum temperatures?
+
+Annual minimum temperature is a strong control on many in-lake processes (eg Hampton *et al* 2017)
+
+Extreme events can have long-lasting effects on lake ecology &amp;mdash; mild winter in Europe 2006&amp;ndash;7 (eg Straile *et al* 2010)
+
+Reduction in habitat or refugia for cold-adapted species
+
+* Arctic charr (*Salvelinus alpinus*)
+* Opossum shrimp (*Mysis salemaai*)
+
+.references[Hampton *et al* (2017). Ecology under lake ice. *Ecology Letters* **20**, 98–111. [doi: 10/f3tpzh](http://doi.org/f3tpzh)
+
+Straile *et al* (2010). Effects of a half a millennium winter on a deep lake &amp;mdash; a shape of things to come? *Global Change Biology* **16**, 2844–2856. [doi: 10/bx6t4d](http://doi.org/bx6t4d)]
+
+---
+
+# Multiple time series &amp;#8680; HGAM
+
+![](research-talk_files/figure-html/plot-all-lakes-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse center middle large-subsection
+
+# Central Limit Theorem
+
+???
+
+Central limit theorem shows us that the Gaussian or normal distribution is the sampling distribution for many sample statistics, including sample means, as samples sizes become large
+
+Central limit theorem underlies much of the theory that justifies much of the statistics you learn about in your statistics courses, and supports the use of the Gaussian or normal distribution
+
+---
+
+# Annual minimum temperature
+
+![](research-talk_files/figure-html/plot-minima-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center large-subsection
+
+# Block Minima
+
+---
+
+# Fisher&amp;ndash;Tippett&amp;ndash;Gnedenko theorem
+
+&gt; The **maximum** of a sample of *iid* random variables after proper renormalization can only converge in distribution to one of three possible distributions; the *Gumbel* distribution, the *Fréchet* distribution, or the *Weibull* distribution.
+
+.row[
+
+.col-4[
+.center[![:scale 90%](./resources/fisher.jpg)
+.smaller[Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:%E0%A4%B0%E0%A5%8B%E0%A4%A8%E0%A4%BE%E0%A4%A1%E0%A5%8D.jpg)]]
+]
+.col-4[ 
+.center[![:scale 84%](./resources/tippett.jpg)]
+.smaller[Source: [ral.ucar.edu](https://ral.ucar.edu/projects/extremes/Extremes/history.html)]
+]
+.col-4[ 
+.center[![:scale 93%](./resources/gnedenko.png)]
+.smaller[Source: [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Gnedenko.png)]
+]
+
+]
+
+---
+class: inverse middle center large-subsection
+
+# Block Minima&amp;hellip;?
+
+---
+
+# Negate the minima &amp;#8680; maxima
+
+![](research-talk_files/figure-html/plot-minima-negated-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center large-subsection
+
+# Three Distributions&amp;hellip;?
+
+---
+
+# Generalised extreme value distribution
+
+In 1978 Daniel McFadden demonstrated the common functional form for all three distributions — the GEVD
+
+`$$G(y) = \exp \left \{ - \left [ 1 + \xi \left ( \frac{y - \mu}{\sigma} \right ) \right ]_{+}^{-1/\xi} \right \}$$`
+
+.row[
+.col-5[
+Three parameters to estimate
+
+* location `\(\mu\)`,
+* scale `\(\sigma\)`, and
+* shape `\(\xi\)`
+]
+.col-7[
+Three distributions
+
+* Gumbel distribution when `\(\xi\)` = 0,
+* Fréchet distribution when `\(\xi\)` &gt; 0, &amp;
+* Weibull distribution when `\(\xi\)` &lt; 0
+]
+]
+
+---
+class: inverse middle center subsection
+
+# Fit Distributional GAM using GEV for response
+
+---
+class: inverse middle center subsection
+
+# Model μ, σ, ξ with smooths of Year
+
+---
+
+# Estimated smooths
+
+&amp;nbsp;
+
+![](research-talk_files/figure-html/draw-gev-model-smooths-1.svg)&lt;!-- --&gt;
+
+---
+
+# Observed vs fitted
+
+![](research-talk_files/figure-html/fitted-values-plot-1.svg)&lt;!-- --&gt;
+
+---
+
+# Estimated minimum temperature
+
+![](research-talk_files/figure-html/fitted-trends-plot-1.svg)&lt;!-- --&gt;
+
+---
+
+# Summary
+
+* Lake **minimum** surface water temperatures have increased by on the order of 1&amp;ndash;3 degrees over the last 60 years
+
+* Evidence that the distribution of annual minima has changed in many lakes &amp;mdash; implications for future extreme events which have long-term knock-on effects
+
+* Distributional GAMs with the GEV distribution are an excellent way of modelling common trends in environmental extremes
+
+---
+
+# Current research
+
+.row[
+
+.col-6[
+1. The California Cooperative Oceanic Fisheries Investigations (CalCOFI) &amp;mdash; Natalya Gallo (UCSD)
+
+2. Changing Ice-Phenology in north hemisphere lakes &amp;mdash; Stefano Mezzini (UofR)
+]
+
+.col-6[
+
+.center[
+&lt;img src="./resources/lake-map.svg" width="100%" /&gt;
+]
+
+]
+
+]
+
+---
+
+# Ice Phenology
+
+.center[
+![](./resources/hpam-spatial-freeze.svg)&lt;!-- --&gt;
+]
+
+---
+
+# Ice Phenology
+
+.center[
+&lt;img src="./resources/p-freeze-thaw.svg" width="100%" /&gt;
+]
+
+---
+
+# Acknowledgements
+
+### Funding
+
+.row[
+
+.col-6[
+.center[![:scale 70%](./resources/NSERC_C.svg)]
+]
+
+.col-6[
+.center[![:scale 70%](./resources/fgsr-logo.jpg)]
+]
+
+]
+
+### Data
+
+* Peter Leavitt (URegina) for the Lake 227 Data
+* Iestyn Woolway and colleagues for archiving the lake surface water data
+* Lake ice data from Global Lake and River Ice Phenology Database (GLRIPD, http://nsidc.org/data/G01377.html)
+
+### Slides
+
+* HTML Slide deck [bit.ly/hifmb-talk](http://bit.ly/hifmb-talk) &amp;copy; Simpson (2020) [![Creative Commons Licence](https://i.creativecommons.org/l/by/4.0/88x31.png)](http://creativecommons.org/licenses/by/4.0/)
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="macros.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
