@@ -493,7 +493,8 @@ div.tocify {
 <span id="cb11-4"><a href="#cb11-4"></a><span class="st">    </span><span class="kw">facet_wrap</span>(<span class="op">~</span><span class="st"> </span>observer) <span class="op">+</span></span>
 <span id="cb11-5"><a href="#cb11-5"></a><span class="st">    </span><span class="kw">labs</span>(<span class="dt">y =</span> <span class="kw">expression</span>(log[e](Height) <span class="op">~</span><span class="st"> </span>(log[e]<span class="op">*</span>mm)), <span class="dt">x =</span> <span class="st">&#39;Day&#39;</span>, <span class="dt">colour =</span> <span class="st">&#39;Treatment&#39;</span>)</span></code></pre></div>
 <pre><code>## Warning: Removed 650 row(s) containing missing values (geom_path).</code></pre>
-<p><img src="index_files/figure-html/plot-log-height-data-1.png" width="100%" /> The <code>log1p()</code> function adds 1 to each observation of plant height before taking logs, as there are some <code>0</code> height plants. The value <code>log(0)</code> is minus infinity, something thats not a helpful number and which can’t easily be represented in the computer in a way that we can include it in the model. Hence adding 1 to all values means we have no zero values in the data before we log transform them.</p>
+<p><img src="index_files/figure-html/plot-log-height-data-1.png" width="100%" /></p>
+<p>The <code>log1p()</code> function adds 1 to each observation of plant height before taking logs, as there are some <code>0</code> height plants. The value <code>log(0)</code> is minus infinity, something thats not a helpful number and which can’t easily be represented in the computer in a way that we can include it in the model. Hence adding 1 to all values means we have no zero values in the data before we log transform them.</p>
 <p>The final thing we’ll do before we start analysing the data, just to simplify things, is to take only those rows of data where we have a height measurement, excluding all the <code>NA</code> values in the <code>height</code> variable. We do this by filtering the <code>plants</code> object</p>
 <div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a>plant_h &lt;-<span class="st"> </span>plants <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">filter</span>(<span class="op">!</span><span class="kw">is.na</span>(height)) </span></code></pre></div>
 <div id="ancova" class="section level2">
@@ -556,18 +557,18 @@ div.tocify {
 <h2>Polynomial regression</h2>
 <p>If we think back to the plot of the data we made earlier, the relationship between plant height and time was non-linear, even on the log scale. The model we just fitted is a linear model, only capable of fitting straight lines and as such is not likely to follow the data closely. Statisticians call this <strong>bias</strong>. To try to reduce the bias we can fit a non-linear curve to the data using polynomials of <code>day</code>. Polynomials are <span class="math inline">\(day\)</span>, <span class="math inline">\(day^2\)</span>, <span class="math inline">\(day^3\)</span>, etc. To model a saturating curve — one which levels off — we might be able to simply us <span class="math inline">\(\text{day} + \text{day}^2\)</span>, but to allow for decreasing height at later days we will use a cubic polynomial, <span class="math inline">\(\text{day}^3\)</span> as well. We can then compare all three models with increasing amounts of non-linearity and see which fits the data better.</p>
 <p>First we create the polynomial models my updating the existing model. First we add first and second order polynomials and their interaction with <code>treatment</code>, which requires us to remove the <code>day * treatment</code> terms from the original model</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>m2 &lt;-<span class="st"> </span><span class="kw">update</span>(m1, . <span class="op">~</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span>day <span class="op">*</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span><span class="kw">poly</span>(day, <span class="dv">2</span>) <span class="op">*</span><span class="st"> </span>treatment)</span></code></pre></div>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1"></a>m2 &lt;-<span class="st"> </span><span class="kw">update</span>(m1, . <span class="op">~</span><span class="st"> </span><span class="kw">poly</span>(day, <span class="dv">2</span>) <span class="op">*</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span>observer)</span></code></pre></div>
 <p>Next we repeat the above but this time adding the third-degree polynomial</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a>m3 &lt;-<span class="st"> </span><span class="kw">update</span>(m1, . <span class="op">~</span><span class="st"> </span>. <span class="op">-</span><span class="st"> </span>day <span class="op">*</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span><span class="kw">poly</span>(day, <span class="dv">3</span>) <span class="op">*</span><span class="st"> </span>treatment)</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1"></a>m3 &lt;-<span class="st"> </span><span class="kw">update</span>(m1, . <span class="op">~</span><span class="st"> </span><span class="kw">poly</span>(day, <span class="dv">3</span>) <span class="op">*</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span>observer)</span></code></pre></div>
 <p>Now we have three models, we can compare them using an analysis of variance table or Akaike’s Information Criterion (AIC). We start with the analysis of variance table</p>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1"></a><span class="kw">anova</span>(m1, m2, m3)</span></code></pre></div>
 <pre><code>## Analysis of Variance Table
 ## 
 ## Model 1: log1p(height) ~ day * treatment + observer
-## Model 2: log1p(height) ~ observer + poly(day, 2) + treatment + treatment:poly(day, 
-##     2)
-## Model 3: log1p(height) ~ observer + poly(day, 3) + treatment + treatment:poly(day, 
-##     3)
+## Model 2: log1p(height) ~ poly(day, 2) + treatment + observer + poly(day, 
+##     2):treatment
+## Model 3: log1p(height) ~ poly(day, 3) + treatment + observer + poly(day, 
+##     3):treatment
 ##   Res.Df    RSS Df Sum of Sq       F    Pr(&gt;F)    
 ## 1   2087 840.79                                   
 ## 2   2084 710.92  3    129.87 134.402 &lt; 2.2e-16 ***
@@ -663,46 +664,46 @@ div.tocify {
 <div id="pairwise-comparisons" class="section level2">
 <h2>Pairwise comparisons</h2>
 <p>If you want formal comparisons of the growth rates for all pairs of treatments, we can also do all pairwise comparisons using the <code>emmtrends()</code>function by using the <code>pairwise</code> option instead of <code>trt-vs-ctrl</code>. As before, we can assess the estimate growth rate (slope) at a given day, here for <code>day == 5</code></p>
-<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">emtrends</span>(m1, pairwise <span class="op">~</span><span class="st"> </span>treatment,</span>
+<div class="sourceCode" id="cb31"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1"></a><span class="kw">emtrends</span>(m3, pairwise <span class="op">~</span><span class="st"> </span>treatment,</span>
 <span id="cb31-2"><a href="#cb31-2"></a>         <span class="dt">var =</span> <span class="st">&quot;day&quot;</span>,</span>
 <span id="cb31-3"><a href="#cb31-3"></a>         <span class="dt">transform =</span> <span class="st">&quot;response&quot;</span>,</span>
 <span id="cb31-4"><a href="#cb31-4"></a>         <span class="dt">at =</span> <span class="kw">list</span>(<span class="dt">day =</span> <span class="dv">5</span>))</span></code></pre></div>
 <pre><code>## $emtrends
-##  treatment day.trend      SE   df lower.CL upper.CL
-##  control      0.0872 0.00352 2087   0.0803   0.0941
-##  1x           0.0788 0.00356 2087   0.0718   0.0857
-##  3x           0.0796 0.00360 2087   0.0725   0.0866
+##  treatment day.trend     SE   df lower.CL upper.CL
+##  control       0.300 0.0165 2081    0.268    0.333
+##  1x            0.259 0.0171 2081    0.225    0.292
+##  3x            0.281 0.0169 2081    0.248    0.314
 ## 
 ## Results are averaged over the levels of: observer 
 ## Confidence level used: 0.95 
 ## 
 ## $contrasts
-##  contrast      estimate      SE   df t.ratio p.value
-##  control - 1x  0.008454 0.00488 2087  1.733  0.1930 
-##  control - 3x  0.007639 0.00490 2087  1.560  0.2633 
-##  1x - 3x      -0.000814 0.00490 2087 -0.166  0.9849 
+##  contrast     estimate     SE   df t.ratio p.value
+##  control - 1x   0.0418 0.0235 2081  1.780  0.1765 
+##  control - 3x   0.0195 0.0234 2081  0.832  0.6830 
+##  1x - 3x       -0.0224 0.0238 2081 -0.939  0.6155 
 ## 
 ## Results are averaged over the levels of: observer 
 ## P value adjustment: tukey method for comparing a family of 3 estimates</code></pre>
 <p>and for <code>day == 20</code></p>
-<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">emtrends</span>(m1, pairwise <span class="op">~</span><span class="st"> </span>treatment,</span>
+<div class="sourceCode" id="cb33"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1"></a><span class="kw">emtrends</span>(m3, pairwise <span class="op">~</span><span class="st"> </span>treatment,</span>
 <span id="cb33-2"><a href="#cb33-2"></a>         <span class="dt">var =</span> <span class="st">&quot;day&quot;</span>,</span>
 <span id="cb33-3"><a href="#cb33-3"></a>         <span class="dt">transform =</span> <span class="st">&quot;response&quot;</span>,</span>
 <span id="cb33-4"><a href="#cb33-4"></a>         <span class="dt">at =</span> <span class="kw">list</span>(<span class="dt">day =</span> <span class="dv">20</span>))</span></code></pre></div>
 <pre><code>## $emtrends
 ##  treatment day.trend      SE   df lower.CL upper.CL
-##  control      0.0872 0.00352 2087   0.0803   0.0941
-##  1x           0.0788 0.00356 2087   0.0718   0.0857
-##  3x           0.0796 0.00360 2087   0.0725   0.0866
+##  control      0.0204 0.00545 2081  0.00972   0.0311
+##  1x           0.0262 0.00542 2081  0.01553   0.0368
+##  3x           0.0232 0.00555 2081  0.01234   0.0341
 ## 
 ## Results are averaged over the levels of: observer 
 ## Confidence level used: 0.95 
 ## 
 ## $contrasts
-##  contrast      estimate      SE   df t.ratio p.value
-##  control - 1x  0.008454 0.00488 2087  1.733  0.1930 
-##  control - 3x  0.007639 0.00490 2087  1.560  0.2633 
-##  1x - 3x      -0.000814 0.00490 2087 -0.166  0.9849 
+##  contrast     estimate      SE   df t.ratio p.value
+##  control - 1x -0.00575 0.00762 2081 -0.755  0.7307 
+##  control - 3x -0.00282 0.00770 2081 -0.366  0.9288 
+##  1x - 3x       0.00293 0.00767 2081  0.382  0.9226 
 ## 
 ## Results are averaged over the levels of: observer 
 ## P value adjustment: tukey method for comparing a family of 3 estimates</code></pre>
@@ -794,6 +795,26 @@ div.tocify {
 <span id="cb38-5"><a href="#cb38-5"></a><span class="st">    </span><span class="kw">labs</span>(<span class="dt">y =</span> <span class="st">&#39;Health (1-5)&#39;</span>, <span class="dt">x =</span> <span class="st">&#39;Day&#39;</span>, <span class="dt">colour =</span> <span class="st">&#39;Treatment&#39;</span>)</span></code></pre></div>
 <pre><code>## Warning: Removed 624 row(s) containing missing values (geom_path).</code></pre>
 <p><img src="index_files/figure-html/plot-health-1.png" width="672" /></p>
+</div>
+<div id="number-of-internodes" class="section level1">
+<h1>Number of internodes</h1>
+<p>We can analyse the number of internodes in a similar way to that for plant height, with an ANCOVA. The data can be plotted using</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1"></a><span class="kw">ggplot</span>(plants, <span class="kw">aes</span>(<span class="dt">x =</span> day, <span class="dt">y =</span> <span class="kw">log1p</span>(internodes), <span class="dt">group =</span> id,</span>
+<span id="cb40-2"><a href="#cb40-2"></a>                   <span class="dt">colour =</span> treatment)) <span class="op">+</span></span>
+<span id="cb40-3"><a href="#cb40-3"></a><span class="st">    </span><span class="kw">geom_line</span>() <span class="op">+</span></span>
+<span id="cb40-4"><a href="#cb40-4"></a><span class="st">    </span><span class="kw">facet_wrap</span>(<span class="op">~</span><span class="st"> </span>observer) <span class="op">+</span></span>
+<span id="cb40-5"><a href="#cb40-5"></a><span class="st">    </span><span class="kw">labs</span>(<span class="dt">y =</span> <span class="st">&#39;Number of internodes&#39;</span>, <span class="dt">x =</span> <span class="st">&#39;Day&#39;</span>, <span class="dt">colour =</span> <span class="st">&#39;Treatment&#39;</span>)</span></code></pre></div>
+<pre><code>## Warning: Removed 670 row(s) containing missing values (geom_path).</code></pre>
+<p><img src="index_files/figure-html/plot-log-internodes-data-1.png" width="100%" /></p>
+<p>First we filter the data</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1"></a>plants_i &lt;-<span class="st"> </span><span class="kw">filter</span>(plants, <span class="op">!</span><span class="kw">is.na</span>(internodes))</span></code></pre></div>
+<p>Then we fit the models, again allowing for polynomials of <code>day</code></p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1"></a>i1 &lt;-<span class="st"> </span><span class="kw">lm</span>(<span class="kw">log1p</span>(internodes) <span class="op">~</span><span class="st"> </span>day <span class="op">*</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span>observer, <span class="dt">data =</span> plants_i)</span>
+<span id="cb43-2"><a href="#cb43-2"></a>i2 &lt;-<span class="st"> </span><span class="kw">update</span>(i1, . <span class="op">~</span><span class="st"> </span><span class="kw">poly</span>(day, <span class="dv">2</span>) <span class="op">*</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span>observer)</span>
+<span id="cb43-3"><a href="#cb43-3"></a>i3 &lt;-<span class="st"> </span><span class="kw">update</span>(i1, . <span class="op">~</span><span class="st"> </span><span class="kw">poly</span>(day, <span class="dv">3</span>) <span class="op">*</span><span class="st"> </span>treatment <span class="op">+</span><span class="st"> </span>observer)</span></code></pre></div>
+<p>And finally we can compre these to see which fits the data best</p>
+<p><code>{r anova-aic-internodes) anova(i1, i2, i3) AIC(i1, i2, i3)</code></p>
+<p>Working from <code>i3</code> then, we repeat some of the <code>emtrends()</code> and <code>emmeans()</code> code we used earlier but applied to <code>i3</code> to investigate changes and difference in the number of internodes over time and between treatments.</p>
 </div>
 <div id="exporting-images-files" class="section level1">
 <h1>Exporting images &amp; files</h1>
