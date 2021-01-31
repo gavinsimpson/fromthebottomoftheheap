@@ -253,7 +253,7 @@ cases %>%
 Warning: Removed 47 row(s) containing missing values (geom_path).
 {% endhighlight %}
 
-![]({{ site.url }}/assets/img/posts/getting-data-from-canada-covid-19-tracker-using-r-plot-cases-1.png)
+![Daily Covid-19 Cases in Saskatchewan]({{ site.url }}/assets/img/posts/getting-data-from-canada-covid-19-tracker-using-r-plot-cases-1.png)
 
 Yeah, we're not doing very well in this province 😞🤬
 
