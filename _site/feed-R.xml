@@ -4,7 +4,7 @@
     <title type="html" xml:lang="en">From the Bottom of the Heap - R</title>
     <link type="application/atom+xml" href="https://www.fromthebottomoftheheap.net/feed-R.xml" rel="self"/>
     <link type="text/plain" href="https://www.fromthebottomoftheheap.net" rel="alternate"/>
-    <updated>2021-01-20T12:11:48-06:00</updated>
+    <updated>2021-01-30T23:48:26-06:00</updated>
     <id>https://www.fromthebottomoftheheap.net/</id>
     <author>
         <name>Gavin L. Simpson</name>
@@ -12,6 +12,284 @@
         <uri>https://www.fromthebottomoftheheap.net/about.html</uri>
     </author>
     <rights type="text">Copyright 2010-2017 Gavin L. Simpson. Available under Creative Commons CC-BY licence</rights>
+    
+    <entry>
+        <title>Two new versions of gratia released</title>
+        <link href="https://www.fromthebottomoftheheap.net/2021/01/30/two-new-versions-of-gratia-on-cran/"/>
+        <author>
+            <name>Gavin L. Simpson</name>
+        </author>
+	
+        <published>2021-01-30T15:00:00-06:00</published>
+        <updated>2021-01-30T15:00:00-06:00</updated>
+	
+        <id>https://www.fromthebottomoftheheap.net/2021/01/30/two-new-versions-of-gratia-on-cran/</id>
+        
+        <summary type="html">
+            &lt;p&gt;
+While the Covid-19 pandemic and teaching a new course in the fall put paid to most of my development time last year, some time off work this January allowed me time to work on &lt;strong&gt;gratia&lt;/strong&gt; 📦 again. I released 0.5.0 to CRAN in part to fix an issue with tests not running on the new M1 chips from Apple because I wasn’t using &lt;strong&gt;vdiffr&lt;/strong&gt; 📦 conditionally. Version 0.5.1 followed shortly thereafter as I’d messed up an argument name in &lt;code&gt;smooth_estimates()&lt;/code&gt;, a new function that I hope will allow development to proceed more quickly and mke it easier to maintain code and extend functionality to cover a greater range of model types. Read on to fin out more about &lt;code&gt;smooth_estimates()&lt;/code&gt; and what else was in these two releases.
+&lt;/p&gt;
+
+        </summary>
+        
+        <content type="html">
+            &lt;p&gt;
+While the Covid-19 pandemic and teaching a new course in the fall put paid to most of my development time last year, some time off work this January allowed me time to work on &lt;strong&gt;gratia&lt;/strong&gt; 📦 again. I released 0.5.0 to CRAN in part to fix an issue with tests not running on the new M1 chips from Apple because I wasn’t using &lt;strong&gt;vdiffr&lt;/strong&gt; 📦 conditionally. Version 0.5.1 followed shortly thereafter as I’d messed up an argument name in &lt;code&gt;smooth_estimates()&lt;/code&gt;, a new function that I hope will allow development to proceed more quickly and mke it easier to maintain code and extend functionality to cover a greater range of model types. Read on to fin out more about &lt;code&gt;smooth_estimates()&lt;/code&gt; and what else was in these two releases.
+&lt;/p&gt;
+&lt;h2 id=&quot;evaluating-smooths-with-smooth_estimates&quot;&gt;
+Evaluating smooths with &lt;code&gt;smooth_estimates()&lt;/code&gt;
+&lt;/h2&gt;
+&lt;p&gt;
+For a while now I’ve realised that the way I’d implemented &lt;code&gt;evaluate_smooth()&lt;/code&gt; wasn’t great. Some design decisions I took earlier on added a lot of unnecessary complexity to the function through handling of factor &lt;code&gt;by&lt;/code&gt; smooths, and which didn’t really work properly in the context of a GAM where the same variable could be in multiple smooth terms.
+&lt;/p&gt;
+&lt;p&gt;
+My original plan was to use a facetted plot for factor &lt;code&gt;by&lt;/code&gt; variable smooths, and so when you selected a model term (more on that later), if that term was a factor &lt;code&gt;by&lt;/code&gt; smooth, instead of just pulling in a single smooth, I would pull in all of the smooths associated with the factor &lt;code&gt;by&lt;/code&gt;. Handling this got complicated and resulted in some kludgy, messy code that was prone to failure when used with a more specialised smooth or a more complex model.
+&lt;/p&gt;
+&lt;p&gt;
+Additionally, how I initially implemented selection of model terms was a bit silly; a user could pass a string for a variable that would be matched against the labels that &lt;strong&gt;mgcv&lt;/strong&gt; 📦 uses for smooth. Any instance of the term in any smooth would then get selected, which is not usually what is wanted when working with complex models with multiple smooths, some of which might contin the same variable.
+&lt;/p&gt;
+&lt;p&gt;
+Because of this, in the summer I decided to completely rewrite &lt;code&gt;evaluate_smooth()&lt;/code&gt;. Then I realised this would not be a good idea as I was going to break a lot of existing code, including code we’d written in support of papers that had been published and which used &lt;code&gt;evaluate_smooth()&lt;/code&gt;. Instead, I decided to start from a clean slate with a new function that didn’t do any of the silly things I’d messed up &lt;code&gt;evaluate_smooth()&lt;/code&gt; with, and which would be much simpler to maintain and develop for a wider range of complex distributional models.
+&lt;/p&gt;
+&lt;p&gt;
+In writing &lt;code&gt;smooth_estimates()&lt;/code&gt; I also came up with a standard way to represent all evaluations of a smooth, regardless of type. The nice thing about this is that it’s easy to return a tibble containing all the values of the evaluated smooth for many smooths at once, something you couldn’t do with &lt;code&gt;evaluate_smooth()&lt;/code&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+The idea behind &lt;code&gt;evaluate_smooth()&lt;/code&gt; and &lt;code&gt;smooth_estimates()&lt;/code&gt; is to return a tibble of values of the smooth evaluated at a grid of &lt;code&gt;n&lt;/code&gt; points over each of the covariates involved in that smooth.
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'mgcv'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'gratia'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'dplyr'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'tidyr'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dat&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data_sim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;eg1&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;seed&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;42&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bs&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;cr&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bs&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;bs&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bs&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ps&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                 &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;method&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;REML&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;smooth_estimates&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 400 x 9
+   smooth type  by       est    se       x0    x1    x2    x3
+   &amp;lt;chr&amp;gt;  &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;
+ 1 s(x0)  TPRS  NA    -1.34  0.392 0.000239    NA    NA    NA
+ 2 s(x0)  TPRS  NA    -1.26  0.366 0.0103      NA    NA    NA
+ 3 s(x0)  TPRS  NA    -1.19  0.342 0.0204      NA    NA    NA
+ 4 s(x0)  TPRS  NA    -1.11  0.319 0.0304      NA    NA    NA
+ 5 s(x0)  TPRS  NA    -1.03  0.298 0.0405      NA    NA    NA
+ 6 s(x0)  TPRS  NA    -0.956 0.280 0.0506      NA    NA    NA
+ 7 s(x0)  TPRS  NA    -0.881 0.264 0.0606      NA    NA    NA
+ 8 s(x0)  TPRS  NA    -0.806 0.250 0.0707      NA    NA    NA
+ 9 s(x0)  TPRS  NA    -0.733 0.238 0.0807      NA    NA    NA
+10 s(x0)  TPRS  NA    -0.661 0.229 0.0908      NA    NA    NA
+# … with 390 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+This seems a little wasteful — all those &lt;code&gt;NA&lt;/code&gt; columns 😱 — but the output is a consistent wa to represent smooths, regardless of the number of covariates etc.
+&lt;/p&gt;
+&lt;p&gt;
+I’m toying with returning the tibble in a nested fashion with &lt;code&gt;nest()&lt;/code&gt;, something like
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;sm&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;smooth_estimates&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; 
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;est&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;se&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;starts_with&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'x'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sm&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 4 x 5
+  smooth type     by    values             data              
+  &amp;lt;chr&amp;gt;  &amp;lt;chr&amp;gt;    &amp;lt;chr&amp;gt; &amp;lt;list&amp;gt;             &amp;lt;list&amp;gt;            
+1 s(x0)  TPRS     NA    &amp;lt;tibble [100 × 2]&amp;gt; &amp;lt;tibble [100 × 4]&amp;gt;
+2 s(x1)  CRS      NA    &amp;lt;tibble [100 × 2]&amp;gt; &amp;lt;tibble [100 × 4]&amp;gt;
+3 s(x2)  B spline NA    &amp;lt;tibble [100 × 2]&amp;gt; &amp;lt;tibble [100 × 4]&amp;gt;
+4 s(x3)  P spline NA    &amp;lt;tibble [100 × 2]&amp;gt; &amp;lt;tibble [100 × 4]&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+which I think is much neater, but does require extra steps from the user to just use the output
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;sm&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;unnest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cols&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 400 x 9
+   smooth type  by       est    se       x0    x1    x2    x3
+   &amp;lt;chr&amp;gt;  &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;
+ 1 s(x0)  TPRS  NA    -1.34  0.392 0.000239    NA    NA    NA
+ 2 s(x0)  TPRS  NA    -1.26  0.366 0.0103      NA    NA    NA
+ 3 s(x0)  TPRS  NA    -1.19  0.342 0.0204      NA    NA    NA
+ 4 s(x0)  TPRS  NA    -1.11  0.319 0.0304      NA    NA    NA
+ 5 s(x0)  TPRS  NA    -1.03  0.298 0.0405      NA    NA    NA
+ 6 s(x0)  TPRS  NA    -0.956 0.280 0.0506      NA    NA    NA
+ 7 s(x0)  TPRS  NA    -0.881 0.264 0.0606      NA    NA    NA
+ 8 s(x0)  TPRS  NA    -0.806 0.250 0.0707      NA    NA    NA
+ 9 s(x0)  TPRS  NA    -0.733 0.238 0.0807      NA    NA    NA
+10 s(x0)  TPRS  NA    -0.661 0.229 0.0908      NA    NA    NA
+# … with 390 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+Internally, the individual smooths are nested by default as that makes it easy to join the tibbles for multiple smooth together. As such, the &lt;em&gt;un&lt;/em&gt;nested-ness of the current behaviour requires an explicit extra step within &lt;code&gt;smooth_estimates()&lt;/code&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+If you have thoughts about this, let me know in the comments below.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;code&gt;smooth_estimates()&lt;/code&gt; is going to supersede &lt;code&gt;evaluate_smooth()&lt;/code&gt;, and currently it can handle pretty much everything that &lt;code&gt;evaluate_smooth()&lt;/code&gt; can do. That doesn’t mean &lt;code&gt;evaluate_smooth()&lt;/code&gt; is going anywhere; as I mentioned above, I don’t want to break old code, so as log as it doesn’t take too much time to maintain &lt;code&gt;evaluate_smooth()&lt;/code&gt; isn’t hurting anyone if I put it out to pasture.
+&lt;/p&gt;
+&lt;p&gt;
+Version 0.5.0 introduced &lt;code&gt;smooth_estimates()&lt;/code&gt; which could only handle very simple univariate smooths, but version 0.5.1 expanded those capabilities. There are a few special smooths that I haven’t yet added capabilities for, including Markov random field smooths and soap film smooths. Support for those will be added by the time version 0.6.0 hits CRAN later this year.
+&lt;/p&gt;
+&lt;h2 id=&quot;partial-residuals&quot;&gt;
+Partial residuals
+&lt;/h2&gt;
+&lt;p&gt;
+Version 0.4.0 introduced the ability to add partial residuals to plots of smooths. Version 0.5.0 exposes this functionality for computing partial residuals via new function &lt;code&gt;partial_residuals()&lt;/code&gt;
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;partial_residuals&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 400 x 4
+    `s(x0)` `s(x1)` `s(x2)` `s(x3)`
+      &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt;
+ 1 -0.236    -1.20   -2.19   0.730 
+ 2  0.00545   0.640  -1.79   1.10  
+ 3  1.58      1.66    5.59   1.13  
+ 4 -1.24     -1.83   -0.892 -0.783 
+ 5 -2.21     -0.100  -2.71  -3.10  
+ 6  1.27     -1.20    3.93   0.0835
+ 7 -0.599     2.94   -0.793 -1.10  
+ 8  1.59      0.402   7.04   2.09  
+ 9  2.74      0.449   7.33   2.45  
+10  1.11     -0.263   0.730  0.703 
+# … with 390 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+The names are currently non-standard — hence all the backticks — and I might change that if I can think of a short hand way to refer to smooths that still allows referencing them uniquely when there are things like factor &lt;code&gt;by&lt;/code&gt; smooths involved.
+&lt;/p&gt;
+&lt;p&gt;
+I also added an &lt;code&gt;add_partial_residuals()&lt;/code&gt;, to add the partial residuals to an existing data frame
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;dat&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add_partial_residuals&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 400 x 14
+       y    x0     x1    x2    x3     f    f0    f1     f2    f3  `s(x0)`
+   &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
+ 1  2.99 0.915 0.0227 0.909 0.402  1.62 0.529  1.05 0.0397     0 -0.236  
+ 2  4.70 0.937 0.513  0.900 0.432  3.25 0.393  2.79 0.0630     0  0.00545
+ 3 13.9  0.286 0.631  0.192 0.664 13.5  1.57   3.53 8.41       0  1.58   
+ 4  5.71 0.830 0.419  0.532 0.182  6.12 1.02   2.31 2.79       0 -1.24   
+ 5  7.63 0.642 0.879  0.522 0.838 10.4  1.80   5.80 2.76       0 -2.21   
+ 6  9.80 0.519 0.108  0.160 0.917 10.4  2.00   1.24 7.18       0  1.27   
+ 7 10.4  0.737 0.980  0.520 0.798 11.3  1.47   7.10 2.75       0 -0.599  
+ 8 12.8  0.135 0.265  0.225 0.503 11.4  0.821  1.70 8.90       0  1.59   
+ 9 13.8  0.657 0.0843 0.282 0.254 11.1  1.76   1.18 8.20       0  2.74   
+10  7.51 0.705 0.386  0.504 0.667  6.50 1.60   2.16 2.74       0  1.11   
+# … with 390 more rows, and 3 more variables: `s(x1)` &amp;lt;dbl&amp;gt;, `s(x2)` &amp;lt;dbl&amp;gt;,
+#   `s(x3)` &amp;lt;dbl&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+but since implementing this I am now questioning whether this is a good thing or rather whether the implementation is a good thing; there’s nothing in the code currently to ensure that the data you provided matches the order of the data used to fit the model — &lt;em&gt;caveat emptor&lt;/em&gt;!
+&lt;/p&gt;
+&lt;h2 id=&quot;penalty-matrices&quot;&gt;
+Penalty matrices
+&lt;/h2&gt;
+&lt;p&gt;
+I’ve been adding functions to &lt;strong&gt;gratia&lt;/strong&gt; that will be helpful when teaching GAMs; I added &lt;code&gt;basis()&lt;/code&gt; a while back and in the 0.5.1 release I added &lt;code&gt;penalty()&lt;/code&gt;, for extracting and tidying penalty matrices of smooths from fitted GAM models.
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;penalty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 324 x 6
+   smooth type  penalty row   col   value
+   &amp;lt;chr&amp;gt;  &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt;   &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt; &amp;lt;dbl&amp;gt;
+ 1 s(x0)  TPRS  s(x0)   f1    f1     9.81
+ 2 s(x0)  TPRS  s(x0)   f1    f2    -1.45
+ 3 s(x0)  TPRS  s(x0)   f1    f3    -5.00
+ 4 s(x0)  TPRS  s(x0)   f1    f4    -1.34
+ 5 s(x0)  TPRS  s(x0)   f1    f5    -6.24
+ 6 s(x0)  TPRS  s(x0)   f1    f6     3.90
+ 7 s(x0)  TPRS  s(x0)   f1    f7    -7.74
+ 8 s(x0)  TPRS  s(x0)   f1    f8    -1.79
+ 9 s(x0)  TPRS  s(x0)   f1    f9     0   
+10 s(x0)  TPRS  s(x0)   f2    f1    -1.45
+# … with 314 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+There is a &lt;code&gt;draw()&lt;/code&gt; method also, to plot the penalty matrix
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; 
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;penalty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; 
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;draw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure&gt;
+&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/two-new-versions-of-gratia-draw-penalty-1.png&quot; alt=&quot;&quot; /&gt;
+&lt;figcaption&gt;
+Penalty matrices for smooths from the fitted GAM. Note that in the released version you need to visually flip the y-axis so that diagonal runs top-left to bottom-right to match with how the matrix is actually arranged; this is fixed in the GitHub version.
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+It was pointed out that the way this is plotted is not very intuitive if you’re trying to map the way the penalty matrix is written to what’s shown in the plot — you have to flip the y-axis. This is due to how &lt;code&gt;geom_raster()&lt;/code&gt; draws things. I have fixed this, but it’s only fixed in the GitHub version of the package, not a current release version.
+&lt;/p&gt;
+&lt;h2 id=&quot;colour-scales&quot;&gt;
+Colour scales
+&lt;/h2&gt;
+&lt;p&gt;
+&lt;code&gt;draw.gam()&lt;/code&gt; and some related &lt;code&gt;draw()&lt;/code&gt; methods now allow you to configure the colour scales used to plot GAMs. Available options include &lt;code&gt;discrete_colour&lt;/code&gt;, &lt;code&gt;continuous_colour&lt;/code&gt;, and &lt;code&gt;continuous_fill&lt;/code&gt;, that take a suitable scale allowing you to change the colour scheme used etc:
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;dat2&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data_sim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;eg2&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dist&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;normal&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scale&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;seed&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model2&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;z&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;40&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dat2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;method&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;REML&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;draw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n_contour&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+     &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;continuous_fill&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ggplot2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scale_fill_distiller&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;palette&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Spectral&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                                                     &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;div&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure&gt;
+&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/two-new-versions-of-gratia-colour-scales-1.png&quot; alt=&quot;&quot; /&gt;
+&lt;figcaption&gt;
+Changing the fill scale used by &lt;code&gt;draw()&lt;/code&gt;
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;h2 id=&quot;constant-and-fun&quot;&gt;
+&lt;code&gt;constant&lt;/code&gt; and &lt;code&gt;fun&lt;/code&gt;
+&lt;/h2&gt;
+&lt;p&gt;
+&lt;code&gt;draw.gam()&lt;/code&gt; can now plot smooths after addition of a constant and transformation via a function. This can be used to put smooths (sort of) on the response scale. For example, in the code below, I add the model intercept to each smooth when plotting
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;b0&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;coef&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;draw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;constant&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure&gt;
+&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/two-new-versions-of-gratia-constant-draw-gam-1.png&quot; alt=&quot;&quot; /&gt;
+&lt;figcaption&gt;
+Plotting smooths, rescaling the y-axis to include the model intercept term in the scale.
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+I plan to add an argument &lt;code&gt;response&lt;/code&gt;, which would take a logical to indicate if you wan to plot on the response scale. If &lt;code&gt;response = TRUE&lt;/code&gt;, it would override anything passed to &lt;code&gt;constant&lt;/code&gt; and &lt;code&gt;fun&lt;/code&gt;, such that &lt;code&gt;draw.gam()&lt;/code&gt; would just do the right thing, and figure out from the model what constant and inverse link function to use. Watch out for that in 0.6.0.
+&lt;/p&gt;
+&lt;h2 id=&quot;excluding-or-selecting-terms-to-include-in-model-predictions&quot;&gt;
+Excluding or selecting terms to include in model predictions
+&lt;/h2&gt;
+&lt;p&gt;
+&lt;code&gt;predict.gam()&lt;/code&gt; allows the user to either exclude or specifically include only selected terms in model predictions. Version 0.5.0 added the same functionality in &lt;code&gt;simulate.gam()&lt;/code&gt; and &lt;code&gt;predicted_samples()&lt;/code&gt;, by allowing you to pass along an &lt;code&gt;exclude&lt;/code&gt; or &lt;code&gt;terms&lt;/code&gt; argument to &lt;code&gt;predict.gam()&lt;/code&gt; that is used in both of these functions.
+&lt;/p&gt;
+&lt;h2 id=&quot;summary&quot;&gt;
+Summary
+&lt;/h2&gt;
+&lt;p&gt;
+All in all, these are not major changes to the functionality of &lt;strong&gt;gratia&lt;/strong&gt;, but the ground work laid in &lt;code&gt;smooth_estimates()&lt;/code&gt; should allow me to address lots of the outstanding bugs related to handling complex model and some complex smooth types, and I’m pretty excited about that.
+&lt;/p&gt;
+
+        </content>
+    </entry>
     
     <entry>
         <title>Extrapolating with B splines and GAMs</title>
@@ -13104,48 +13382,6 @@ Marchetto (1994; &lt;em&gt;Journal of Paleolimnology&lt;/em&gt; &lt;strong&gt;12
 ter Braak &amp;amp; Juggins (1993; &lt;em&gt;Hydrobiologia&lt;/em&gt;, 269/270, 485–502)
 &lt;/li&gt;
 &lt;/ul&gt;
-
-        </content>
-    </entry>
-    
-    <entry>
-        <title>A new version of analogue for a new year</title>
-        <link href="https://www.fromthebottomoftheheap.net/2013/01/04/a-new-version-of-analogue-for-a-new-year/"/>
-        <author>
-            <name>Gavin L. Simpson</name>
-        </author>
-	
-        <published>2013-01-04T00:00:00-06:00</published>
-        <updated>2013-01-04T00:00:00-06:00</updated>
-	
-        <id>https://www.fromthebottomoftheheap.net/2013/01/04/a-new-version-of-analogue-for-a-new-year/</id>
-        
-        <summary type="html">
-            &lt;p&gt;Yesterday I rolled up a new version (0.10-0) of &lt;a href=&quot;http://cran.r-project.org/web/packages/analogue/index.html&quot;&gt;analogue&lt;/a&gt;, my R package for analysing palaeoecological data. It is now available from CRAN. There were lots of incremental changes to &lt;code&gt;Stratiplot()&lt;/code&gt; to improve the quality of the stratigraphic diagrams produced and fix several annoying bugs. Also the definition of the standard error of MAT reconstructions was fixed; it is essentially a weighted variance but the original version assumed the weights summed to 1, which is not the case for dissimilarities of the &lt;em&gt;k&lt;/em&gt;-NN. Several new functions and additional functionality were added to the package.&lt;/p&gt;
-
-        </summary>
-        
-        <content type="html">
-            &lt;p&gt;
-Yesterday I rolled up a new version (0.10-0) of &lt;a href=&quot;http://cran.r-project.org/web/packages/analogue/index.html&quot;&gt;analogue&lt;/a&gt;, my R package for analysing palaeoecological data. It is now available from CRAN. There were lots of incremental changes to &lt;code&gt;Stratiplot()&lt;/code&gt; to improve the quality of the stratigraphic diagrams produced and fix several annoying bugs. Also the definition of the standard error of MAT reconstructions was fixed; it is essentially a weighted variance but the original version assumed the weights summed to 1, which is not the case for dissimilarities of the &lt;em&gt;k&lt;/em&gt;-NN. Several new functions and additional functionality were added to the package.
-&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-&lt;code&gt;caterpillarPlot()&lt;/code&gt; produces caterpillar plots showing species WA optima and tolerance ranges
-&lt;/li&gt;
-&lt;li&gt;
-&lt;code&gt;splitSample()&lt;/code&gt; is a convenience function for sampling a subset of training set samples whilst ensuring that the entire environmental gradient of interest in the training set is evenly sampled.
-&lt;/li&gt;
-&lt;li&gt;
-The &lt;code&gt;wa()&lt;/code&gt; function received a lot of love in this iteration. The main addition is to allow non-linear deshrinking of the raw WA estimates alongside the more common inverse and classical deshrinking techniques. The deshrinking is achieved using a cubic regression spline fitted using the &lt;code&gt;gam()&lt;/code&gt; function in package &lt;a href=&quot;http://cran.r-project.org/web/packages/mgcv/index.html&quot;&gt;mgcv&lt;/a&gt;. The spline is constrained to be monotonic to make sure that the deshrunk values for increasing raw values are likewise increasing. Small tolerance handling in &lt;code&gt;wa()&lt;/code&gt; with tolerance downweighting gained the option to replace small tolerances with the mean of all taxon tolerances.
-&lt;/li&gt;
-&lt;li&gt;
-&lt;code&gt;logitreg()&lt;/code&gt;, which applies a logistic regression to the problem of identifying a critical threshold in compositional dissimilarity for MAT models, saw a major update. The returned object was substantially altered to allow for a wider amount of information to be supplied to the user. &lt;code&gt;fitted()&lt;/code&gt; and &lt;code&gt;predict()&lt;/code&gt; methods for class &lt;code&gt;“logitreg”&lt;/code&gt; were also added. These compute the fitted probabilities for the training set samples and for new (e.g. fossil) samples respectively. The probabilities are in respect to the analogue-ness of samples to the groups in the training set (e.g. vegetation biomes in the case of pollen data). These changes allow an analysis similar in spirit to that of &lt;a href=&quot;http://dx.doi.org/10.1016/S0033-5894(03)00088-7&quot;&gt;Gavin et al (2003, Quaternary Research 60; 356–367)&lt;/a&gt; in their Figure 8. Here though logistic regression fits are used and not the ROC method they use.
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;
-I’ll be writing more on these ideas, especially the monotonic deshrinking and the logistic regression approach to dissimilarity threshold choice in future posts.
-&lt;/p&gt;
 
         </content>
     </entry>

@@ -3,7 +3,7 @@
     <title type="html" xml:lang="en">From the bottom of the heap</title>
     <link type="application/atom+xml" href="https://www.fromthebottomoftheheap.net/feed.xml" rel="self"/>
     <link type="text/plain" href="https://www.fromthebottomoftheheap.net" rel="alternate"/>
-    <updated>2021-01-20T12:11:48-06:00</updated>
+    <updated>2021-01-30T23:48:26-06:00</updated>
     <id>https://www.fromthebottomoftheheap.net/</id>
     <author>
         <name>Gavin L. Simpson</name>
@@ -11,6 +11,284 @@
         <uri>https://www.fromthebottomoftheheap.net/about.html</uri>
     </author>
     <rights type="text">Copyright 2010-2013 Gavin L. Simpson. Available under Creative Commons CC-BY licence</rights>
+    
+    <entry>
+        <title>Two new versions of gratia released</title>
+        <link href="https://www.fromthebottomoftheheap.net/2021/01/30/two-new-versions-of-gratia-on-cran/"/>
+        <author>
+            <name>Gavin L. Simpson</name>
+        </author>
+	
+        <published>2021-01-30T15:00:00-06:00</published>
+        <updated>2021-01-30T15:00:00-06:00</updated>
+	
+        <id>https://www.fromthebottomoftheheap.net/2021/01/30/two-new-versions-of-gratia-on-cran/</id>
+        
+        <summary type="html">
+            &lt;p&gt;
+While the Covid-19 pandemic and teaching a new course in the fall put paid to most of my development time last year, some time off work this January allowed me time to work on &lt;strong&gt;gratia&lt;/strong&gt; 📦 again. I released 0.5.0 to CRAN in part to fix an issue with tests not running on the new M1 chips from Apple because I wasn’t using &lt;strong&gt;vdiffr&lt;/strong&gt; 📦 conditionally. Version 0.5.1 followed shortly thereafter as I’d messed up an argument name in &lt;code&gt;smooth_estimates()&lt;/code&gt;, a new function that I hope will allow development to proceed more quickly and mke it easier to maintain code and extend functionality to cover a greater range of model types. Read on to fin out more about &lt;code&gt;smooth_estimates()&lt;/code&gt; and what else was in these two releases.
+&lt;/p&gt;
+
+        </summary>
+        
+        <content type="html">
+            &lt;p&gt;
+While the Covid-19 pandemic and teaching a new course in the fall put paid to most of my development time last year, some time off work this January allowed me time to work on &lt;strong&gt;gratia&lt;/strong&gt; 📦 again. I released 0.5.0 to CRAN in part to fix an issue with tests not running on the new M1 chips from Apple because I wasn’t using &lt;strong&gt;vdiffr&lt;/strong&gt; 📦 conditionally. Version 0.5.1 followed shortly thereafter as I’d messed up an argument name in &lt;code&gt;smooth_estimates()&lt;/code&gt;, a new function that I hope will allow development to proceed more quickly and mke it easier to maintain code and extend functionality to cover a greater range of model types. Read on to fin out more about &lt;code&gt;smooth_estimates()&lt;/code&gt; and what else was in these two releases.
+&lt;/p&gt;
+&lt;h2 id=&quot;evaluating-smooths-with-smooth_estimates&quot;&gt;
+Evaluating smooths with &lt;code&gt;smooth_estimates()&lt;/code&gt;
+&lt;/h2&gt;
+&lt;p&gt;
+For a while now I’ve realised that the way I’d implemented &lt;code&gt;evaluate_smooth()&lt;/code&gt; wasn’t great. Some design decisions I took earlier on added a lot of unnecessary complexity to the function through handling of factor &lt;code&gt;by&lt;/code&gt; smooths, and which didn’t really work properly in the context of a GAM where the same variable could be in multiple smooth terms.
+&lt;/p&gt;
+&lt;p&gt;
+My original plan was to use a facetted plot for factor &lt;code&gt;by&lt;/code&gt; variable smooths, and so when you selected a model term (more on that later), if that term was a factor &lt;code&gt;by&lt;/code&gt; smooth, instead of just pulling in a single smooth, I would pull in all of the smooths associated with the factor &lt;code&gt;by&lt;/code&gt;. Handling this got complicated and resulted in some kludgy, messy code that was prone to failure when used with a more specialised smooth or a more complex model.
+&lt;/p&gt;
+&lt;p&gt;
+Additionally, how I initially implemented selection of model terms was a bit silly; a user could pass a string for a variable that would be matched against the labels that &lt;strong&gt;mgcv&lt;/strong&gt; 📦 uses for smooth. Any instance of the term in any smooth would then get selected, which is not usually what is wanted when working with complex models with multiple smooths, some of which might contin the same variable.
+&lt;/p&gt;
+&lt;p&gt;
+Because of this, in the summer I decided to completely rewrite &lt;code&gt;evaluate_smooth()&lt;/code&gt;. Then I realised this would not be a good idea as I was going to break a lot of existing code, including code we’d written in support of papers that had been published and which used &lt;code&gt;evaluate_smooth()&lt;/code&gt;. Instead, I decided to start from a clean slate with a new function that didn’t do any of the silly things I’d messed up &lt;code&gt;evaluate_smooth()&lt;/code&gt; with, and which would be much simpler to maintain and develop for a wider range of complex distributional models.
+&lt;/p&gt;
+&lt;p&gt;
+In writing &lt;code&gt;smooth_estimates()&lt;/code&gt; I also came up with a standard way to represent all evaluations of a smooth, regardless of type. The nice thing about this is that it’s easy to return a tibble containing all the values of the evaluated smooth for many smooths at once, something you couldn’t do with &lt;code&gt;evaluate_smooth()&lt;/code&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+The idea behind &lt;code&gt;evaluate_smooth()&lt;/code&gt; and &lt;code&gt;smooth_estimates()&lt;/code&gt; is to return a tibble of values of the smooth evaluated at a grid of &lt;code&gt;n&lt;/code&gt; points over each of the covariates involved in that smooth.
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'mgcv'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'gratia'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'dplyr'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'tidyr'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dat&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data_sim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;eg1&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;seed&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;42&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bs&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;cr&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bs&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;bs&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bs&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;ps&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                 &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;method&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;REML&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;smooth_estimates&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 400 x 9
+   smooth type  by       est    se       x0    x1    x2    x3
+   &amp;lt;chr&amp;gt;  &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;
+ 1 s(x0)  TPRS  NA    -1.34  0.392 0.000239    NA    NA    NA
+ 2 s(x0)  TPRS  NA    -1.26  0.366 0.0103      NA    NA    NA
+ 3 s(x0)  TPRS  NA    -1.19  0.342 0.0204      NA    NA    NA
+ 4 s(x0)  TPRS  NA    -1.11  0.319 0.0304      NA    NA    NA
+ 5 s(x0)  TPRS  NA    -1.03  0.298 0.0405      NA    NA    NA
+ 6 s(x0)  TPRS  NA    -0.956 0.280 0.0506      NA    NA    NA
+ 7 s(x0)  TPRS  NA    -0.881 0.264 0.0606      NA    NA    NA
+ 8 s(x0)  TPRS  NA    -0.806 0.250 0.0707      NA    NA    NA
+ 9 s(x0)  TPRS  NA    -0.733 0.238 0.0807      NA    NA    NA
+10 s(x0)  TPRS  NA    -0.661 0.229 0.0908      NA    NA    NA
+# … with 390 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+This seems a little wasteful — all those &lt;code&gt;NA&lt;/code&gt; columns 😱 — but the output is a consistent wa to represent smooths, regardless of the number of covariates etc.
+&lt;/p&gt;
+&lt;p&gt;
+I’m toying with returning the tibble in a nested fashion with &lt;code&gt;nest()&lt;/code&gt;, something like
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;sm&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;smooth_estimates&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; 
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;est&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;se&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;starts_with&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'x'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sm&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 4 x 5
+  smooth type     by    values             data              
+  &amp;lt;chr&amp;gt;  &amp;lt;chr&amp;gt;    &amp;lt;chr&amp;gt; &amp;lt;list&amp;gt;             &amp;lt;list&amp;gt;            
+1 s(x0)  TPRS     NA    &amp;lt;tibble [100 × 2]&amp;gt; &amp;lt;tibble [100 × 4]&amp;gt;
+2 s(x1)  CRS      NA    &amp;lt;tibble [100 × 2]&amp;gt; &amp;lt;tibble [100 × 4]&amp;gt;
+3 s(x2)  B spline NA    &amp;lt;tibble [100 × 2]&amp;gt; &amp;lt;tibble [100 × 4]&amp;gt;
+4 s(x3)  P spline NA    &amp;lt;tibble [100 × 2]&amp;gt; &amp;lt;tibble [100 × 4]&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+which I think is much neater, but does require extra steps from the user to just use the output
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;sm&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;unnest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cols&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;values&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 400 x 9
+   smooth type  by       est    se       x0    x1    x2    x3
+   &amp;lt;chr&amp;gt;  &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;
+ 1 s(x0)  TPRS  NA    -1.34  0.392 0.000239    NA    NA    NA
+ 2 s(x0)  TPRS  NA    -1.26  0.366 0.0103      NA    NA    NA
+ 3 s(x0)  TPRS  NA    -1.19  0.342 0.0204      NA    NA    NA
+ 4 s(x0)  TPRS  NA    -1.11  0.319 0.0304      NA    NA    NA
+ 5 s(x0)  TPRS  NA    -1.03  0.298 0.0405      NA    NA    NA
+ 6 s(x0)  TPRS  NA    -0.956 0.280 0.0506      NA    NA    NA
+ 7 s(x0)  TPRS  NA    -0.881 0.264 0.0606      NA    NA    NA
+ 8 s(x0)  TPRS  NA    -0.806 0.250 0.0707      NA    NA    NA
+ 9 s(x0)  TPRS  NA    -0.733 0.238 0.0807      NA    NA    NA
+10 s(x0)  TPRS  NA    -0.661 0.229 0.0908      NA    NA    NA
+# … with 390 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+Internally, the individual smooths are nested by default as that makes it easy to join the tibbles for multiple smooth together. As such, the &lt;em&gt;un&lt;/em&gt;nested-ness of the current behaviour requires an explicit extra step within &lt;code&gt;smooth_estimates()&lt;/code&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+If you have thoughts about this, let me know in the comments below.
+&lt;/p&gt;
+&lt;p&gt;
+&lt;code&gt;smooth_estimates()&lt;/code&gt; is going to supersede &lt;code&gt;evaluate_smooth()&lt;/code&gt;, and currently it can handle pretty much everything that &lt;code&gt;evaluate_smooth()&lt;/code&gt; can do. That doesn’t mean &lt;code&gt;evaluate_smooth()&lt;/code&gt; is going anywhere; as I mentioned above, I don’t want to break old code, so as log as it doesn’t take too much time to maintain &lt;code&gt;evaluate_smooth()&lt;/code&gt; isn’t hurting anyone if I put it out to pasture.
+&lt;/p&gt;
+&lt;p&gt;
+Version 0.5.0 introduced &lt;code&gt;smooth_estimates()&lt;/code&gt; which could only handle very simple univariate smooths, but version 0.5.1 expanded those capabilities. There are a few special smooths that I haven’t yet added capabilities for, including Markov random field smooths and soap film smooths. Support for those will be added by the time version 0.6.0 hits CRAN later this year.
+&lt;/p&gt;
+&lt;h2 id=&quot;partial-residuals&quot;&gt;
+Partial residuals
+&lt;/h2&gt;
+&lt;p&gt;
+Version 0.4.0 introduced the ability to add partial residuals to plots of smooths. Version 0.5.0 exposes this functionality for computing partial residuals via new function &lt;code&gt;partial_residuals()&lt;/code&gt;
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;partial_residuals&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 400 x 4
+    `s(x0)` `s(x1)` `s(x2)` `s(x3)`
+      &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt;   &amp;lt;dbl&amp;gt;
+ 1 -0.236    -1.20   -2.19   0.730 
+ 2  0.00545   0.640  -1.79   1.10  
+ 3  1.58      1.66    5.59   1.13  
+ 4 -1.24     -1.83   -0.892 -0.783 
+ 5 -2.21     -0.100  -2.71  -3.10  
+ 6  1.27     -1.20    3.93   0.0835
+ 7 -0.599     2.94   -0.793 -1.10  
+ 8  1.59      0.402   7.04   2.09  
+ 9  2.74      0.449   7.33   2.45  
+10  1.11     -0.263   0.730  0.703 
+# … with 390 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+The names are currently non-standard — hence all the backticks — and I might change that if I can think of a short hand way to refer to smooths that still allows referencing them uniquely when there are things like factor &lt;code&gt;by&lt;/code&gt; smooths involved.
+&lt;/p&gt;
+&lt;p&gt;
+I also added an &lt;code&gt;add_partial_residuals()&lt;/code&gt;, to add the partial residuals to an existing data frame
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;dat&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;add_partial_residuals&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;model&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 400 x 14
+       y    x0     x1    x2    x3     f    f0    f1     f2    f3  `s(x0)`
+   &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;  &amp;lt;dbl&amp;gt; &amp;lt;dbl&amp;gt;    &amp;lt;dbl&amp;gt;
+ 1  2.99 0.915 0.0227 0.909 0.402  1.62 0.529  1.05 0.0397     0 -0.236  
+ 2  4.70 0.937 0.513  0.900 0.432  3.25 0.393  2.79 0.0630     0  0.00545
+ 3 13.9  0.286 0.631  0.192 0.664 13.5  1.57   3.53 8.41       0  1.58   
+ 4  5.71 0.830 0.419  0.532 0.182  6.12 1.02   2.31 2.79       0 -1.24   
+ 5  7.63 0.642 0.879  0.522 0.838 10.4  1.80   5.80 2.76       0 -2.21   
+ 6  9.80 0.519 0.108  0.160 0.917 10.4  2.00   1.24 7.18       0  1.27   
+ 7 10.4  0.737 0.980  0.520 0.798 11.3  1.47   7.10 2.75       0 -0.599  
+ 8 12.8  0.135 0.265  0.225 0.503 11.4  0.821  1.70 8.90       0  1.59   
+ 9 13.8  0.657 0.0843 0.282 0.254 11.1  1.76   1.18 8.20       0  2.74   
+10  7.51 0.705 0.386  0.504 0.667  6.50 1.60   2.16 2.74       0  1.11   
+# … with 390 more rows, and 3 more variables: `s(x1)` &amp;lt;dbl&amp;gt;, `s(x2)` &amp;lt;dbl&amp;gt;,
+#   `s(x3)` &amp;lt;dbl&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+but since implementing this I am now questioning whether this is a good thing or rather whether the implementation is a good thing; there’s nothing in the code currently to ensure that the data you provided matches the order of the data used to fit the model — &lt;em&gt;caveat emptor&lt;/em&gt;!
+&lt;/p&gt;
+&lt;h2 id=&quot;penalty-matrices&quot;&gt;
+Penalty matrices
+&lt;/h2&gt;
+&lt;p&gt;
+I’ve been adding functions to &lt;strong&gt;gratia&lt;/strong&gt; that will be helpful when teaching GAMs; I added &lt;code&gt;basis()&lt;/code&gt; a while back and in the 0.5.1 release I added &lt;code&gt;penalty()&lt;/code&gt;, for extracting and tidying penalty matrices of smooths from fitted GAM models.
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;penalty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 324 x 6
+   smooth type  penalty row   col   value
+   &amp;lt;chr&amp;gt;  &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt;   &amp;lt;chr&amp;gt; &amp;lt;chr&amp;gt; &amp;lt;dbl&amp;gt;
+ 1 s(x0)  TPRS  s(x0)   f1    f1     9.81
+ 2 s(x0)  TPRS  s(x0)   f1    f2    -1.45
+ 3 s(x0)  TPRS  s(x0)   f1    f3    -5.00
+ 4 s(x0)  TPRS  s(x0)   f1    f4    -1.34
+ 5 s(x0)  TPRS  s(x0)   f1    f5    -6.24
+ 6 s(x0)  TPRS  s(x0)   f1    f6     3.90
+ 7 s(x0)  TPRS  s(x0)   f1    f7    -7.74
+ 8 s(x0)  TPRS  s(x0)   f1    f8    -1.79
+ 9 s(x0)  TPRS  s(x0)   f1    f9     0   
+10 s(x0)  TPRS  s(x0)   f2    f1    -1.45
+# … with 314 more rows&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+There is a &lt;code&gt;draw()&lt;/code&gt; method also, to plot the penalty matrix
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; 
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;penalty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; 
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;draw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure&gt;
+&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/two-new-versions-of-gratia-draw-penalty-1.png&quot; alt=&quot;&quot; /&gt;
+&lt;figcaption&gt;
+Penalty matrices for smooths from the fitted GAM. Note that in the released version you need to visually flip the y-axis so that diagonal runs top-left to bottom-right to match with how the matrix is actually arranged; this is fixed in the GitHub version.
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+It was pointed out that the way this is plotted is not very intuitive if you’re trying to map the way the penalty matrix is written to what’s shown in the plot — you have to flip the y-axis. This is due to how &lt;code&gt;geom_raster()&lt;/code&gt; draws things. I have fixed this, but it’s only fixed in the GitHub version of the package, not a current release version.
+&lt;/p&gt;
+&lt;h2 id=&quot;colour-scales&quot;&gt;
+Colour scales
+&lt;/h2&gt;
+&lt;p&gt;
+&lt;code&gt;draw.gam()&lt;/code&gt; and some related &lt;code&gt;draw()&lt;/code&gt; methods now allow you to configure the colour scales used to plot GAMs. Available options include &lt;code&gt;discrete_colour&lt;/code&gt;, &lt;code&gt;continuous_colour&lt;/code&gt;, and &lt;code&gt;continuous_fill&lt;/code&gt;, that take a suitable scale allowing you to change the colour scheme used etc:
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;dat2&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data_sim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;eg2&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1000&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dist&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;normal&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scale&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;seed&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model2&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;z&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;k&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;40&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dat2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;method&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;REML&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;draw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n_contour&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+     &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;continuous_fill&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ggplot2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;scale_fill_distiller&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;palette&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Spectral&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+                                                     &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;div&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure&gt;
+&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/two-new-versions-of-gratia-colour-scales-1.png&quot; alt=&quot;&quot; /&gt;
+&lt;figcaption&gt;
+Changing the fill scale used by &lt;code&gt;draw()&lt;/code&gt;
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;h2 id=&quot;constant-and-fun&quot;&gt;
+&lt;code&gt;constant&lt;/code&gt; and &lt;code&gt;fun&lt;/code&gt;
+&lt;/h2&gt;
+&lt;p&gt;
+&lt;code&gt;draw.gam()&lt;/code&gt; can now plot smooths after addition of a constant and transformation via a function. This can be used to put smooths (sort of) on the response scale. For example, in the code below, I add the model intercept to each smooth when plotting
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;b0&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;coef&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;draw&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gam_model&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;constant&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure&gt;
+&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/two-new-versions-of-gratia-constant-draw-gam-1.png&quot; alt=&quot;&quot; /&gt;
+&lt;figcaption&gt;
+Plotting smooths, rescaling the y-axis to include the model intercept term in the scale.
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+I plan to add an argument &lt;code&gt;response&lt;/code&gt;, which would take a logical to indicate if you wan to plot on the response scale. If &lt;code&gt;response = TRUE&lt;/code&gt;, it would override anything passed to &lt;code&gt;constant&lt;/code&gt; and &lt;code&gt;fun&lt;/code&gt;, such that &lt;code&gt;draw.gam()&lt;/code&gt; would just do the right thing, and figure out from the model what constant and inverse link function to use. Watch out for that in 0.6.0.
+&lt;/p&gt;
+&lt;h2 id=&quot;excluding-or-selecting-terms-to-include-in-model-predictions&quot;&gt;
+Excluding or selecting terms to include in model predictions
+&lt;/h2&gt;
+&lt;p&gt;
+&lt;code&gt;predict.gam()&lt;/code&gt; allows the user to either exclude or specifically include only selected terms in model predictions. Version 0.5.0 added the same functionality in &lt;code&gt;simulate.gam()&lt;/code&gt; and &lt;code&gt;predicted_samples()&lt;/code&gt;, by allowing you to pass along an &lt;code&gt;exclude&lt;/code&gt; or &lt;code&gt;terms&lt;/code&gt; argument to &lt;code&gt;predict.gam()&lt;/code&gt; that is used in both of these functions.
+&lt;/p&gt;
+&lt;h2 id=&quot;summary&quot;&gt;
+Summary
+&lt;/h2&gt;
+&lt;p&gt;
+All in all, these are not major changes to the functionality of &lt;strong&gt;gratia&lt;/strong&gt;, but the ground work laid in &lt;code&gt;smooth_estimates()&lt;/code&gt; should allow me to address lots of the outstanding bugs related to handling complex model and some complex smooth types, and I’m pretty excited about that.
+&lt;/p&gt;
+
+        </content>
+    </entry>
     
     <entry>
         <title>Extrapolating with B splines and GAMs</title>
@@ -12261,374 +12539,6 @@ There is a lot more to Unison than I have covered here, including having Unison 
 &lt;p&gt;
 If you’ve been wanting a tool to help sync up your work to two or more computers, give Unison a whirl.
 &lt;/p&gt;
-
-        </content>
-    </entry>
-    
-    <entry>
-        <title>Summarising multivariate palaeoenvironmental data</title>
-        <link href="https://www.fromthebottomoftheheap.net/2014/01/09/pcurve-part-2/"/>
-        <author>
-            <name>Gavin L. Simpson</name>
-        </author>
-	
-        <published>2014-01-09T00:00:00-06:00</published>
-        <updated>2014-01-09T00:00:00-06:00</updated>
-	
-        <id>https://www.fromthebottomoftheheap.net/2014/01/09/pcurve-part-2/</id>
-        
-        <summary type="html">
-            &lt;p&gt;
-The &lt;em&gt;horseshoe effect&lt;/em&gt; is a well known and discussed issue with principal component analysis (PCA) &lt;span class=&quot;citation&quot; data-cites=&quot;goodall_objective_1954 noy-meir_principal_1970 swan_examination_1970&quot;&gt;(e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970)&lt;/span&gt;. Similar geometric artefacts also affect correspondence analysis (CA). In &lt;a href=&quot;/2013/12/28/pcurve-1/&quot;&gt;part 1 of this series&lt;/a&gt; I looked at the implications of these “artefacts” for the recovery of temporal or single dominant gradients from multivariate palaeoecological data. In part 2, I introduce the topic of principal curves &lt;span class=&quot;citation&quot; data-cites=&quot;hastie_principal_1989&quot;&gt;(Hastie and Stuetzle, 1989)&lt;/span&gt;.
-&lt;/p&gt;
-&lt;div id=&quot;refs&quot; class=&quot;references hanging-indent&quot; role=&quot;doc-bibliography&quot; role=&quot;doc-bibliography&quot;&gt;
-&lt;div id=&quot;ref-goodall_objective_1954&quot;&gt;
-&lt;p&gt;
-Goodall, D. (1954). Objective methods for the classification of vegetation. III. an essay in the use of factor analysis. &lt;em&gt;Australian Journal of Botany&lt;/em&gt; 2, 304–324. Available at: &lt;a href=&quot;http://www.publish.csiro.au/paper/BT9540304&quot;&gt;http://www.publish.csiro.au/paper/BT9540304&lt;/a&gt; [Accessed June 3, 2013].
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-hastie_principal_1989&quot;&gt;
-&lt;p&gt;
-Hastie, T., and Stuetzle, W. (1989). Principal curves. &lt;em&gt;Journal of the American Statistical Association&lt;/em&gt; 84, 502–516. doi:&lt;a href=&quot;https://doi.org/10.2307/2289936&quot;&gt;10.2307/2289936&lt;/a&gt;.
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-noy-meir_principal_1970&quot;&gt;
-&lt;p&gt;
-Noy-Meir, I., and Austin, M. P. (1970). Principal component ordination and simulated vegetational data. &lt;em&gt;Ecology&lt;/em&gt; 51, 551–552. doi:&lt;a href=&quot;https://doi.org/10.2307/1935398&quot;&gt;10.2307/1935398&lt;/a&gt;.
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-swan_examination_1970&quot;&gt;
-&lt;p&gt;
-Swan, J. M. A. (1970). An examination of some ordination problems by use of simulated vegetational data. &lt;em&gt;Ecology&lt;/em&gt; 51, 89–102. doi:&lt;a href=&quot;https://doi.org/10.2307/1933602&quot;&gt;10.2307/1933602&lt;/a&gt;.
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-
-        </summary>
-        
-        <content type="html">
-            &lt;p&gt;
-The &lt;em&gt;horseshoe effect&lt;/em&gt; is a well known and discussed issue with principal component analysis (PCA) &lt;span class=&quot;citation&quot; data-cites=&quot;goodall_objective_1954 noy-meir_principal_1970 swan_examination_1970&quot;&gt;(e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970)&lt;/span&gt;. Similar geometric artefacts also affect correspondence analysis (CA). In &lt;a href=&quot;/2013/12/28/pcurve-1/&quot;&gt;part 1 of this series&lt;/a&gt; I looked at the implications of these “artefacts” for the recovery of temporal or single dominant gradients from multivariate palaeoecological data. In part 2, I introduce the topic of principal curves &lt;span class=&quot;citation&quot; data-cites=&quot;hastie_principal_1989&quot;&gt;(Hastie and Stuetzle, 1989)&lt;/span&gt;.
-&lt;/p&gt;
-&lt;p&gt;
-A principal curve (PC) is a smooth, one-dimensional curve fitted through a data set in ( m ) dimensions in such as way that the curve “fits” the data best, for some definition of “best”, which we will take as meaning that the distances between the observations and the curve are minimised in some way. PCs can be thought of as a combination of principal components and splines and as you’ll see in part 3 of this series, this concept is not just superficial. In the figure below, data from the equation
-&lt;/p&gt;
-&lt;p&gt;
-[ y = -0.9x + 2x^2 + -1.4x^3 + , N(= 0, = 0.05) ]
-&lt;/p&gt;
-&lt;p&gt;
-are plotted and the fitted relationship between (x) and (y) is shown as produced by four methods indicated by the red line in each panel. The four methods used were
-&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-Ordinary Least Squares (OLS)
-&lt;/li&gt;
-&lt;li&gt;
-Principal Components Analysis (PCA)
-&lt;/li&gt;
-&lt;li&gt;
-Cubic smoothing spline (CSS), and
-&lt;/li&gt;
-&lt;li&gt;
-Principal Curves (PCs)
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;figure&gt;
-&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-comparison-of-minimised-distances.png&quot; alt=&quot;&quot; /&gt;
-&lt;figcaption&gt;
-Fitted relationship between &lt;em&gt;x&lt;/em&gt; and &lt;em&gt;y&lt;/em&gt; (solid line) and the minimised errors (green line segments) for (a) least squares regression, (b) principal components analysis, (c) cubic smoothing spline, and (d) a principal curve.
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-For our purposes, think of (x) and (y) as being two species. In the OLS solution, the sum of squared errors in (y) are minimised by the fitted line and hence (x) and (y) play different asymmetric roles in the model; uncertainty in (x) is considered to be zero and all the random variation is in (y). Contrast this with the way errors are minimised in PCA; the error is now with respect to both (x) &lt;em&gt;and&lt;/em&gt; (y) and hence the distance from a point to it’s location on the principal component line is orthogonal (or at 90°) to the line. In both cases however, the fitted line, the “model”, is linear, a straight line.
-&lt;/p&gt;
-&lt;p&gt;
-Splines of various sorts have been used to provide non- or semi-parametric fits between (x) and (y). In panel (c) of the plot above, a cubic smoothing spline is fitted to the sample data. As with OLS, the CSS minimises squared errors in (y) &lt;em&gt;only&lt;/em&gt;; it is a regression method after-all. The difference is that the fitted model can be a smooth curve rather than a straight line.
-&lt;/p&gt;
-&lt;p&gt;
-Prinicpal curves combine the features of the PCA approach with those of the spline. The corresponding principal curve for the sample data is shown in panel (d) and is a smooth, non-linear fit but this time the fit has minimised the error in (x) &lt;em&gt;and&lt;/em&gt; (y). The errors are orthogonal to the principal curve and join the observation with the point on the curve to which it projects, in other words &lt;em&gt;is closest to&lt;/em&gt;. I’ll look at exactly how that is done later in this post.
-&lt;/p&gt;
-&lt;p&gt;
-The algorithm developed by &lt;span class=&quot;citation&quot; data-cites=&quot;hastie_principal_1989&quot;&gt;Hastie and Stuetzle (1989)&lt;/span&gt; to fit a PC has two essential steps
-&lt;/p&gt;
-&lt;ol type=&quot;1&quot;&gt;
-&lt;li&gt;
-a projection step, and
-&lt;/li&gt;
-&lt;li&gt;
-a local averaging step.
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;p&gt;
-These two steps are iterated to convergence and can be arranged in any order; you can start with either the projection step or the local averaging step.
-&lt;/p&gt;
-&lt;p&gt;
-In the projection step, the sample locations are projected onto the current PC by finding the location along the curve closest to each point. Closest is defined in the same way as for PCA, namely the length of the line orthogonal to the curve that joins the sample point and its projection point on the curve.
-&lt;/p&gt;
-&lt;p&gt;
-For the local averaging step, one end of the curve is chosen arbitrarily and the distance along the curve from this end is determined. These distances are then used as the predictor variable in a smooth regression model to predict the response values of a single species. A model is fitted in turn to each species. This step has the effect of bending the curve towards the data. The type of smoother used for the models is a plugin to the PC algorithm; smoothing splines were initially used, but any smooth regression model could be employed, such as a kernel smoother or regression splines, or a generalized additive model.
-&lt;/p&gt;
-&lt;p&gt;
-Convergence is declared when the fitted curve is sufficiently close to that of the previous iteration, the meaning of &lt;em&gt;sufficiently close&lt;/em&gt; being controlled by a threshold parameter that can be varied by the user to allow for more or less strict convergence.
-&lt;/p&gt;
-&lt;p&gt;
-To illustrate the fitting process, I turn to a synthetic data set from &lt;span class=&quot;citation&quot; data-cites=&quot;podani-miklos-2002&quot;&gt;Podani and Miklós (2002)&lt;/span&gt;, one that is similar in spirit to the data I used from &lt;span class=&quot;citation&quot; data-cites=&quot;legendre_numerical_2012&quot;&gt;Legendre and Legendre (2012, 482)&lt;/span&gt; in the &lt;a href=&quot;/2013/12/28/pcurve-1/&quot;&gt;earlier post&lt;/a&gt;. The data set is somewhat tedious to create hence I have written a couple of functions that can generate data sets from the paper &lt;span class=&quot;citation&quot; data-cites=&quot;podani-miklos-2002&quot;&gt;(Podani and Miklós, 2002)&lt;/span&gt; that are available on Github. To read this code into R and recreate the data from Figure 1 &lt;span class=&quot;citation&quot; data-cites=&quot;podani-miklos-2002&quot;&gt;(Podani and Miklós, 2002)&lt;/span&gt; run
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;## load Podani and Miklos data-set-generating function from github&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tmp&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tempfile&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;download.file&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;https://github.com/gavinsimpson/random_code/raw/master/podani.R&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-              &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tmp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;method&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;wget&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;source&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tmp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## generate data set 1 of Podani &amp;amp; Miklos&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;podani1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-As with the data in the &lt;a href=&quot;/2013/12/28/pcurve-1/&quot;&gt;earlier post&lt;/a&gt;, when ordinated using PCA a very strong horseshoe is apparent in the solution. Projecting points on to the first PCA axis for example, the true ordering of samples along the gradient is lost at the ends of the axis where the horseshoe bends back on itself.
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;## ordinate&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;vegan&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pca1&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rda&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## plot data and PCA&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;layout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;matrix&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nrow&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;matplot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;o&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pch&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;19&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylab&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Abundance&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlab&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Gradient&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ordipointlabel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pca1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;display&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;sites&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;layout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure&gt;
-&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-2-podani-data-plot.png&quot; alt=&quot;&quot; /&gt;
-&lt;figcaption&gt;
-Data set 1 from &lt;span class=&quot;citation&quot; data-cites=&quot;podani-miklos-2002&quot;&gt;Podani and Miklós (2002)&lt;/span&gt; (upper panel) and configuration resulting from the ordination of these data by PCA (lower panel)
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-There are several R packages that fit PCs as described above, including &lt;strong&gt;&lt;a href=&quot;http://cran.r-project.org/web/packages/princurve/index.html&quot;&gt;princurve&lt;/a&gt;&lt;/strong&gt;, which was converted from the &lt;strong&gt;S&lt;/strong&gt; original implementation of Trevor Hastie, and &lt;strong&gt;&lt;a href=&quot;http://cran.r-project.org/web/packages/pcurve/index.html&quot;&gt;pcurve&lt;/a&gt;&lt;/strong&gt;, Glenn De’ath’s port of Hastie’s code and given an ecological makeover as described in &lt;span class=&quot;citation&quot; data-cites=&quot;death_principal_1999&quot;&gt;(De’ath, 1999)&lt;/span&gt; and which I now maintain. However, I will use the interface I wrote for the &lt;strong&gt;&lt;a href=&quot;http://cran.r-project.org/web/packages/analogue/index.html&quot;&gt;analogue&lt;/a&gt;&lt;/strong&gt; package, which is a wrapper to the &lt;code&gt;principal.curve()&lt;/code&gt; function of &lt;strong&gt;princurve&lt;/strong&gt;, designed specifically for working with palaeo data. To fit a PC to the example data, use
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;## Load analogue&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;analogue&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;prc1&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;prcurve&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;trace&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plotit&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;thresh&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.0005&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;maxit&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;50&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-Because I used &lt;code&gt;trace = TRUE&lt;/code&gt;, information on the fitting process is printed to the screen. Note that I increased the maximum number of iterations to 50 (&lt;code&gt;maxit = 50&lt;/code&gt;) and reduced the default convergence tolerance (&lt;code&gt;thresh = 0.0005&lt;/code&gt;) to give a closer fit and to make a more interesting animation showing how the curve in sequentially updated. The &lt;code&gt;plotit&lt;/code&gt; argument will draw a plot of the current iteration’s PC in a PCA of the data. The figure below shows this updating of the curve as an animation
-&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-animation.gif&quot; alt=&quot;&quot; /&gt;
-&lt;figcaption&gt;
-Progression of the PC iterative algorithm as it adapts to the example data set.
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-Although I haven’t actually checked, I suspect the reason the fitted curve moves away from the samples at the top of the figure in later iterations is that it is being bent closer to samples in other dimensions than those shown on the PCA. If you were to use the default tolerance, the algorithm converges after five iterations and is much closer to the samples at the top of the figure and has a slightly better fit than the one shown in the figure, however, it is not &lt;em&gt;self-consistent&lt;/em&gt; given the tighter tolerance of &lt;code&gt;thresh = 0.0005&lt;/code&gt;. A curve is said to be self-consistent if for any point on the curve, the average of the points that project there coincides with the point on the curve. &lt;span class=&quot;citation&quot; data-cites=&quot;hastie_principal_1989&quot;&gt;Hastie and Stuetzle (1989)&lt;/span&gt; note that they are &lt;q&gt;“unable to prove… that each step guarantees a decrease in the criterion [sum of squared errors]”&lt;/q&gt;, which fits with our observations here. &lt;code&gt;prcurve()&lt;/code&gt; spat the following information to the screen during fitting
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-rout&quot; data-lang=&quot;rout&quot;&gt;R&amp;gt; prc1 &amp;lt;- prcurve(p1, trace = TRUE, plotit = TRUE, thresh = 0.0005,
-+                 maxit = 50)
---------------------------------------------------------------------------------
-Initial curve: d.sq: 415.4000
-Iteration   1: d.sq: 225.0781
-Iteration   2: d.sq: 226.6742
-Iteration   3: d.sq: 227.8931
-Iteration   4: d.sq: 229.2305
-Iteration   5: d.sq: 229.0200
-Iteration   6: d.sq: 229.4651
-Iteration   7: d.sq: 230.2869
-Iteration   8: d.sq: 231.3375
-Iteration   9: d.sq: 232.8548
-Iteration  10: d.sq: 234.2305
-Iteration  11: d.sq: 235.1783
-Iteration  12: d.sq: 235.4467
-Iteration  13: d.sq: 235.1242
-Iteration  14: d.sq: 236.7539
-Iteration  15: d.sq: 242.6807
-Iteration  16: d.sq: 247.1509
-Iteration  17: d.sq: 248.8073
-Iteration  18: d.sq: 249.5422
-Iteration  19: d.sq: 250.2597
-Iteration  20: d.sq: 250.9525
-Iteration  21: d.sq: 251.5495
-Iteration  22: d.sq: 252.0903
-Iteration  23: d.sq: 252.5108
-Iteration  24: d.sq: 252.8692
-Iteration  25: d.sq: 253.1439
-Iteration  26: d.sq: 253.4109
-Iteration  27: d.sq: 253.6296
-Iteration  28: d.sq: 253.8369
-Iteration  29: d.sq: 254.0217
-Iteration  30: d.sq: 254.1867
-Iteration  31: d.sq: 254.3728
-Iteration  32: d.sq: 254.5084
-Iteration  33: d.sq: 254.6286
---------------------------------------------------------------------------------
-PC Converged in 33 iterations.
---------------------------------------------------------------------------------&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-33 iterations were required before convergence in this instance. Printing the object returned by &lt;code&gt;prcurve()&lt;/code&gt; yields further information on the fitted curve
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-rout&quot; data-lang=&quot;rout&quot;&gt;R&amp;gt; prc1
-
-    Principal Curve Fitting
-
-Call: prcurve(X = p1, maxit = 50, trace = TRUE, thresh = 5e-04, plotit
-= TRUE)
-
-Algorithm converged after 33 iterations
-
-          SumSq Proportion
-Total       415       1.00
-Explained   161       0.39
-Residual    255       0.61
-
-Fitted curve uses 336.433 degrees of freedom.&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The curve explains 39% of the variance in the example data set and whilst there is a significant amount of unexplained variance, the PC is a significant improvement over the % fit that the PCA affords these data (the value displayed below is a proportion) although it does use a significantly higher number of degrees of freedom in doing so (~336 compared with 42 for the PCA — the first principal component is a linear combination of 42 species scores.).
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-rout&quot; data-lang=&quot;rout&quot;&gt;R&amp;gt; varExpl(pca1)
-    PC1 
-0.05963&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-There’s not a whole lot more to principal curves, except a bit of fiddling and plenty of details on how those smoothers are fitted. I don’t want this post to turn into an even larger missive than it already is, so I’ll postpone those details to another post. In the meantime, I’ll show a principal curve fitted to the Abernethy Forest data I introduced at the end of the &lt;a href=&quot;/2013/12/28/pcurve-1/&quot;&gt;previous post&lt;/a&gt;. I’ll quickly run through the code without much explanation as I’ll cover the details in part three of this series.
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;## Load the Abernethy Forest data&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;abernethy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## Remove the Depth and Age variables&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;abernethy2&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;abernethy&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;37&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;38&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## Fit the principal curve varying complexity for each species&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;aber.pc&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;prcurve&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;abernethy2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;trace&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vary&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;penalty&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1.4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;aber.pc&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## Plot&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;op&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;par&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mar&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;aber.pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;par&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;op&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## 3d plot&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot3d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;aber.pc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The plot below (code not shown for this) shows how the responses of the main taxa in the data set vary as the algorithm iterates to convergence in six iterations. The major changes happen in the first 2 iterations.
-&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-spp-responses.gif&quot; alt=&quot;&quot; /&gt;
-&lt;figcaption&gt;
-Individual smoothers fitted to the Abernethy Forest data set for the 9 most abundant species.
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The fitted PC is shown below
-&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-abernethy-fitted-curve.png&quot; alt=&quot;&quot; /&gt;
-&lt;figcaption&gt;
-Principal curve fitted to the Abernethy Forest data set.
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-and explains 96% of the variance in the data
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;aber.pc&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Principal&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Curve&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Fitting&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Call&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;prcurve&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;abernethy2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vary&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;trace&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;penalty&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1.4&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Algorithm&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;converged&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;after&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;6&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iterations&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-           &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;SumSq&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Proportion&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Total&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;     &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;103234&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;       &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1.00&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Explained&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;98864&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;       &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.96&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Residual&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;4370&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;       &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.04&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Fitted&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;curve&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;uses&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;218.339&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;degrees&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;of&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;freedom.&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-and we’d need 4 or 5 PCA axes to do as well as this, and even then we’d be in the unenviable position of having to visualize that 5d space.
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;varExpl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rda&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;abernethy2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;axes&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;5&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cumulative&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-   &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PC1&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PC2&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PC3&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PC4&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;PC5&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; 
-&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.4650&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.8022&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.9059&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.9439&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.9703&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The principal curve, whilst using a larger number of degrees of freedom (~220 vs ~180 for a 5-axis PCA solution), embeds the same amount of information in a single variable, the arc length distance along the principal curve, which may be used as one would a PCA axis score.
-&lt;/p&gt;
-&lt;p&gt;
-By way of some eye candy to close&lt;a href=&quot;#fn1&quot; class=&quot;footnote-ref&quot; id=&quot;fnref1&quot; role=&quot;doc-noteref&quot;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;, the output of &lt;code&gt;plot3d(aber.pc)&lt;/code&gt; is an &lt;strong&gt;rgl&lt;/strong&gt; device window which contains a spin-able, zoom-able 3D representation of the data and the fitted curve. The axes of the plot are the first three principal components, the points are where the samples rfom the core are located in this reduced space and the orange line is the fitted principal curve. Rather than show a static image, I used the &lt;strong&gt;rgl&lt;/strong&gt; package to spin the display and wrapped this up in a video, displayed below. The video can be streamed but weighs in at 11Mb (! — I struggled to keep the text legible), just so you know.
-&lt;/p&gt;
-&lt;video width=&quot;770&quot; height=&quot;429&quot; controls style=&quot;margin-left: auto; margin-right: auto; display: block; margin-top: 10px; margin-bottom: 10px;&quot;&gt;
-&lt;source src=&quot;https://www.fromthebottomoftheheap.net/assets/video/prcurve-movie.webm&quot; type=&quot;video/webm&quot;&gt;
-&lt;p&gt;
-Your browser does not support the video tag. &lt;/video&gt;
-&lt;/p&gt;
-&lt;p&gt;
-Seeing the curve (and the data) in three dimensions rather than the usual two is quite illuminating!
-&lt;/p&gt;
-&lt;p&gt;
-That’s it for part 2. Next time I’ll take a closer look at the &lt;code&gt;prcurve()&lt;/code&gt; function, what the options for fitting principal curves are, among other things.
-&lt;/p&gt;
-&lt;h3 class=&quot;unnumbered&quot; id=&quot;references&quot;&gt;
-References
-&lt;/h3&gt;
-&lt;div id=&quot;refs&quot; class=&quot;references hanging-indent&quot; role=&quot;doc-bibliography&quot; role=&quot;doc-bibliography&quot;&gt;
-&lt;div id=&quot;ref-death_principal_1999&quot;&gt;
-&lt;p&gt;
-De’ath, G. (1999). Principal curves: A new technique for indirect and direct gradient analysis. &lt;em&gt;Ecology&lt;/em&gt; 80, 2237–2253. Available at: &lt;a href=&quot;http://www.esajournals.org/doi/abs/10.1890/0012-9658(1999)080%5B2237:PCANTF%5D2.0.CO%3B2&quot;&gt;http://www.esajournals.org/doi/abs/10.1890/0012-9658(1999)080%5B2237:PCANTF%5D2.0.CO%3B2&lt;/a&gt; [Accessed May 31, 2013].
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-goodall_objective_1954&quot;&gt;
-&lt;p&gt;
-Goodall, D. (1954). Objective methods for the classification of vegetation. III. an essay in the use of factor analysis. &lt;em&gt;Australian Journal of Botany&lt;/em&gt; 2, 304–324. Available at: &lt;a href=&quot;http://www.publish.csiro.au/paper/BT9540304&quot;&gt;http://www.publish.csiro.au/paper/BT9540304&lt;/a&gt; [Accessed June 3, 2013].
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-hastie_principal_1989&quot;&gt;
-&lt;p&gt;
-Hastie, T., and Stuetzle, W. (1989). Principal curves. &lt;em&gt;Journal of the American Statistical Association&lt;/em&gt; 84, 502–516. doi:&lt;a href=&quot;https://doi.org/10.2307/2289936&quot;&gt;10.2307/2289936&lt;/a&gt;.
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-legendre_numerical_2012&quot;&gt;
-&lt;p&gt;
-Legendre, P., and Legendre, L. (2012). &lt;em&gt;Numerical ecology&lt;/em&gt;. 3rd ed. Elsevier.
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-noy-meir_principal_1970&quot;&gt;
-&lt;p&gt;
-Noy-Meir, I., and Austin, M. P. (1970). Principal component ordination and simulated vegetational data. &lt;em&gt;Ecology&lt;/em&gt; 51, 551–552. doi:&lt;a href=&quot;https://doi.org/10.2307/1935398&quot;&gt;10.2307/1935398&lt;/a&gt;.
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-podani-miklos-2002&quot;&gt;
-&lt;p&gt;
-Podani, J., and Miklós, I. (2002). Resemblance coefficients and the horseshoe effect in principal coordinates analysis. &lt;em&gt;Ecology&lt;/em&gt; 83, 3331–3343. Available at: &lt;a href=&quot;http://www.jstor.org/stable/3072083&quot;&gt;http://www.jstor.org/stable/3072083&lt;/a&gt;.
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;div id=&quot;ref-swan_examination_1970&quot;&gt;
-&lt;p&gt;
-Swan, J. M. A. (1970). An examination of some ordination problems by use of simulated vegetational data. &lt;em&gt;Ecology&lt;/em&gt; 51, 89–102. doi:&lt;a href=&quot;https://doi.org/10.2307/1933602&quot;&gt;10.2307/1933602&lt;/a&gt;.
-&lt;/p&gt;
-&lt;/div&gt;
-&lt;/div&gt;
-&lt;section class=&quot;footnotes&quot; role=&quot;doc-endnotes&quot;&gt;
-&lt;hr /&gt;
-&lt;ol&gt;
-&lt;li id=&quot;fn1&quot; role=&quot;doc-endnote&quot;&gt;
-&lt;p&gt;
-Well, not that much candy; I’m still getting to grips with &lt;strong&gt;rgl&lt;/strong&gt; and creating videos from individual PNG frames…&lt;a href=&quot;#fnref1&quot; class=&quot;footnote-back&quot; role=&quot;doc-backlink&quot;&gt;↩︎&lt;/a&gt;
-&lt;/p&gt;
-&lt;/li&gt;
-&lt;/ol&gt;
-&lt;/section&gt;
 
         </content>
     </entry>
