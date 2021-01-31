@@ -1,0 +1,554 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-7900310-7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-7900310-7');
+</script>
+
+
+    <meta charset="utf-8">
+    <title>Getting data from the Canada Covid-19 Tracker using R</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="Covid-19, API" />
+
+
+<meta name="description" content="Last semester (Fall 2020) I taught a new course in healthcare data science for the Johnson Shoyama Graduate School in Public Policy. One of the final topics of the course was querying application programming interfaces (APIs) from within R. The example we used was querying data on the Covid 19 pandemic from the Covid-19 Tracker Canada, which has a simple API that’s easy to work with. In this post I’ll show how we accessed the API from within R and converted the query responses into something we can work with easily.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Getting data from the Canada Covid-19 Tracker using R" />
+<meta property="dc:creator" content="Gavin Simpson" />
+
+<meta property="dc:date" content="2021-01-31T10:49:00-06:00" />
+
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Getting data from the Canada Covid-19 Tracker using R" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+
+<meta property="http://ogp.me/ns/article#published_time" content="2021-01-31T10:49:00-06:00" />
+
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="Last semester (Fall 2020) I taught a new course in healthcare data science for the Johnson Shoyama Graduate School in Public Policy. One of the final topics of the course was querying application programming interfaces (APIs) from within R. The example we used was querying data on the Covid 19..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Getting data from the Canada Covid-19 Tracker using R" />
+
+<meta name="twitter:image" content="https://www.fromthebottomoftheheap.net/assets/img/posts/getting-data-from-canada-covid-19-tracker-using-r-plot-cases-1.png" />
+
+
+<meta name="twitter:description" content="Last semester (Fall 2020) I taught a new course in healthcare data science for the Johnson Shoyama Graduate School in Public Policy. One of the final topics of the course was querying application ..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+
+<meta name="citation_publication_date" content="31 Jan 2021"/>
+<meta name="citation_date" content="31 Jan 2021"/>
+
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Getting data from the Canada Covid-19 Tracker using R"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+    
+    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2021/01/30/two-new-versions-of-gratia-on-cran/">Two new versions of gratia released</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Getting data from the Canada Covid-19 Tracker using R </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>Last semester (Fall 2020) I taught a new course in healthcare data science for the <a href="https://www.schoolofpublicpolicy.sk.ca/">Johnson Shoyama Graduate School in Public Policy</a>. One of the final topics of the course was querying application programming interfaces (APIs) from within R. The example we used was querying data on the Covid 19 pandemic from the <a href="https://covid19tracker.ca">Covid-19 Tracker Canada</a>, which has a simple API that’s easy to work with. In this post I’ll show how we accessed the API from within R and converted the query responses into something we can work with easily.</p>
+<p>There are many ways of querying APIs in R via a range of packages. Here, I’m going to use <strong>httr</strong> 📦 to query the API and <strong>jsonlite</strong> 📦 to convert what the API responds to our query with into something more useful. The packages we need are listed in the chunk below — if you don’t have them, uncomment the <code>install.packages()</code> line and change <code>Ncpus</code> to something suitble for your computer.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">pkgs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s1">'httr'</span><span class="p">,</span><span class="w"> </span><span class="s1">'jsonlite'</span><span class="p">,</span><span class="w"> </span><span class="s1">'dplyr'</span><span class="p">,</span><span class="w"> </span><span class="s1">'ggplot2'</span><span class="p">,</span><span class="w"> </span><span class="s1">'purrr'</span><span class="p">)</span><span class="w">
+</span><span class="c1">## install.packages(pkgs, Ncpus = 4)</span><span class="w">
+</span><span class="n">vapply</span><span class="p">(</span><span class="n">pkgs</span><span class="p">,</span><span class="w"> </span><span class="n">library</span><span class="p">,</span><span class="w"> </span><span class="n">logical</span><span class="p">(</span><span class="m">1</span><span class="p">),</span><span class="w"> </span><span class="n">logical.return</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">character.only</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">    httr jsonlite    dplyr  ggplot2    purrr 
+    TRUE     TRUE     TRUE     TRUE     TRUE </code></pre>
+</figure>
+<p>The kind of API we’re going to query is a RESTful API — <strong>RE</strong>presentational <strong>S</strong>tate <strong>T</strong>ransfer. To do the query we need identify the resource we want to query and then send the query using HTTP, the <strong>H</strong>yper<strong>T</strong>ext <strong>T</strong>ransfer <strong>P</strong>rotocol. The resource identity is specified using a uniform resource identifier or URI</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/ps4ds-figure-14-2.png" alt="" /><figcaption>Graphic showing the parts of a URI. Source: Programming Skills for Data Science (Ross &amp; Freeman, 2018)</figcaption>
+</figure>
+<p>The URI comprises four parts</p>
+<ol type="1">
+<li>the protocol</li>
+<li>the base URI</li>
+<li>the endpoint</li>
+<li>additional query parameters</li>
+</ol>
+<p>For the Covid-19 Tracker Canada, we’ll use the HTTPS protocol for secure HTTP, and its base URI is <code>api.covid19tracker.ca</code>. The <em>endpoint</em> is the specific location of the data you want to access. For the API we’re querying, endpoints include</p>
+<ul>
+<li><code>/reports</code></li>
+<li><code>/cases</code></li>
+<li><code>/fatalities</code></li>
+<li><code>/provinces</code></li>
+</ul>
+<p>Endpoints can also allow multiple sub-resources, these are variables and take the form <code>:var_name</code>. For example, the <code>/reports/province</code> endpoint allows the province to be specified as a sub-resource. It is documented as <code>/reports/province/:code</code>, so we would specify endpoints as <code>/reports/province/SK</code> etc, where we are setting <code>:code</code> to <code>SK</code>.</p>
+<p>The final part of the URI are the query parameters and they allow some fine control over what is requested from the endpoint. These are added as key-value pairs, following a <code>?</code>, and pairs are separated with <code>&amp;</code>. The key is the name of the parameter, and the value is what you want to pass to that parameter. For example, when querying cases, we can specify the province and how many cases are returned per page using</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="o">/</span><span class="n">cases</span><span class="o">?</span><span class="n">province</span><span class="o">=</span><span class="n">ON</span><span class="o">&amp;</span><span class="n">per_page</span><span class="o">=</span><span class="m">50</span></code></pre>
+</figure>
+<p>Which endpoints and query parameters are supported are documented in the specific API you are trying to access, so always take some time to familiarise yourself with the API itself. For the Covid-19 Tracker Canada the documentation is also at <a href="https://api.covid19tracker.ca">api.covid19tracker.ca</a>.</p>
+<p>It’s usually best to build the URI up from these parts stored as separate objects within R</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">base</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"https://api.covid19tracker.ca"</span><span class="w">
+</span><span class="n">ep</span><span class="w">    </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"/reports/province/sk"</span><span class="w">
+</span><span class="n">query</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"?date=2021-01-31"</span><span class="w">
+</span><span class="n">req</span><span class="w">   </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">paste0</span><span class="p">(</span><span class="n">base</span><span class="p">,</span><span class="w"> </span><span class="n">ep</span><span class="p">,</span><span class="w"> </span><span class="n">query</span><span class="p">)</span><span class="w">
+</span><span class="n">req</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">[1] "https://api.covid19tracker.ca/reports/province/sk?date=2021-01-31"</code></pre>
+</figure>
+<p>The HTTP request involves using a <em>verb</em> and the URI — here we will use the <code>GET</code> verb. In <strong>httr</strong> 📦 the <code>GET</code> verb is found in the <code>GET()</code> function</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">response</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">GET</span><span class="p">(</span><span class="n">req</span><span class="p">)</span></code></pre>
+</figure>
+<p>The response consists of two parts</p>
+<ol type="1">
+<li>the headers</li>
+<li>the body</li>
+</ol>
+<p>The headers contain information about the request and response, while the body contains the result of the query. You can access these components of the response using <code>headers()</code> and <code>content()</code> respectively.</p>
+<p>When you print <code>response</code> you’ll see a brief summary of the response metadata</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">response</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Response [https://api.covid19tracker.ca/reports/province/sk?date=2021-01-31]
+  Date: 2021-01-31 22:42
+  Status: 200
+  Content-Type: application/json
+  Size: 488 B</code></pre>
+</figure>
+<p>The status code is important; 200 means <strong>success</strong> and anything else likely indicates some form of failure. Keep an I on the status code of your queries. If you’re wrapping these codes in a function, the <code>warn_for_status()</code> and <code>stop_for_status()</code> functions to query the status and which throw a warning or an error if the request failed respectively.</p>
+<p>The body of the response can be accessed as a generic R list, as the raw bytes of the response, or as plain text. When viewed as text, we see that the text format is JSON</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">jsonlite</span><span class="o">::</span><span class="n">prettify</span><span class="p">(</span><span class="n">content</span><span class="p">(</span><span class="n">response</span><span class="p">,</span><span class="w"> </span><span class="s1">'text'</span><span class="p">,</span><span class="w"> </span><span class="n">encoding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'UTF-8'</span><span class="p">))</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">{
+    "province": "sk",
+    "data": [
+        {
+            "date": "2021-01-31",
+            "change_cases": 238,
+            "change_fatalities": 4,
+            "change_tests": 2459,
+            "change_hospitalizations": -3,
+            "change_criticals": 3,
+            "change_recoveries": 223,
+            "change_vaccinations": 120,
+            "change_vaccines_distributed": 0,
+            "change_vaccinated": 0,
+            "total_cases": 23863,
+            "total_fatalities": 304,
+            "total_tests": 508638,
+            "total_hospitalizations": 203,
+            "total_criticals": 31,
+            "total_recoveries": 21026,
+            "total_vaccinations": 35359,
+            "total_vaccines_distributed": 32725,
+            "total_vaccinated": 4637
+        }
+    ]
+}
+ </code></pre>
+</figure>
+<p>Above, I used the <code>prettify()</code> function to display the JSON in a human-readable format. Note also that I’m specifying the encoding explicitly to be UTF-8 as that’s what my Linux system uses. If you’re not sure about the encoding for your system, just leave the <code>encoding</code> argument off and you’ll see a message indicating what encoding was used.</p>
+<p>To actually parse the JSON into a similar R object we use <code>jsonlite::fromJSON()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">parsed</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">fromJSON</span><span class="p">(</span><span class="n">content</span><span class="p">(</span><span class="n">response</span><span class="p">,</span><span class="w"> </span><span class="s1">'text'</span><span class="p">,</span><span class="w"> </span><span class="n">encoding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'UTF-8'</span><span class="p">))</span><span class="w">
+</span><span class="n">str</span><span class="p">(</span><span class="n">parsed</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">List of 2
+ $ province: chr "sk"
+ $ data    :'data.frame':   1 obs. of  19 variables:
+  ..$ date                       : chr "2021-01-31"
+  ..$ change_cases               : int 238
+  ..$ change_fatalities          : int 4
+  ..$ change_tests               : int 2459
+  ..$ change_hospitalizations    : int -3
+  ..$ change_criticals           : int 3
+  ..$ change_recoveries          : int 223
+  ..$ change_vaccinations        : int 120
+  ..$ change_vaccines_distributed: int 0
+  ..$ change_vaccinated          : int 0
+  ..$ total_cases                : int 23863
+  ..$ total_fatalities           : int 304
+  ..$ total_tests                : int 508638
+  ..$ total_hospitalizations     : int 203
+  ..$ total_criticals            : int 31
+  ..$ total_recoveries           : int 21026
+  ..$ total_vaccinations         : int 35359
+  ..$ total_vaccines_distributed : int 32725
+  ..$ total_vaccinated           : int 4637</code></pre>
+</figure>
+<p>What we’re most interested in is the <code>$data</code> component, but you can see that <strong>jsonlite</strong> 📦 has converted the JSON to an R list and where appropriate has converted arrays to data frames, as for <code>$data</code> here. Exactly what is returned by the API will be specific to each API, so read the docmentation for the API you want and look at the structure of what is returned to identify the names of relevant components etc.</p>
+<h2 id="covid-19-cases-per-day">Covid-19 cases per day</h2>
+<p>Now that we’ve had a crash course in querying an API, let’s do something substantive and query the Covid-19 case data for my adopted home province of Saskatchewan. For this we want the <code>/reports</code> endpoint and we can specify the province as a sub-resource.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">base</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s1">'https://api.covid19tracker.ca'</span><span class="w">
+</span><span class="n">ep</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s1">'/reports/province/sk'</span><span class="w">
+</span><span class="n">req</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">paste0</span><span class="p">(</span><span class="n">base</span><span class="p">,</span><span class="w"> </span><span class="n">ep</span><span class="p">)</span><span class="w">
+</span><span class="n">response</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">GET</span><span class="p">(</span><span class="n">req</span><span class="p">)</span><span class="w">
+</span><span class="n">cases</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">response</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">content</span><span class="p">(</span><span class="n">as</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'text'</span><span class="p">,</span><span class="w"> </span><span class="n">encoding</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'UTF-8'</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">fromJSON</span><span class="p">()</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">pluck</span><span class="p">(</span><span class="s1">'data'</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">as_tibble</span><span class="p">()</span><span class="w">
+</span><span class="n">cases</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 373 x 19
+   date  change_cases change_fataliti… change_tests change_hospital…
+   &lt;chr&gt;        &lt;int&gt;            &lt;int&gt;        &lt;int&gt;            &lt;int&gt;
+ 1 2020…           NA               NA            0                0
+ 2 2020…           NA               NA            0                0
+ 3 2020…           NA               NA            0                0
+ 4 2020…           NA               NA            0                0
+ 5 2020…           NA               NA            0                0
+ 6 2020…           NA               NA            0                0
+ 7 2020…           NA               NA            0                0
+ 8 2020…           NA               NA            0                0
+ 9 2020…           NA               NA            0                0
+10 2020…           NA               NA            0                0
+# … with 363 more rows, and 14 more variables: change_criticals &lt;int&gt;,
+#   change_recoveries &lt;int&gt;, change_vaccinations &lt;int&gt;,
+#   change_vaccines_distributed &lt;int&gt;, change_vaccinated &lt;int&gt;,
+#   total_cases &lt;int&gt;, total_fatalities &lt;int&gt;, total_tests &lt;int&gt;,
+#   total_hospitalizations &lt;int&gt;, total_criticals &lt;int&gt;,
+#   total_recoveries &lt;int&gt;, total_vaccinations &lt;int&gt;,
+#   total_vaccines_distributed &lt;int&gt;, total_vaccinated &lt;int&gt;</code></pre>
+</figure>
+<p>At the moment the <code>date</code> variable is stored as a simple character vector. If we convert that to a <code>'Date'</code> object, <strong>ggplot2</strong> 📦 will draw a nicely formatted time axis for us</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">cases</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">mutate</span><span class="p">(</span><span class="n">date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">as.Date</span><span class="p">(</span><span class="n">date</span><span class="p">))</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+  </span><span class="n">ggplot</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">date</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">change_cases</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">labs</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">NULL</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Cases'</span><span class="p">,</span><span class="w">
+         </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Daily Covid-19 cases in Saskatchewan'</span><span class="p">,</span><span class="w">
+         </span><span class="n">caption</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Source: N. Little. COVID-19 Tracker Canada (2021), COVID19tracker.ca'</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning: Removed 47 row(s) containing missing values (geom_path).</code></pre>
+</figure>
+<p><img src="https://www.fromthebottomoftheheap.net/assets/img/posts/getting-data-from-canada-covid-19-tracker-using-r-plot-cases-1.png" /></p>
+<p>Yeah, we’re not doing very well in this province 😞🤬</p>
+<p>Hope you enjoyed the post — if you have comments or questions, ask them in the Comment section below.</p>
+<h3 id="references">References</h3>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/";
+  var disqus_title = "Getting data from the Canada Covid-19 Tracker using R";
+  //var disqus_identifier = "/2021/01/31/getting-data-from-canada-covid-19-tracker-using-r";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>31 January 2021</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/covid-19/"><span class="label label-inverse">Covid-19</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/api/"><span class="label label-inverse">API</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2021 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    
+    
+
+
+  </body>
+</html>
+
+

@@ -12,6 +12,7 @@ tags:
 - releases
 active: blog
 category: R
+twitterimg: "two-new-versions-of-gratia-colour-scales-1.png"
 ---
 
 

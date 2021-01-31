@@ -4,7 +4,7 @@
     <title type="html" xml:lang="en">From the Bottom of the Heap - R</title>
     <link type="application/atom+xml" href="https://www.fromthebottomoftheheap.net/feed-R.xml" rel="self"/>
     <link type="text/plain" href="https://www.fromthebottomoftheheap.net" rel="alternate"/>
-    <updated>2021-01-30T23:48:26-06:00</updated>
+    <updated>2021-01-31T16:50:08-06:00</updated>
     <id>https://www.fromthebottomoftheheap.net/</id>
     <author>
         <name>Gavin L. Simpson</name>
@@ -12,6 +12,288 @@
         <uri>https://www.fromthebottomoftheheap.net/about.html</uri>
     </author>
     <rights type="text">Copyright 2010-2017 Gavin L. Simpson. Available under Creative Commons CC-BY licence</rights>
+    
+    <entry>
+        <title>Getting data from the Canada Covid-19 Tracker using R</title>
+        <link href="https://www.fromthebottomoftheheap.net/2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/"/>
+        <author>
+            <name>Gavin L. Simpson</name>
+        </author>
+	
+        <published>2021-01-31T10:49:00-06:00</published>
+        <updated>2021-01-31T10:49:00-06:00</updated>
+	
+        <id>https://www.fromthebottomoftheheap.net/2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/</id>
+        
+        <summary type="html">
+            &lt;p&gt;
+Last semester (Fall 2020) I taught a new course in healthcare data science for the &lt;a href=&quot;https://www.schoolofpublicpolicy.sk.ca/&quot;&gt;Johnson Shoyama Graduate School in Public Policy&lt;/a&gt;. One of the final topics of the course was querying application programming interfaces (APIs) from within R. The example we used was querying data on the Covid 19 pandemic from the &lt;a href=&quot;https://covid19tracker.ca&quot;&gt;Covid-19 Tracker Canada&lt;/a&gt;, which has a simple API that’s easy to work with. In this post I’ll show how we accessed the API from within R and converted the query responses into something we can work with easily.
+&lt;/p&gt;
+
+        </summary>
+        
+        <content type="html">
+            &lt;p&gt;
+Last semester (Fall 2020) I taught a new course in healthcare data science for the &lt;a href=&quot;https://www.schoolofpublicpolicy.sk.ca/&quot;&gt;Johnson Shoyama Graduate School in Public Policy&lt;/a&gt;. One of the final topics of the course was querying application programming interfaces (APIs) from within R. The example we used was querying data on the Covid 19 pandemic from the &lt;a href=&quot;https://covid19tracker.ca&quot;&gt;Covid-19 Tracker Canada&lt;/a&gt;, which has a simple API that’s easy to work with. In this post I’ll show how we accessed the API from within R and converted the query responses into something we can work with easily.
+&lt;/p&gt;
+&lt;p&gt;
+There are many ways of querying APIs in R via a range of packages. Here, I’m going to use &lt;strong&gt;httr&lt;/strong&gt; 📦 to query the API and &lt;strong&gt;jsonlite&lt;/strong&gt; 📦 to convert what the API responds to our query with into something more useful. The packages we need are listed in the chunk below — if you don’t have them, uncomment the &lt;code&gt;install.packages()&lt;/code&gt; line and change &lt;code&gt;Ncpus&lt;/code&gt; to something suitble for your computer.
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;pkgs&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'httr'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'jsonlite'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'dplyr'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'ggplot2'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'purrr'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## install.packages(pkgs, Ncpus = 4)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;vapply&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pkgs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;library&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;logical&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;logical.return&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;character.only&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;TRUE&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;    httr jsonlite    dplyr  ggplot2    purrr 
+    TRUE     TRUE     TRUE     TRUE     TRUE &lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+The kind of API we’re going to query is a RESTful API — &lt;strong&gt;RE&lt;/strong&gt;presentational &lt;strong&gt;S&lt;/strong&gt;tate &lt;strong&gt;T&lt;/strong&gt;ransfer. To do the query we need identify the resource we want to query and then send the query using HTTP, the &lt;strong&gt;H&lt;/strong&gt;yper&lt;strong&gt;T&lt;/strong&gt;ext &lt;strong&gt;T&lt;/strong&gt;ransfer &lt;strong&gt;P&lt;/strong&gt;rotocol. The resource identity is specified using a uniform resource identifier or URI
+&lt;/p&gt;
+&lt;figure&gt;
+&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/ps4ds-figure-14-2.png&quot; alt=&quot;&quot; /&gt;
+&lt;figcaption&gt;
+Graphic showing the parts of a URI. Source: Programming Skills for Data Science (Ross &amp;amp; Freeman, 2018)
+&lt;/figcaption&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+The URI comprises four parts
+&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;
+the protocol
+&lt;/li&gt;
+&lt;li&gt;
+the base URI
+&lt;/li&gt;
+&lt;li&gt;
+the endpoint
+&lt;/li&gt;
+&lt;li&gt;
+additional query parameters
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;
+For the Covid-19 Tracker Canada, we’ll use the HTTPS protocol for secure HTTP, and its base URI is &lt;code&gt;api.covid19tracker.ca&lt;/code&gt;. The &lt;em&gt;endpoint&lt;/em&gt; is the specific location of the data you want to access. For the API we’re querying, endpoints include
+&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;code&gt;/reports&lt;/code&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;code&gt;/cases&lt;/code&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;code&gt;/fatalities&lt;/code&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;code&gt;/provinces&lt;/code&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;
+Endpoints can also allow multiple sub-resources, these are variables and take the form &lt;code&gt;:var_name&lt;/code&gt;. For example, the &lt;code&gt;/reports/province&lt;/code&gt; endpoint allows the province to be specified as a sub-resource. It is documented as &lt;code&gt;/reports/province/:code&lt;/code&gt;, so we would specify endpoints as &lt;code&gt;/reports/province/SK&lt;/code&gt; etc, where we are setting &lt;code&gt;:code&lt;/code&gt; to &lt;code&gt;SK&lt;/code&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+The final part of the URI are the query parameters and they allow some fine control over what is requested from the endpoint. These are added as key-value pairs, following a &lt;code&gt;?&lt;/code&gt;, and pairs are separated with &lt;code&gt;&amp;amp;&lt;/code&gt;. The key is the name of the parameter, and the value is what you want to pass to that parameter. For example, when querying cases, we can specify the province and how many cases are returned per page using
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cases&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;?&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;province&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ON&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;amp;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;per_page&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;50&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+Which endpoints and query parameters are supported are documented in the specific API you are trying to access, so always take some time to familiarise yourself with the API itself. For the Covid-19 Tracker Canada the documentation is also at &lt;a href=&quot;https://api.covid19tracker.ca&quot;&gt;api.covid19tracker.ca&lt;/a&gt;.
+&lt;/p&gt;
+&lt;p&gt;
+It’s usually best to build the URI up from these parts stored as separate objects within R
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;base&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;https://api.covid19tracker.ca&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ep&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;    &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;/reports/province/sk&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;query&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;?date=2021-01-31&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;req&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;   &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;paste0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;base&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;query&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;req&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;[1] &quot;https://api.covid19tracker.ca/reports/province/sk?date=2021-01-31&quot;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+The HTTP request involves using a &lt;em&gt;verb&lt;/em&gt; and the URI — here we will use the &lt;code&gt;GET&lt;/code&gt; verb. In &lt;strong&gt;httr&lt;/strong&gt; 📦 the &lt;code&gt;GET&lt;/code&gt; verb is found in the &lt;code&gt;GET()&lt;/code&gt; function
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;GET&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;req&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+The response consists of two parts
+&lt;/p&gt;
+&lt;ol type=&quot;1&quot;&gt;
+&lt;li&gt;
+the headers
+&lt;/li&gt;
+&lt;li&gt;
+the body
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;
+The headers contain information about the request and response, while the body contains the result of the query. You can access these components of the response using &lt;code&gt;headers()&lt;/code&gt; and &lt;code&gt;content()&lt;/code&gt; respectively.
+&lt;/p&gt;
+&lt;p&gt;
+When you print &lt;code&gt;response&lt;/code&gt; you’ll see a brief summary of the response metadata
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Response [https://api.covid19tracker.ca/reports/province/sk?date=2021-01-31]
+  Date: 2021-01-31 22:42
+  Status: 200
+  Content-Type: application/json
+  Size: 488 B&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+The status code is important; 200 means &lt;strong&gt;success&lt;/strong&gt; and anything else likely indicates some form of failure. Keep an I on the status code of your queries. If you’re wrapping these codes in a function, the &lt;code&gt;warn_for_status()&lt;/code&gt; and &lt;code&gt;stop_for_status()&lt;/code&gt; functions to query the status and which throw a warning or an error if the request failed respectively.
+&lt;/p&gt;
+&lt;p&gt;
+The body of the response can be accessed as a generic R list, as the raw bytes of the response, or as plain text. When viewed as text, we see that the text format is JSON
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;jsonlite&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;prettify&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'text'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encoding&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'UTF-8'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;{
+    &quot;province&quot;: &quot;sk&quot;,
+    &quot;data&quot;: [
+        {
+            &quot;date&quot;: &quot;2021-01-31&quot;,
+            &quot;change_cases&quot;: 238,
+            &quot;change_fatalities&quot;: 4,
+            &quot;change_tests&quot;: 2459,
+            &quot;change_hospitalizations&quot;: -3,
+            &quot;change_criticals&quot;: 3,
+            &quot;change_recoveries&quot;: 223,
+            &quot;change_vaccinations&quot;: 120,
+            &quot;change_vaccines_distributed&quot;: 0,
+            &quot;change_vaccinated&quot;: 0,
+            &quot;total_cases&quot;: 23863,
+            &quot;total_fatalities&quot;: 304,
+            &quot;total_tests&quot;: 508638,
+            &quot;total_hospitalizations&quot;: 203,
+            &quot;total_criticals&quot;: 31,
+            &quot;total_recoveries&quot;: 21026,
+            &quot;total_vaccinations&quot;: 35359,
+            &quot;total_vaccines_distributed&quot;: 32725,
+            &quot;total_vaccinated&quot;: 4637
+        }
+    ]
+}
+ &lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+Above, I used the &lt;code&gt;prettify()&lt;/code&gt; function to display the JSON in a human-readable format. Note also that I’m specifying the encoding explicitly to be UTF-8 as that’s what my Linux system uses. If you’re not sure about the encoding for your system, just leave the &lt;code&gt;encoding&lt;/code&gt; argument off and you’ll see a message indicating what encoding was used.
+&lt;/p&gt;
+&lt;p&gt;
+To actually parse the JSON into a similar R object we use &lt;code&gt;jsonlite::fromJSON()&lt;/code&gt;
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;parsed&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fromJSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'text'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encoding&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'UTF-8'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;parsed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;List of 2
+ $ province: chr &quot;sk&quot;
+ $ data    :'data.frame':   1 obs. of  19 variables:
+  ..$ date                       : chr &quot;2021-01-31&quot;
+  ..$ change_cases               : int 238
+  ..$ change_fatalities          : int 4
+  ..$ change_tests               : int 2459
+  ..$ change_hospitalizations    : int -3
+  ..$ change_criticals           : int 3
+  ..$ change_recoveries          : int 223
+  ..$ change_vaccinations        : int 120
+  ..$ change_vaccines_distributed: int 0
+  ..$ change_vaccinated          : int 0
+  ..$ total_cases                : int 23863
+  ..$ total_fatalities           : int 304
+  ..$ total_tests                : int 508638
+  ..$ total_hospitalizations     : int 203
+  ..$ total_criticals            : int 31
+  ..$ total_recoveries           : int 21026
+  ..$ total_vaccinations         : int 35359
+  ..$ total_vaccines_distributed : int 32725
+  ..$ total_vaccinated           : int 4637&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+What we’re most interested in is the &lt;code&gt;&lt;span class=&quot;math inline&quot;&gt;\(data&amp;lt;/code&amp;gt; component, but you can see that &amp;lt;strong&amp;gt;jsonlite&amp;lt;/strong&amp;gt; 📦 has converted the JSON to an R list and where appropriate has converted arrays to data frames, as for &amp;lt;code&amp;gt;\)&lt;/span&gt;data&lt;/code&gt; here. Exactly what is returned by the API will be specific to each API, so read the docmentation for the API you want and look at the structure of what is returned to identify the names of relevant components etc.
+&lt;/p&gt;
+&lt;h2 id=&quot;covid-19-cases-per-day&quot;&gt;
+Covid-19 cases per day
+&lt;/h2&gt;
+&lt;p&gt;
+Now that we’ve had a crash course in querying an API, let’s do something substantive and query the Covid-19 case data for my adopted home province of Saskatchewan. For this we want the &lt;code&gt;/reports&lt;/code&gt; endpoint and we can specify the province as a sub-resource.
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;base&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'https://api.covid19tracker.ca'&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ep&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'/reports/province/sk'&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;req&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;paste0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;base&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ep&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;GET&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;req&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cases&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;response&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;as&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'text'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;encoding&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'UTF-8'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;fromJSON&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pluck&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'data'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;as_tibble&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cases&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;# A tibble: 373 x 19
+   date  change_cases change_fataliti… change_tests change_hospital…
+   &amp;lt;chr&amp;gt;        &amp;lt;int&amp;gt;            &amp;lt;int&amp;gt;        &amp;lt;int&amp;gt;            &amp;lt;int&amp;gt;
+ 1 2020…           NA               NA            0                0
+ 2 2020…           NA               NA            0                0
+ 3 2020…           NA               NA            0                0
+ 4 2020…           NA               NA            0                0
+ 5 2020…           NA               NA            0                0
+ 6 2020…           NA               NA            0                0
+ 7 2020…           NA               NA            0                0
+ 8 2020…           NA               NA            0                0
+ 9 2020…           NA               NA            0                0
+10 2020…           NA               NA            0                0
+# … with 363 more rows, and 14 more variables: change_criticals &amp;lt;int&amp;gt;,
+#   change_recoveries &amp;lt;int&amp;gt;, change_vaccinations &amp;lt;int&amp;gt;,
+#   change_vaccines_distributed &amp;lt;int&amp;gt;, change_vaccinated &amp;lt;int&amp;gt;,
+#   total_cases &amp;lt;int&amp;gt;, total_fatalities &amp;lt;int&amp;gt;, total_tests &amp;lt;int&amp;gt;,
+#   total_hospitalizations &amp;lt;int&amp;gt;, total_criticals &amp;lt;int&amp;gt;,
+#   total_recoveries &amp;lt;int&amp;gt;, total_vaccinations &amp;lt;int&amp;gt;,
+#   total_vaccines_distributed &amp;lt;int&amp;gt;, total_vaccinated &amp;lt;int&amp;gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+At the moment the &lt;code&gt;date&lt;/code&gt; variable is stored as a simple character vector. If we convert that to a &lt;code&gt;‘Date’&lt;/code&gt; object, &lt;strong&gt;ggplot2&lt;/strong&gt; 📦 will draw a nicely formatted time axis for us
+&lt;/p&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;cases&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mutate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;date&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;as.Date&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;date&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%&amp;gt;%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+  &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ggplot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;aes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;date&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;change_cases&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;geom_line&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;labs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;NULL&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Cases'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+         &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;title&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Daily Covid-19 cases in Saskatchewan'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+         &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;caption&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'Source: N. Little. COVID-19 Tracker Canada (2021), COVID19tracker.ca'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-text&quot; data-lang=&quot;text&quot;&gt;Warning: Removed 47 row(s) containing missing values (geom_path).&lt;/code&gt;&lt;/pre&gt;
+&lt;/figure&gt;
+&lt;p&gt;
+&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/getting-data-from-canada-covid-19-tracker-using-r-plot-cases-1.png&quot; /&gt;
+&lt;/p&gt;
+&lt;p&gt;
+Yeah, we’re not doing very well in this province 😞🤬
+&lt;/p&gt;
+&lt;p&gt;
+Hope you enjoyed the post — if you have comments or questions, ask them in the Comment section below.
+&lt;/p&gt;
+&lt;h3 id=&quot;references&quot;&gt;
+References
+&lt;/h3&gt;
+
+        </content>
+    </entry>
     
     <entry>
         <title>Two new versions of gratia released</title>
@@ -13181,207 +13463,6 @@ At this point the plot should look like the right hand panel of Figure 3, above.
 &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;par&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;op&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
 &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;layout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
 &lt;/figure&gt;
-
-        </content>
-    </entry>
-    
-    <entry>
-        <title>Monotonic deshrinking in weighted averaging models</title>
-        <link href="https://www.fromthebottomoftheheap.net/2013/01/05/monotonic-deshrinking-in-weighted-averaging-models/"/>
-        <author>
-            <name>Gavin L. Simpson</name>
-        </author>
-	
-        <published>2013-01-05T00:00:00-06:00</published>
-        <updated>2013-01-05T00:00:00-06:00</updated>
-	
-        <id>https://www.fromthebottomoftheheap.net/2013/01/05/monotonic-deshrinking-in-weighted-averaging-models/</id>
-        
-        <summary type="html">
-            &lt;p&gt;Weighted averaging regression and calibration is the most widely used method for developing a palaeolimnological transfer function. Such models are used to reconstruct properties of the past lake environment such as pH, total phosphorus, and water temperature with, it has to be said, varying degrees of success and usefulness.&lt;/p&gt;
-&lt;p&gt;In simple weighted averaging (WA) there is little to specify other than the predictors (the species or other proxy data) and the response (the thing you wish to build a model for and predict). The one user-specified option in a simple WA is the type of deshrinking to use.&lt;/p&gt;
-&lt;p&gt;Why deshrinking?&lt;/p&gt;
-
-        </summary>
-        
-        <content type="html">
-            &lt;p&gt;
-Weighted averaging regression and calibration is the most widely used method for developing a palaeolimnological transfer function. Such models are used to reconstruct properties of the past lake environment such as pH, total phosphorus, and water temperature with, it has to be said, varying degrees of success and usefulness.
-&lt;/p&gt;
-&lt;p&gt;
-In simple weighted averaging (WA) there is little to specify other than the predictors (the species or other proxy data) and the response (the thing you wish to build a model for and predict). The one user-specified option in a simple WA is the type of deshrinking to use.
-&lt;/p&gt;
-&lt;p&gt;
-Why deshrinking?
-&lt;/p&gt;
-&lt;p&gt;
-Well, in a WA model, averages of the response are effectively taken twice; i) first when the WA optima of the response variable for each taxon is computed, and ii) a second time when a weighted average of the optima for the species in each sample is computed to give the raw WA estimate of the response for each sample. Note that the weights here are the values in the predictor data matrix; usually these are species or taxon abundances (often the in the form of proportions or percentages).
-&lt;/p&gt;
-&lt;p&gt;
-The effect of taking averages twice is to shrink the range of possible estimates from a WA model. This can be illustrated using some of the tools from &lt;a href=&quot;http://bit.ly/VFk6Le&quot;&gt;analogue&lt;/a&gt;. First load the package and the SWAP example data set
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;## load analogue...&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;require&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;analogue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## ...and some example data&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swapdiat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swappH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-Next, compute the WA pH optima for each diatom taxon
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;opt&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;optima&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swapdiat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swappH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## compute WA optima&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The final step is to use some simple matrix algebra to give the raw WA estimates of the pH for each SWAP sample (site). (Note that the &lt;code&gt;swapdiat&lt;/code&gt; object needs to be cast as a matrix for the matrix algebra step, which we do using &lt;code&gt;data.matrix()&lt;/code&gt;)
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;diat&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;data.matrix&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swapdiat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;  &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## convert to a matrix&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;diat&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;%*%&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;opt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rowSums&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;diat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))[,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## compute raw WA estimates&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-I won’t go into the details of the last step; it is a reasonably optimised bit of R code to compute a weighted average of the pH optima for each species in a given sample. (The first part of the code involving the matrix multiplication operator &lt;code&gt;%*%&lt;/code&gt; forms a weighted sum of the pH optima, with weights given by the abundances of the diatom taxa.)
-&lt;/p&gt;
-&lt;p&gt;
-From the above we can see that there are three types of pH value:
-&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-the observed pH in &lt;code&gt;swappH&lt;/code&gt;
-&lt;/li&gt;
-&lt;li&gt;
-the pH optima for each taxon in &lt;code&gt;opt&lt;/code&gt;, and
-&lt;/li&gt;
-&lt;li&gt;
-the WA estimate of pH for each site in &lt;code&gt;pred&lt;/code&gt;.
-&lt;/li&gt;
-&lt;/ul&gt;
-&lt;p&gt;
-A quick look at the range of the pH values for each stage shows the shrinkage problem resulting from averaging
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;r.obs&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swappH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r.opt&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;opt&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r.wa&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-rout&quot; data-lang=&quot;rout&quot;&gt;&amp;gt; rbind(r.obs, r.opt, r.wa)
-          [,1]    [,2]
-r.obs 4.330000 7.25000
-r.opt 4.500000 7.25000
-r.wa  4.875662 6.62395&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-About a whole pH unit has been lost due to the repeated taking of averages. Clearly, this is a problem for WA models, one that is addressed through the using a deshrinking step.
-&lt;/p&gt;
-&lt;p&gt;
-Traditionally there were two approaches to deshrinking; &lt;em&gt;inverse&lt;/em&gt; and &lt;em&gt;classical&lt;/em&gt; deshrinking. In the inverse approach, a model of the form
-&lt;/p&gt;
-&lt;p&gt;
-&lt;span class=&quot;math display&quot;&gt;[  = _0 + _1 + ]&lt;/span&gt;
-&lt;/p&gt;
-&lt;p&gt;
-which is a simple linear regression with the observed values as the response and the raw WA estimates as the predictor. The classical deshrinking approach flips the role of the response and the predictor such the model is
-&lt;/p&gt;
-&lt;p&gt;
-&lt;span class=&quot;math display&quot;&gt;[  = _0 + _1 + ]&lt;/span&gt;
-&lt;/p&gt;
-&lt;p&gt;
-Expanded WA estimates are achieved by taking the usual predicted values from the inverse model or by inverting the classical model equation.
-&lt;/p&gt;
-&lt;p&gt;
-Both the inverse and classical deshrinking approaches are linear. The idea of using a non-linear deshrinking step has long been proposed in the literature, all the way back to ter Braak and Juggins (1993) and Marchetto (1994), but in practice the idea has not caught on, presumably because of a lack of widely-available and user-friendly software that implement the technique.
-&lt;/p&gt;
-&lt;p&gt;
-In the non-linear deshrinking approach the following model is use, which is very similar to that of the inverse approach
-&lt;/p&gt;
-&lt;p&gt;
-&lt;span class=&quot;math display&quot;&gt;[  = _0 + f_1() + ]&lt;/span&gt;
-&lt;/p&gt;
-&lt;p&gt;
-where ( f_1() ) is a smooth, monotonic function. The monotonicity constraint is important; as the raw WA estimate increases in value the expanded estimate should also increase. In other words we don’t allow for the expanded estimate to get smaller (bigger) as the raw WA estimate gets bigger (smaller).
-&lt;/p&gt;
-&lt;p&gt;
-New code in &lt;strong&gt;analogue&lt;/strong&gt; implements this monotonic deshrinking idea. The seed of the actual implementation used here is murky.&lt;sup&gt;&lt;a href=&quot;#notes&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; Briefly, both &lt;strong&gt;analogue&lt;/strong&gt; and &lt;strong&gt;rioja&lt;/strong&gt; fit a cubic regression spline via &lt;code&gt;s(wa.est, bs = “cr”)&lt;/code&gt;, but as the standard &lt;code&gt;gam()&lt;/code&gt; function won’t constrain the smooth to be monotonic some additional steps have to be performed, and we end up fitting a penalised regression with monotonicity constraints invoked. The code to show how to do this in &lt;strong&gt;mgcv&lt;/strong&gt; was sitting there in one of Simon’s man pages!
-&lt;/p&gt;
-&lt;p&gt;
-So what does this look like? The figure below shows the raw WA pH estimates and the observed pH values for the SWAP diatom data we looked at earlier. The thick green line fitted through the points is the monotonic cubic regression spline fitted via &lt;strong&gt;mgcv&lt;/strong&gt;.
-&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/monotonic_deshrinking_figure_1.png&quot; alt=&quot;&quot; /&gt;
-&lt;figcaption&gt;
-Monotonic deshrinking spline for the SWAP diatom pH data set
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The monotonic deshrinking and the plot were produced using
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;c1&quot;&gt;## do the monotonic deshrinking&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mono&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;deshrink&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swappH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;monotonic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## need to get things in increasing order for plotting&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-
-&lt;/span&gt;&lt;span class=&quot;c1&quot;&gt;## draw the data and the fitted monotonic cubic regression spline&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swappH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;asp&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylim&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r.obs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlim&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r.obs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-     &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;panel.first&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;abline&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;col&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;darkgrey&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lwd&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-     &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylab&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Observed pH&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlab&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Raw WA pH&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lines&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mono&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;l&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;col&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;forestgreen&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lwd&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-In this example, there appears to be two relationships between the raw WA estimates and the observed pH; a steeper one up to pH 6.0 and a somewhat less strong one thereafter. Figure 2 shows a comparison of the three deshrinking methods discussed above.
-&lt;/p&gt;
-&lt;figure&gt;
-&lt;img src=&quot;https://www.fromthebottomoftheheap.net/assets/img/posts/monotonic_deshrinking_figure_2.png&quot; alt=&quot;&quot; /&gt;
-&lt;figcaption&gt;
-Comparison of inverse, classical and monotonic deshrinking for the SWAP diatom pH data set
-&lt;/figcaption&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The inverse and classicial deshrinking values were computed using
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;inv&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;deshrink&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swappH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;inverse&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cla&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;deshrink&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swappH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;classical&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;$&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The figure was produced using
-&lt;/p&gt;
-&lt;figure class=&quot;highlight&quot;&gt;
-&lt;pre&gt;&lt;code class=&quot;language-r&quot; data-lang=&quot;r&quot;&gt;&lt;span class=&quot;n&quot;&gt;ylim&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r.obs&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;r.wa&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mono&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;inv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cla&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;swappH&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;asp&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylim&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlim&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-     &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;panel.first&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;abline&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;col&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;darkgrey&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lwd&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-     &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ylab&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Observed pH&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;xlab&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Raw WA pH&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;-&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lines&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;inv&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;l&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;col&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;darkorange&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lwd&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lines&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cla&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;l&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;col&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;navyblue&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lwd&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lines&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;mono&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;~&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pred&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ord&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;l&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;col&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;forestgreen&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lwd&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;legend&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;topleft&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;legend&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Monotonic&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Inverse&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Classical&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-       &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;col&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;forestgreen&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;darkorange&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;navyblue&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
-       &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;lwd&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;m&quot;&gt;3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bty&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;n&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
-&lt;/figure&gt;
-&lt;p&gt;
-The monotonic deshrinking curve is quite similar to the inverse deshrinking one; this is not surprising as monotonic deshrinking is a local version of the inverse deshrinking model. The two curves only deviate from one another above pH 5.5.
-&lt;/p&gt;
-&lt;p&gt;
-There does seem to be a slight improvement in WA model performance when using monotonic deshrinking over the other deshrinking techniques, for the SWAP data set at least. Well, that was the conclusion of the paper John and I have been working on for a special issue of JoPL. But you’ll have to wait for the paper (and accompanying blog post) for the full details when it is accepted and in press.
-&lt;/p&gt;
-&lt;p&gt;
-##Notes &lt;sup&gt;1&lt;/sup&gt; Steve Juggins discussed the idea briefly in a presentation he gave at UCL a number of years ago and I had at the back of my mind been mulling how to do this in R without having code the entire thing(!) myself. John Birks recently suggested that I use monotonic deshrinking in a comparison of transfer function methods we were doing for a special issue of the Journal of Paleolimnology (JoPL). It turns out that Richard Telford, a colleague of John’s, had discussed this with both John and Steve too including the implementation used in &lt;strong&gt;analogue&lt;/strong&gt; and, as it turned out, also in Steve’s &lt;strong&gt;rioja&lt;/strong&gt; R package. It seems Steve and I implemented almost the same idea, independently; me after I’d been scouring Simon Wood’s exceedingly useful man pages for his &lt;strong&gt;mgcv&lt;/strong&gt; package trying to find out how to do something with &lt;code&gt;gam()&lt;/code&gt; to analyse time series data.
-&lt;/p&gt;
-&lt;p&gt;
-##References
-&lt;/p&gt;
-&lt;ul&gt;
-&lt;li&gt;
-Marchetto (1994; &lt;em&gt;Journal of Paleolimnology&lt;/em&gt; &lt;strong&gt;12&lt;/strong&gt;, 155–162)
-&lt;/li&gt;
-&lt;li&gt;
-ter Braak &amp;amp; Juggins (1993; &lt;em&gt;Hydrobiologia&lt;/em&gt;, 269/270, 485–502)
-&lt;/li&gt;
-&lt;/ul&gt;
 
         </content>
     </entry>
