@@ -1,0 +1,159 @@
+--- 
+title: "Two new versions of gratia released"
+date: 2021-01-30 21:00:00
+status: publish
+layout: post
+published: true
+type: post
+tags:
+- gratia
+- GAMs
+- CRAN
+- releases
+active: blog
+category: R
+---
+
+```{r setup, echo = FALSE, include = FALSE, cache = FALSE}
+## Change the `fig.path` and `cache.path` parts to reflect the new post
+render_jekyll()
+opts_knit$set(progress = TRUE, base.url = "{{ site.url }}/assets/img/posts/", base.dir = "/home/gavin/work/web/jekyll/blog/assets/img/posts/")
+opts_chunk$set(results = "hold",
+               fig.path = "two-new-versions-of-gratia-", 
+               comment = NA,
+               prompt = FALSE,
+               cache = TRUE,
+               cache.path = "../_knitr-cache/two-new-versions-of-gratia-", 
+               fig.show = "hold",
+               dev = "png",
+               dpi = 85,
+               tidy = FALSE,
+               fig.height = 6,
+               fig.width = 8,
+               dev.args = list(pointsize = 10))
+opts_chunk$set(fig.lp = "fig:")
+```
+
+While the Covid-19 pandemic and teaching a new course in the fall put paid to most of my development time last year, some time off work this January allowed me time to work on **gratia** 📦 again. I released 0.5.0 to CRAN in part to fix an issue with tests not running on the new M1 chips from Apple because I wasn't using **vdiffr** 📦 conditionally. Version 0.5.1 followed shortly thereafter as I'd messed up an argument name in `smooth_estimates()`, a new function that I hope will allow development to proceed more quickly and mke it easier to maintain code and extend functionality to cover a greater range of model types. Read on to fin out more about `smooth_estimates()` and what else was in these two releases.
+
+## Evaluating smooths with `smooth_estimates()`
+
+For a while now I've realised that the way I'd implemented `evaluate_smooth()` wasn't great. Some design decisions I took earlier on added a lot of unnecessary complexity to the function through handling of factor `by` smooths, and which didn't really work properly in the context of a GAM where the same variable could be in multiple smooth terms.
+
+My original plan was to use a facetted plot for factor `by` variable smooths, and so when you selected a model term (more on that later), if that term was a factor `by` smooth, instead of just pulling in a single smooth, I would pull in all of the smooths associated with the factor `by`. Handling this got complicated and resulted in some kludgy, messy code that was prone to failure when used with a more specialised smooth or a more complex model.
+
+Additionally, how I initially implemented selection of model terms was a bit silly; a user could pass a string for a variable that would be matched against the labels that **mgcv** 📦 uses for smooth. Any instance of the term in any smooth would then get selected, which is not usually what is wanted when working with complex models with multiple smooths, some of which might contin the same variable.
+
+Because of this, in the summer I decided to completely rewrite `evaluate_smooth()`. Then I realised this would not be a good idea as I was going to break a lot of existing code, including code we'd written in support of papers that had been published and which used `evaluate_smooth()`. Instead, I decided to start from a clean slate with a new function that didn't do any of the silly things I'd messed up `evaluate_smooth()` with, and which would be much simpler to maintain and develop for a wider range of complex distributional models.
+
+In writing `smooth_estimates()` I also came up with a standard way to represent all evaluations of a smooth, regardless of type. The nice thing about this is that it's easy to return a tibble containing all the values of the evaluated smooth for many smooths at once, something you couldn't do with `evaluate_smooth()`.
+
+The idea behind `evaluate_smooth()` and `smooth_estimates()` is to return a tibble of values of the smooth evaluated at a grid of `n` points over each of the covariates involved in that smooth.
+
+```{r smooth_estimates_1, cache = FALSE, message = FALSE}
+library('mgcv')
+library('gratia')
+library('dplyr')
+library('tidyr')
+
+dat <- data_sim("eg1", seed = 42)
+gam_model <- gam(y ~ s(x0) + s(x1, bs = "cr") + s(x2, bs = "bs") + s(x3, bs = "ps"),
+                 data = dat, method = "REML")
+
+smooth_estimates(gam_model)
+```
+
+This seems a little wasteful --- all those `NA` columns 😱 --- but the output is a consistent wa to represent smooths, regardless of the number of covariates etc.
+
+I'm toying with returning the tibble in a nested fashion with `nest()`, something like
+
+```{r smooth_estimates_nest, cache = TRUE, message = FALSE}
+sm <- smooth_estimates(gam_model) %>% 
+  nest(values = c(est, se), data = starts_with('x'))
+sm
+```
+
+which I think is much neater, but does require extra steps from the user to just use the output
+
+```{r smooth_estimates_unnest, cache = TRUE, message = FALSE}
+sm %>%
+  unnest(cols = c(values, data)) 
+```
+
+Internally, the individual smooths are nested by default as that makes it easy to join the tibbles for multiple smooth together. As such, the *un*nested-ness of the current behaviour requires an explicit extra step within `smooth_estimates()`.
+
+If you have thoughts about this, let me know in the comments below.
+
+`smooth_estimates()` is going to supersede `evaluate_smooth()`, and currently it can handle pretty much everything that `evaluate_smooth()` can do. That doesn't mean `evaluate_smooth()` is going anywhere; as I mentioned above, I don't want to break old code, so as log as it doesn't take too much time to maintain `evaluate_smooth()` isn't hurting anyone if I put it out to pasture.
+
+Version 0.5.0 introduced `smooth_estimates()` which could only handle very simple univariate smooths, but version 0.5.1 expanded those capabilities. There are a few special smooths that I haven't yet added capabilities for, including Markov random field smooths and soap film smooths. Support for those will be added by the time version 0.6.0 hits CRAN later this year.
+
+## Partial residuals
+
+Version 0.4.0 introduced the ability to add partial residuals to plots of smooths. Version 0.5.0 exposes this functionality for computing partial residuals via new function `partial_residuals()`
+
+```{r partial_residuals, cache = TRUE, message = FALSE}
+partial_residuals(gam_model)
+```
+
+The names are currently non-standard --- hence all the backticks --- and I might change that if I can think of a short hand way to refer to smooths that still allows referencing them uniquely when there are things like factor `by` smooths involved.
+
+I also added an `add_partial_residuals()`, to add the partial residuals to an existing data frame
+
+```{r add_partial_residuals, cache = TRUE, message = FALSE}
+dat %>%
+  add_partial_residuals(model = gam_model)
+```
+
+but since implementing this I am now questioning whether this is a good thing or rather whether the implementation is a good thing; there's nothing in the code currently to ensure that the data you provided matches the order of the data used to fit the model --- *caveat emptor*!
+
+## Penalty matrices
+
+I've been adding functions to **gratia** that will be helpful when teaching GAMs; I added `basis()` a while back and in the 0.5.1 release I added `penalty()`, for extracting and tidying penalty matrices of smooths from fitted GAM models.
+
+```{r penalty, cache = TRUE, message = FALSE}
+penalty(gam_model)
+```
+
+There is a `draw()` method also, to plot the penalty matrix
+
+```{r draw-penalty, cache = TRUE, message = FALSE, fig.cap = "Penalty matrices for smooths from the fitted GAM. Note that in the released version you need to visually flip the y-axis so that diagonal runs top-left to bottom-right to match with how the matrix is actually arranged; this is fixed in the GitHub version."}
+gam_model %>% 
+  penalty() %>% 
+  draw()
+```
+
+It was pointed out that the way this is plotted is not very intuitive if you're trying to map the way the penalty matrix is written to what's shown in the plot --- you have to flip the y-axis. This is due to how `geom_raster()` draws things. I have fixed this, but it's only fixed in the GitHub version of the package, not a current release version.
+
+## Colour scales
+
+`draw.gam()` and some related `draw()` methods now allow you to configure the colour scales used to plot GAMs. Available options include `discrete_colour`, `continuous_colour`, and `continuous_fill`, that take a suitable scale allowing you to change the colour scheme used etc:
+
+```{r colour-scales, cache = TRUE, message = FALSE, fig.cap = "Changing the fill scale used by `draw()`"}
+dat2 <- data_sim("eg2", n = 1000, dist = "normal", scale = 1, seed = 2)
+gam_model2 <- gam(y ~ s(x, z, k = 40), data = dat2, method = "REML")
+draw(gam_model2, n_contour = 5,
+     continuous_fill = ggplot2::scale_fill_distiller(palette = "Spectral",
+                                                     type = "div"))
+```
+
+## `constant` and `fun`
+
+`draw.gam()` can now plot smooths after addition of a constant and transformation via a function. This can be used to put smooths (sort of) on the response scale. For example, in the code below, I add the model intercept to each smooth when plotting
+
+```{r constant-draw-gam, cache = TRUE, message = FALSE, fig.cap = "Plotting smooths, rescaling the y-axis to include the model intercept term in the scale."}
+b0 <- coef(gam_model)[1]
+draw(gam_model, constant = b0)
+```
+
+I plan to add an argument `response`, which would take a logical to indicate if you wan to plot on the response scale. If `response = TRUE`, it would override anything passed to `constant` and `fun`, such that `draw.gam()` would just do the right thing, and figure out from the model what constant and inverse link function to use. Watch out for that in 0.6.0.
+
+## Excluding or selecting terms to include in model predictions
+
+`predict.gam()` allows the user to either exclude or specifically include only selected terms in model predictions. Version 0.5.0 added the same functionality in `simulate.gam()` and `predicted_samples()`, by allowing you to pass along an `exclude` or `terms` argument to `predict.gam()` that is used in both of these functions.
+
+## Summary
+
+All in all, these are not major changes to the functionality of **gratia**, but the ground work laid in `smooth_estimates()` should allow me to address lots of the outstanding bugs related to handling complex model and some complex smooth types, and I'm pretty excited about that.
+
+
