@@ -1,0 +1,745 @@
+  <!DOCTYPE html>
+<html lang="en">
+  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-7900310-7"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-7900310-7');
+</script>
+
+
+    <meta charset="utf-8">
+    <title>Using random effects in GAMs with mgcv</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="Gavin Simpson">
+    
+    
+<!-- HTML5 metadata -->
+
+<meta name="keywords" content="GAM, mgcv, random effects, smooths, penalty, variance components" />
+
+
+<meta name="description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (nlme 📦) or one of lmer() or glmer() (lme4 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with gam(). brms 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use gam() or bam() from mgcv. In this post I’ll show you how to do just that.
+" />
+
+<!-- RDFa Metadata (in DublinCore) -->
+<meta property="dc:title" content="Using random effects in GAMs with mgcv" />
+<meta property="dc:creator" content="Gavin Simpson" />
+
+<meta property="dc:date" content="2021-02-02T10:50:00-06:00" />
+
+<meta property="dc:type" content="" /> <!-- article? entry?-->
+<meta property="dc:format" content="text/html" />
+<meta property="dc:language" content="en" />
+<meta property="dc:source" content="From the Bottom of the Heap" />
+<!-- RDFa Metadata (in OpenGraph) -->
+<meta property="og:title" content="Using random effects in GAMs with mgcv" />
+<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
+<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
+<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
+
+<meta property="http://ogp.me/ns/article#published_time" content="2021-02-02T10:50:00-06:00" />
+
+<meta property="og:site_name" content="From the Bottom of the Heap" />
+<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/" />
+<meta property="og:type" content="article" />
+
+<meta name="og:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme()..." />
+
+<!-- Twitter Card Meta data -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site.id" content="@ucfagls" />
+<meta name="twitter:creator:id" content="@ucfagls" />
+<meta name="twitter:title" content="Using random effects in GAMs with mgcv" />
+
+<meta name="twitter:image" content="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png" />
+
+
+<meta name="twitter:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the..." />
+
+<!-- Google Scholar Metadata -->
+<meta name="resource_type" content="From the Bottom of the Heap"/>
+<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
+
+<meta name="citation_publication_date" content="02 Feb 2021"/>
+<meta name="citation_date" content="02 Feb 2021"/>
+
+<meta name="citation_author" content="Gavin Simpson"/>
+<meta name="citation_title" content="Using random effects in GAMs with mgcv"/>
+
+    
+    <!-- Link to the Atom feeds -->
+    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
+    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
+    
+    <!-- Le styles -->
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
+      .sidebar-nav {
+        padding: 9px 0;
+      }
+    </style>
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
+    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le fav and touch icons -->
+    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
+    
+    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+  </head>
+
+  <body>
+
+      <div class="navbar navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </a>
+          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
+              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
+                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
+                </ul>
+              </li>
+              <li ><a href="https://www.fromthebottomoftheheap.net/teaching/"><i class="icon-user"></i> Teaching</a></li>
+              <li  class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
+                <ul class="dropdown-menu">
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="dropdown-submenu">
+                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
+                    <ul class="dropdown-menu">
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
+                      </li>
+                      <li>
+                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+          
+
+      <article>
+      <div class="row">
+        <!-- <div class="span8 offset2"> -->
+        <div class="span10">
+          <div class="clearfix">
+            
+            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/">Getting data from the Canada Covid-19 Tracker using R</a> <i class="icon-arrow-right"></i></span>
+          </div>
+          <div class="page-header">
+            <header>
+              <h1>Using random effects in GAMs with mgcv </h1>
+            </header>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="span12">
+          <div class="row">
+            <div class="span10">
+              
+            <p>There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using <code>gamm()</code> from the <strong>mgcv</strong> 📦 or <code>gamm4()</code> from the <strong>gamm4</strong> 📦, which use <code>lme()</code> (<strong>nlme</strong> 📦) or one of <code>lmer()</code> or <code>glmer()</code> (<strong>lme4</strong> 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with <code>gam()</code>. <strong>brms</strong> 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use <code>gam()</code> or <code>bam()</code> from <strong>mgcv</strong>. In this post I’ll show you how to do just that.</p>
+<h2 id="smooths-as-random-effects">Smooths as random effects</h2>
+<p>The sorts of smooths we fit in <strong>mgcv</strong> are (typically) penalized smooths; we choose to use some number of basis functions <span class="math inline">\(k\)</span>, which sets an upper limit on the complexity — wiggliness — of the smooth, and then we estimate parameters for the model by maximizing a penalized log-likelihood. The log-likelihood of the model is a measure of the fit (or lack there of), while the penalty helps us avoid fitting overly complex smooths.</p>
+<p>In the sorts of models that can be fitted in <strong>mgcv</strong>, the penalty is a function of the model coefficients, <span class="math inline">\(\boldsymbol{\beta}\)</span>, and a penalty matrix<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, which we write as <span class="math inline">\(\boldsymbol{S}\)</span>. The penalty then is <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span>. The penalty matrix measures the wiggliness of each basis function (on the diagonal), and how the wiggliness of one basis function affects the wiggliness of another (the off diagonals). Just as the <span class="math inline">\(\boldsymbol{\beta}\)</span> scale the individual basis functions, they also scale penalty values in the penalty matrix; if you were to choose large weights for the most wiggly basis functions, the overall penalty <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span> would increase by a lot more than if we used smaller weights for those really wiggly functions.</p>
+<p>The penalty then acts to shrink the estimates of <span class="math inline">\(\boldsymbol{\beta}\)</span> away from the values they would take if we weren’t doing a penalized fit and were instead fixing the wiggliness of the smooth at the maximum value dictated by <span class="math inline">\(k\)</span>. Put another way, the penalty shrinks the estimates for <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero.</p>
+<p>Random effects also involve shrinkage. With a random effect we’re trying to model subject specific effects (subject-specific intercepts, or subject-specific “slopes” of covariates) without having to explicitly estimate a fixed effect parameter for each subject’s intercept or covariate effect. Instead we think of the subject-specific intercepts or “slopes” as coming from distribution, typically a Gaussian distribution, with mean 0 and some variance that is to be estimated. The larger this random effect variance, the greater the variation among subject-specific intercepts, “slopes” etc. The smaller the random effect variance, the closer to zero the estimated effects are pulled. As a result, random effects shrink to, varying degrees, the estimated subject-specific effects, and how much they do that is related to the random effect variance.</p>
+<p>If I abuse all standards of notation and represent the estimated random effects with <span class="math inline">\(\boldsymbol{\beta}\)</span>, you might get the feeling that perhaps there is some link between whats happening when we estimate random effects shrinking the <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero, and the penalty applied to smooths that shrinks the <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero. If you did, you’d be right, there is. And if so, there must be a penalty matrix that we can write down for a random effect — if we assume that each random intercept or “slope” is a basis function, the penalty matrix <span class="math inline">\(\mathbf{S}\)</span> is a simple diagonal matrix, one row and column per subject, with a constant value on the diagonal (and zeroes everywhere else):</p>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-penalty-example-1.png" alt="" /><figcaption>Penalty matrix corresponding to a random effect for a factor with 10 subjects (levels).</figcaption>
+</figure>
+<p>To complete the picture, when we fit a GAM, we’re maximising the penalised log-likelihood over both the model parameters <span class="math inline">\(\boldsymbol{\beta}\)</span> and a smoothness parameter, <span class="math inline">\(\boldsymbol{\lambda}\)</span>. It’s <span class="math inline">\(\boldsymbol{\lambda}\)</span> that actually controls how much price we pay for the wiggliness penalty as we add <span class="math inline">\(\boldsymbol{\lambda} \boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span> to the log-likelihood. It turns out that the variance of the random effect is equal to the scale parameter (the residual variance <span class="math inline">\(\sigma^{2}_{\varepsilon}\)</span> in a Gaussian model for example) divided by <span class="math inline">\(\boldsymbol{\lambda}\)</span>.</p>
+<p>This link between smooths and random effects is really cool; not only are we able to estimate smooths and GAMs using the machinery of mixed effects models, we can also estimate random effects using all the penalized spline machinery available for GAMs in <strong>mgcv</strong>.</p>
+<p>OK, so that was all really hand-wavy and skipped over a lot of math and theory<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, but I hope it gives you the intuition you need to understand how random effects are represented as smooths, through the identity penalty matrix.</p>
+<h2 id="fitting-random-effects-with-mgcv">Fitting random effects with mgcv</h2>
+<p>So much for the theory, let’s see how this all works in practice.</p>
+<p>By way of an example, I’m going to use a data set from a study on the effects of testosterone on the growth of rats from <span class="citation" data-cites="Molenberghs2000-vk">Molenberghs and Verbeke (2000)</span>, which was analysed in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (2013)</span>, from were I also obtained the data. In the experiment, 50 rats were randomly assigned to one of three groups; a control group or a group receiving low or high doses of Decapeptyl, which inhibits testosterone production. The experiment started when the rats were 45 days old and starting with the 50th day, the size of the rat’s head was measured via an X-ray image. You can download the data <a href="https://www.uni-goettingen.de/de/551625.html">here</a>.</p>
+<p>For the example, we’ll use the following packages</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">pkgs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">,</span><span class="w"> </span><span class="s2">"lme4"</span><span class="p">,</span><span class="w"> </span><span class="s2">"ggplot2"</span><span class="p">,</span><span class="w"> </span><span class="s2">"vroom"</span><span class="p">,</span><span class="w"> </span><span class="s2">"dplyr"</span><span class="p">,</span><span class="w"> </span><span class="s2">"forcats"</span><span class="p">,</span><span class="w"> </span><span class="s2">"tidyr"</span><span class="p">)</span><span class="w">
+</span><span class="c1">## install.packages(pkgs, Ncpus = 4)</span><span class="w">
+</span><span class="n">vapply</span><span class="p">(</span><span class="n">pkgs</span><span class="p">,</span><span class="w"> </span><span class="n">library</span><span class="p">,</span><span class="w"> </span><span class="n">logical</span><span class="p">(</span><span class="m">1</span><span class="p">),</span><span class="w"> </span><span class="n">character.only</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">logical.return</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w">
+       </span><span class="n">quietly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">   mgcv    lme4 ggplot2   vroom   dplyr forcats   tidyr 
+   TRUE    TRUE    TRUE    TRUE    TRUE    TRUE    TRUE </code></pre>
+</figure>
+<p>We’ll also need the development version of the <strong>gratia</strong> 📦, which we can install with the <strong>remotes</strong> 📦 (if you don’t have that installed, install it first)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="c1">## install.packages("remotes")</span><span class="w">
+</span><span class="c1">## remotes::install_github('gavinsimpson/gratia')</span><span class="w">
+</span><span class="n">library</span><span class="p">(</span><span class="s1">'gratia'</span><span class="p">)</span></code></pre>
+</figure>
+<p>We load the data — ignore the warning about new names as we deleted that column anyway</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">rats</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">vroom</span><span class="p">(</span><span class="s1">'rats.txt'</span><span class="p">,</span><span class="w"> </span><span class="n">delim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'   '</span><span class="p">,</span><span class="w"> </span><span class="n">col_types</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'dddddddddddd-'</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">New names:
+* `` -&gt; ...13</code></pre>
+</figure>
+<p>Next we need to prepare the data for modelling. The variable <code>transf_time</code> is the main covariate of interest. It relates to the age of the rats in days via the transformation</p>
+<p><span class="math display">\[\log (1 + (\mathtt{time} - 45) / 10)\]</span></p>
+<p>where <span class="math inline">\(\mathtt{time}\)</span> is the <code>time</code> variable in the data set. We also need to convert the <code>group</code> variable to a factor with useful levels to create a <code>treatment</code> variable and we convert <code>subject</code> — an identifier for each individual rat — a factor</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">rats</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rats</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">mutate</span><span class="p">(</span><span class="n">treatment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fct_recode</span><span class="p">(</span><span class="n">factor</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="w"> </span><span class="n">levels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">3</span><span class="p">)),</span><span class="w">
+                                  </span><span class="n">Low</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'1'</span><span class="p">,</span><span class="w">
+                                  </span><span class="n">High</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'3'</span><span class="p">,</span><span class="w">
+                                  </span><span class="n">Control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'2'</span><span class="p">),</span><span class="w">
+           </span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factor</span><span class="p">(</span><span class="n">subject</span><span class="p">))</span></code></pre>
+</figure>
+<p>The number of observations per rat is variable, with only 22 of the 50 rats having the complete seven measurements by day 110</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">rats</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">na.omit</span><span class="p">()</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">count</span><span class="p">(</span><span class="n">subject</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
+    </span><span class="n">count</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n_rats"</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 7 x 2
+      n n_rats
+* &lt;int&gt;  &lt;int&gt;
+1     1      4
+2     2      3
+3     3      5
+4     4      9
+5     5      5
+6     6      2
+7     7     22</code></pre>
+</figure>
+<p>so there’ll be no averaging the response within subjects and doing an ANOVA.</p>
+<p>Before we fit the models an explore how to work with random effects in <strong>mgcv</strong>, we’ll plot the data</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">plt_labs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Head height (distance in pixels)'</span><span class="p">,</span><span class="w">
+                 </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Age in days'</span><span class="p">,</span><span class="w">
+                 </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Treatment'</span><span class="p">)</span><span class="w">
+</span><span class="n">ggplot</span><span class="p">(</span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">time</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">response</span><span class="p">,</span><span class="w">
+                 </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">treatment</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">facet_wrap</span><span class="p">(</span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">plt_labs</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning: Removed 98 row(s) containing missing values (geom_path).</code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-rat-data-1.png" alt="" /><figcaption>Plot of the rat hormone therapy data</figcaption>
+</figure>
+<p>The model fitted in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (2013)</span> is</p>
+<p><span class="math display">\[y_{ij} = \beta_0 + \gamma_{0i} + \beta_1 L_i \cdot t_{ij} + \beta_2 H_i \cdot t_{ij} + \beta_3 C_i \cdot t_{ij} + \gamma_{1i} \cdot t_{ij} + \varepsilon_{ij}\]</span></p>
+<p>where</p>
+<ul>
+<li><span class="math inline">\(\beta_0\)</span> is the population mean of the response at the start of the treatment</li>
+<li><span class="math inline">\(L_i\)</span>, <span class="math inline">\(H_i\)</span>, <span class="math inline">\(C_i\)</span> are dummy variables encoding for each treatment group</li>
+<li><span class="math inline">\(\gamma_{0i}\)</span> is the rat-specific mean (random intercept)</li>
+<li><span class="math inline">\(\gamma_{qi} \cdot t_{ij}\)</span> is the rat-specific effect of <code>transf_time</code> (random slope)</li>
+</ul>
+<p>If this isn’t very clear — it took me a little while to grok what this meant and translate it to R speak — note that each of <span class="math inline">\(\beta_1\)</span>, <span class="math inline">\(\beta_2\)</span>, and <span class="math inline">\(\beta_3\)</span> are associated with an interaction between the dummy variable coding for the treatment and the time variable. So we have a model with an intercept and three interaction terms with no main effects.</p>
+<p>In <code>lmer()</code> we can fit this model with (ignore the singular fit warning for now)</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1_lmer</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lmer</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="o">:</span><span class="n">transf_time</span><span class="w"> </span><span class="o">+</span><span class="w">
+                    </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">subject</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">transf_time</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">subject</span><span class="p">),</span><span class="w">
+                </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">boundary (singular) fit: see ?isSingular</code></pre>
+</figure>
+<p>If you’re not familiar with this model specification for the random effects, it specifies uncorrelated random effects for the subject-specific means (random intercept; <code>(1 | subject)</code>) and the subject_specific effects of <code>transf_time</code> (random slope; <code>(0 + transf_time | subject)</code>). The <code>0</code> in the formula for the latter suppresses the (random) intercept as we already included that as a separate term.</p>
+<p>The reason we’re fitting uncorrelated random effects is because that’s all <strong>mgcv</strong> can fit; there’s no way to encode a covariance term between the two random effects.</p>
+<p>The equivalent model fitted using <code>gam()</code> is</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1_gam</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="o">:</span><span class="n">transf_time</span><span class="w"> </span><span class="o">+</span><span class="w">
+                  </span><span class="n">s</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'re'</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+                  </span><span class="n">s</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">transf_time</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'re'</span><span class="p">),</span><span class="w">
+              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'REML'</span><span class="p">)</span></code></pre>
+</figure>
+<p>Note:</p>
+<ol type="1">
+<li>we specify two separate <em>random effect</em> smooths, one per random term,</li>
+<li>we indicate that the smooth should be a random effect with <code>bs = 're'</code>,</li>
+<li>any grouping variables <strong>must</strong> be coded as a factor — that’s why we converted <code>subject</code> (which is an integer vector) to a factor right after importing the data.</li>
+</ol>
+<p>Let’s compare the fixed effect terms; first for the <code>lmer()</code> version</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">fixef</span><span class="p">(</span><span class="n">m1_lmer</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">                 (Intercept) treatmentControl:transf_time 
+                   68.607386                     6.871128 
+    treatmentLow:transf_time    treatmentHigh:transf_time 
+                    7.506897                     7.313854 </code></pre>
+</figure>
+<p>and for the <code>gam()</code> version</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">coef</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">)[</span><span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">]</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">                 (Intercept) treatmentControl:transf_time 
+                   68.607385                     6.871130 
+    treatmentLow:transf_time    treatmentHigh:transf_time 
+                    7.506897                     7.313859 </code></pre>
+</figure>
+<p>which are close enough.</p>
+<p>Next let’s look at the estimated variances of the random effect terms. First for the <code>lmer()</code> model:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m1_lmer</span><span class="p">)</span><span class="o">$</span><span class="n">varcor</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"> Groups    Name        Std.Dev.
+ subject   (Intercept) 1.8881  
+ subject.1 transf_time 0.0000  
+ Residual              1.2020  </code></pre>
+</figure>
+<p>and now for the <code>gam()</code> model</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">variance_comp</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 3 x 5
+  component               variance std_dev lower_ci upper_ci
+  &lt;chr&gt;                      &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 s(subject)             3.56      1.89    1.51e+ 0  2.36e 0
+2 s(subject,transf_time) 0.0000257 0.00507 8.21e-42  3.14e36
+3 scale                  1.44      1.20    1.09e+ 0  1.33e 0</code></pre>
+</figure>
+<p>Apart from being as close for the differences not to matter, we should also note that the variance for the rat-specific effect of <code>transf_time</code> is effectively 0. This is likely the cause of the singular fit warning from <code>lmer()</code>. The <code>lower_ci</code> and <code>upper_ci</code> variables indicate the limits of a 95% confidence interval on the standard deviation of each variance component; the coverage can be controlled via the <code>coverage</code> argument to <code>variance_comp()</code>. The confidence interval for the rat-specific time effect variance is huge, again indicating that there really isn’t much variation at all in this component.</p>
+<p>Here we used the <code>variance_comp()</code> function from <strong>gratia</strong> to extract the variance components, which expresses the random effects as their equivalent variance components that you’d see in a mixed model output. <code>variance_comp()</code> is a simple wrapper to <code>mgcv::gam.vcomp()</code>, which is doing all the hard work, but <code>variance_comp()</code> suppresses the annoying printed output produced by <code>gam.vcomp()</code> and returns the variance components as a tibble.</p>
+<p>You can see a nicer version of the variance components for <code>lmer()</code> by printing the whole <code>summary()</code> but it produces a lot of output; the bit we are interested in just now is in the section labelled <em>Random effects:</em></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m1_lmer</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Linear mixed model fit by REML ['lmerMod']
+Formula: response ~ treatment:transf_time + (1 | subject) + (0 + transf_time |  
+    subject)
+   Data: rats
+
+REML criterion at convergence: 932.4
+
+Scaled residuals: 
+     Min       1Q   Median       3Q      Max 
+-2.25576 -0.65898 -0.01164  0.58358  2.88310 
+
+Random effects:
+ Groups    Name        Variance Std.Dev.
+ subject   (Intercept) 3.565    1.888   
+ subject.1 transf_time 0.000    0.000   
+ Residual              1.445    1.202   
+Number of obs: 252, groups:  subject, 50
+
+Fixed effects:
+                             Estimate Std. Error t value
+(Intercept)                   68.6074     0.3312  207.13
+treatmentControl:transf_time   6.8711     0.2276   30.19
+treatmentLow:transf_time       7.5069     0.2252   33.34
+treatmentHigh:transf_time      7.3139     0.2808   26.05
+
+Correlation of Fixed Effects:
+            (Intr) trtC:_ trtL:_
+trtmntCnt:_ -0.340              
+trtmntLw:t_ -0.351  0.119       
+trtmntHgh:_ -0.327  0.111  0.115
+optimizer (nloptwrap) convergence code: 0 (OK)
+boundary (singular) fit: see ?isSingular</code></pre>
+</figure>
+<p>One of the nice things about the output from the <code>gam()</code> model is that the <code>summary()</code> contains a test for the random effects</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Family: gaussian 
+Link function: identity 
+
+Formula:
+response ~ treatment:transf_time + s(subject, bs = "re") + s(subject, 
+    transf_time, bs = "re")
+
+Parametric coefficients:
+                             Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)                   68.6074     0.3312  207.13   &lt;2e-16 ***
+treatmentControl:transf_time   6.8711     0.2276   30.19   &lt;2e-16 ***
+treatmentLow:transf_time       7.5069     0.2252   33.34   &lt;2e-16 ***
+treatmentHigh:transf_time      7.3139     0.2808   26.05   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+                             edf Ref.df     F p-value    
+s(subject)             43.723610     49 11.51  &lt;2e-16 ***
+s(subject,transf_time)  0.001387     47  0.00   0.744    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.926   Deviance explained =   94%
+-REML =  466.2  Scale est. = 1.4448    n = 252</code></pre>
+</figure>
+<p>This test is due to <span class="citation" data-cites="Wood2013-gz">Wood (2013)</span>. It is based on a likelihood ratio test and uses a reference distribution that is appropriate for testing a null hypothesis that is on the boundary of the parameter space (the null, that the variance is 0, is on the lower boundary of possible values for the parameter — you can’t have a negative variance!)</p>
+<p>There is little evidence in support of the rat-specific time effects, reflecting what we saw when we looked at the variance components above.</p>
+<p>If we look at the estimated degrees of freedom (EDF; the <code>edf</code> column) for each of the “smooths” we see the shrinkage in action. The <code>Ref.df</code> column contains the maximum degrees of freedom for each term, used in the calculation of the <em>p</em> value. The rat-specific mean distances — the <code>s(subject)</code> term — have only been shrunk a little to an EDF of ~43.7. In contrast, the EDF for the rat-specific effects of time has been shrunk to effectively zero.</p>
+<p>The EDFs for smooths can be extracted from a fitted model with <code>edf()</code></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">edf</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 2 x 2
+  smooth                      edf
+  &lt;chr&gt;                     &lt;dbl&gt;
+1 s(subject)             43.7    
+2 s(subject,transf_time)  0.00139</code></pre>
+</figure>
+<p>To plot the estimated time effects for each rat, we need to produce a new data frame with values of the range of <code>transf_time</code> for each rat, and include the relevant treatment value for the rat also. We do this with <code>expand()</code> and <code>nesting()</code> from the <strong>tidyr</strong> 📦.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">new_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tidyr</span><span class="o">::</span><span class="n">expand</span><span class="p">(</span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">nesting</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">treatment</span><span class="p">),</span><span class="w">
+                          </span><span class="n">transf_time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">unique</span><span class="p">(</span><span class="n">transf_time</span><span class="p">))</span></code></pre>
+</figure>
+<p>which we then use to predict from the model</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m1_pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bind_cols</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span><span class="w">
+                     </span><span class="n">as.data.frame</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w">
+                                           </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)))</span></code></pre>
+</figure>
+<p>which gives us something we can plot easily with <strong>ggplot</strong></p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">m1_pred</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">transf_time</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subject</span><span class="p">,</span><span class="w">
+                    </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">treatment</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">facet_wrap</span><span class="p">(</span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">plt_labs</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png" alt="" /><figcaption>Fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
+</figure>
+<p>We can also compare the fitted curves with the observed data</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">m1_pred</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">transf_time</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subject</span><span class="p">,</span><span class="w">
+                    </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">treatment</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">response</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">facet_wrap</span><span class="p">(</span><span class="o">~</span><span class="w"> </span><span class="n">subject</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
+    </span><span class="n">plt_labs</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">Warning: Removed 98 rows containing missing values (geom_point).</code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-compare-1.png" alt="" /><figcaption>Observed values and fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
+</figure>
+<p>A simpler model, which drops the rat-specific effects of <code>transf_time</code> is</p>
+<p><span class="math display">\[y_{ij} = \beta_0 + \gamma_{0i} + \beta_1 L_i \cdot t_{ij} + \beta_2 H_i \cdot t_{ij} + \beta_3 C_i \cdot t_{ij} + \varepsilon_{ij}\]</span></p>
+<p>which drops the <span class="math inline">\(\gamma_{qi} \cdot t_{ij}\)</span> term, excluding the rat-specific time effects from the model.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">m2_lmer</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lmer</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="o">:</span><span class="n">transf_time</span><span class="w"> </span><span class="o">+</span><span class="w">
+                    </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">subject</span><span class="p">),</span><span class="w">
+                </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">)</span><span class="w">
+</span><span class="n">m2_gam</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="o">:</span><span class="n">transf_time</span><span class="w"> </span><span class="o">+</span><span class="w">
+                  </span><span class="n">s</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'re'</span><span class="p">),</span><span class="w">
+              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'REML'</span><span class="p">)</span></code></pre>
+</figure>
+<p>As we should now expected, the two models have estimated variance components that are essentially equivalent. First for the <code>lmer()</code> fit:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m2_lmer</span><span class="p">)</span><span class="o">$</span><span class="n">varcor</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"> Groups   Name        Std.Dev.
+ subject  (Intercept) 1.8881  
+ Residual             1.2020  </code></pre>
+</figure>
+<p>and now for the <code>gam()</code> version</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">variance_comp</span><span class="p">(</span><span class="n">m2_gam</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text"># A tibble: 2 x 5
+  component  variance std_dev lower_ci upper_ci
+  &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+1 s(subject)     3.56    1.89     1.51     2.36
+2 scale          1.44    1.20     1.09     1.33</code></pre>
+</figure>
+<p>We could use the <code>anova()</code> method for <code>"gam"</code> fits but for fully penalized terms like random effects, the test isn’t very good and <em>p</em> values can be badly biased. Wood (2017, p. 315) says of the test “As expected, the test if clearly useless for comparing models differing in [their] random effect structure.” So, maybe give this one a miss.</p>
+<p>Using <code>AIC()</code> to compare the models is also an option:</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">AIC</span><span class="p">(</span><span class="n">m2_gam</span><span class="p">,</span><span class="w"> </span><span class="n">m1_gam</span><span class="p">)</span></code></pre>
+</figure>
+<figure class="highlight">
+<pre><code class="language-text" data-lang="text">             df      AIC
+m2_gam 48.98553 852.9313
+m1_gam 48.98931 852.9371</code></pre>
+</figure>
+<p>AIC clearly favours the simpler model as the fits of the two models are essentially the same. Note that because the EDF of the <code>s(subject, transf_time)</code> was so close to zero, we don’t pay much of a penalty for including this term in the model, and hence the AICs of the two models are very similar (typically we’d expect that where two models have the same fit, the AIC for the more complex one would be the larger value).</p>
+<p>Note that the AIC computed for the <code>gam()</code> model is a <em>conditional</em> AIC, where the likelihood is of all model coefficients set to their maximum penalized likelihood estimates. The AIC for an <code>lmer()</code> fit is a <em>marginal</em> AIC, where all the penalized coefficients are viewed as random effects and integrated out of the joint density of the response and random effects.</p>
+<p>The conditional AIC for the <code>gam()</code> fit would be anti-conservative, especially so in the case of models containing random effects. The upshot of that is that the <em>conditional</em> AIC would typically choose a model with a random effects structure that isn’t in the true model if no steps were taking to account for smoothness parameter selection in the EDF calculation. The <code>AIC()</code> method for <code>gam()</code> fits applies a suitable correction to the model EDF to account for smoothness parameter selection, resulting in an information criterion that has mostly good properties.</p>
+<figure class="highlight">
+<pre><code class="language-r" data-lang="r"><span class="n">draw</span><span class="p">(</span><span class="n">m2_gam</span><span class="p">,</span><span class="w"> </span><span class="n">parametric</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span></code></pre>
+</figure>
+<figure>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-draw-gam-model-1.png" alt="" /><figcaption>QQ-plot of the rat-specific mean distance effects</figcaption>
+</figure>
+<p>We need <code>parametric = FALSE</code> here because at the time of writing there is a bug in the code that handles parametric fixed effects.</p>
+<h2 id="its-not-all-good-news">It’s not all good news</h2>
+<p>It all seems a little too good to be true, doesn’t it! We have a way to fit models with random effects that works well, allows for tests of random effect terms against a null of 0 variance, and which allows us to use all the extended families that <code>gam()</code> allows including some complex distributional model families.</p>
+<p>Well, as they say, there is no free lunch; the main issue with fitting random effects as smooths within <code>gam()</code> fits is to do with efficiency. <code>lmer()</code> and <code>glmer()</code> use very efficient algorithms for fitting the model, including the use of sparse matrices for the model terms. Because <code>gam()</code> fits need the full penalty matrix for each random effect, and <code>gam()</code> currently doesn’t use any sparse matrices for efficient computation, <code>gam()</code> fits are going to get very slow as the number of random effects increases: the larger the number of subjects (levels) the slower things will get. The same will happen the greater the number of complex random effect terms you include the model.</p>
+<p>Basically, if you have random effects with many hundreds or thousands of levels (subjects), expect the time it takes to fit your <code>gam()</code> to increase dramatically, and expect the memory usage to increase markedly too.</p>
+<p>Also, running <code>summary()</code> on a model with random effects with many levels or lots of random effects terms is also going to be slow: the test for the random effect terms is quite computationally expensive. If you are mostly interested in the other model terms, setting the <code>re.test</code> argument to <code>FALSE</code> will skip the tests for random effects (and other terms with zero dimension null space), allowing the summary for the other terms to be computed quickly.</p>
+<h2 id="fin">Fin</h2>
+<p>In this post I showed how random effects can be represented as smooths and how to use them practically in in <code>gam()</code> models. I hope you found it useful. If you have any comments or questions, let me know them in the comments below.</p>
+<h3 class="unnumbered" id="references">References</h3>
+<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<div id="ref-Fahrmeir2013-xu">
+<p>Fahrmeir, L., Kneib, T., Lang, S., and Marx, B. (2013). <em>Regression: Models, methods and applications</em>. Springer Berlin Heidelberg doi:<a href="https://doi.org/10.1007/978-3-642-34333-9">10.1007/978-3-642-34333-9</a>.</p>
+</div>
+<div id="ref-Molenberghs2000-vk">
+<p>Molenberghs, G., and Verbeke, G. (2000). <em>Linear mixed models for longitudinal data</em>. Springer, New York, NY doi:<a href="https://doi.org/10.1007/978-1-4419-0300-6">10.1007/978-1-4419-0300-6</a>.</p>
+</div>
+<div id="ref-Wood2013-gz">
+<p>Wood, S. N. (2013). A simple test for random effects in regression models. <em>Biometrika</em> 100, 1005–1010. doi:<a href="https://doi.org/10.1093/biomet/ast038">10.1093/biomet/ast038</a>.</p>
+</div>
+<div id="ref-Wood2017-qi">
+<p>Wood, S. N. (2017). <em>Generalized Additive Models: An introduction with R, second edition</em>. CRC Press.</p>
+</div>
+</div>
+<section class="footnotes" role="doc-endnotes">
+<hr />
+<ol>
+<li id="fn1" role="doc-endnote"><p>or matrices; smooths can have multiple penalty matrices that are stacked block-diagonally in <span class="math inline">\(\mathbf{S}\)</span>. For simplicity’s sake I’m just going to assume a single penalty matrix.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2" role="doc-endnote"><p>You can read about this in brief in §5.8 of <span class="citation" data-cites="Wood2017-qi">Wood (2017)</span> and follow up via references therein<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section>
+
+            <hr />
+            <h3>Comments</h3>
+            <div id="disqus_thread"></div>
+<script type="text/javascript">
+  var disqus_shortname = "fromthebottomoftheheap";
+  var disqus_url = "https://www.fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/";
+  var disqus_title = "Using random effects in GAMs with mgcv";
+  //var disqus_identifier = "/2021/02/02/random-effects-in-gams";
+
+  (function() {
+    var dsq = document.createElement('script');
+    dsq.type = 'text/javascript';
+    dsq.async = true;
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+  })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+            </div>
+            <div class="span2">
+                            <div class="side-snippet">
+                <h4>By Gavin Simpson</h4>
+              
+                <h4>02 February 2021</h4>
+              
+              </div>
+
+                            <div class="side-snippet">
+                <h4>Posted in</h4>
+                
+                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
+                
+              </div>
+       
+
+                            <div class="side-snippet">
+                <h4>Tagged</h4>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/mgcv/"><span class="label label-inverse">mgcv</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/random-effects/"><span class="label label-inverse">random effects</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/smooths/"><span class="label label-inverse">smooths</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/penalty/"><span class="label label-inverse">penalty</span></a><br>
+                
+                  <a href="https://www.fromthebottomoftheheap.net/tag/variance-components/"><span class="label label-inverse">variance components</span></a><br>
+                
+              </div>
+
+                          <div class="side-snippet">
+              <h4>Social</h4>
+              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Impactstory profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/impactstory-symbol.png" /> <a href="https://impactstory.org/u/0000-0002-9084-8413">Impactstory profile</a></p>
+              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
+            </div>
+
+                          <div class="side-snippet">
+              <h4>Blogroll</h4>
+              <ul class="unstyled">
+                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://www.ancienteco.com/">Andrew Barr's Ancient Eco</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
+                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
+              </ul>
+            </div>
+
+              
+            </div>
+          </div>
+        </div>
+      </div>
+      </article>
+
+        
+
+    </div><!--/.fixed-container-->
+    
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="span2">
+            <h4>Menu</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
+            </ul>
+          </div>
+          <div class="span2">
+            <h4>R packages</h4>
+            <ul class="unstyled">
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
+              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
+            </ul>        
+          </div>
+          <div class="span6">
+            <h4>Fineprint</h4>
+            <p><small>Copyright &copy; 2010&ndash;2021 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
+            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
+          </div>
+        </div>
+      </div>
+    </footer>
+    
+        <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
+    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
+    <!--<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>-->
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    </script>
+    <script>
+        jQuery(function ($) {
+            $(".addToolTip").tooltip()
+        });
+    </script>
+    
+    
+
+
+  </body>
+</html>
+
+
