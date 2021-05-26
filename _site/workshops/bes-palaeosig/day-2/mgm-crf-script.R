@@ -8,6 +8,8 @@ library('analogue')
 
 ## Load data
 aber <- read_rds('abernethy-count-data.rds')
+## or:
+aber <- read_rds(url('http://bit.ly/abercount'))
 ## take a subset of spp
 take <- c("BETULA", "PINUS_SYLVESTRIS", "ULMUS", "QUERCUS", "ALNUS_GLUTINOSA",
           "CORYLUS_MYRICA", "SALIX", "JUNIPERUS_COMMUNIS", "CALLUNA_VULGARIS",
@@ -38,6 +40,8 @@ aber <- aber[, cs]
 names(aber) <- tolower(names(aber))
 ## aber ages
 aberAge <- read_rds('abernethy-sample-age.rds')
+## or:
+aberAge <- read_rds(url('http://bit.ly/aberage'))
 
 
 ## stationary MGM

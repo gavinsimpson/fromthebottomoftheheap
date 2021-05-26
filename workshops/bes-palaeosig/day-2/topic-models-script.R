@@ -1,6 +1,6 @@
 ## Fit a Topic Model to the Abernethy Forest data set
 
-#install.packages("remotes")
+install.packages("remotes")
 remotes::install_github("gavinsimpson/ggvegan")
 
 # install.packages("servr")
@@ -21,6 +21,9 @@ library('splines')
 
 ## Load data
 aber <- read_rds('abernethy-count-data.rds')
+## or:
+aber <- read_rds(url('http://bit.ly/abercount'))
+
 ## take a subset of spp
 take <- c("BETULA", "PINUS_SYLVESTRIS", "ULMUS", "QUERCUS", "ALNUS_GLUTINOSA",
           "CORYLUS_MYRICA", "SALIX", "JUNIPERUS_COMMUNIS", "CALLUNA_VULGARIS",
@@ -52,6 +55,8 @@ aber <- aber[, cs]
 names(aber) <- tolower(names(aber))
 ## aber ages
 aberAge <- read_rds('abernethy-sample-age.rds')
+## or:
+aberAge <- read_rds(url('http://bit.ly/aberage'))
 
 ## Models to fit
 k <- 2:10 # 2, 3, ... 10 associations / groups
@@ -75,7 +80,7 @@ k.bic <- which.min(sapply(tms, AIC, k = log(nrow(aber))))
 ## but we'll take the model with 5 groups
 aberlda <- tms[[k.ind]]
 
-## extract the posteriorfitted distribution of the model
+## extract the posterior fitted distribution of the model
 aberPosterior <- posterior(aberlda)
 ## topic proportions
 aberTopics <- aberPosterior$topics
