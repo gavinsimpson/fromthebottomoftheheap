@@ -5,6 +5,7 @@ library('readr')
 library('mgm')
 library('qgraph')
 library('analogue')
+library('MRFcov')
 
 ## Load data
 aber <- read_rds('abernethy-count-data.rds')
@@ -49,7 +50,7 @@ timer <- Sys.time()
 stat_mgm <- mgm(data = aber,
                 type = rep('p', ncol(aber)),
                 k = 2,
-                lambdaSel = 'EBIC',
+                lambdaSel = 'EBIC', # "CV"
                 alphaSel = 'EBIC',
                 lambdaFolds = 5,
                 ruleReg = 'AND')
@@ -67,8 +68,8 @@ qgraph(stat_mgm$pairwise$wadj,
        labels = colnames(aber),
        label.cex = 0.8,
        legend = FALSE,
-       layout = 'spring',
-       filetype = 'pdf',
+       layout = 'circle',
+       filetype = "R", #'pdf',
        filename = 'static-mgm-spring-layout')
 
 qgraph(stat_mgm$pairwise$wadj,
@@ -78,7 +79,7 @@ qgraph(stat_mgm$pairwise$wadj,
        labels = colnames(aber),
        label.cex = 0.7,
        legend = FALSE,
-       filetype = 'pdf',
+       filetype = 'R',
        filename = 'static-mgm-circle-layout',
        vsize = 3)
 
@@ -105,7 +106,7 @@ round(bw_tvm$meanError, 3)
 timer <- Sys.time()
 set.seed(1)
 tvm <- tvmgm(data = aber,
-             type = rep('g', ncol(aber)),
+             type = rep('p', ncol(aber)),
              level = rep(1, ncol(aber)),
              k = 2,
              lambdaSel = 'EBIC',
@@ -169,7 +170,17 @@ layout(1)
 
 
 library('MRFcov')
-mrf <- MRFcov(data = aber, n_nodes = ncol(aber), n_cores = 3,
+mrf <- MRFcov(data = aber, n_nodes = ncol(aber), n_cores = 2,
               family = 'poisson')
               
 plotMRF_hm(mrf)
+
+## To get a network diagram from the MRF, you can extract the adjacency matrix
+## and convert it to an igraph object...
+net <- igraph::graph.adjacency(mrf$graph, weighted = TRUE, mode = "undirected")
+## ... then plot with igraphs plot method
+igraph::plot.igraph(net, layout = igraph::layout.circle,
+                    edge.width = abs(igraph::E(net)$weight),
+                    edge.color = ifelse(igraph::E(net)$weight < 0, 'blue', 'red'))
+
+

@@ -229,3 +229,12 @@ ggplot(dirreg_pred, aes(x = Age, y = Proportion, fill = Association)) +
 
 ## Could use brms package to fit the Dirichlet regression using penalised splines
 ## so selecting how wiggly or smoothly over time the proportions change
+
+## This should fit a model where the topic prevalence varies as a smooth function of time
+fit_stm <- stm(documents = corpus$documents,
+               vocab = corpus$vocab,
+               K = 5,
+               prevalence = ~ s(Age),
+               data = aberAge,
+               max.em.its = 200,
+               init.type = "Spectral")
