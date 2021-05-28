@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>Generalized Additive Models</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Gavin Simpson" />
+    <script src="libs/header-attrs/header-attrs.js"></script>
+    <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" type="text/css" />
+    <link rel="stylesheet" href="my.css" type="text/css" />
+  </head>
+  <body>
+    <textarea id="source">
+class: inverse, middle, left, my-title-slide, title-slide
+
+# Generalized Additive Models
+### Gavin Simpson
+### BES Palaeo SIG Workshop • May 25-28 2021
+
+---
+
+
+
+
+class: inverse
+background-image: url('./resources/victor-freitas-548350-unsplash.jpg')
+background-size: cover
+
+# Palaeo data are time series
+
+### Interest in changes in the data over time &amp;mdash; implies the estimation of trends in data
+
+### Commonly, trend detection involves eye-balling the data
+
+Not reproducible &amp;mdash; poor science
+
+Conflates **signal** and **noise**
+
+Not thinking about **effect size**
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@victorfreitas?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Victor Freitas"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-1px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M20.8 18.1c0 2.7-2.2 4.8-4.8 4.8s-4.8-2.1-4.8-4.8c0-2.7 2.2-4.8 4.8-4.8 2.7.1 4.8 2.2 4.8 4.8zm11.2-7.4v14.9c0 2.3-1.9 4.3-4.3 4.3h-23.4c-2.4 0-4.3-1.9-4.3-4.3v-15c0-2.3 1.9-4.3 4.3-4.3h3.7l.8-2.3c.4-1.1 1.7-2 2.9-2h8.6c1.2 0 2.5.9 2.9 2l.8 2.4h3.7c2.4 0 4.3 1.9 4.3 4.3zm-8.6 7.5c0-4.1-3.3-7.5-7.5-7.5-4.1 0-7.5 3.4-7.5 7.5s3.3 7.5 7.5 7.5c4.2-.1 7.5-3.4 7.5-7.5z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Victor Freitas&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+class: inverse
+background-image: url('./resources/neonbrand-395901-unsplash.jpg')
+background-size: cover
+
+# What statistical analysis is done is often wrong
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@neonbrand?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from NeONBRAND"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;NeONBRAND&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+class: inverse
+background-image: url('./resources/aron-visuals-322314-unsplash.jpg')
+background-size: cover
+
+# Time waits for no palaeolimnologist
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@aronvisuals?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Aron Visuals"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Aron Visuals&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+class: inverse
+background-image: url('./resources/alex-konokh-777923-unsplash.jpg')
+background-size: cover
+
+# Never join the dots
+
+## You're conflating signal and noise
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@shngpr?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Alex Konokh"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Alex Konokh&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# Spurious correlation
+
+.row[
+
+.col-8[
+
+Two time series may be correlated because
+
+* of their relationship with a third confounding variable
+* of nothing, they're just both going up or down for no common reason
+
+Correlation is simply a measure of the strength of association between two series
+
+### Correlation ≠ Causation
+
+]
+
+.col-4[
+.center[![:scale 100%](./resources/yule-paper.png)]
+]
+
+]
+
+---
+background-image: url('./resources/chart.png')
+background-size: contain
+
+
+.footnote[Source: Tyler Vigen [www.tylervigen.com/spurious-correlations](http://www.tylervigen.com/spurious-correlations)]
+
+---
+
+# Non-parametric ≠ no assumptions
+
+.row[
+
+.col-7[
+
+You can calculate `\(r\)`, `\(\rho\)`, or `\(\tau\)` on time series — but what do they mean?
+
+When you *test* `\(r\)`, `\(\rho\)`, or `\(\tau\)` you need theory &amp; assumptions
+
+Key is **independent observations**
+
+Palaeo data almost surely violate those assumptions
+
+*p* values become meaningless
+
+]
+
+.col-5[
+.center[![:scale 80%](./resources/yule-paper.png)]
+]
+
+]
+
+---
+
+# Never smooth data you input to a statistical test
+
+.row[
+
+.col-6[
+### Ever — not once
+
+It makes the test result *moar significant*
+
+You just threw away the noise!
+
+]
+
+.col-6[
+![scale: 100%](./resources/harvey-et-al-figure-1.png)
+]
+
+]
+
+.row[
+
+.col-12[
+### Palaeo data are often already smoothed. We should &amp; can — but don't — account for this
+]
+
+]
+
+---
+class: inverse
+background-image: url('resources/mathew-macquarrie-149083-unsplash.jpg')
+background-size: cover
+
+# .smallcaps[Loess] must die
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@deskfire?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Mathew MacQuarrie"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Mathew MacQuarrie&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# .smallcaps[Loess] (for inference) must die
+
+.row[
+
+.col-7[
+.smallcaps[Loess] is a scatterplot smoother &amp;mdash; for EDA
+
+The fit is controlled by the *span*
+
+Must choose *span* appropriately
+
+Difficult (impossible?) to do properly&amp;hellip;
+
+As a result often chosen subjectively!
+
+Plain wrong &amp;mdash; don't do it!
+
+Don't use .smallcaps[Loess] for inference&amp;hellip; exploratory data analysis only
+]
+
+.col-5[
+![scale: 100%](./resources/branaavan-fig-edited.png)
+]
+]
+
+---
+
+# .smallcaps[Loess] must die — but we all use it
+
+.center[![scale: 100%](./resources/dper-concensus-reconstruction.png)]
+
+Consensus reconstruction — total 💩
+
+.footnote[Source: **Simpson** &amp; Hall (2012) Human Impacts&amp;hellip; *DPER Vol. 5* [doi: 
+10/c49x](http://doi.org/c49x)]
+
+---
+class: inverse
+background-image: url('resources/ross-findon-303091-unsplash.jpg')
+background-size: contain
+
+# What are we to do&amp;hellip;?
+
+.footnote[&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@rossf?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Ross Findon"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-1px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M20.8 18.1c0 2.7-2.2 4.8-4.8 4.8s-4.8-2.1-4.8-4.8c0-2.7 2.2-4.8 4.8-4.8 2.7.1 4.8 2.2 4.8 4.8zm11.2-7.4v14.9c0 2.3-1.9 4.3-4.3 4.3h-23.4c-2.4 0-4.3-1.9-4.3-4.3v-15c0-2.3 1.9-4.3 4.3-4.3h3.7l.8-2.3c.4-1.1 1.7-2 2.9-2h8.6c1.2 0 2.5.9 2.9 2l.8 2.4h3.7c2.4 0 4.3 1.9 4.3 4.3zm-8.6 7.5c0-4.1-3.3-7.5-7.5-7.5-4.1 0-7.5 3.4-7.5 7.5s3.3 7.5 7.5 7.5c4.2-.1 7.5-3.4 7.5-7.5z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Ross Findon&lt;/span&gt;&lt;/a&gt;]
+
+---
+class: inverse
+background-image: url(resources/roman-mager-59976-unsplash.jpg)
+background-size: cover
+
+# .alpha[Model your data]
+
+.footnote[&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@roman_lazygeek?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Roman Mager"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-1px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M20.8 18.1c0 2.7-2.2 4.8-4.8 4.8s-4.8-2.1-4.8-4.8c0-2.7 2.2-4.8 4.8-4.8 2.7.1 4.8 2.2 4.8 4.8zm11.2-7.4v14.9c0 2.3-1.9 4.3-4.3 4.3h-23.4c-2.4 0-4.3-1.9-4.3-4.3v-15c0-2.3 1.9-4.3 4.3-4.3h3.7l.8-2.3c.4-1.1 1.7-2 2.9-2h8.6c1.2 0 2.5.9 2.9 2l.8 2.4h3.7c2.4 0 4.3 1.9 4.3 4.3zm-8.6 7.5c0-4.1-3.3-7.5-7.5-7.5-4.1 0-7.5 3.4-7.5 7.5s3.3 7.5 7.5 7.5c4.2-.1 7.5-3.4 7.5-7.5z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Roman Mager&lt;/span&gt;&lt;/a&gt;]
+
+---
+
+# Model your data
+
+Many models available for time series but palaeo data are often unhelpful
+
+1. uneven spacing of observations in time (typically)
+
+2. compaction, variable accumulation rates &amp;rarr; non-constant variance
+
+Can't use typical statistical time series models
+
+**But we can use generalized additive models**
+
+---
+class: inverse
+background-image: url('./resources/franki-chamaki-z4H9MYmWIMA-unsplash.jpg')
+background-size: cover
+
+# 
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@franki?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Franki Chamaki"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Franki Chamaki&lt;/span&gt;&lt;/a&gt;
+]
+
+???
+
+We learn from data because it can highlight our preconceptions and biases
+
+---
+
+# Learning from data
+
+![](gams-talk_files/figure-html/lm-plot-1.svg)&lt;!-- --&gt;
+
+???
+
+Learning from data could be a simple as fitting a linear regression model...
+
+---
+class: inverse
+background-image: url('./resources/deep-learning-turned-up-to-11.jpg')
+background-size: contain
+
+# 
+
+???
+
+Or as complex as fitting a sophisticated multi-layered neural network trained on huge datasets or corpora
+
+---
+
+# Learning involves trade-offs
+
+.row[
+.col-6[
+.center[![:scale 75%](resources/low-bias-low-variance.jpg)]
+]
+
+.col-6[
+.center[![:scale 75%](resources/interpretable-black-box.jpg)]
+]
+]
+
+???
+
+Learning from data involves trade offs
+
+We can have models that fit our data well &amp;mdash; low bias &amp;mdash; but which are highly variable, or
+
+We can fit models that have lower variance, but these tend to have higher bias, i.e. fit the data less well
+
+A linear regression model is very interpretable but unless the underlying relationship is linear it will have poor fit
+
+Deep learning may fit data incredibly well but the model is very difficult to interpret and understand
+
+---
+
+# Generalized Additive Models
+
+&lt;br /&gt;
+
+![](resources/tradeoff-slider.png)
+
+.references[Source: [GAMs in R by Noam Ross](https://noamross.github.io/gams-in-r-course/)]
+
+???
+
+GAMs are an intermediate-complexity model
+
+* can learn from data without needing to be informed by the user
+* remain interpretable because we can visualize the fitted features
+
+---
+class: inverse middle center large-subsection
+
+# GAMs fit wiggly functions
+
+---
+class: inverse
+background-image: url('resources/wiggly-things.png')
+background-size: contain
+
+???
+
+---
+
+
+
+# Wiggly things
+
+.center[![](resources/spline-anim.gif)]
+
+???
+
+GAMs use splines to represent the non-linear relationships between covariates, here `x`, and the response variable on the `y` axis.
+
+---
+class: inverse middle center massive-subsection
+
+# GAMs
+
+---
+class: inverse
+background-image: url('./resources/rob-potter-398564.jpg')
+background-size: contain
+
+# GAMs are not magical
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px;" href="https://unsplash.com/@robpotter?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Rob Potter"&gt;&lt;span style="display:inline-block;padding:2px 3px;"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-1px;fill:white;" viewBox="0 0 32 32"&gt;&lt;title&gt;&lt;/title&gt;&lt;path d="M20.8 18.1c0 2.7-2.2 4.8-4.8 4.8s-4.8-2.1-4.8-4.8c0-2.7 2.2-4.8 4.8-4.8 2.7.1 4.8 2.2 4.8 4.8zm11.2-7.4v14.9c0 2.3-1.9 4.3-4.3 4.3h-23.4c-2.4 0-4.3-1.9-4.3-4.3v-15c0-2.3 1.9-4.3 4.3-4.3h3.7l.8-2.3c.4-1.1 1.7-2 2.9-2h8.6c1.2 0 2.5.9 2.9 2l.8 2.4h3.7c2.4 0 4.3 1.9 4.3 4.3zm-8.6 7.5c0-4.1-3.3-7.5-7.5-7.5-4.1 0-7.5 3.4-7.5 7.5s3.3 7.5 7.5 7.5c4.2-.1 7.5-3.4 7.5-7.5z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px;"&gt;Rob Potter&lt;/span&gt;&lt;/a&gt;
+]
+
+
+---
+class: inverse middle center large-subsection
+
+# Basis Expansions
+
+---
+class: inverse center middle huge-subsection
+
+# Example
+
+---
+
+# HadCRUT4 time series
+
+![](gams-talk_files/figure-html/hadcrut-temp-example-1.svg)&lt;!-- --&gt;
+
+---
+
+# Polynomials
+
+![](gams-talk_files/figure-html/hadcrut-temp-polynomial-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center large-subsection
+
+# Not that basis expansion
+
+---
+
+# Splines formed from basis functions
+
+![](gams-talk_files/figure-html/basis-functions-1.svg)&lt;!-- --&gt;
+
+???
+
+Splines are built up from basis functions
+
+Here I'm showing a cubic regression spline basis with 10 knots/functions
+
+We weight each basis function to get a spline. Here all the basisi functions have the same weight so they would fit a horizontal line
+
+---
+
+# Weight basis functions &amp;#8680; spline
+
+
+
+.center[![](resources/basis-fun-anim.gif)]
+
+???
+
+But if we choose different weights we get more wiggly spline
+
+Each of the splines I showed you earlier are all generated from the same basis functions but using different weights
+
+---
+
+# How do GAMs learn from data?
+
+![](gams-talk_files/figure-html/example-data-figure-1.svg)&lt;!-- --&gt;
+
+???
+
+How does this help us learn from data?
+
+Here I'm showing a simulated data set, where the data are drawn from the orange functions, with noise. We want to learn the orange function from the data
+
+---
+
+# Maximise penalised log-likelihood &amp;#8680; &amp;beta;
+
+
+
+.center[![](resources/gam-crs-animation.gif)]
+
+???
+
+Fitting a GAM involves finding the weights for the basis functions that produce a spline that fits the data best, subject to some constraints
+
+---
+class: inverse middle center subsection
+
+# Avoid overfitting our sample
+
+---
+class: inverse middle center subsection
+
+# Use a wiggliness penalty &amp;mdash; avoid fitting too wiggly models
+
+---
+class: inverse center middle huge-subsection
+
+# Example
+
+---
+
+# HadCRUT4 time series
+
+![](gams-talk_files/figure-html/hadcrut-temp-penalty-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse center middle big-subsection
+
+# OK some math
+
+---
+class: inverse center middle large-subsection
+
+# How wiggly?
+
+$$
+\int_{\mathbb{R}} [f^{\prime\prime}]^2 dx = \boldsymbol{\beta}^{\mathsf{T}}\mathbf{S}\boldsymbol{\beta}
+$$
+
+---
+class: inverse center middle large-subsection
+
+# Penalised fit
+
+$$
+\mathcal{L}_p(\boldsymbol{\beta}) = \mathcal{L}(\boldsymbol{\beta}) - \frac{1}{2} \lambda\boldsymbol{\beta}^{\mathsf{T}}\mathbf{S}\boldsymbol{\beta}
+$$
+
+---
+
+# Fitted GAM
+
+![](gams-talk_files/figure-html/hadcrutemp-fitted-gam-1.svg)&lt;!-- --&gt;
+
+---
+class: inverse middle center massive-subsection
+
+# mgcv
+
+---
+
+# Generalized additive model
+
+Linear trend model
+
+`$$\mathbb{E}(y_i) = \beta_0 + \beta_1 x_i$$`
+
+GAM
+
+`$$\mathbb{E}(y_i) = \beta_0 + f(x_i)$$`
+
+`\(f(\mathbf{x})\)` is the trend &amp;mdash; we assume trend is **smooth**
+
+---
+
+# Fitting GAMs in *mgcv*
+
+Wrap a variable in `s( )` to get a smooth
+
+
+```r
+m &lt;- gam(Temperature ~ s(Year, k = 20), data = gtemp, method = "REML")
+```
+
+User chooses `k` &amp;mdash; the number of basis functions used to represent `\(f(x_i)\)`
+
+Think of `k` as an upper limit on wiggliness
+
+Fit using REML or ML (`method = "ML"`) smoothness selection
+
+GCV can undersmooth but it's the default!
+
+---
+
+# Choosing a response family
+
+A GLM / GAM can be written as
+
+`\begin{align}
+y_i &amp; \sim \mathcal{D}(\mu_i, \theta) \\
+g(\mu_i) &amp; = \eta_i = \beta_0 + \beta_1 x_{1i} + f(x_{2i}) + \cdots \\
+\mu_i &amp; = g^{-1}(\beta_0 + \beta_1 x_{1i} + f(x_{2i}) + \cdots) \\
+\end{align}`
+
+`\(\mathcal{D}\)` is some distribution with a mean and possibly some other parameters
+
+`\(g()\)` is the link function that maps from the `\(-\infty - +\infty\)` scale to the response scale
+
+What values to the response can take helps dictate the choice of `family`
+
+---
+
+# Choosing a response family
+
+* Can the response take any real value? `gaussian()` or `scat()`
+* Is the response integer counts? `poisson()`, `nb()`
+* Is the response continuous but positive reals? `Gamma()`, `inverse.gaussian()`, `tw()`
+* Is the response non-negative continuous reals? `tw()`
+* Is the response a proportion? `betar()`
+* Is the response 0/1? `binomial()`
+* Is the response a binomial count? `binomial()`
+
+There are other choices
+
+---
+
+# Braya-S&amp;oslash;
+
+Alkenone unsaturation index &amp;mdash; temperature interpretation
+
+&lt;br /&gt;
+
+.center[
+![](gams-talk_files/figure-html/braya-so-data-1.svg)&lt;!-- --&gt;
+]
+
+.footnote[D’Andrea, *et al* (2011). PNAS *108*: 9765&amp;ndash;9769. [doi: 10/brnm2n](https://doi.org/10.1073/pnas.1101708108)]
+
+---
+
+# Braya-S&amp;oslash; &amp;mdash; estimated trend
+
+We get some wiggles &amp;mdash; but which are real?
+
+
+
+&lt;br /&gt;
+
+.center[
+![](gams-talk_files/figure-html/braya-fitted-gam-plot-1.svg)&lt;!-- --&gt;
+]
+
+---
+
+# Calculus FTW!
+
+Compute the first derivative of the spline and it's uncertainty
+
+* Where confidence band *includes* **0** we fail reject the H&lt;sub&gt;0&lt;/sub&gt; of *no change*
+* Where *doesn't* include **0** we reject H&lt;sub&gt;0&lt;/sub&gt; &amp;rarr; conclude there's change
+
+&lt;br /&gt;
+.center[
+![](gams-talk_files/figure-html/unnamed-chunk-1-1.svg)&lt;!-- --&gt;
+]
+
+---
+
+# Braya-S&amp;oslash; rates of change
+
+
+
+&lt;br /&gt;
+.center[
+![](gams-talk_files/figure-html/braya-derivatives-plot-1.svg)&lt;!-- --&gt;
+]
+
+---
+
+# What else&amp;hellip;?
+
+Once you start to think in terms of models you can address problems out of reach previously:
+
+* *models for mean and variance* &amp;mdash; resilience &amp; tipping points (?)
+* *account for age-model uncertainty*
+* *compare trends across multiple sites*
+* &amp;hellip;
+
+---
+
+# Lake 227: eutrophication &amp;rarr; increased variance
+
+.row[
+.col-6[
+![:scale 120%](./resources/lake227-pigment-gamma-lss-mean.svg)
+]
+
+.col-6[
+![:scale 120%](./resources/lake227-pigment-gamma-lss-sigma.svg)]
+]
+
+---
+class: inverse
+background-image: url('./resources/mathew-macquarrie-677399-unsplash.jpg')
+background-size: cover
+
+# GAMs are a gateway drug
+
+Hierarchical GAMs &amp;mdash; Pedersen et al (2019) *PeerJ*.&amp;nbsp; [doi: 10/c49w](http://doi.org/c49w)
+
+Non-linear variation partitioning &amp;mdash; Simpson &amp; Anderson (2009) *Limnology &amp; Oceanography* [doi: 10/dqfznq](http://doi.org/dqfznq)
+
+Models for
+
+* variance
+* extremes / quantiles
+
+Joint models for bivariate correlations
+
+Multivariate models
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@deskfire?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Mathew MacQuarrie"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Mathew MacQuarrie&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+class: inverse
+background-image: url('./resources/hennie-stander-1347894-unsplash.jpg')
+background-size: cover
+
+# Training
+
+.alpha[
+Palaeolimnology was a qualitative science
+
+Key figures dragged us into the world of quantitative palaeolimnology
+
+Training and software were critical for this revolution
+
+We have the software we need now &amp;mdash; R
+
+A renewed need for training in modern methods
+]
+
+&lt;br /&gt;
+
+### .alpha[What should that training look like?]
+
+.footnote[
+&lt;a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &amp;quot;San Francisco&amp;quot;, &amp;quot;Helvetica Neue&amp;quot;, Helvetica, Ubuntu, Roboto, Noto, &amp;quot;Segoe UI&amp;quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@henniestander?utm_medium=referral&amp;amp;utm_campaign=photographer-credit&amp;amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Hennie Stander"&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;&lt;svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"&gt;&lt;title&gt;unsplash-logo&lt;/title&gt;&lt;path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"&gt;&lt;/path&gt;&lt;/svg&gt;&lt;/span&gt;&lt;span style="display:inline-block;padding:2px 3px"&gt;Hennie Stander&lt;/span&gt;&lt;/a&gt;
+]
+
+---
+
+# Want to know more&amp;hellip;?
+
+.row[
+.col-7[
+Paper &amp;mdash; [doi:10/gfrc4p](http://doi.org/gfrc4p)
+
+Blog &amp;mdash; [fromthebottomoftheheap.net](https://fromthebottomoftheheap.net)
+
+Slides &amp;mdash; [bit.ly/pals-stats](http://bit.ly/pals-stats)
+]
+
+.col-5[
+![:scale 100%](./resources/simpson-2018-fevo-paper.svg)
+]
+
+]
+
+---
+class: inverse middle center big-subsection
+
+# Advanced Topics
+
+---
+class: inverse middle center big-subsection
+
+# HGAMs
+
+---
+
+# Hierarchical GAMs
+
+A HGAM is a model where we have multiple sequences
+
+* multiple species in a single core/site
+
+* multiple species in multiple cores/sites
+
+* same proxy at multiple cores/sites
+
+Don't model each species / proxy separately &amp;mdash; model everything in a single model
+
+Random splines &amp;mdash; use the smooth equivalent of a random effect
+
+---
+
+# Hierarchical GAMs
+
+.row[
+
+.col-7[
+
+Build a HGAM is a number of ways
+
+* Common shared trend?
+* Same wiggliness per group smooth
+* Different wiggliness per group smooth
+
+]
+
+.col-5[
+
+.center[
+&lt;img src="./resources/hgam-models.png" width="923" /&gt;
+]
+]
+]
+
+---
+
+# Hierarchical GAMs &amp;mdash; common trend?
+
+Model with a common trend
+
+
+```r
+## random spline version - same wiggliness
+gam(y ~ s(time) + s(time, group, bs = "fs"), method = "REML")
+
+## by variable version - different wiggliness
+gam(y ~ group + s(time) + s(time, by = group, m = 1), method = "REML")
+```
+
+We need `group` as a factor term in the `by` version to account for the group means
+
+`m = 1` penalises deviation from a flat function (deviation from common trend)
+
+---
+
+# Hierarchical GAMs &amp;mdash; common trend?
+
+Model *without* a common trend
+
+
+```r
+## random spline version - same wiggliness
+gam(y ~ s(time, group, bs = "fs"), method = "REML")
+
+## by variable version - different wiggliness
+gam(y ~ group + s(time, by = group), method = "REML")
+```
+
+We need `group` as a factor term in the `by` version to account for the group means
+
+---
+class: inverse middle center big-subsection
+
+# Distributional Models
+
+---
+class: inverse middle center big-subsection
+
+# Mean
+
+???
+
+The mean
+
+When we analyze data we mostly focus on this property of our data
+
+With summary statistics we often talk about the average of a set of values
+
+Or in a statistical model we might estimate expected change in the response for some change in one or more covariates
+
+Or we may be interested in estimating the trend in a data series where the trend described how the expected value of y changes over time
+
+
+
+---
+class: inverse middle center big-subsection
+
+# Variance
+
+???
+
+There are other important properties of data however and in the short case study I want to talk about the variance &amp; how we can use statistical models to investigate changes in the variance of ecosystems over time
+
+---
+
+# Variance
+
+Intuitive &amp; key descriptor of ecosystem state
+
+.row[
+.col-6[
+.center[
+&lt;img src="./resources/scheffer-2012-high-resilience.jpg" width="828" /&gt;
+]
+]
+
+.col-6[
+.center[
+&lt;img src="./resources/scheffer-2012-low-resilience.jpg" width="828" /&gt;
+]
+]
+.col-12[
+.small[Source: Scheffer *et al* Science (2012)]
+]
+]
+
+???
+
+The variance is an important measure of ecosystem state
+
+Ecologists have linked variance with coexistence of populations and variance can be interpreted in terms of resilience theory
+
+Here I'm showing two cartoons;
+
+A: in the high resilience state the ecosystem returns rapidly to the equilibrium following perturbation and hence has low variance
+
+B: in the low resilience state, where the basin of attraction has become shallower, the ecosystem takes longer to return to equilibrium following perturbation and hence exhibits high variance
+
+Variance, however, is much harder to estimate from data
+
+---
+
+# Moving windows &amp;mdash; don't do this!
+
+.row[
+.col-6[
+
+Moving window approach:
+
+1. detrend
+2. choose window size
+3. estimate variance
+4. move window 1 time step
+5. repeat 3. &amp; 4. until done
+6. look for trend
+
+]
+
+.col-6[
+.center[
+&lt;img src="./resources/dakos-rolling-window-figure-modified.png" width="1071" /&gt;
+]
+.small[Modified from Dakos *et al* (2012) PLOS One]
+]
+]
+
+???
+
+One way to estimate the variance of a series is by using a moving window
+
+Here the analyst first detrends the time series
+
+Choose an appropriate window size
+
+Starting from the beginning of the series calculate the variance of the observations in the window
+
+Move the window along one time step and repeat 3 and 4 until you get to the end of the series
+
+A trend in the resulting variance time series is estimated using Kendall's rank correlation tau
+
+In this example the interest was in the end of the series so they right-aligned the window meaning they had to observe half the series before they could calculate the variance
+
+---
+
+# Problems
+
+*Ad hoc*
+
+* How to detrend (method, complexity of trend, ...)
+* What window width?
+
+Ideally regularly spaced data
+
+* What to do about gaps, missing data, irregularly spaced data?
+
+Statistical testing hard
+
+* Kendall's `\(\tau\)` assumes independence
+* Surrogate time series assumes regular sampling, sensitive to choice of ARMA
+
+???
+
+The whole approach is *ad hoc* with many knobs to twiddle &amp;mdash; how do you detrend the series? what width of window should be used?
+
+Suited to regularly spaced data so you have the same number of observations in each window, but what about series with data gaps, missing observations, or data that are irregularly spaced?
+
+Statistical inference is very hard; Kendall's tau assumes the data are independence but they can't be because of the moving window. Sometime surrogate time series are used to assess significance of the trend in variance; Surrogate time series are series generated with known properties that don't have a change in variance, but these approaches rely on classical techniques like ARMA models which only work for regularly spaced data and the test is sensitive to choice of orders in the ARMA
+
+---
+class: inverse middle center big-subsection
+
+# Lake 227
+
+???
+
+Today I want to illustrate how we can use modern statistical models to continuously estimate the variance of multivariate time series using data from Lake 227 in the Experimental Lakes Area, Canada
+
+---
+
+# Lake 227
+
+.row[
+.col-6[
+* Experimentally manipulated
+* Annual sediment samples 1943&amp;ndash;1990
+]
+.col-6[
+* Analyzed for fossil pigments
+]
+]
+
+Cottingham *et al* (2000) **Ecology Letters** showed via a Levene's test that **variances** pre- &amp; post-intervention were different
+
+???
+
+The lake was experimentally manipulated to investigate responses to increased nutrients
+
+The lake is annually laminated and Peter Leavitt, URegina, measured the sub-fossil pigment concentrations for each year between 1943 and 1990
+
+Kathy Cottingham, Jim Rusak, and Peter Leavitt previously analyzed these data by separating them into control and treated sections and compared the variances of the two periods with a Levene's test, equivalent of a t-test but for differences of variances not means
+
+They showed that the algal community was more variable in the treated period than in the pre-manipulation period
+
+---
+
+# Lake 227
+
+![](gams-talk_files/figure-html/lake-227-pigment-data-1.svg)&lt;!-- --&gt;
+
+???
+
+Today I will focus only on the main algal groups:
+
+* diatoms &amp; chrysophytes through Fucoxanthin,
+* cryptophytes through Alloxanthin,
+* cyanobacteria and chlorophytes through Lutein-Zeaxanthin &amp; pheophytin b, and
+* total algae through beta carotene
+
+---
+class: inverse middle center big-subsection
+
+# Challenge
+
+???
+
+The challenge is to estimate how the mean **and** the variance changed continuously throughout the experimental manipulation
+
+---
+
+# Parameters beyond the mean
+
+![](gams-talk_files/figure-html/gaussian-distributions-plt-1.svg)&lt;!-- --&gt;
+
+???
+
+To do this we'll need models for the variance of a data set
+
+If we think of the Gaussian distribution that distribution has two parameters, the mean and the variance
+
+In linear regression we model the mean of the response at different values of the covariates, and assume the variance is constant at a value estimated from the residuals
+
+In the left panel I'm showing how the Gaussian distribution changes as we alter the mean while keeping the variance fixed, while in the right panel I keep the mean fixed but vary the variance &amp;mdash; the parameters are independent
+
+---
+
+# Distributional models
+
+.medium[
+`$$y_{i} | \boldsymbol{x}_i \boldsymbol{z}_i \sim \mathcal{D}(\vartheta_{1}(\boldsymbol{x}_i), \ldots, \vartheta_{K}(\boldsymbol{x}_i))$$`
+]
+
+For the Gaussian distribution
+
+* `\(\vartheta_{1}(\boldsymbol{x}_i) = \mu(\boldsymbol{x}_i)\)`
+
+* `\(\vartheta_{2}(\boldsymbol{z}_i) = \sigma(\boldsymbol{z}_i)\)`
+
+Provide a list of formulas, one per parameter
+
+
+```r
+m &lt;- gam( list( y ~ s(time),          # &lt;- formula for mean
+                    s(time) ),        # &lt;- formula for variance 
+          data = df, method = "REML", family = gaulss())
+```
+
+???
+
+Instead of treating the variance as a nuisance parameter, we could model both the variance **and** the mean as functions of the covariates
+
+This is done using what is called a *distributional model*
+
+In this model we say that the response values y_i, given the values of one or more covariates x_i follow some distribution with parameters theta, which are themselves functions of one or more covariates
+
+For the Gaussian distribution theta 1 would be the mean and theta 2 the variance (or standard deviation)
+
+We do not need to restrict ourselves to the Gaussian distribution however
+
+---
+
+# The Gamma distribution
+
+![](gams-talk_files/figure-html/gamma-dist-1.svg)&lt;!-- --&gt;
+
+???
+
+The gamma distribution would be more appropriate for describing the pigment data as it allows for positive continuous values, where those values are skewed, with some large values
+
+Here I'm showing different types of gamma distribution that vary in the mean and their variance and we should note that unlike the Gaussian distribution, we cannot change the mean without also changing the variance of the gamma distribution
+
+---
+
+# Lake 227 sedimentary pigments
+
+Fitted gamma distributional model using {brms} 📦 and **Stan**
+`\begin{align*}
+y_t    &amp; \sim \mathcal{G}(\mu = \eta_{1,t}, \alpha = \eta_{2,t}) \\
+\eta_{1,t} &amp; = \exp(f_{1,\text{pigment}}(\text{Year}_t)) \\
+\eta_{2,t} &amp; = \exp(f_{2,\text{pigment}}(\text{Year}_t))
+\end{align*}`
+
+Mean `\(\mu\)` and shape `\(\alpha\)` each modelled with "random effect" spline using `bs = "fs"`
+
+Could also fit this using {mgcv} 📦 and `gammals()` or `twlss()` family if no censored pigments
+
+???
+
+To estimate how the mean and the variance of the pigment data changed during the experimental manipulation, I fitted a gamma distributional model using the brms package and the Stan Bayesian software
+
+We assume the responses are conditionally distributed gamma, and we model the mean and the shape parameter of the distribution with linear predictors
+
+Each linear predictor includes a smooth function of Year for each pigment
+
+After fitting we calculate the variance at each time point using the estimated values of the mean and the shape parameters using the posterior distribution of the response to generate credible intervals
+
+---
+
+# Results &amp;mdash; pigment means
+
+
+
+![](gams-talk_files/figure-html/lake-227-fitted-mean-1.svg)&lt;!-- --&gt;
+
+???
+
+This plot shows the estimated mean concentration for the five pigments estimated from the model, and which shows the increase in algal abundance during the experimental manipulation
+
+---
+
+# Results &amp;mdash; pigment variances
+
+![](gams-talk_files/figure-html/lake-227-fitted-sigma-1.svg)&lt;!-- --&gt;
+
+???
+
+In this plot are showing the estimated variance throughout the time series
+
+We clearly see the increased variance in the algal communities that Cottingham et al observed, but now we can provide a continuous estimate of the variance over time rather than having to split the data into two and compare the variance of the two time periods
+
+---
+
+# Variable variance
+
+A feature of most palaeo data is heteroscedasticity
+
+Compaction &amp; varying sedimentation rates in time plus constant depth sampling
+
+Some samples contain more lake years (time) than others
+
+Thus the lake &amp; the sampling scheme are averaging different amounts of time in each sample
+
+Samples averaging more time have less variance all else equal
+
+Must account for this if we want to model variance
+
+---
+
+# Variable variance
+
+In the Lake Vera study we included `ellapsed_time` in the variance formula
+
+`ellapsed_time` is a variable containing the amount of time contained in each sample
+
+More details in Simpson (2018) Frontiers paper
+
+---
+
+# Acknowledgments
+
+### Data
+
+Peter Leavitt (URegina) for the Lake 227 pigment data
+
+### Funding
+
+.row[
+.col-6[
+.center[![:scale 70%](./resources/fgsr-logo.jpg)]
+]
+
+.col-6[
+.center[![:scale 70%](./resources/NSERC_C.svg)]
+]
+]
+
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script src="macros.js"></script>
+<script>var slideshow = remark.create({
+"highlightStyle": "github",
+"highlightLines": true,
+"countIncrementalSlides": false,
+"ratio": "16:9",
+"slideNumberFormat": "<div class=\"progress-bar-container\">\n  <div class=\"progress-bar\" style=\"width: calc(%current% / %total% * 100%);\">\n  </div>\n</div>"
+});
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();
+// adds .remark-code-has-line-highlighted class to <pre> parent elements
+// of code chunks containing highlighted lines with class .remark-code-line-highlighted
+(function(d) {
+  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
+  const preParents = [];
+  const findPreParent = function(line, p = 0) {
+    if (p > 1) return null; // traverse up no further than grandparent
+    const el = line.parentElement;
+    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
+  };
+
+  for (let line of hlines) {
+    let pre = findPreParent(line);
+    if (pre && !preParents.includes(pre)) preParents.push(pre);
+  }
+  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
+})(document);</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
