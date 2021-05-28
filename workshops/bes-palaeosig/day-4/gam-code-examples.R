@@ -82,6 +82,7 @@ k.check(m4)
 ## Lake 227 example
 
 ## Load data
+## download file http://bit.ly/palaesig-227 save in working directory
 lake227 <- read_excel('CONC227.xlsx')
 
 ## Peter higlighted Fuco, Allox, Lutzeax, Pheo_b, Bcarot
@@ -136,7 +137,7 @@ k.check(mtwlss)
 ##------------------------------------------------------------------------------
 ## Braya So
 ## load braya so data set
-braya <- read.table("DAndrea.2011.Lake Braya So.txt", skip = 84)
+braya <- read.table(url("http://bit.ly/brayaso"), skip = 84)
 ## clean up variable names
 names(braya) <- c("Depth", "DepthUpper", "DepthLower", "Year", "YearYoung",
                   "YearOld", "UK37")
