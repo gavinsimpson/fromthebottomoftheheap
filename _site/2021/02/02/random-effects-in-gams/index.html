@@ -233,16 +233,16 @@
             <p>There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using <code>gamm()</code> from the <strong>mgcv</strong> 📦 or <code>gamm4()</code> from the <strong>gamm4</strong> 📦, which use <code>lme()</code> (<strong>nlme</strong> 📦) or one of <code>lmer()</code> or <code>glmer()</code> (<strong>lme4</strong> 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with <code>gam()</code>. <strong>brms</strong> 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use <code>gam()</code> or <code>bam()</code> from <strong>mgcv</strong>. In this post I’ll show you how to do just that.</p>
 <h2 id="smooths-as-random-effects">Smooths as random effects</h2>
 <p>The sorts of smooths we fit in <strong>mgcv</strong> are (typically) penalized smooths; we choose to use some number of basis functions <span class="math inline">\(k\)</span>, which sets an upper limit on the complexity — wiggliness — of the smooth, and then we estimate parameters for the model by maximizing a penalized log-likelihood. The log-likelihood of the model is a measure of the fit (or lack there of), while the penalty helps us avoid fitting overly complex smooths.</p>
-<p>In the sorts of models that can be fitted in <strong>mgcv</strong>, the penalty is a function of the model coefficients, <span class="math inline">\(\boldsymbol{\beta}\)</span>, and a penalty matrix<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, which we write as <span class="math inline">\(\boldsymbol{S}\)</span>. The penalty then is <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span>. The penalty matrix measures the wiggliness of each basis function (on the diagonal), and how the wiggliness of one basis function affects the wiggliness of another (the off diagonals). Just as the <span class="math inline">\(\boldsymbol{\beta}\)</span> scale the individual basis functions, they also scale penalty values in the penalty matrix; if you were to choose large weights for the most wiggly basis functions, the overall penalty <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span> would increase by a lot more than if we used smaller weights for those really wiggly functions.</p>
+<p>In the sorts of models that can be fitted in <strong>mgcv</strong>, the penalty is a function of the model coefficients, <span class="math inline">\(\boldsymbol{\beta}\)</span>, and a penalty matrix<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, which we write as <span class="math inline">\(\boldsymbol{S}\)</span>. The penalty then is <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span>. The penalty matrix measures the wiggliness of each basis function (on the diagonal), and how the wiggliness of one basis function affects the wiggliness of another (the off diagonals). Just as the <span class="math inline">\(\boldsymbol{\beta}\)</span> scale the individual basis functions, they also scale penalty values in the penalty matrix; if you were to choose large weights for the most wiggly basis functions, the overall penalty <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span> would increase by a lot more than if we used smaller weights for those really wiggly functions.</p>
 <p>The penalty then acts to shrink the estimates of <span class="math inline">\(\boldsymbol{\beta}\)</span> away from the values they would take if we weren’t doing a penalized fit and were instead fixing the wiggliness of the smooth at the maximum value dictated by <span class="math inline">\(k\)</span>. Put another way, the penalty shrinks the estimates for <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero.</p>
 <p>Random effects also involve shrinkage. With a random effect we’re trying to model subject specific effects (subject-specific intercepts, or subject-specific “slopes” of covariates) without having to explicitly estimate a fixed effect parameter for each subject’s intercept or covariate effect. Instead we think of the subject-specific intercepts or “slopes” as coming from distribution, typically a Gaussian distribution, with mean 0 and some variance that is to be estimated. The larger this random effect variance, the greater the variation among subject-specific intercepts, “slopes” etc. The smaller the random effect variance, the closer to zero the estimated effects are pulled. As a result, random effects shrink to, varying degrees, the estimated subject-specific effects, and how much they do that is related to the random effect variance.</p>
 <p>If I abuse all standards of notation and represent the estimated random effects with <span class="math inline">\(\boldsymbol{\beta}\)</span>, you might get the feeling that perhaps there is some link between whats happening when we estimate random effects shrinking the <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero, and the penalty applied to smooths that shrinks the <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero. If you did, you’d be right, there is. And if so, there must be a penalty matrix that we can write down for a random effect — if we assume that each random intercept or “slope” is a basis function, the penalty matrix <span class="math inline">\(\mathbf{S}\)</span> is a simple diagonal matrix, one row and column per subject, with a constant value on the diagonal (and zeroes everywhere else):</p>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-penalty-example-1.png" alt="" /><figcaption>Penalty matrix corresponding to a random effect for a factor with 10 subjects (levels).</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-penalty-example-1.png" alt="Penalty matrix corresponding to a random effect for a factor with 10 subjects (levels)." /><figcaption>Penalty matrix corresponding to a random effect for a factor with 10 subjects (levels).</figcaption>
 </figure>
 <p>To complete the picture, when we fit a GAM, we’re maximising the penalised log-likelihood over both the model parameters <span class="math inline">\(\boldsymbol{\beta}\)</span> and a smoothness parameter, <span class="math inline">\(\boldsymbol{\lambda}\)</span>. It’s <span class="math inline">\(\boldsymbol{\lambda}\)</span> that actually controls how much price we pay for the wiggliness penalty as we add <span class="math inline">\(\boldsymbol{\lambda} \boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span> to the log-likelihood. It turns out that the variance of the random effect is equal to the scale parameter (the residual variance <span class="math inline">\(\sigma^{2}_{\varepsilon}\)</span> in a Gaussian model for example) divided by <span class="math inline">\(\boldsymbol{\lambda}\)</span>.</p>
 <p>This link between smooths and random effects is really cool; not only are we able to estimate smooths and GAMs using the machinery of mixed effects models, we can also estimate random effects using all the penalized spline machinery available for GAMs in <strong>mgcv</strong>.</p>
-<p>OK, so that was all really hand-wavy and skipped over a lot of math and theory<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, but I hope it gives you the intuition you need to understand how random effects are represented as smooths, through the identity penalty matrix.</p>
+<p>OK, so that was all really hand-wavy and skipped over a lot of math and theory<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>, but I hope it gives you the intuition you need to understand how random effects are represented as smooths, through the identity penalty matrix.</p>
 <h2 id="fitting-random-effects-with-mgcv">Fitting random effects with mgcv</h2>
 <p>So much for the theory, let’s see how this all works in practice.</p>
 <p>By way of an example, I’m going to use a data set from a study on the effects of testosterone on the growth of rats from <span class="citation" data-cites="Molenberghs2000-vk">Molenberghs and Verbeke (2000)</span>, which was analysed in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (2013)</span>, from were I also obtained the data. In the experiment, 50 rats were randomly assigned to one of three groups; a control group or a group receiving low or high doses of Decapeptyl, which inhibits testosterone production. The experiment started when the rats were 45 days old and starting with the 50th day, the size of the rat’s head was measured via an X-ray image. You can download the data <a href="https://www.uni-goettingen.de/de/551625.html">here</a>.</p>
@@ -317,7 +317,7 @@
 <pre><code class="language-text" data-lang="text">Warning: Removed 98 row(s) containing missing values (geom_path).</code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-rat-data-1.png" alt="" /><figcaption>Plot of the rat hormone therapy data</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-rat-data-1.png" alt="Plot of the rat hormone therapy data" /><figcaption>Plot of the rat hormone therapy data</figcaption>
 </figure>
 <p>The model fitted in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (2013)</span> is</p>
 <p><span class="math display">\[y_{ij} = \beta_0 + \gamma_{0i} + \beta_1 L_i \cdot t_{ij} + \beta_2 H_i \cdot t_{ij} + \beta_3 C_i \cdot t_{ij} + \gamma_{1i} \cdot t_{ij} + \varepsilon_{ij}\]</span></p>
@@ -501,7 +501,7 @@ R-sq.(adj) =  0.926   Deviance explained =   94%
     </span><span class="n">plt_labs</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png" alt="" /><figcaption>Fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png" alt="Fitted growth curves from the mixed effect model fitted using gam()" /><figcaption>Fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
 </figure>
 <p>We can also compare the fitted curves with the observed data</p>
 <figure class="highlight">
@@ -516,7 +516,7 @@ R-sq.(adj) =  0.926   Deviance explained =   94%
 <pre><code class="language-text" data-lang="text">Warning: Removed 98 rows containing missing values (geom_point).</code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-compare-1.png" alt="" /><figcaption>Observed values and fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-compare-1.png" alt="Observed values and fitted growth curves from the mixed effect model fitted using gam()" /><figcaption>Observed values and fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
 </figure>
 <p>A simpler model, which drops the rat-specific effects of <code>transf_time</code> is</p>
 <p><span class="math display">\[y_{ij} = \beta_0 + \gamma_{0i} + \beta_1 L_i \cdot t_{ij} + \beta_2 H_i \cdot t_{ij} + \beta_3 C_i \cdot t_{ij} + \varepsilon_{ij}\]</span></p>
@@ -566,7 +566,7 @@ m1_gam 48.98931 852.9371</code></pre>
 <pre><code class="language-r" data-lang="r"><span class="n">draw</span><span class="p">(</span><span class="n">m2_gam</span><span class="p">,</span><span class="w"> </span><span class="n">parametric</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span></code></pre>
 </figure>
 <figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-draw-gam-model-1.png" alt="" /><figcaption>QQ-plot of the rat-specific mean distance effects</figcaption>
+<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-draw-gam-model-1.png" alt="QQ-plot of the rat-specific mean distance effects" /><figcaption>QQ-plot of the rat-specific mean distance effects</figcaption>
 </figure>
 <p>We need <code>parametric = FALSE</code> here because at the time of writing there is a bug in the code that handles parametric fixed effects.</p>
 <h2 id="its-not-all-good-news">It’s not all good news</h2>
@@ -576,8 +576,8 @@ m1_gam 48.98931 852.9371</code></pre>
 <p>Also, running <code>summary()</code> on a model with random effects with many levels or lots of random effects terms is also going to be slow: the test for the random effect terms is quite computationally expensive. If you are mostly interested in the other model terms, setting the <code>re.test</code> argument to <code>FALSE</code> will skip the tests for random effects (and other terms with zero dimension null space), allowing the summary for the other terms to be computed quickly.</p>
 <h2 id="fin">Fin</h2>
 <p>In this post I showed how random effects can be represented as smooths and how to use them practically in in <code>gam()</code> models. I hope you found it useful. If you have any comments or questions, let me know them in the comments below.</p>
-<h3 class="unnumbered" id="references">References</h3>
-<div id="refs" class="references hanging-indent" role="doc-bibliography">
+<h3 id="references" class="unnumbered">References</h3>
+<div id="refs" class="references">
 <div id="ref-Fahrmeir2013-xu">
 <p>Fahrmeir, L., Kneib, T., Lang, S., and Marx, B. (2013). <em>Regression: Models, methods and applications</em>. Springer Berlin Heidelberg doi:<a href="https://doi.org/10.1007/978-3-642-34333-9">10.1007/978-3-642-34333-9</a>.</p>
 </div>
@@ -591,11 +591,11 @@ m1_gam 48.98931 852.9371</code></pre>
 <p>Wood, S. N. (2017). <em>Generalized Additive Models: An introduction with R, second edition</em>. CRC Press.</p>
 </div>
 </div>
-<section class="footnotes" role="doc-endnotes">
+<section class="footnotes">
 <hr />
 <ol>
-<li id="fn1" role="doc-endnote"><p>or matrices; smooths can have multiple penalty matrices that are stacked block-diagonally in <span class="math inline">\(\mathbf{S}\)</span>. For simplicity’s sake I’m just going to assume a single penalty matrix.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
-<li id="fn2" role="doc-endnote"><p>You can read about this in brief in §5.8 of <span class="citation" data-cites="Wood2017-qi">Wood (2017)</span> and follow up via references therein<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn1"><p>or matrices; smooths can have multiple penalty matrices that are stacked block-diagonally in <span class="math inline">\(\mathbf{S}\)</span>. For simplicity’s sake I’m just going to assume a single penalty matrix.<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn2"><p>You can read about this in brief in §5.8 of <span class="citation" data-cites="Wood2017-qi">Wood (2017)</span> and follow up via references therein<a href="#fnref2" class="footnote-back">↩</a></p></li>
 </ol>
 </section>
 
