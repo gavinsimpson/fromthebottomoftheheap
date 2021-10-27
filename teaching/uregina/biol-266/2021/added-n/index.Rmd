@@ -219,7 +219,7 @@ then we combine the sheets and add in an extra variable `observer` (who did the 
 plants <- bind_rows(plants) %>%
     mutate(observer = rep(sheet_names, times = obs_per_sheet),
            id = paste(observer, id, sep = '_'),
-           treatment = fct_relevel(treatment, 'control'))
+           treatment = fct_relevel(treatment, '0'))
 ```
 
 OK, that's a lot of data processing. Let's look at the data.
@@ -469,7 +469,7 @@ Here the formula means you want to show the `treatment` effects against `day`. T
 
 ## Pairwise comparisons
 
-If you want formal comparisons of the growth rates for all pairs of treatments, we can also do all pairwise comparisons using the `emmtrends()`function by using the `pairwise` option instead of `trt-vs-ctrl`. As before, we can assess the estimate growth rate (slope) at a given day, here for `day == 5`
+If you want formal comparisons of the growth rates for all pairs of treatments, we can also do all pairwise comparisons using the `emmtrends()`function by using the `pairwise` option instead of `trt-vs-ctrl`. Note however, that these results will be the same as the ones above as we have only two groups to compare. As before, we can assess the estimate growth rate (slope) at a given day, here for `day == 5`
 
 ```{r height-pairwise-day-5}
 emtrends(m3, pairwise ~ treatment,
@@ -487,7 +487,7 @@ emtrends(m3, pairwise ~ treatment,
          at = list(day = 20))
 ```
 
-We don't see any differences in the estimated growth rates, but are there differences in the average plant height between the two treatments? We can test that using the `emmeans()` function, again using the `pairwise` option instead of `trt-vs-ctrl`. We use `emmeans()` here because we want estimates of the expected mean height for each treatment at a set of days, and not the slope of a trend line.
+We don't see any differences in the estimated growth rates at the two days requested, but are there differences in the average plant height between the two treatments? We can test that using the `emmeans()` function, again using the `pairwise` option or `trt-vs-ctrl` because we have only two levels. We use `emmeans()` here because we want estimates of the expected mean height for each treatment at a set of days, and not the slope of a trend line.
 
 ```{r emmeans-pairwise}
 emmeans(m3, pairwise ~ treatment | day,
@@ -495,6 +495,14 @@ emmeans(m3, pairwise ~ treatment | day,
 ```
 
 There is a lot of output here, but it follows that which we have seen previously; The `$emmeans` component contains the point estimates of plant height for the three treatments for each of the requested days, while the `$contrasts` component shows the pairwise comparisons for the treatment.
+
+Note alos that these are on the log-height scale, we could add `transform = "response"` to get the estimates on the original mm height scale
+
+```{r emmeans-pairwise-response-scale}
+emmeans(m3, pairwise ~ treatment | day,
+        at = list(day = c(1, 5, 10, 15, 20)),
+        transform = "response")
+```
 
 **Are any of these pairwise comparisons statistically significant?**  **Does which pairs of comparisons are significantly different change over time?** **What does this suggest about the effects of the treatment and the cultivar on the growth of the plants?**
 
