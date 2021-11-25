@@ -13,10 +13,12 @@ altmetric: true
 Below is a list of my research publications covering papers in peer-reviewed journals and book chapters. If you are interested, see my [Google Scholar profile](http://scholar.google.com/citations?user=BFuK-JEAAAAJ&pagesize=100).
 
 Articles with a <i class="icon-file"></i> icon have a preprint or reprint available: click the icon to download this as a PDF.
+
+ 1. Schnell, L.J., **Simpson, G.L.**, Suchan, D.M., Quere, W., Weger, H.G., & Davis, M.C. (revision submitted) An at-home lab in plant biology designed to engage students in the process of science. *Ecology and Evolution*.
  
  1. Haig, H.A., Hayes, N.M., **Simpson, G.L.**, Yi, Y., Wissel, B., Finlay, K., Hodder, K.R., Leavitt, P.R. (submitted) Application of isotope mass-balance models (&delta;^2^H, &delta;^18^O) to assess spatial variability in lake hydrology on the Northern Great Plains, Canada. *Journal of Hydrology* <a href="{{ site.url }}/assets/reprints/haig-et-al-j-hydrol-x-spatial-survey-2020.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint" data-placement="top" data-animation="true"></i></a>
 
- 1. Heisler, L.M., **Simpson, G.L.**, Poulin, R.G., Wellicome, T.I., & Hall, B.D. (in revision) [Habitat specificity is not universal proxy for sensitivity to habitat conversion among rodents on the Canadian Prairies](https://doi.org/10.1101/678268). *Ecological Applications*. <a href="https://www.biorxiv.org/content/biorxiv/early/2019/06/21/678268.full-text.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint PDF" data-placement="top" data-animation="true"></i></a>
+ 1. Heisler, L.M., **Simpson, G.L.**, Poulin, R.G., Wellicome, T.I., & Hall, B.D. (in revision) [Habitat specificity is not universal proxy for sensitivity to habitat conversion among rodents on the Canadian Prairies](https://doi.org/10.1101/678268). <a href="https://www.biorxiv.org/content/biorxiv/early/2019/06/21/678268.full-text.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint PDF" data-placement="top" data-animation="true"></i></a>
 
  1. Bergbusch, N., Hayes, N.M., **Simpson, G.L.**, Qui&ntilde;ones-Rivera, Z., & Leavitt, P.R. (2021) [Decadal effects of climate, nitrogen removal from wastewater, and lotic characteristics on phytoplankton in small phosphorus-rich prairie streams](https://doi.org/10.1111/fwb.13833). *Freshwater Biology* <a href="https://onlinelibrary.wiley.com/doi/pdf/10.1111/fwb.13833"><i class="icon-file addToolTip" data-original-title="Download reprint" data-placement="top" data-animation="true"></i></a> {% include cc-by-icon.html %}
 
