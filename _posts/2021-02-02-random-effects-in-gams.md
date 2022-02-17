@@ -460,7 +460,7 @@ variance_comp(m2_gam)
 2 scale          1.44    1.20     1.09     1.33
 {% endhighlight %}
 
-We could use the `anova()` method for `"gam"` fits but for fully penalized terms like random effects, the test isn't very good and *p* values can be badly biased. Wood (2017, p. 315) says of the test "As expected, the test if clearly useless for comparing models differing in [their] random effect structure."  So, maybe give this one a miss.
+We could use the `anova()` method for `"gam"` fits but for fully penalized terms like random effects, the test isn't very good and *p* values can be badly biased. Wood (2017, p. 315) says of the test "As expected, the test is clearly useless for comparing models differing in [their] random effect structure."  So, maybe give this one a miss.
 
 Using `AIC()` to compare the models is also an option:
 
