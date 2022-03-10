@@ -11,7 +11,7 @@ active: about
 
 ## About me
 
-I'm Gavin Simpson. For a long time I was a research associate/fellow/'whatever they decided to call us' in the [Environmental Change Research Centre](http://www.ecrc.ucl.ac.uk "ECRC website") at [UCL](http://www.ucl.ac.uk "UCL Web site"). As of Feb 2013 I've moved to the [Department of Biology](http://www.uregina.ca/science/biology/) at the [University of Regina](http://www.uregina.ca/) where I have the grand title of *Quantitative Environmental Scientist*!
+I'm Gavin Simpson. I recently moved to the Department of Animal Science, Aarhus University, Denmark, where I am now an Assistant Professor of Applied Biometrics. Prior to this, I was at the Institute of Environmental Change and Society and the [Department of Biology](http://www.uregina.ca/science/biology/) at the [University of Regina](http://www.uregina.ca/) where I had the grand title of *Quantitative Environmental Scientist*! For a long time prior to that I was a research associate/fellow/'whatever they decided to call us' in the [Environmental Change Research Centre](http://www.ecrc.ucl.ac.uk "ECRC website") at [UCL](http://www.ucl.ac.uk "UCL Web site").
 
 My work revolves around lakes and how global environmental changes affect aquatic ecosystems across a range of time-scales. I'm particularly interested in biogeochemistry, especially carbon and nitrogen cycling in upland and remote lakes, and climate change impacts on lakes.
 
