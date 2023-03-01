@@ -81,7 +81,7 @@ anova(m1, m0)
 As is often the case in the real world, things aren't quite so simple; there are several issues we need to take care of if we are going to really be testing nested models and the smooth terms that we're interested in, specifically we need to
 
 1. ensure that the models really are nested models,
-2. fit using maximum likelihood (`method = "ML"`) not residual maximum likelihood (`method = "ML"`) because the two models have different *fixed* effects
+2. fit using maximum likelihood (`method = "ML"`) not residual maximum likelihood (`method = "REML"`) because the two models have different *fixed* effects
 3. fit the same AR(7) process in the residuals in both models.
 
 To compare additive models we really want to ensure that the fixed effects parts are properly nested and appropriate for an ANOVA-like decomposition of *main* effects and *interactions*. **mgcv** provides a very simple way to achieve this via a tensor product interaction smooth and the `ti()` function. `ti()` smooths are created in the same way as the `te()` smooth we encountered in the last post, but unlike `te()`, `ti()` smooths do *not* incorporate the main effects of the terms involved in the smooth. It is further assumed therefore that you have included the main effects smooths in the model formula.
