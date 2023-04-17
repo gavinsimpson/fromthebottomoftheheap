@@ -16,7 +16,7 @@ Articles with a <i class="icon-file"></i> icon have a preprint or reprint availa
 
  1. Turner, S.D., Rose, N.L., Boyle, J., **Simpson, G.L.**, Gardner, E. (in review) Historical (1850&ndash;1995) nitrogen changes in UK catchments recorded by lake sediment &delta;^15^N. *Environmental Chemistry*
 
- 1. Gushulak, C.A.C., Mezzini, S., Moir, K.E., **Simpson, G.L.**, Bunting, L., Wissel, B., Engstrom, D.R., Laird, K.LR., St. Amand, A., Cumming, B.F. & Leavitt, P.R. (in review)  Eutrophication and abrupt changes in large prairie lakes (Lakes Manitoba and Winnipeg) due to increased nutrient influx from proximal sources. *Limnology and Oceanography*
+ 1. Gushulak, C.A.C., Mezzini, S., Moir, K.E., **Simpson, G.L.**, Bunting, L., Wissel, B., Engstrom, D.R., Laird, K.LR., St. Amand, A., Cumming, B.F. & Leavitt, P.R. (submitted)  Eutrophication and abrupt changes in large prairie lakes (Lakes Manitoba and Winnipeg) due to increased nutrient influx from proximal sources. *Freshwater Biology*
 
  1. Haig, H.A., Hayes, N.M., **Simpson, G.L.**, Yi, Y., Wissel, B., Finlay, K., Hodder, K.R., Leavitt, P.R. (in revision) Application of isotope mass-balance models (&delta;^2^H, &delta;^18^O) to assess spatial variability in lake hydrology on the Northern Great Plains, Canada. *Journal of Hydrology* <a href="{{ site.url }}/assets/reprints/haig-et-al-j-hydrol-x-spatial-survey-2020.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint" data-placement="top" data-animation="true"></i></a>
 
