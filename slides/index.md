@@ -81,7 +81,7 @@ Estimating ecological resilience from poorly behaved time series
 
 Estimating the time-varying correlation between time series using copula distributional models
   ~ Virtual International Statistical Ecology Conference (vISEC) 2020
-  ~  <a href="https://gavinsimpson.github.io/visec2020-talk/visec2020-simpson-june-2020.html"><span class='label label-success'>Slide deck</span></a> <a href="https://gavinsimpson.github.io/visec2020-talk/visec2020-simpson-june-2020.html"><span class='label label-info'>Code</span></a> 
+  ~  <a href="https://gavinsimpson.github.io/visec2020-talk/visec2020-simpson-june-2020.html"><span class='label label-success'>Slide deck</span></a> <a href="https://gavinsimpson.github.io/visec2020-talk/visec2020-simpson-june-2020.html"><span class='label label-info'>Code</span></a> <a href="https://youtu.be/tym_CR5dddI"><span class='label label-danger'>Recording</span></a>
 
 ## 2019
 
