@@ -11,6 +11,8 @@ active: slides
 
 ## 2023
 
+<div id="slides">
+
 Applying statistical thinking to palaeo data through generalized additive models
   ~ Session Keynote presentation at XXI INQUA Congress 2023, Rome, 13&ndash;20<sup>th</sup> July <a href="https://doi.org/10.5281/zenodo.8186141"><span class="label label-warning">10.5281/zenodo.8186141</span></a> <a href="https://bit.ly/inqua-talk-2023"><span class="label label-success">Slide deck</span></a> <a href="https://github.com/gavinsimpson/inqua23"><span class="label label-info">Code</span></a>
 
@@ -24,3 +26,5 @@ Quantifying trends in ecological data using GAMs
 
 Detecting change in a dynamic world
   ~ School of Earth, Environment and Ecosystem Sciences Seminar Series, The Open University, 1<sup>th</sup> November <a href="https://gavinsimpson.github.io/open-university-seminar-nov-2022/index.html"><span class="label label-success">Slide deck</span></a> <a href="https://github.com/gavinsimpson/open-university-seminar-nov-2022"><span class="label label-info">Code</span></a>
+
+</div>
