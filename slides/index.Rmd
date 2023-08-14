@@ -18,27 +18,33 @@ library("dplyr")
 
 # load talks
 talks <- read_xlsx("../assets/datasets/talk-data.xlsx",
-  col_types = c("date", "text", "text", "logical", "logical", "text", "text", "text")) |>
+  col_types = c("date", "text", "text", "logical", "logical", "text", "text", "text", "text")) |>
   mutate(year = format(date, "%Y"))
 
-talk_md <- function(title, where, doi, slidedeck, code){
+talk_md <- function(title, where, doi, slidedeck, code, recording){
   doi_md <- ifelse(is.na(doi), "",
     glue("<a href=\"http://doi.org/{doi}\"><span class=\"label label-warning\">{doi}</span></a>"))
-  slides_md <- ifelse(is.na(slidedeck), "",
-    glue("<a href=\"{slidedeck}\"><span class='label label-success'>Slide deck</span></a>"))
-  code_md <- ifelse(is.na(code), "",
-    glue("<a href=\"{slidedeck}\"><span class='label label-info'>Code</span></a>"))
-  glue("
+
+slides_md <- ifelse(is.na(slidedeck), "",
+  glue("<a href=\"{slidedeck}\"><span class='label label-success'>Slide deck</span></a>"))
+
+code_md <- ifelse(is.na(code), "",
+  glue("<a href=\"{slidedeck}\"><span class='label label-info'>Code</span></a>"))
+  
+recording_md <- ifelse(is.na(recording), "",
+    glue("<a href=\"{recording}\"><span class='label label-danger'>Recording</span></a>"))
+
+glue("
 {title}
   ~ {where}
-  ~ {doi_md} {slides_md} {code_md}
+  ~ {doi_md} {slides_md} {code_md} {recording_md}
 
 ")
 }
 
 output <- talks |>
   rowwise() |>
-  mutate(md = talk_md(title, where, doi, slidedeck, code)) |>
+  mutate(md = talk_md(title, where, doi, slidedeck, code, recording)) |>
   arrange(desc(date))
 
 # low level wrapper to write out each talk
