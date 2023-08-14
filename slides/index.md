@@ -37,7 +37,7 @@ Quantifying trends in biodiversity with generalized additive models
 
 Detecting change in palaeoecological time series, old and new
   ~ PaleoEcoGen seminar series, online, 24th March
-  ~  <a href="https://gavinsimpson.github.io/paleoecogen-seminar-2022/"><span class='label label-success'>Slide deck</span></a> <a href="https://gavinsimpson.github.io/paleoecogen-seminar-2022/"><span class='label label-info'>Code</span></a> <a href="https://youtu.be/4qN5l6zI0nk"><span class='label label-danger'>Recording</span></a>
+  ~  <a href="https://gavinsimpson.github.io/paleoecogen-seminar-2022/"><span class='label label-success'>Slide deck</span></a> <a href="https://gavinsimpson.github.io/paleoecogen-seminar-2022/"><span class='label label-info'>Code</span></a> <a href="https://youtu.be/4qN5l6zI0nk"><span class='label label-inverse'>Recording</span></a>
 
 Estimating trends in messy time series using generalized additive models
   ~ Statistics & Biostatistic Seminar Series, Department of Statistics & Actuarial Science, University of Waterloo, 10th March
@@ -81,7 +81,7 @@ Estimating ecological resilience from poorly behaved time series
 
 Estimating the time-varying correlation between time series using copula distributional models
   ~ Virtual International Statistical Ecology Conference (vISEC) 2020
-  ~  <a href="https://gavinsimpson.github.io/visec2020-talk/visec2020-simpson-june-2020.html"><span class='label label-success'>Slide deck</span></a> <a href="https://gavinsimpson.github.io/visec2020-talk/visec2020-simpson-june-2020.html"><span class='label label-info'>Code</span></a> <a href="https://youtu.be/tym_CR5dddI"><span class='label label-danger'>Recording</span></a>
+  ~  <a href="https://gavinsimpson.github.io/visec2020-talk/visec2020-simpson-june-2020.html"><span class='label label-success'>Slide deck</span></a> <a href="https://gavinsimpson.github.io/visec2020-talk/visec2020-simpson-june-2020.html"><span class='label label-info'>Code</span></a> <a href="https://youtu.be/tym_CR5dddI"><span class='label label-inverse'>Recording</span></a>
 
 ## 2019
 
