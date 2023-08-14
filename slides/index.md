@@ -9,7 +9,7 @@ tags: []
 active: slides
 ---
 
-<div id="slides">
+<div class="slides">
 
 ## 2023
 
