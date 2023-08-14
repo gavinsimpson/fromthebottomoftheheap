@@ -1,0 +1,66 @@
+---
+title: Slides
+subtitle: Slide decks from presentations
+status: publish
+layout: page
+published: true
+type: post
+tags: []
+active: slides
+---
+
+<div id="slides">
+
+```{r write-slides-info, echo = FALSE, results = "asis", message = FALSE, error = FALSE, warning = FALSE}
+library("readxl")
+library("glue")
+library("dplyr")
+
+# load talks
+talks <- read_xlsx("../assets/datasets/talk-data.xlsx",
+  col_types = c("date", "text", "text", "logical", "logical", "text", "text", "text")) |>
+  mutate(year = format(date, "%Y"))
+
+talk_md <- function(title, where, doi, slidedeck, code){
+  doi_md <- ifelse(is.na(doi), "",
+    glue("<a href=\"http://doi.org/{doi}\"><span class=\"label label-warning\">{doi}</span></a>"))
+  slides_md <- ifelse(is.na(slidedeck), "",
+    glue("<a href=\"{slidedeck}\"><span class='label label-warning'>Slide deck</span></a>"))
+  code_md <- ifelse(is.na(code), "",
+    glue("<a href=\"{slidedeck}\"><span class='label label-warning'>Code</span></a>"))
+  glue("
+{title}
+  ~ {where}
+  ~ {doi_md} {slides_md} {code_md}
+
+")
+}
+
+output <- talks |>
+  rowwise() |>
+  mutate(md = talk_md(title, where, doi, slidedeck, code)) |>
+  arrange(desc(date))
+
+# low level wrapper to write out each talk
+wrapper <- function(i, df) {
+  cat(df$md[i], sep = "\n")
+}
+
+# higher level wrapper to print out year header & each talk per year
+split_wrapper <- function(df) {
+  year <- unique(df$year)
+  year_str <- glue("## {year}
+
+
+")
+  cat(year_str)
+  lapply(seq_len(nrow(df)), wrapper, df = df)
+}
+
+# split by year, descending
+spl <- split(output, output$year)
+# write out the md for talks
+out <- lapply(spl[sort(names(spl), decreasing = TRUE)], split_wrapper)
+```
+
+</div>
