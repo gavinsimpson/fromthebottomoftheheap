@@ -14,11 +14,13 @@ Below is a list of my research publications covering papers in peer-reviewed jou
 
 Articles with a <i class="icon-file"></i> icon have a preprint or reprint available: click the icon to download this as a PDF.
 
- 1. Polazzo, F., Limberger, R., Pennekamp, F., Ross, S., Simpson, G.L., & Petchey, O. (submitted) Response diversity in the context of multifarious environmental change. *Ecological Monographs*
+ 1. Jansen, J., **Simpson, G.L.**, Weyhenmeyer, G.A., Härkönen, L.H., Paterson, A.M., del Giorgio, P. & Prairie, Y. (submitted) Climate-driven deoxygenation of northern lakes.
+
+ 1. Polazzo, F., Limberger, R., Pennekamp, F., Ross, S., **Simpson, G.L.**, & Petchey, O. (submitted) Response diversity in the context of multifarious environmental change. *Ecological Monographs*
 
  1. Turner, S.D., Rose, N.L., Boyle, J., **Simpson, G.L.**, & Gardner, E. (in review) Historical (1850&ndash;1995) nitrogen changes in UK catchments recorded by lake sediment &delta;^15^N. *Environmental Chemistry*
 
- 1. Haig, H.A., Hayes, N.M., **Simpson, G.L.**, Yi, Y., Wissel, B., Finlay, K., Hodder, K.R., Leavitt, P.R. (in revision) Application of isotope mass-balance models (&delta;^2^H, &delta;^18^O) to assess spatial variability in lake hydrology on the Northern Great Plains, Canada. *Journal of Hydrology* <a href="{{ site.url }}/assets/reprints/haig-et-al-j-hydrol-x-spatial-survey-2020.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint" data-placement="top" data-animation="true"></i></a>
+ 1. Haig, H.A., Hayes, N.M., **Simpson, G.L.**, Yi, Y., Wissel, B., Finlay, K., Hodder, K.R., & Leavitt, P.R. (in revision) Application of isotope mass-balance models (&delta;^2^H, &delta;^18^O) to assess spatial variability in lake hydrology on the Northern Great Plains, Canada. *Journal of Hydrology* <a href="{{ site.url }}/assets/reprints/haig-et-al-j-hydrol-x-spatial-survey-2020.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint" data-placement="top" data-animation="true"></i></a>
 
  1. Heisler, L.M., **Simpson, G.L.**, Poulin, R.G., Wellicome, T.I., & Hall, B.D. (in revision) [Habitat specificity is not universal proxy for sensitivity to habitat conversion among rodents on the Canadian Prairies](https://doi.org/10.1101/678268). <a href="https://www.biorxiv.org/content/biorxiv/early/2019/06/21/678268.full-text.pdf"><i class="icon-file addToolTip" data-original-title="Download preprint PDF" data-placement="top" data-animation="true"></i></a>
 
