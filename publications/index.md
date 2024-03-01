@@ -14,9 +14,11 @@ Below is a list of my research publications covering papers in peer-reviewed jou
 
 Articles with a <i class="icon-file"></i> icon have a preprint or reprint available: click the icon to download this as a PDF.
 
+ 1. Pla-Rabés, S., Matias, M.G., Gonçalves, V., Vázquez Loureiro, D., Marques, H., Bao, R., Buchaca, T., Hernández, A., Giralt, S., Sáez, A., **Simpson, G.L.**, Nogué, S., Raposeiro, P.M. (submitted) Global warming triggers abrupt regime shifts in island lake ecosystems
+
  1. Jansen, J., **Simpson, G.L.**, Weyhenmeyer, G.A., Härkönen, L.H., Paterson, A.M., del Giorgio, P. & Prairie, Y. (submitted) Climate-driven deoxygenation of northern lakes.
 
- 1. Polazzo, F., Limberger, R., Pennekamp, F., Ross, S., **Simpson, G.L.**, & Petchey, O. (submitted) Response diversity in the context of multifarious environmental change. *Ecological Monographs*
+ 1. Polazzo, F., Limberger, R., Pennekamp, F., Ross, S., **Simpson, G.L.**, & Petchey, O. (submitted) Response diversity in the context of multifarious environmental change.
 
  1. Turner, S.D., Rose, N.L., Boyle, J., **Simpson, G.L.**, & Gardner, E. (in review) Historical (1850&ndash;1995) nitrogen changes in UK catchments recorded by lake sediment &delta;^15^N. *Environmental Chemistry*
 
