@@ -1,0 +1,589 @@
+---
+title: "Looking at Data"
+subtitle: "Data Visualisation mini-course"
+author: "Gavin L. Simpson"
+institute: "Institute of Environmental Change and Society"
+date: "31/03/2019"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: '../macros.js'
+      ratio: '16:9'
+    css: [default, 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css', '../my.css']
+---
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+library('ggplot2')
+library('dplyr')
+library('tidyr')
+library('colorspace')
+```
+
+# Data Visualisation
+
+Some data visualisations are better than others
+
+---
+class: inverse
+background-image: url('./resources/emily-morter-188019-unsplash.jpg')
+background-size: cover
+
+# Why?
+
+---
+
+# Data Visualisation
+
+Some data visualisations are better than others
+
+* Taste
+    * The eye is in the beholder
+* Choice of data
+* Human visual perception
+---
+
+# What makes bad figures?
+
+**Aesthetic**
+
+Tacky, tasteless, ugly, hodgepodge, inconsistent design
+
+**Substantive**
+
+Graph has problems because of the data being presented
+
+**Perceptual**
+
+Inspite of good taste and good data, a graph may be *confusing* or *misleading* because of how people perceive and process what they are looking at
+
+---
+
+# Always plot your data
+
+.row[
+
+.col-6[
+
+* Anscombe's quartet
+* Scatterplot
+    * 2 quantities mapped to x and y axis
+* $x$ and $y$ in each set have the same
+    * mean
+    * variance
+* Regression lines have same $\hat{\beta}$
+* $x$ and $y$ have the same correlation
+]
+.col-6[
+
+```{r anscombe, echo = FALSE}
+anscombe_tidy <- anscombe %>%
+    mutate(observation = seq_len(n())) %>%
+    gather(key, value, -observation) %>%
+    separate(key, c("variable", "set"), 1, convert = TRUE) %>%
+    mutate(set = c("I", "II", "III", "IV")[set]) %>%
+    spread(variable, value)
+
+ggplot(anscombe_tidy, aes(x, y)) +
+    geom_point() +
+    facet_wrap(~ set) +
+    geom_smooth(method = "lm", se = FALSE)
+```
+
+]
+
+]
+
+---
+
+# Visualising data
+
+.center[![:scale 55%](./resources/jan-vanhove-correlations.png)]
+
+---
+
+# Visualising data
+
+.center[![:scale 75%](./resources/monster.jpg)]
+
+---
+
+# Visualising data
+
+.center[![](./resources/Minard.png)]
+
+---
+class: inverse
+background-image: url('./resources/franki-chamaki-694946-unsplash.jpg')
+background-size: cover
+
+# 
+
+---
+
+# Bad data
+
+.center[![:scale 80%](./resources/new-york-times-how-stable-are-democracies.png)]
+
+---
+
+# Bad data
+
+.center[![](./resources/erik-voeten-washington-post.png)]
+
+---
+
+# Bad Data
+
+.center[![](./resources/bad-excel-chart.png)]
+
+---
+
+# Perception
+
+.row[
+
+.col-6[
+
+![](./resources/hermann-grid.png)
+
+]
+
+.col-6[
+
+![](./resources/mach-bands.png)
+
+]
+
+]
+
+---
+
+# Perception
+
+.row[
+
+.col-8[
+
+.center[![](./resources/fig5-14.png)]
+
+]
+
+.col-4[
+
+.center[![](./resources/the-dress.png)]
+
+]
+
+]
+
+---
+class: inverse
+background-image: url('./resources/isaac-smith-1182056-unsplash.jpg')
+background-size: cover
+
+# Mapping
+
+---
+
+# Mapping
+
+Drawing a graph involves mapping data to visual attributes
+
+Some mappings more effective than others
+
+.center[![](./resources/fig5-1.png)]
+
+---
+
+# Accuracy of Mappings
+
+.center[![](./resources/fig5-8.png)]
+
+---
+background-image: url('./resources/sharon-pittaway-98257-unsplash.jpg')
+background-size: cover
+
+# Colour
+
+---
+class: inverse
+background-image: url('./resources/michael-maasen-587273-unsplash.jpg')
+background-size: cover
+
+# Colour models
+
+---
+
+# Colour models
+
+.row[
+
+.col-6[
+
+* Red Green Blue &mdash; RGB
+    
+	* Hexadecimal (base 16)
+	
+	* '0'&ndash;'9' with 'A'&ndash;'F' for 10-15
+	
+	* Encode 256 values of each colour
+	
+	* In R `"#AA6633"`
+	
+	* TVs, Digital cameras, etc
+
+* Cyan Yellow Magenta Black &mdash; CYMK
+    
+	* Covers a much wider range of colours than RGB
+    
+	* Magazines, printing
+
+]
+
+.col-6[
+
+* Hue Chroma Luminance &mdash; HCL
+    
+	* Hue &mdash; colour
+	
+	* Chroma &mdash; how much of the colour
+	
+	* Luminance &mdash; brightness
+	
+	* Designed to reflect human colour perception
+
+]
+
+]
+
+---
+
+# Colour palettes
+
+A colour palette is a the colour scheme or selection used to represent data or design on a graph
+
+Want more than a numerical mapping &mdash; want perceptually uniform mappings
+
+.row[
+
+.col-4[
+
+* discrete
+
+* sequential
+
+* diverging
+
+]
+
+.col-8[
+
+.center[
+```{r discrete-pal, fig.height = 1, fig.width = 7, echo = FALSE, dpi = 150}
+op <- par(mar = c(0,0,0,0) + 0.1)
+swatchplot(qualitative_hcl(7, palette = "set2"))
+par(op)
+```
+```{r sequential-pal, fig.height = 1, fig.width = 7, echo = FALSE, dpi = 150}
+op <- par(mar = c(0,0,0,0) + 0.1)
+swatchplot(sequential_hcl(7, palette = "Inferno"))
+par(op)
+```
+```{r diverging-pal, fig.height = 1, fig.width = 7, echo = FALSE, dpi = 150}
+op <- par(mar = c(0,0,0,0) + 0.1)
+swatchplot(diverging_hcl(7, palette = "Blue-Red"))
+par(op)
+```
+]
+
+]
+]
+
+---
+
+# Discrete palettes
+
+.row[
+
+.col-6[
+
+* Categorical data
+
+* Easily distinguishable
+
+* Favour no one colour
+
+* Vary H, constant C & L
+
+]
+
+.col-6[
+
+.center[
+```{r hcl-discrete-spectrum, fig.height = 8, fig.width = 8, echo = FALSE, dpi = 150}
+p <- qualitative_hcl(5, palette = "set2")
+specplot(p)
+```
+]
+]
+]
+
+---
+
+# Sequential palettes
+
+.row[
+
+.col-6[
+
+* Continuous data
+
+* Brightness & intensity of colour vary
+
+* Vary C & L, constant H
+
+]
+
+.col-6[
+
+.center[
+```{r hcl-sequential-spectrum, fig.height = 8, fig.width = 8, echo = FALSE, dpi = 150}
+specplot(sequential_hcl(50, palette = "Blues-2"))
+```
+]
+
+]
+
+]
+
+---
+
+# Sequential multi-hue palettes
+
+.row[
+
+.col-6[
+
+* Continuous data
+
+* Can vary everything if careful
+
+* Vary H, C & L
+
+]
+
+.col-6[
+
+.center[
+```{r hcl-sequential-spectrum-2, fig.height = 8, fig.width = 8, echo = FALSE, dpi = 150}
+specplot(sequential_hcl(100, palette = "Inferno"))
+```
+]
+
+]
+
+]
+
+---
+
+# Diverging palettes
+
+.row[
+
+.col-6[
+
+* Continuous data where mid-point means something (0)
+
+* Single hue in each arm
+
+* C & L are balanced in each arm
+
+* C goes to 0 at mid-point
+
+
+]
+
+.col-6[
+
+.center[
+```{r hcl-diverging-spectrum, fig.height = 8, fig.width = 8, echo = FALSE, dpi = 150}
+specplot(diverging_hcl(100, palette = "Blue-Red"))
+```
+]
+
+]
+
+]
+
+---
+
+# Rainbow
+
+.center[
+```{r rainbow-swatch, fig.height = 3, fig.width = 8, echo = FALSE, dpi = 150}
+swatchplot(rainbow(500))
+```
+]
+
+---
+
+# #endrainbow
+
+.row[
+
+.col-6[
+
+* Luminance is not linear or even monotonic
+
+* Colour vision deficiency
+
+]
+
+.col-6[
+
+.center[
+```{r rainbow-spectrum, fig.height = 8, fig.width = 8, echo = FALSE, dpi = 150}
+specplot(rainbow(100), rgb = TRUE)
+```
+]
+
+]
+
+]
+
+---
+
+# #endrainbow
+
+.center[
+```{r rainbow-desat-swatch, fig.height = 3, fig.width = 8, echo = FALSE, dpi = 150}
+swatchplot(desaturate(rainbow(500)))
+```
+]
+
+---
+
+# #endrainbow
+
+.center[
+```{r rainbow-deutan-swatch, fig.height = 3, fig.width = 8, echo = FALSE, dpi = 150}
+swatchplot(tritan(rainbow(500)))
+```
+]
+
+---
+
+# Colour vision deficiency
+
+Decreased ability to see colour or differences in colour
+
+.row[
+
+.col-6[
+
+* Red-Green CVD is sex-linked
+* Gene carried on X chromosome
+* Blue-Yellow CVD is not; chromosome 7
+* -anomaly vs -anopia
+
+.center[![](./resources/Color_blindness.png)]
+
+]
+
+.col-6[
+
+.center[![](./resources/Ishihara_9.png)]
+
+]
+
+]
+
+---
+
+# Pop
+
+Can you see the green squares?
+
+.center[![:scale 50%](./resources/c02-fig7.jpg)]
+
+---
+
+# Preattentive pop-out
+
+Some shapes, colours, angles more easy to spot
+
+Can happen before (or almost before) before consciously looking at something
+
+.row[
+
+.col-6[
+
+.center[![](./resources/c02-fig8.jpg)]
+
+]
+
+.col-6[
+
+.center[![](./resources/c02-fig9.jpg)]
+
+]
+
+]
+
+.row[
+
+.col-6[
+
+.center[![](./resources/c02-fig10.jpg)]
+
+]
+
+.col-6[
+
+.center[![](./resources/c02-fig11.jpg)]
+
+]
+
+]
+
+---
+# Bad graphs
+
+.center[![:scale 60%](./resources/left-click-bad.png)]
+
+---
+
+# Bad graphs
+
+.center[![:scale 60%](./resources/left-click-better.png)]
+
+---
+
+# Bad graphs
+
+.center[![:scale 50%](./resources/brazils-golden-oldie-blowout-bad.png)]
+
+---
+
+# Bad graphs
+
+.center[![:scale 50%](./resources/brazils-golden-oldie-blowout-better.png)]
+
+---
+
+# Bad graphs
+
+.center[![:scale 50%](./resources/fit-as-a-butchers-dog-bad.png)]
+
+---
+
+# Bad graphs
+
+.center[![:scale 50%](./resources/fit-as-a-butchers-dog-better.png)]
+
+

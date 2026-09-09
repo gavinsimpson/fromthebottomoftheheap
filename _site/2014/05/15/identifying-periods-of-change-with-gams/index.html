@@ -1,535 +1,962 @@
-  <!DOCTYPE html>
-<html lang="en">
-  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gavin Simpson">
+<meta name="dcterms.date" content="2014-05-15">
+<meta name="description" content="In previous posts (here and here) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous post I extended the modelling approach to deal with seasonal data where we model both the within year (seasonal) and be…">
+
+<title>Identifying periods of change in time series with GAMs – From the bottom of the heap</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../">
+<link href="../../../../assets/ico/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../site_libs/bootstrap/bootstrap-8fb4e4cb2a8747aefb233048377198cf.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-6FQL01W176');
 </script>
+<script data-ad-client="ca-pub-2908943772231164" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 
 
-    <meta charset="utf-8">
-    <title>Identifying periods of change in time series with GAMs</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Gavin Simpson">
-    
-    
-<!-- HTML5 metadata -->
+<meta property="og:title" content="Identifying periods of change in time series with GAMs – From the bottom of the heap">
+<meta property="og:description" content="In previous posts (here and here) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous post I extended the modelling approach to deal with seasonal data where we model both the within year (seasonal) and be…">
+<meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/identifying-periods-of-change-with-gams-finite-differences-plot.png">
+<meta property="og:site_name" content="From the bottom of the heap">
+<meta property="og:image:height" content="318">
+<meta property="og:image:width" content="595">
+<meta name="twitter:title" content="Identifying periods of change in time series with GAMs – From the bottom of the heap">
+<meta name="twitter:description" content="In previous posts (here and here) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous post I extended the modelling approach to deal with seasonal data where we model both the within year (seasonal) and be…">
+<meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/identifying-periods-of-change-with-gams-finite-differences-plot.png">
+<meta name="twitter:creator" content="@ucfagls">
+<meta name="twitter:site" content="@ucfagls">
+<meta name="twitter:image-height" content="318">
+<meta name="twitter:image-width" content="595">
+<meta name="twitter:card" content="summary_large_image">
+</head>
 
-<meta name="keywords" content="GAM, Time series, modelling, Central England Temperature" />
+<body class="nav-fixed quarto-light">
 
-
-<meta name="description" content="In previous posts (here and here) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous post I extended the modelling approach to deal with seasonal data where we model both the within year (seasonal) and between year (trend) variation with separate smooth functions. One of the complications of time series modelling with smoothers is how to summarize the fitted model; you have a non-linear trend which may be statistically significant but it may not be increasing or decreasing everywhere. How do we identify where in the series that the data are changing? That’s the topic of this post, in which I’ll use the method of finite differences to estimate the rate of change (slope) in the fitted smoother and, through some mgcv magic, use the information recorded in the fitted model to identify periods of statistically significant change in the time series.
-" />
-
-<!-- RDFa Metadata (in DublinCore) -->
-<meta property="dc:title" content="Identifying periods of change in time series with GAMs" />
-<meta property="dc:creator" content="Gavin Simpson" />
-
-<meta property="dc:date" content="2014-05-15T00:00:00+02:00" />
-
-<meta property="dc:type" content="" /> <!-- article? entry?-->
-<meta property="dc:format" content="text/html" />
-<meta property="dc:language" content="en" />
-<meta property="dc:source" content="From the Bottom of the Heap" />
-<!-- RDFa Metadata (in OpenGraph) -->
-<meta property="og:title" content="Identifying periods of change in time series with GAMs" />
-<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
-<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
-<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
-
-<meta property="http://ogp.me/ns/article#published_time" content="2014-05-15T00:00:00+02:00" />
-
-<meta property="og:site_name" content="From the Bottom of the Heap" />
-<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2014/05/15/identifying-periods-of-change-with-gams/" />
-<meta property="og:type" content="article" />
-
-<meta name="og:description" content="In previous posts (here and here) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous post I extended the modelling approach to deal with seasonal data where we model both the within year (seasonal) and between year..." />
-
-<!-- Twitter Card Meta data -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site.id" content="@ucfagls" />
-<meta name="twitter:creator:id" content="@ucfagls" />
-<meta name="twitter:title" content="Identifying periods of change in time series with GAMs" />
-
-
-<meta name="twitter:description" content="In previous posts (here and here) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous post I extended the modelling approa..." />
-
-<!-- Google Scholar Metadata -->
-<meta name="resource_type" content="From the Bottom of the Heap"/>
-<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
-
-<meta name="citation_publication_date" content="15 May 2014"/>
-<meta name="citation_date" content="15 May 2014"/>
-
-<meta name="citation_author" content="Gavin Simpson"/>
-<meta name="citation_title" content="Identifying periods of change in time series with GAMs"/>
-
-    
-    <!-- Link to the Atom feeds -->
-    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
-    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
-    
-    <!-- Le styles -->
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
-      }
-      .sidebar-nav {
-        padding: 9px 0;
-      }
-    </style>
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
-
-    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
-    <!-- Le fav and touch icons -->
-    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
-    
-    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  </head>
-
-  <body>
-
-      <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
-              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> Resources <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/teaching/">Teaching</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/workshops/">Workshops</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/slides/">Slides</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../../index.html">
+    <span class="navbar-title">From the bottom of the heap</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="//index.html"> <i class="bi bi-house-door" role="img">
+</i> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//about/index.html"> <i class="bi bi-info-circle" role="img">
+</i> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//blog/index.html"> <i class="bi bi-chat-left-text" role="img">
+</i> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//publications/index.html"> <i class="bi bi-file-earmark-text" role="img">
+</i> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//research/index.html"> <i class="bi bi-tools" role="img">
+</i> 
+<span class="menu-text">Research</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-the-lab" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-funnel" role="img">
+</i> 
+ <span class="menu-text">The Lab</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-the-lab">    
+        <li>
+    <a class="dropdown-item" href="//lab/index.html">
+ <span class="dropdown-text">About</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/research/index.html">
+ <span class="dropdown-text">Research</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/members/index.html">
+ <span class="dropdown-text">Members</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/publications/index.html">
+ <span class="dropdown-text">Publications</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/join/index.html">
+ <span class="dropdown-text">Join the lab</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection" role="img">
+</i> 
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="//teaching/index.html">
+ <span class="dropdown-text">Teaching</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../workshops/">
+ <span class="dropdown-text">Workshops</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//slides/index.html">
+ <span class="dropdown-text">Slides</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-code" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-code-slash" role="img">
+</i> 
+ <span class="menu-text">Code</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-code">    
+        <li>
+    <a class="dropdown-item" href="//code/dper-scripts/index.html">
+ <span class="dropdown-text">DPER Scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//code/r-packages/index.html">
+ <span class="dropdown-text">R Packages</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../../feed.xml"> <i class="bi bi-rss" role="img" aria-label="RSS feed">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Identifying periods of change in time series with GAMs</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">R</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    In previous posts (here and here) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous post I extended the modelling approach to deal with seasonal data where we model both the within year (seasonal) and be…
+  </div>
+</div>
 
 
-    <div class="container">
-          
+<div class="quarto-title-meta">
 
-      <article>
-      <div class="row">
-        <!-- <div class="span8 offset2"> -->
-        <div class="span10">
-          <div class="clearfix">
-            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2014/06/16/simultaneous-confidence-intervals-for-derivatives/">Confidence intervals for derivatives of splines in GAMs</a></span>
-            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2014/05/09/modelling-seasonal-data-with-gam/">Modelling seasonal data with GAMs</a> <i class="icon-arrow-right"></i></span>
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gavin Simpson </p>
           </div>
-          <div class="page-header">
-            <header>
-              <h1>Identifying periods of change in time series with GAMs </h1>
-            </header>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="span12">
-          <div class="row">
-            <div class="span10">
-              
-            <p>In previous posts (<a href="/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/">here</a> and <a href="/2011/07/21/smoothing-temporally-correlated-data/">here</a>) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous <a href="/2014/05/09/modelling-seasonal-data-with-gam/">post</a> I extended the modelling approach to deal with seasonal data where we model both the within year (seasonal) and between year (trend) variation with separate smooth functions. One of the complications of time series modelling with smoothers is how to summarize the fitted model; you have a non-linear trend which may be statistically significant but it may not be increasing or decreasing everywhere. How do we identify where in the series that the data are changing? That’s the topic of this post, in which I’ll use the method of finite differences to estimate the rate of change (slope) in the fitted smoother and, through some <strong>mgcv</strong> magic, use the information recorded in the fitted model to identify periods of statistically significant change in the time series.</p>
-<h2 id="catching-up">Catching up</h2>
-<p>First off, if you haven’t already done so, go read my <a href="/2014/05/09/modelling-seasonal-data-with-gam/">post on modelling seasonal data with GAMs</a> as it provides the background info on the data and the model that I’ll be looking at here but also explains how we fitted the model etc. Don’t worry; you don’t need to run all that code to follow this post as I have put the relevant data processing parts in a Github <a href="https://gist.github.com/gavinsimpson/b52f6d375f57d539818b">gist</a> that we’ll download and <code>source()</code> shortly.</p>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 15, 2014</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+
+<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
+<section id="posted-in" class="level4">
+<h4 data-anchor-id="posted-in">Posted in</h4>
+<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
+</section>
+<section id="tagged" class="level4">
+<h4 data-anchor-id="tagged">Tagged</h4>
+<p><a href="../../../../tag/gam/" class="badge text-bg-dark">GAM</a> <a href="../../../../tag/time-series/" class="badge text-bg-dark">Time series</a> <a href="../../../../tag/modelling/" class="badge text-bg-dark">modelling</a> <a href="../../../../tag/central-england-temperature/" class="badge text-bg-dark">Central England Temperature</a></p>
+</section>
+</div></div><p>In previous posts (<a href="../../../../2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/">here</a> and <a href="../../../../2011/07/21/smoothing-temporally-correlated-data/">here</a>) I looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. In my previous <a href="../../../../2014/05/09/modelling-seasonal-data-with-gam/">post</a> I extended the modelling approach to deal with seasonal data where we model both the within year (seasonal) and between year (trend) variation with separate smooth functions. One of the complications of time series modelling with smoothers is how to summarize the fitted model; you have a non-linear trend which may be statistically significant but it may not be increasing or decreasing everywhere. How do we identify where in the series that the data are changing? That’s the topic of this post, in which I’ll use the method of finite differences to estimate the rate of change (slope) in the fitted smoother and, through some <strong>mgcv</strong> magic, use the information recorded in the fitted model to identify periods of statistically significant change in the time series.</p>
+<section id="catching-up" class="level2">
+<h2 data-anchor-id="catching-up">Catching up</h2>
+<p>First off, if you haven’t already done so, go read my <a href="../../../../2014/05/09/modelling-seasonal-data-with-gam/">post on modelling seasonal data with GAMs</a> as it provides the background info on the data and the model that I’ll be looking at here but also explains how we fitted the model etc. Don’t worry; you don’t need to run all that code to follow this post as I have put the relevant data processing parts in a Github <a href="https://gist.github.com/gavinsimpson/b52f6d375f57d539818b">gist</a> that we’ll download and <code>source()</code> shortly.</p>
 <p>OK, now that you’ve read the previous post we can begin…</p>
 <p>To bring you up to speed, I put the bits of code from the previous post that we need here in a <a href="https://gist.github.com/gavinsimpson/b52f6d375f57d539818b">gist</a> on Github. To run this code you can simply do the following</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## Load the CET data and process as per other blog post</span><span class="w">
-</span><span class="n">tmpf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">()</span><span class="w">
-</span><span class="n">download.file</span><span class="p">(</span><span class="s2">"https://gist.github.com/gavinsimpson/b52f6d375f57d539818b/raw/2978362d97ee5cc9e7696d2f36f94762554eefdf/load-process-cet-monthly.R"</span><span class="p">,</span><span class="w">
-              </span><span class="n">tmpf</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"wget"</span><span class="p">)</span><span class="w">
-</span><span class="n">source</span><span class="p">(</span><span class="n">tmpf</span><span class="p">)</span><span class="w">
-</span><span class="n">ls</span><span class="p">()</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">[1] "annCET" "cet"    "CET"    "rn"     "tmpf"   "Years" </code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Load the CET data and process as per other blog post</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>tmpf <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://gist.github.com/gavinsimpson/b52f6d375f57d539818b/raw/2978362d97ee5cc9e7696d2f36f94762554eefdf/load-process-cet-monthly.R"</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>              tmpf, <span class="at">method =</span> <span class="st">"wget"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(tmpf)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+[1] "annCET" "cet"    "CET"    "rn"     "tmpf"   "Years" 
+</code></pre>
 <p>The gist contains code to download and process the monthly Central England Temperature (CET) time series so that it is ready for analysis via <code>gamm()</code>. Next we fit an additive model with seasonal and trend smooth and an AR(2) process for the residuals; the code predicts from the model at 200 locations over the entire time series and generates a pointwise, approximate 95% confidence interval on the trend spline.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">ctrl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">niterEM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">msVerbose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">optimMethod</span><span class="o">=</span><span class="s2">"L-BFGS-B"</span><span class="p">)</span><span class="w">
-</span><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w">
-           </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="o">|</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
-           </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)</span><span class="w">
-
-</span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">nrow</span><span class="p">(</span><span class="n">cet</span><span class="p">),</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">200</span><span class="p">)</span><span class="w">
-</span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w">
-             </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Time</span><span class="p">[</span><span class="n">want</span><span class="p">],</span><span class="w"> </span><span class="n">Date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Date</span><span class="p">[</span><span class="n">want</span><span class="p">],</span><span class="w">
-                        </span><span class="n">nMonth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nMonth</span><span class="p">[</span><span class="n">want</span><span class="p">]))</span><span class="w">
-</span><span class="n">p2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
-</span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">p2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p2</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">se2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p2</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">])</span><span class="w">
-
-</span><span class="n">df.res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">df.residual</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">)</span><span class="w">
-</span><span class="n">crit.t</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">qt</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="n">df.res</span><span class="p">,</span><span class="w"> </span><span class="n">lower.tail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w">
-</span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w">
-                  </span><span class="n">upper</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p2</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">crit.t</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se2</span><span class="p">),</span><span class="w">
-                  </span><span class="n">lower</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p2</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">crit.t</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se2</span><span class="p">))</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>ctrl <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">niterEM =</span> <span class="dv">0</span>, <span class="at">msVerbose =</span> <span class="cn">TRUE</span>, <span class="at">optimMethod=</span><span class="st">"L-BFGS-B"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">gamm</span>(Temperature <span class="sc">~</span> <span class="fu">s</span>(nMonth, <span class="at">bs =</span> <span class="st">"cc"</span>, <span class="at">k =</span> <span class="dv">12</span>) <span class="sc">+</span> <span class="fu">s</span>(Time, <span class="at">k =</span> <span class="dv">20</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>           <span class="at">data =</span> cet, <span class="at">correlation =</span> <span class="fu">corARMA</span>(<span class="at">form =</span> <span class="sc">~</span> <span class="dv">1</span><span class="sc">|</span>Year, <span class="at">p =</span> <span class="dv">2</span>),</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>           <span class="at">control =</span> ctrl)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>want <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">1</span>, <span class="fu">nrow</span>(cet), <span class="at">length.out =</span> <span class="dv">200</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>pdat <span class="ot">&lt;-</span> <span class="fu">with</span>(cet,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>             <span class="fu">data.frame</span>(<span class="at">Time =</span> Time[want], <span class="at">Date =</span> Date[want],</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>                        <span class="at">nMonth =</span> nMonth[want]))</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">predict</span>(m2<span class="sc">$</span>gam, <span class="at">newdata =</span> pdat, <span class="at">type =</span> <span class="st">"terms"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>pdat <span class="ot">&lt;-</span> <span class="fu">transform</span>(pdat, <span class="at">p2 =</span> p2<span class="sc">$</span>fit[,<span class="dv">2</span>], <span class="at">se2 =</span> p2<span class="sc">$</span>se.fit[,<span class="dv">2</span>])</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>df.res <span class="ot">&lt;-</span> <span class="fu">df.residual</span>(m2<span class="sc">$</span>gam)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>crit.t <span class="ot">&lt;-</span> <span class="fu">qt</span>(<span class="fl">0.025</span>, df.res, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>pdat <span class="ot">&lt;-</span> <span class="fu">transform</span>(pdat,</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>                  <span class="at">upper =</span> p2 <span class="sc">+</span> (crit.t <span class="sc">*</span> se2),</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>                  <span class="at">lower =</span> p2 <span class="sc">-</span> (crit.t <span class="sc">*</span> se2))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Note that I didn’t compute the confidence interval last time out, but I’ll use it here to augment the plots of the trend produced later.</p>
-<h2 id="first-derivatives-and-finite-differences">First derivatives and finite differences</h2>
+</section>
+<section id="first-derivatives-and-finite-differences" class="level2">
+<h2 data-anchor-id="first-derivatives-and-finite-differences">First derivatives and finite differences</h2>
 <p>One measure of change in a system is that the rate of change of the system is non-zero. If we had a simple linear regression model for a trend, then the estimated rate of change would be \( \hat{\beta} \), the slope of the regression line. Then because we’re being all statistical we can ask questions such as whether the non-zero estimate we might obtain for the slope is distinguishable from zero given the uncertainty in the estimate. This slope or the estimate \( \hat{\beta} \) is the first derivative of the regression line. Technically, this is the instantaneous rate of change of the function that defines the line, an idea can be extended to any function, even one as potentially complex as a fitted spline function.</p>
 <p>The problem we have though is that in general we don’t have an equation for the spline from which we can derive the derivatives. So how do we estimate the derivative of a spline function in our additive model? One solution is to use the method of finite differences, the essentials of which are displayed in the plots below</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/identifying-periods-of-change-with-gams-finite-differences-plot.png" alt="Illustration of the finite differences approach to estimating derivatives of function" /><figcaption>Illustration of the finite differences approach to estimating derivatives of function</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/identifying-periods-of-change-with-gams-finite-differences-plot.png" class="img-fluid figure-img"></p>
+<figcaption>Illustration of the finite differences approach to estimating derivatives of function</figcaption>
 </figure>
+</div>
 <p>If you have heard of the <a href="http://en.wikipedia.org/wiki/Trapezoidal_rule"><em>trapezoidal rule</em></a> for approximating the integral of a function, finite differences will be very familiar; instead of being interested in the area under the function we’re interested in estimating the slope of the function at any point. Consider the situation in the left hand plot above. The thick curve is the fitted spline for the trend component of the additive model <code>m2</code>. Superimposed on this curve are five points, between pairs of which we can approximate the first derivative of the function. We know the distance along the <em>x</em> axis (time) between each pair of points and we can evaluate the value of the function on the <em>y</em> axis by predicting from <code>m2</code> for the times at the indicated time points. It is then trivial to compute the slope \( m \) of the lines connecting the points as the change in the <em>y</em> direction divided by the change in the <em>x</em> direction, or</p>
 <p>\[ m = \frac{\Delta y}{\Delta x} \]</p>
 <p>As you can see from the left hand plot, in some parts of the function the derivative is reasonably well approximated by this crude method using just five points, but in most places this approach either under or over estimates the derivative of the function. The solution to this problem is to evaluate the slope at more points that are located closer together on the function. The right hand plot above shows the finite difference method for 20 points, which for all intents and purposes produces an acceptable estimate of the first derivative of the function. We can increase the accuracy of our derivatives estimates by using points that are closer and closer together. At some point the points would be infinitely close and we’d know the first derivative exactly, except with a computer we can’t get to that point using the finite difference method.</p>
 <p>To sum up, we can approximate the first derivative of a fitted spline by choosing a set of points \(p\) on the function and another set of points \(p \prime\) positioned a very small distance (say +10<sup>-5</sup>) from the first set. Using the <code>predict()</code> method with <code>type = "lpmatrix"</code> plus some other <strong>mgcv</strong> magic we can evaluate the fitted trend spline at the locations \(p\) and \(p \prime\) and compute the change in the function between the pairs of points and <em>voilà</em> we have our estimate of the first derivative of the fitted spline.</p>
-<h2 id="confidence-intervals-on-derivatives">Confidence intervals on derivatives…?</h2>
+</section>
+<section id="confidence-intervals-on-derivatives" class="level2">
+<h2 data-anchor-id="confidence-intervals-on-derivatives">Confidence intervals on derivatives…?</h2>
 <p>Earlier, when discussing the simple linear regression line, I touched on the issue of error or uncertainty in the estimate of the slope parameter \(\hat{\beta}\) and how we allow for this in deciding whether the estimated rate of change was different from zero (technically: whether zero was a likely value for the slope given the model). The same issue concerns us with the first derivatives of the fitted spline; we still want to know where on the function the function is changing sufficiently that we can distinguish this change from no-change given our uncertainty knowledge of the function.</p>
 <p>Thankfully, with a little bit of magic from <strong>mgcv</strong> we can compute the uncertainty in the estimates of the first derivative of the spline. I’ve encapsulated this in some functions that are currently only available as a <a href="https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30">gist</a> on Github. I intend to package these up at some point with other functions for working with GAM(M) time series models. I’m also grateful to Simon Wood, author of <strong>mgcv</strong>, who provided the initial code to compute the derivatives and which I have generalized somewhat to the user to specify particular terms and to identify the correct terms from the model without having to count columns in the smoother prediction matrix.</p>
 <p>To load the functions into R from Github use</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## download the derivatives gist</span><span class="w">
-</span><span class="n">tmpf</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">()</span><span class="w">
-</span><span class="n">download.file</span><span class="p">(</span><span class="s2">"https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R"</span><span class="p">,</span><span class="w">
-              </span><span class="n">tmpf</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"wget"</span><span class="p">)</span><span class="w">
-</span><span class="n">source</span><span class="p">(</span><span class="n">tmpf</span><span class="p">)</span><span class="w">
-</span><span class="n">ls</span><span class="p">()</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text"> [1] "annCET"        "cet"           "CET"           "confint.Deriv"
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="do">## download the derivatives gist</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>tmpf <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R"</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>              tmpf, <span class="at">method =</span> <span class="st">"wget"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(tmpf)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+ [1] "annCET"        "cet"           "CET"           "confint.Deriv"
  [5] "crit.t"        "ctrl"          "Deriv"         "df.res"       
  [9] "m2"            "m2.d"          "m2.dci"        "m2.dsig"      
 [13] "op"            "p2"            "pdat"          "plot.Deriv"   
 [17] "rn"            "signifD"       "take"          "take2"        
 [21] "Term"          "tmpf"          "want"          "Years"        
-[25] "ylab"          "ylim"         </code></pre>
-</figure>
+[25] "ylab"          "ylim"         
+</code></pre>
 <p>I don’t intend to explain all the code behind those functions, but the salient parts of the derivative computation are</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">X0</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">newDF</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
-</span><span class="n">newDF</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">newDF</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">eps</span><span class="w">
-</span><span class="n">X1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">mod</span><span class="p">,</span><span class="w"> </span><span class="n">newDF</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
-</span><span class="n">Xp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="p">(</span><span class="n">X1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">X0</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">eps</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>X0 <span class="ot">&lt;-</span> <span class="fu">predict</span>(mod, newDF, <span class="at">type =</span> <span class="st">"lpmatrix"</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>newDF <span class="ot">&lt;-</span> newDF <span class="sc">+</span> eps</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>X1 <span class="ot">&lt;-</span> <span class="fu">predict</span>(mod, newDF, <span class="at">type =</span> <span class="st">"lpmatrix"</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>Xp <span class="ot">&lt;-</span> (X1 <span class="sc">-</span> X0) <span class="sc">/</span> eps</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Here, <code>newDF</code> is a data frame of points along <em>x</em> at which we wish to evaluate the derivative and <code>eps</code> is the distance along <em>x</em> we nudge the points to give us locations \(p \prime\). <code>type = "lpmatrix"</code> forces <code>predict()</code> to return a matrix which, when multiplied by the vector of model coefficients, returns values fror the linear predictor of the model. The useful thing about this representation is that we can derive information on the fits or confidence intervals on quantities derived from the fitted model. Here we subtract one <code>lpmatrix</code> from another and divide these values by <code>eps</code> and proceed to do inference on those “slopes” directly.</p>
 <p>The other critical bit of code is</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="k">for</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="nf">seq_len</span><span class="p">(</span><span class="n">nt</span><span class="p">))</span><span class="w"> </span><span class="p">{</span><span class="w">
-  </span><span class="n">Xi</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Xp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="m">0</span><span class="w">
-  </span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">grep</span><span class="p">(</span><span class="n">t.labs</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="w"> </span><span class="n">colnames</span><span class="p">(</span><span class="n">X1</span><span class="p">))</span><span class="w">
-  </span><span class="n">Xi</span><span class="p">[,</span><span class="w"> </span><span class="n">want</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Xp</span><span class="p">[,</span><span class="w"> </span><span class="n">want</span><span class="p">]</span><span class="w">
-  </span><span class="n">df</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Xi</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">mod</span><span class="p">)</span><span class="w">    </span><span class="c1"># derivatives</span><span class="w">
-  </span><span class="n">df.sd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rowSums</span><span class="p">(</span><span class="n">Xi</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">mod</span><span class="o">$</span><span class="n">Vp</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">Xi</span><span class="p">)</span><span class="o">^</span><span class="m">.5</span><span class="w">
-  </span><span class="n">lD</span><span class="p">[[</span><span class="n">i</span><span class="p">]]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">deriv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">df</span><span class="p">,</span><span class="w"> </span><span class="n">se.deriv</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">df.sd</span><span class="p">)</span><span class="w">
-</span><span class="p">}</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(i <span class="cf">in</span> <span class="fu">seq_len</span>(nt)) {</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  Xi <span class="ot">&lt;-</span> Xp <span class="sc">*</span> <span class="dv">0</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  want <span class="ot">&lt;-</span> <span class="fu">grep</span>(t.labs[i], <span class="fu">colnames</span>(X1))</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  Xi[, want] <span class="ot">&lt;-</span> Xp[, want]</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>  df <span class="ot">&lt;-</span> Xi <span class="sc">%*%</span> <span class="fu">coef</span>(mod)    <span class="co"># derivatives</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>  df.sd <span class="ot">&lt;-</span> <span class="fu">rowSums</span>(Xi <span class="sc">%*%</span> mod<span class="sc">$</span>Vp <span class="sc">*</span> Xi)<span class="sc">^</span>.<span class="dv">5</span></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>  lD[[i]] <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">deriv =</span> df, <span class="at">se.deriv =</span> df.sd)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This is where we compute the actual derivative and their standard errors. This is done in a loop as we have to work separately with the columns of the <code>lpmatrix</code> that relate to each spline. The first three lines of code within the loop are housekeeping that handle this part, with <code>Xi</code> being the matrix into which we insert the relevant values from the <code>lpmatrix</code> for the current term and contains zeroes elsewhere. <code>Xi %*% coef(mod)</code> gives us values of the derivative by a matrix multiplication with the model coefficients. Because irrelevant columns are 0 we don’t need to subset the coefficient vector, but we could make this more efficient by avoiding the copies of <code>Xp</code> by doing some further subsetting steps if we wished to.</p>
 <p>The variances for the terms relating to current spline are computed using <code>Xi %*% mod$Vp * Xi</code> where <code>mod$Vp</code> is the covariance matrix of the (fixed effects) parameters of the GAM(M). These are summed and their square root take to give the standard error for the entire spline and not for each of the basis functions that comprise the spline. The last line of the loop just stores the computed derivatives and standard errors in a list that will form part of the object returned by the <code>Deriv()</code> function.</p>
 <p>With that, most of the hard work is done. The <code>confint.Deriv()</code> method will compute confidence intervals for the derivatives from their standard errors and some information on the fitted GAM(M), the coverage of these intervals is given by \( 1 - \alpha \) with \( \alpha \) commonly set to 0.05, but this can be controlled via argument <code>alpha</code>. It is worth noting that these confidence intervals are of the usual pointwise flavour; they would be OK if you only looked at the interval for a single point in isolation but they can’t be correct when we look at the entire spline. The reason they can’t be correct for the entire spline is related to the issue of multiple comparisons and in effect, by looking at the entire spline we are making a lot of multiple comparisons of tests. We could compute simultaneous intervals but I haven’t written the functions to do it just yet; it’s not difficult as we can simulate from the fitted model and derive simultaneous intervals that way. That will have to wait for another post at a future date though!</p>
 <p>There are two further trivial functions contained in the gist:</p>
 <ul>
 <li><p><code>signifD()</code> plows through the points at which we evaluated the derivative and looks for locations where the pointwise \( 1 - \alpha \) confidence interval doesn’t include zero. Where zero is contained within the confidence interval the function returns an <code>NA</code> and for points where zero isn’t included the value of the function (or the derivative, depending on what you supplied to <code>signifD()</code>) is returned.</p>
-The function gives you back a list with two components <code>incr</code> and <code>decr</code> which contain the locations where the estimated derivative is positive or negative, respectively, and zero is not contained in the confidence interval. As you’ll see soon, we can use these two separate lists to colour the increasing a decreasing parts of the fitted spline.</li>
+<p>The function gives you back a list with two components <code>incr</code> and <code>decr</code> which contain the locations where the estimated derivative is positive or negative, respectively, and zero is not contained in the confidence interval. As you’ll see soon, we can use these two separate lists to colour the increasing a decreasing parts of the fitted spline.</p></li>
 <li><p><code>plot.Deriv()</code> is an S3 method for <code>plot()</code> which will plot the estimated derivatives and associated confidence intervals. You can do this for selected terms via argument <code>term</code>. The confidence interval can be displayed as lines or a solid polygon via argument <code>polygon</code>. Other graphical parameters can be passed along via <code>...</code>.</p>
 <p>The one interesting argument is <code>sizer</code>, which if set to <code>TRUE</code> will colour increasing parts of the spline in blue and in red for the decreasing parts (where zero is not contained in the confidence interval). These colours come from the <a href="http://www.unc.edu/~marron/DataAnalyses/SiZer_Intro.html">siZer</a> method.</p></li>
 </ul>
-<h2 id="back-to-the-cet-example">Back to the CET example</h2>
+</section>
+<section id="back-to-the-cet-example" class="level2">
+<h2 data-anchor-id="back-to-the-cet-example">Back to the CET example</h2>
 <p>With that taken care of, we can use the functions to compute derivatives, confidence intervals, and ancillary information for the trend spline in model <code>m2</code> with a few simple lines of code</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">Term</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="s2">"Time"</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m2.d</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Deriv</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m2.dci</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">confint</span><span class="p">(</span><span class="n">m2.d</span><span class="p">,</span><span class="w"> </span><span class="n">term</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Term</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m2.dsig</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">signifD</span><span class="p">(</span><span class="n">pdat</span><span class="o">$</span><span class="n">p2</span><span class="p">,</span><span class="w"> </span><span class="n">d</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">m2.d</span><span class="p">[[</span><span class="n">Term</span><span class="p">]]</span><span class="o">$</span><span class="n">deriv</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">                    </span><span class="n">m2.dci</span><span class="p">[[</span><span class="n">Term</span><span class="p">]]</span><span class="o">$</span><span class="n">upper</span><span class="p">,</span><span class="w"> </span><span class="n">m2.dci</span><span class="p">[[</span><span class="n">Term</span><span class="p">]]</span><span class="o">$</span><span class="n">lower</span><span class="p">)</span></code></pre>
-</figure>
-<p>Most of that is self-explanatory, but the <code>signifD()</code> call, in lieu of any documentation yet, deserves some explanation. The first argument is the the thing you want to return in the <code>incr</code> and <code>decr</code> components. In this case I use the contribution to the fitted values for the trend spline alone <code>pdat$p2</code>. The argument <code>d</code> is the vector of derivatives for a single term in the model. The two remaining arguments<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> are <code>upper</code> and <code>lower</code> which need to be supplied with the upper and lower bounds on the confidence interval respectively. Extracting all of that is a bit redundant when we could pass in the object returned by <code>confint.Deriv()</code> but I was thinking more simply when I wrote <code>signifD()</code> in a few dark days of number crunching when people were waiting on me to deliver some results.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> Term <span class="ot">&lt;-</span> <span class="st">"Time"</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> m2.d <span class="ot">&lt;-</span> <span class="fu">Deriv</span>(m2)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> m2.dci <span class="ot">&lt;-</span> <span class="fu">confint</span>(m2.d, <span class="at">term =</span> Term)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> m2.dsig <span class="ot">&lt;-</span> <span class="fu">signifD</span>(pdat<span class="sc">$</span>p2, <span class="at">d =</span> m2.d[[Term]]<span class="sc">$</span>deriv,</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                    m2.dci[[Term]]<span class="sc">$</span>upper, m2.dci[[Term]]<span class="sc">$</span>lower)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Most of that is self-explanatory, but the <code>signifD()</code> call, in lieu of any documentation yet, deserves some explanation. The first argument is the the thing you want to return in the <code>incr</code> and <code>decr</code> components. In this case I use the contribution to the fitted values for the trend spline alone <code>pdat$p2</code>. The argument <code>d</code> is the vector of derivatives for a single term in the model. The two remaining arguments<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> are <code>upper</code> and <code>lower</code> which need to be supplied with the upper and lower bounds on the confidence interval respectively. Extracting all of that is a bit redundant when we could pass in the object returned by <code>confint.Deriv()</code> but I was thinking more simply when I wrote <code>signifD()</code> in a few dark days of number crunching when people were waiting on me to deliver some results.</p>
 <p>A quick plot of the first derivative of the spline is achieved using</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/identifying-periods-of-change-with-gams-first-derivative-plot.png" alt="First derivative of fitted trend spline from the additive model with AR(2) errors" /><figcaption>First derivative of fitted trend spline from the additive model with AR(2) errors</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/identifying-periods-of-change-with-gams-first-derivative-plot.png" class="img-fluid figure-img"></p>
+<figcaption>First derivative of fitted trend spline from the additive model with AR(2) errors</figcaption>
 </figure>
-<p>From the plot it is clear that there are two periods of (statistically) significant change, both increases, as shown by the blue indicators. However, with a plot like the one above you really have to dial in your brain to thinking about an increasing (decreasing) trend in the data when the derivative line is above (below) the zero line, even if the derivative is decreasing (increasing). As such, I have found an alternative display that combines a plot of the estimated trend spline with periods of significant change indicated by a thicker line with or without the siZer colours. You can see examples of such plots in a <a href="/2013/10/23/time-series-plots-with-lattice-and-ggplot/">previous post</a>.</p>
-<p>That <a href="/2013/10/23/time-series-plots-with-lattice-and-ggplot/">post</a> used the <strong>lattice</strong> and <strong>ggplot2</strong> packages to draw the plots. I still find it easier to just bash out a base graphics plot for such things unless I need the faceting features offered by those packages. Below I take such an approach and build a base graphics plot up from a series of plotting calls that successively augment the plot, starting with the estimated trend spline and pointwise confidence interval, then two calls to superimpose the periods of significant increase and decrease (although the latter doesn’t actually draw anything in this plot)</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">upper</span><span class="p">,</span><span class="w"> </span><span class="n">lower</span><span class="p">,</span><span class="w"> </span><span class="n">p2</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">degree</span><span class="o">*</span><span class="n">C</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="s2">":"</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">centred</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> 
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">p2</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p2</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">upper</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dashed"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">lower</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dashed"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">unlist</span><span class="p">(</span><span class="n">m2.dsig</span><span class="o">$</span><span class="n">incr</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">unlist</span><span class="p">(</span><span class="n">m2.dsig</span><span class="o">$</span><span class="n">decr</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span></code></pre>
+</div>
+<p>From the plot it is clear that there are two periods of (statistically) significant change, both increases, as shown by the blue indicators. However, with a plot like the one above you really have to dial in your brain to thinking about an increasing (decreasing) trend in the data when the derivative line is above (below) the zero line, even if the derivative is decreasing (increasing). As such, I have found an alternative display that combines a plot of the estimated trend spline with periods of significant change indicated by a thicker line with or without the siZer colours. You can see examples of such plots in a <a href="../../../../2013/10/23/time-series-plots-with-lattice-and-ggplot/">previous post</a>.</p>
+<p>That <a href="../../../../2013/10/23/time-series-plots-with-lattice-and-ggplot/">post</a> used the <strong>lattice</strong> and <strong>ggplot2</strong> packages to draw the plots. I still find it easier to just bash out a base graphics plot for such things unless I need the faceting features offered by those packages. Below I take such an approach and build a base graphics plot up from a series of plotting calls that successively augment the plot, starting with the estimated trend spline and pointwise confidence interval, then two calls to superimpose the periods of significant increase and decrease (although the latter doesn’t actually draw anything in this plot)</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> ylim <span class="ot">&lt;-</span> <span class="fu">with</span>(pdat, <span class="fu">range</span>(upper, lower, p2))</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> ylab <span class="ot">&lt;-</span> <span class="fu">expression</span>(Temperature <span class="sc">~</span> (degree<span class="sc">*</span>C <span class="sc">*</span> <span class="st">":"</span> <span class="sc">~</span> centred))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> </span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> <span class="fu">plot</span>(p2 <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">type =</span> <span class="st">"n"</span>, <span class="at">ylab =</span> ylab, <span class="at">ylim =</span> ylim)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(p2 <span class="sc">~</span> Date, <span class="at">data =</span> pdat)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(upper <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">lty =</span> <span class="st">"dashed"</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(lower <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">lty =</span> <span class="st">"dashed"</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(<span class="fu">unlist</span>(m2.dsig<span class="sc">$</span>incr) <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">col =</span> <span class="st">"blue"</span>, <span class="at">lwd =</span> <span class="dv">3</span>)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(<span class="fu">unlist</span>(m2.dsig<span class="sc">$</span>decr) <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lwd =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/identifying-periods-of-change-with-gams-plot-trend-with-sizer.png" class="img-fluid figure-img"></p>
+<figcaption>Fitted trend showing periods of significant increase in temperature in blue.</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/identifying-periods-of-change-with-gams-plot-trend-with-sizer.png" alt="Fitted trend showing periods of significant increase in temperature in blue." /><figcaption>Fitted trend showing periods of significant increase in temperature in blue.</figcaption>
-</figure>
+</div>
 <p>When looking at a plot like this, it is always important to have in the back of your mind a picture of the original data and how variance is decomposed between the seasonal, trend and residual terms, as well as the <em>effect size</em> associated with the trend and seasonal splines. You get a very different impression of the magnitude of the trend from the plot shown below, which contains the original data as well as the fitted trend spline.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">Temperature</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">points</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">Temperature</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">        </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lightgrey"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">16</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.7</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p2</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">upper</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dashed"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">lower</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"dashed"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">unlist</span><span class="p">(</span><span class="n">m2.dsig</span><span class="o">$</span><span class="n">incr</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">unlist</span><span class="p">(</span><span class="n">m2.dsig</span><span class="o">$</span><span class="n">decr</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">plot</span>(Temperature <span class="sc">-</span> <span class="fu">mean</span>(Temperature) <span class="sc">~</span> Date, <span class="at">data =</span> cet, <span class="at">type =</span> <span class="st">"n"</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>      <span class="at">ylab =</span> ylab)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">points</span>(Temperature <span class="sc">-</span> <span class="fu">mean</span>(Temperature) <span class="sc">~</span> Date, <span class="at">data =</span> cet,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>        <span class="at">col =</span> <span class="st">"lightgrey"</span>, <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">cex =</span> <span class="fl">0.7</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(p2 <span class="sc">~</span> Date, <span class="at">data =</span> pdat)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(upper <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">lty =</span> <span class="st">"dashed"</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(lower <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">lty =</span> <span class="st">"dashed"</span>)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(<span class="fu">unlist</span>(m2.dsig<span class="sc">$</span>incr) <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">col =</span> <span class="st">"blue"</span>, <span class="at">lwd =</span> <span class="dv">3</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(<span class="fu">unlist</span>(m2.dsig<span class="sc">$</span>decr) <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lwd =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/identifying-periods-of-change-with-gams-plot-trend-with-sizer-and-data.png" class="img-fluid figure-img"></p>
+<figcaption>Fitted trend showing periods of significant increase in temperature in blue. The original data are shown as grey points. Note the low precision of the data early in the CET series.</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/identifying-periods-of-change-with-gams-plot-trend-with-sizer-and-data.png" alt="Fitted trend showing periods of significant increase in temperature in blue. The original data are shown as grey points. Note the low precision of the data early in the CET series." /><figcaption>Fitted trend showing periods of significant increase in temperature in blue. The original data are shown as grey points. Note the low precision of the data early in the CET series.</figcaption>
-</figure>
+</div>
 <p>Yet, whilst small compared to the seasonal amplitude in temperature, the CET exhibits about a 1° increase in mean temperature over the past 150 or so years. Not something to dismiss as trivial.</p>
-<h2 id="summing-up">Summing up</h2>
+</section>
+<section id="summing-up" class="level2">
+<h2 data-anchor-id="summing-up">Summing up</h2>
 <p>In this post I’ve attempted to explain the method of finite differences for estimating the derivatives of a function such as the splines of an additive model. This was illustrated using custom functions to extract information from the fitted model and make use of features of the <strong>mgcv</strong> package that allowed the estimation of standard errors for quantities derived from the fitted model, such as the first derivatives used in the post.</p>
 <p>So far we’ve looked at fitting an additive model to seasonal data employing two smoothers in an additive model, the use of cyclic splines to represent cyclical features of the data, and estimation of an appropriate ARMA correlation structure to account for serial dependence in the data. Here we’ve seen how to identify periods of significant change in the trend term using the first derivative of the fitted spline. Where do we go from here?</p>
 <p>One important improvement is to turn the pointwise confidence interval into a simultaneous one. There is one other feature potentially present in the data that we have thus far failed to address; we might reasonably expect that the seasonal pattern in temperature has changed with the increase in the level of the series over time. To fit a model that includes this possibility we’ll need to investigate smooth functions of two (or more) variables as well as look in more detail at how to build more complex GAM(M) models with <strong>mgcv</strong>. I’ll see about addressing these two issues in future posts.</p>
-<section class="footnotes">
-<hr />
-<ol>
-<li id="fn1"><p>There’s a further argument, <code>eval</code>, which contains the value you wish to test for inclusion in the coverage of the confidence interval. By default this is set to <code>0</code>.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-</ol>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2014/05/09/modelling-seasonal-data-with-gam/">← Older: Modelling seasonal data with GAMs</a></span> <span class="text-end"><a href="../../../../2014/06/16/simultaneous-confidence-intervals-for-derivatives/">Newer: Confidence intervals for derivatives of splines in GAMs →</a></span></p>
+</div>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
 </section>
 
-            <hr />
-            <h3>Comments</h3>
-            <div id="disqus_thread"></div>
-<script type="text/javascript">
-  var disqus_shortname = "fromthebottomoftheheap";
-  var disqus_url = "https://www.fromthebottomoftheheap.net/2014/05/15/identifying-periods-of-change-with-gams/";
-  var disqus_title = "Identifying periods of change in time series with GAMs";
-  //var disqus_identifier = "/2014/05/15/identifying-periods-of-change-with-gams";
 
-  (function() {
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
-
-            </div>
-            <div class="span2">
-                            <div class="side-snippet">
-                <h4>By Gavin Simpson</h4>
-              
-                <h4>15 May 2014</h4>
-              
-              </div>
-
-                            <div class="side-snippet">
-                <h4>Posted in</h4>
-                
-                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
-                
-              </div>
-       
-
-                            <div class="side-snippet">
-                <h4>Tagged</h4>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/time-series/"><span class="label label-inverse">Time series</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/modelling/"><span class="label label-inverse">modelling</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/central-england-temperature/"><span class="label label-inverse">Central England Temperature</span></a><br>
-                
-              </div>
-
-                          <div class="side-snippet">
-              <h4>Social</h4>
-              <p><a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 150px !important;" ></a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
-            </div>
-
-
-                          <div class="side-snippet">
-              <h4>Blogroll</h4>
-              <ul class="unstyled">
-                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://rweekly.org/">R Weekly</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
-              </ul>
-            </div>
-
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      </article>
-
-        
-
-    </div><!--/.fixed-container-->
-    
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="span2">
-            <h4>Menu</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
-            </ul>
-          </div>
-          <div class="span2">
-            <h4>R packages</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
-            </ul>        
-          </div>
-          <div class="span6">
-            <h4>Fineprint</h4>
-            <p><small>Copyright &copy; 2010&ndash;2024 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
-            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
-        <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script>
-        jQuery(function ($) {
-            $(".addToolTip").tooltip()
+<ol>
+<li id="fn1"><p>There’s a further argument, <code>eval</code>, which contains the value you wish to test for inclusion in the coverage of the confidence interval. By default this is set to <code>0</code>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/fromthebottomoftheheap\.net");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
         });
-        // Fix suggested by Dependabot as I don't think i can upgrade to jq >=3.5.0 with this version of bootstrap
-        jQuery.htmlPrefilter = function( html ) {
-	return html;
-	};
-    </script>
-    
-    
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="preferred_color_scheme">
+<input type="hidden" id="giscus-alt-theme" value="preferred_color_scheme">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "gavinsimpson/fromthebottomoftheheap-comments";
+    script.dataset.repoId = "";
+    script.dataset.category = "Blog comments";
+    script.dataset.categoryId = "";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright © 2010–2026 Gavin Simpson</p>
+</div>   
+    <div class="nav-footer-center">
+<p>Content available under a <a href="../../../../permissions/">Creative Commons Attribution 4.0 licence</a>.</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:ucfagls@gmail.com">
+      <i class="bi bi-envelope" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://orcid.org/0000-0002-9084-8413">
+<p>ORCID</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
 
 
-  </body>
-</html>
 
 
+</body></html>

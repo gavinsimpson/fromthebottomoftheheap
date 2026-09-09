@@ -1,248 +1,349 @@
-  <!DOCTYPE html>
-<html lang="en">
-  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gavin Simpson">
+<meta name="dcterms.date" content="2014-01-09">
+<meta name="description" content="The horseshoe effect is a well known and discussed issue with principal component analysis (PCA) (e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970). Similar geometric artefacts also affect correspondence analysis (CA). In part 1 of this series I loo…">
+
+<title>Summarising multivariate palaeoenvironmental data – From the bottom of the heap</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../">
+<link href="../../../../assets/ico/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../site_libs/bootstrap/bootstrap-8fb4e4cb2a8747aefb233048377198cf.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-6FQL01W176');
 </script>
+<script data-ad-client="ca-pub-2908943772231164" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 
 
-    <meta charset="utf-8">
-    <title>Summarising multivariate palaeoenvironmental data</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Gavin Simpson">
-    
-    
-<!-- HTML5 metadata -->
+<meta property="og:title" content="Summarising multivariate palaeoenvironmental data – From the bottom of the heap">
+<meta property="og:description" content="The horseshoe effect is a well known and discussed issue with principal component analysis (PCA) (e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970). Similar geometric artefacts also affect correspondence analysis (CA). In part 1 of this series I loo…">
+<meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/prcurve-comparison-of-minimised-distances.png">
+<meta property="og:site_name" content="From the bottom of the heap">
+<meta property="og:image:height" content="500">
+<meta property="og:image:width" content="500">
+<meta name="twitter:title" content="Summarising multivariate palaeoenvironmental data – From the bottom of the heap">
+<meta name="twitter:description" content="The horseshoe effect is a well known and discussed issue with principal component analysis (PCA) (e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970). Similar geometric artefacts also affect correspondence analysis (CA). In part 1 of this series I loo…">
+<meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/prcurve-comparison-of-minimised-distances.png">
+<meta name="twitter:creator" content="@ucfagls">
+<meta name="twitter:site" content="@ucfagls">
+<meta name="twitter:image-height" content="500">
+<meta name="twitter:image-width" content="500">
+<meta name="twitter:card" content="summary_large_image">
+</head>
 
-<meta name="keywords" content="Palaeoecology, Ordination, Principal curves, R, analogue" />
+<body class="nav-fixed quarto-light">
 
-
-<meta name="description" content="The horseshoe effect is a well known and discussed issue with principal component analysis (PCA) (e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970). Similar geometric artefacts also affect correspondence analysis (CA). In part 1 of this series I looked at the implications of these “artefacts” for the recovery of temporal or single dominant gradients from multivariate palaeoecological data. In part 2, I introduce the topic of principal curves (Hastie and Stuetzle, 1989).
-
-
-Goodall, D. (1954). Objective methods for the classification of vegetation. III. an essay in the use of factor analysis. Australian Journal of Botany 2, 304–324. Available at: http://www.publish.csiro.au/paper/BT9540304 [Accessed June 3, 2013].
-
-
-Hastie, T., and Stuetzle, W. (1989). Principal curves. Journal of the American Statistical Association 84, 502–516. doi:10.2307/2289936.
-
-
-Noy-Meir, I., and Austin, M. P. (1970). Principal component ordination and simulated vegetational data. Ecology 51, 551–552. doi:10.2307/1935398.
-
-
-Swan, J. M. A. (1970). An examination of some ordination problems by use of simulated vegetational data. Ecology 51, 89–102. doi:10.2307/1933602.
-
-
-" />
-
-<!-- RDFa Metadata (in DublinCore) -->
-<meta property="dc:title" content="Summarising multivariate palaeoenvironmental data" />
-<meta property="dc:creator" content="Gavin Simpson" />
-
-<meta property="dc:date" content="2014-01-09T00:00:00+01:00" />
-
-<meta property="dc:type" content="" /> <!-- article? entry?-->
-<meta property="dc:format" content="text/html" />
-<meta property="dc:language" content="en" />
-<meta property="dc:source" content="From the Bottom of the Heap" />
-<!-- RDFa Metadata (in OpenGraph) -->
-<meta property="og:title" content="Summarising multivariate palaeoenvironmental data" />
-<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
-<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
-<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
-
-<meta property="http://ogp.me/ns/article#published_time" content="2014-01-09T00:00:00+01:00" />
-
-<meta property="og:site_name" content="From the Bottom of the Heap" />
-<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2014/01/09/pcurve-part-2/" />
-<meta property="og:type" content="article" />
-
-<meta name="og:description" content="The horseshoe effect is a well known and discussed issue with principal component analysis (PCA) (e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970). Similar geometric artefacts also affect correspondence analysis (CA). In part 1 of this series I looked at the implications of these “artefacts” for the recovery of temporal..." />
-
-<!-- Twitter Card Meta data -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site.id" content="@ucfagls" />
-<meta name="twitter:creator:id" content="@ucfagls" />
-<meta name="twitter:title" content="Summarising multivariate palaeoenvironmental data" />
-
-
-<meta name="twitter:description" content="The horseshoe effect is a well known and discussed issue with principal component analysis (PCA) (e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970). Similar geometric artefacts also affec..." />
-
-<!-- Google Scholar Metadata -->
-<meta name="resource_type" content="From the Bottom of the Heap"/>
-<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
-
-<meta name="citation_publication_date" content="09 Jan 2014"/>
-<meta name="citation_date" content="09 Jan 2014"/>
-
-<meta name="citation_author" content="Gavin Simpson"/>
-<meta name="citation_title" content="Summarising multivariate palaeoenvironmental data"/>
-
-    
-    <!-- Link to the Atom feeds -->
-    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
-    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
-    
-    <!-- Le styles -->
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
-      }
-      .sidebar-nav {
-        padding: 9px 0;
-      }
-    </style>
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
-
-    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
-    <!-- Le fav and touch icons -->
-    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
-    
-    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  </head>
-
-  <body>
-
-      <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
-              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> Resources <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/teaching/">Teaching</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/workshops/">Workshops</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/slides/">Slides</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../../index.html">
+    <span class="navbar-title">From the bottom of the heap</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="//index.html"> <i class="bi bi-house-door" role="img">
+</i> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//about/index.html"> <i class="bi bi-info-circle" role="img">
+</i> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//blog/index.html"> <i class="bi bi-chat-left-text" role="img">
+</i> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//publications/index.html"> <i class="bi bi-file-earmark-text" role="img">
+</i> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//research/index.html"> <i class="bi bi-tools" role="img">
+</i> 
+<span class="menu-text">Research</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-the-lab" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-funnel" role="img">
+</i> 
+ <span class="menu-text">The Lab</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-the-lab">    
+        <li>
+    <a class="dropdown-item" href="//lab/index.html">
+ <span class="dropdown-text">About</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/research/index.html">
+ <span class="dropdown-text">Research</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/members/index.html">
+ <span class="dropdown-text">Members</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/publications/index.html">
+ <span class="dropdown-text">Publications</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/join/index.html">
+ <span class="dropdown-text">Join the lab</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection" role="img">
+</i> 
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="//teaching/index.html">
+ <span class="dropdown-text">Teaching</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../workshops/">
+ <span class="dropdown-text">Workshops</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//slides/index.html">
+ <span class="dropdown-text">Slides</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-code" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-code-slash" role="img">
+</i> 
+ <span class="menu-text">Code</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-code">    
+        <li>
+    <a class="dropdown-item" href="//code/dper-scripts/index.html">
+ <span class="dropdown-text">DPER Scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//code/r-packages/index.html">
+ <span class="dropdown-text">R Packages</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../../feed.xml"> <i class="bi bi-rss" role="img" aria-label="RSS feed">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Summarising multivariate palaeoenvironmental data</h1>
+<p class="subtitle lead">part 2</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">R</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    The horseshoe effect is a well known and discussed issue with principal component analysis (PCA) <span class="citation" data-cites="goodall_objective_1954 noy-meir_principal_1970 swan_examination_1970">(e.g. <a href="#ref-goodall_objective_1954" role="doc-biblioref">Goodall, 1954</a>; <a href="#ref-noy-meir_principal_1970" role="doc-biblioref">Noy-Meir and Austin, 1970</a>; <a href="#ref-swan_examination_1970" role="doc-biblioref">Swan, 1970</a>)</span>. Similar geometric artefacts also affect correspondence analysis (CA). In part 1 of this series I loo…
+  </div>
+</div>
 
 
-    <div class="container">
-          
+<div class="quarto-title-meta">
 
-      <article>
-      <div class="row">
-        <!-- <div class="span8 offset2"> -->
-        <div class="span10">
-          <div class="clearfix">
-            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2014/03/25/file-synchronisation-with-unison/">File synchronisation with Unison</a></span>
-            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot/">Decluttering ordination plots part 4: orditkplot()</a> <i class="icon-arrow-right"></i></span>
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gavin Simpson </p>
           </div>
-          <div class="page-header">
-            <header>
-              <h1>Summarising multivariate palaeoenvironmental data <small>part 2</small></h1>
-            </header>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="span12">
-          <div class="row">
-            <div class="span10">
-              
-            <p>The <em>horseshoe effect</em> is a well known and discussed issue with principal component analysis (PCA) <span class="citation" data-cites="goodall_objective_1954 noy-meir_principal_1970 swan_examination_1970">(e.g. Goodall, 1954; Noy-Meir and Austin, 1970; Swan, 1970)</span>. Similar geometric artefacts also affect correspondence analysis (CA). In <a href="/2013/12/28/pcurve-1/">part 1 of this series</a> I looked at the implications of these “artefacts” for the recovery of temporal or single dominant gradients from multivariate palaeoecological data. In part 2, I introduce the topic of principal curves <span class="citation" data-cites="hastie_principal_1989">(Hastie and Stuetzle, 1989)</span>.</p>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 9, 2014</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+
+<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
+<section id="posted-in" class="level4">
+<h4 data-anchor-id="posted-in">Posted in</h4>
+<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
+</section>
+<section id="tagged" class="level4">
+<h4 data-anchor-id="tagged">Tagged</h4>
+<p><a href="../../../../tag/palaeoecology/" class="badge text-bg-dark">Palaeoecology</a> <a href="../../../../tag/ordination/" class="badge text-bg-dark">Ordination</a> <a href="../../../../tag/principal-curves/" class="badge text-bg-dark">Principal curves</a> <a href="../../../../tag/r/" class="badge text-bg-dark">R</a> <a href="../../../../tag/analogue/" class="badge text-bg-dark">analogue</a></p>
+</section>
+</div></div><p>The <em>horseshoe effect</em> is a well known and discussed issue with principal component analysis (PCA) <span class="citation" data-cites="goodall_objective_1954 noy-meir_principal_1970 swan_examination_1970">(e.g. <a href="#ref-goodall_objective_1954" role="doc-biblioref">Goodall, 1954</a>; <a href="#ref-noy-meir_principal_1970" role="doc-biblioref">Noy-Meir and Austin, 1970</a>; <a href="#ref-swan_examination_1970" role="doc-biblioref">Swan, 1970</a>)</span>. Similar geometric artefacts also affect correspondence analysis (CA). In <a href="../../../../2013/12/28/pcurve-1/">part 1 of this series</a> I looked at the implications of these “artefacts” for the recovery of temporal or single dominant gradients from multivariate palaeoecological data. In part 2, I introduce the topic of principal curves <span class="citation" data-cites="hastie_principal_1989">(<a href="#ref-hastie_principal_1989" role="doc-biblioref">Hastie and Stuetzle, 1989</a>)</span>.</p>
 <p>A principal curve (PC) is a smooth, one-dimensional curve fitted through a data set in \( m \) dimensions in such as way that the curve “fits” the data best, for some definition of “best”, which we will take as meaning that the distances between the observations and the curve are minimised in some way. PCs can be thought of as a combination of principal components and splines and as you’ll see in part 3 of this series, this concept is not just superficial. In the figure below, data from the equation</p>
 <p>\[ y = -0.9x + 2x^2 + -1.4x^3 + \varepsilon, \quad \varepsilon \sim N(\mu = 0, \sigma = 0.05) \]</p>
 <p>are plotted and the fitted relationship between \(x\) and \(y\) is shown as produced by four methods indicated by the red line in each panel. The four methods used were</p>
@@ -252,13 +353,16 @@ Swan, J. M. A. (1970). An examination of some ordination problems by use of simu
 <li>Cubic smoothing spline (CSS), and</li>
 <li>Principal Curves (PCs)</li>
 </ul>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-comparison-of-minimised-distances.png" alt="Fitted relationship between x and y (solid line) and the minimised errors (green line segments) for (a) least squares regression, (b) principal components analysis, (c) cubic smoothing spline, and (d) a principal curve." /><figcaption>Fitted relationship between <em>x</em> and <em>y</em> (solid line) and the minimised errors (green line segments) for (a) least squares regression, (b) principal components analysis, (c) cubic smoothing spline, and (d) a principal curve.</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/prcurve-comparison-of-minimised-distances.png" class="img-fluid figure-img"></p>
+<figcaption>Fitted relationship between <em>x</em> and <em>y</em> (solid line) and the minimised errors (green line segments) for (a) least squares regression, (b) principal components analysis, (c) cubic smoothing spline, and (d) a principal curve.</figcaption>
 </figure>
+</div>
 <p>For our purposes, think of \(x\) and \(y\) as being two species. In the OLS solution, the sum of squared errors in \(y\) are minimised by the fitted line and hence \(x\) and \(y\) play different asymmetric roles in the model; uncertainty in \(x\) is considered to be zero and all the random variation is in \(y\). Contrast this with the way errors are minimised in PCA; the error is now with respect to both \(x\) <em>and</em> \(y\) and hence the distance from a point to it’s location on the principal component line is orthogonal (or at 90°) to the line. In both cases however, the fitted line, the “model”, is linear, a straight line.</p>
 <p>Splines of various sorts have been used to provide non- or semi-parametric fits between \(x\) and \(y\). In panel (c) of the plot above, a cubic smoothing spline is fitted to the sample data. As with OLS, the CSS minimises squared errors in \(y\) <em>only</em>; it is a regression method after-all. The difference is that the fitted model can be a smooth curve rather than a straight line.</p>
 <p>Prinicpal curves combine the features of the PCA approach with those of the spline. The corresponding principal curve for the sample data is shown in panel (d) and is a smooth, non-linear fit but this time the fit has minimised the error in \(x\) <em>and</em> \(y\). The errors are orthogonal to the principal curve and join the observation with the point on the curve to which it projects, in other words <em>is closest to</em>. I’ll look at exactly how that is done later in this post.</p>
-<p>The algorithm developed by <span class="citation" data-cites="hastie_principal_1989">Hastie and Stuetzle (1989)</span> to fit a PC has two essential steps</p>
+<p>The algorithm developed by <span class="citation" data-cites="hastie_principal_1989">Hastie and Stuetzle (<a href="#ref-hastie_principal_1989" role="doc-biblioref">1989</a>)</span> to fit a PC has two essential steps</p>
 <ol type="1">
 <li>a projection step, and</li>
 <li>a local averaging step.</li>
@@ -267,46 +371,49 @@ Swan, J. M. A. (1970). An examination of some ordination problems by use of simu
 <p>In the projection step, the sample locations are projected onto the current PC by finding the location along the curve closest to each point. Closest is defined in the same way as for PCA, namely the length of the line orthogonal to the curve that joins the sample point and its projection point on the curve.</p>
 <p>For the local averaging step, one end of the curve is chosen arbitrarily and the distance along the curve from this end is determined. These distances are then used as the predictor variable in a smooth regression model to predict the response values of a single species. A model is fitted in turn to each species. This step has the effect of bending the curve towards the data. The type of smoother used for the models is a plugin to the PC algorithm; smoothing splines were initially used, but any smooth regression model could be employed, such as a kernel smoother or regression splines, or a generalized additive model.</p>
 <p>Convergence is declared when the fitted curve is sufficiently close to that of the previous iteration, the meaning of <em>sufficiently close</em> being controlled by a threshold parameter that can be varied by the user to allow for more or less strict convergence.</p>
-<p>To illustrate the fitting process, I turn to a synthetic data set from <span class="citation" data-cites="podani-miklos-2002">Podani and Miklós (2002)</span>, one that is similar in spirit to the data I used from <span class="citation" data-cites="legendre_numerical_2012">Legendre and Legendre (2012, 482)</span> in the <a href="/2013/12/28/pcurve-1/">earlier post</a>. The data set is somewhat tedious to create hence I have written a couple of functions that can generate data sets from the paper <span class="citation" data-cites="podani-miklos-2002">(Podani and Miklós, 2002)</span> that are available on Github. To read this code into R and recreate the data from Figure 1 <span class="citation" data-cites="podani-miklos-2002">(Podani and Miklós, 2002)</span> run</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## load Podani and Miklos data-set-generating function from github</span><span class="w">
-</span><span class="n">tmp</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tempfile</span><span class="p">()</span><span class="w">
-</span><span class="n">download.file</span><span class="p">(</span><span class="s2">"https://github.com/gavinsimpson/random_code/raw/master/podani.R"</span><span class="p">,</span><span class="w">
-              </span><span class="n">tmp</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"wget"</span><span class="p">)</span><span class="w">
-</span><span class="n">source</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span><span class="w">
-
-</span><span class="c1">## generate data set 1 of Podani &amp; Miklos</span><span class="w">
-</span><span class="n">p1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">podani1</span><span class="p">()</span></code></pre>
+<p>To illustrate the fitting process, I turn to a synthetic data set from <span class="citation" data-cites="podani-miklos-2002">Podani and Miklós (<a href="#ref-podani-miklos-2002" role="doc-biblioref">2002</a>)</span>, one that is similar in spirit to the data I used from <span class="citation" data-cites="legendre_numerical_2012">Legendre and Legendre (<a href="#ref-legendre_numerical_2012" role="doc-biblioref">2012, 482</a>)</span> in the <a href="../../../../2013/12/28/pcurve-1/">earlier post</a>. The data set is somewhat tedious to create hence I have written a couple of functions that can generate data sets from the paper <span class="citation" data-cites="podani-miklos-2002">(<a href="#ref-podani-miklos-2002" role="doc-biblioref">Podani and Miklós, 2002</a>)</span> that are available on Github. To read this code into R and recreate the data from Figure 1 <span class="citation" data-cites="podani-miklos-2002">(<a href="#ref-podani-miklos-2002" role="doc-biblioref">Podani and Miklós, 2002</a>)</span> run</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## load Podani and Miklos data-set-generating function from github</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(<span class="st">"https://github.com/gavinsimpson/random_code/raw/master/podani.R"</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>              tmp, <span class="at">method =</span> <span class="st">"wget"</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(tmp)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="do">## generate data set 1 of Podani &amp; Miklos</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">podani1</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>As with the data in the <a href="../../../../2013/12/28/pcurve-1/">earlier post</a>, when ordinated using PCA a very strong horseshoe is apparent in the solution. Projecting points on to the first PCA axis for example, the true ordering of samples along the gradient is lost at the ends of the axis where the horseshoe bends back on itself.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="do">## ordinate</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"vegan"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>pca1 <span class="ot">&lt;-</span> <span class="fu">rda</span>(p1)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="do">## plot data and PCA</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="fu">layout</span>(<span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">2</span>,<span class="dv">2</span>), <span class="at">nrow =</span> <span class="dv">3</span>))</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="fu">matplot</span>(p1, <span class="at">type =</span> <span class="st">"o"</span>, <span class="at">pch =</span> <span class="dv">19</span>, <span class="at">ylab =</span> <span class="st">"Abundance"</span>, <span class="at">xlab =</span> <span class="st">"Gradient"</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ordipointlabel</span>(pca1, <span class="at">display =</span> <span class="st">"sites"</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="fu">layout</span>(<span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/prcurve-2-podani-data-plot.png" class="img-fluid figure-img"></p>
+<figcaption>Data set 1 from <span class="citation" data-cites="podani-miklos-2002">Podani and Miklós (<a href="#ref-podani-miklos-2002" role="doc-biblioref">2002</a>)</span> (upper panel) and configuration resulting from the ordination of these data by PCA (lower panel)</figcaption>
 </figure>
-<p>As with the data in the <a href="/2013/12/28/pcurve-1/">earlier post</a>, when ordinated using PCA a very strong horseshoe is apparent in the solution. Projecting points on to the first PCA axis for example, the true ordering of samples along the gradient is lost at the ends of the axis where the horseshoe bends back on itself.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## ordinate</span><span class="w">
-</span><span class="n">library</span><span class="p">(</span><span class="s2">"vegan"</span><span class="p">)</span><span class="w">
-</span><span class="n">pca1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rda</span><span class="p">(</span><span class="n">p1</span><span class="p">)</span><span class="w">
-
-</span><span class="c1">## plot data and PCA</span><span class="w">
-</span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">),</span><span class="w"> </span><span class="n">nrow</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">))</span><span class="w">
-</span><span class="n">matplot</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"o"</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">19</span><span class="p">,</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Abundance"</span><span class="p">,</span><span class="w"> </span><span class="n">xlab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Gradient"</span><span class="p">)</span><span class="w">
-</span><span class="n">ordipointlabel</span><span class="p">(</span><span class="n">pca1</span><span class="p">,</span><span class="w"> </span><span class="n">display</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"sites"</span><span class="p">)</span><span class="w">
-</span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
-</figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-2-podani-data-plot.png" alt="Data set 1 from Podani and Miklós (2002) (upper panel) and configuration resulting from the ordination of these data by PCA (lower panel)" /><figcaption>Data set 1 from <span class="citation" data-cites="podani-miklos-2002">Podani and Miklós (2002)</span> (upper panel) and configuration resulting from the ordination of these data by PCA (lower panel)</figcaption>
-</figure>
-<p>There are several R packages that fit PCs as described above, including <strong><a href="http://cran.r-project.org/web/packages/princurve/index.html">princurve</a></strong>, which was converted from the <strong>S</strong> original implementation of Trevor Hastie, and <strong><a href="http://cran.r-project.org/web/packages/pcurve/index.html">pcurve</a></strong>, Glenn De’ath’s port of Hastie’s code and given an ecological makeover as described in <span class="citation" data-cites="death_principal_1999">(De’ath, 1999)</span> and which I now maintain. However, I will use the interface I wrote for the <strong><a href="http://cran.r-project.org/web/packages/analogue/index.html">analogue</a></strong> package, which is a wrapper to the <code>principal.curve()</code> function of <strong>princurve</strong>, designed specifically for working with palaeo data. To fit a PC to the example data, use</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## Load analogue</span><span class="w">
-</span><span class="n">library</span><span class="p">(</span><span class="s2">"analogue"</span><span class="p">)</span><span class="w">
-
-</span><span class="n">prc1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">prcurve</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">trace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">plotit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">thresh</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.0005</span><span class="p">,</span><span class="w"> </span><span class="n">maxit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">50</span><span class="p">)</span></code></pre>
-</figure>
+</div>
+<p>There are several R packages that fit PCs as described above, including <strong><a href="http://cran.r-project.org/web/packages/princurve/index.html">princurve</a></strong>, which was converted from the <strong>S</strong> original implementation of Trevor Hastie, and <strong><a href="http://cran.r-project.org/web/packages/pcurve/index.html">pcurve</a></strong>, Glenn De’ath’s port of Hastie’s code and given an ecological makeover as described in <span class="citation" data-cites="death_principal_1999">(<a href="#ref-death_principal_1999" role="doc-biblioref">De’ath, 1999</a>)</span> and which I now maintain. However, I will use the interface I wrote for the <strong><a href="http://cran.r-project.org/web/packages/analogue/index.html">analogue</a></strong> package, which is a wrapper to the <code>principal.curve()</code> function of <strong>princurve</strong>, designed specifically for working with palaeo data. To fit a PC to the example data, use</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Load analogue</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"analogue"</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>prc1 <span class="ot">&lt;-</span> <span class="fu">prcurve</span>(p1, <span class="at">trace =</span> <span class="cn">TRUE</span>, <span class="at">plotit =</span> <span class="cn">TRUE</span>, <span class="at">thresh =</span> <span class="fl">0.0005</span>, <span class="at">maxit =</span> <span class="dv">50</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Because I used <code>trace = TRUE</code>, information on the fitting process is printed to the screen. Note that I increased the maximum number of iterations to 50 (<code>maxit = 50</code>) and reduced the default convergence tolerance (<code>thresh = 0.0005</code>) to give a closer fit and to make a more interesting animation showing how the curve in sequentially updated. The <code>plotit</code> argument will draw a plot of the current iteration’s PC in a PCA of the data. The figure below shows this updating of the curve as an animation</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-animation.gif" alt="Progression of the PC iterative algorithm as it adapts to the example data set." /><figcaption>Progression of the PC iterative algorithm as it adapts to the example data set.</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/prcurve-animation.gif" class="img-fluid figure-img"></p>
+<figcaption>Progression of the PC iterative algorithm as it adapts to the example data set.</figcaption>
 </figure>
-<p>Although I haven’t actually checked, I suspect the reason the fitted curve moves away from the samples at the top of the figure in later iterations is that it is being bent closer to samples in other dimensions than those shown on the PCA. If you were to use the default tolerance, the algorithm converges after five iterations and is much closer to the samples at the top of the figure and has a slightly better fit than the one shown in the figure, however, it is not <em>self-consistent</em> given the tighter tolerance of <code>thresh = 0.0005</code>. A curve is said to be self-consistent if for any point on the curve, the average of the points that project there coincides with the point on the curve. <span class="citation" data-cites="hastie_principal_1989">Hastie and Stuetzle (1989)</span> note that they are <q>“unable to prove… that each step guarantees a decrease in the criterion [sum of squared errors]”</q>, which fits with our observations here. <code>prcurve()</code> spat the following information to the screen during fitting</p>
-<figure class="highlight">
-<pre><code class="language-rout" data-lang="rout">R&gt; prc1 &lt;- prcurve(p1, trace = TRUE, plotit = TRUE, thresh = 0.0005,
+</div>
+<p>Although I haven’t actually checked, I suspect the reason the fitted curve moves away from the samples at the top of the figure in later iterations is that it is being bent closer to samples in other dimensions than those shown on the PCA. If you were to use the default tolerance, the algorithm converges after five iterations and is much closer to the samples at the top of the figure and has a slightly better fit than the one shown in the figure, however, it is not <em>self-consistent</em> given the tighter tolerance of <code>thresh = 0.0005</code>. A curve is said to be self-consistent if for any point on the curve, the average of the points that project there coincides with the point on the curve. <span class="citation" data-cites="hastie_principal_1989">Hastie and Stuetzle (<a href="#ref-hastie_principal_1989" role="doc-biblioref">1989</a>)</span> note that they are <q>“unable to prove… that each step guarantees a decrease in the criterion [sum of squared errors]”</q>, which fits with our observations here. <code>prcurve()</code> spat the following information to the screen during fitting</p>
+<pre class="rout"><code>
+R&gt; prc1 &lt;- prcurve(p1, trace = TRUE, plotit = TRUE, thresh = 0.0005,
 +                 maxit = 50)
 --------------------------------------------------------------------------------
 Initial curve: d.sq: 415.4000
@@ -345,11 +452,11 @@ Iteration  32: d.sq: 254.5084
 Iteration  33: d.sq: 254.6286
 --------------------------------------------------------------------------------
 PC Converged in 33 iterations.
---------------------------------------------------------------------------------</code></pre>
-</figure>
+--------------------------------------------------------------------------------
+</code></pre>
 <p>33 iterations were required before convergence in this instance. Printing the object returned by <code>prcurve()</code> yields further information on the fitted curve</p>
-<figure class="highlight">
-<pre><code class="language-rout" data-lang="rout">R&gt; prc1
+<pre class="rout"><code>
+R&gt; prc1
 
     Principal Curve Fitting
 
@@ -363,253 +470,570 @@ Total       415       1.00
 Explained   161       0.39
 Residual    255       0.61
 
-Fitted curve uses 336.433 degrees of freedom.</code></pre>
-</figure>
+Fitted curve uses 336.433 degrees of freedom.
+</code></pre>
 <p>The curve explains 39% of the variance in the example data set and whilst there is a significant amount of unexplained variance, the PC is a significant improvement over the % fit that the PCA affords these data (the value displayed below is a proportion) although it does use a significantly higher number of degrees of freedom in doing so (~336 compared with 42 for the PCA — the first principal component is a linear combination of 42 species scores.).</p>
-<figure class="highlight">
-<pre><code class="language-rout" data-lang="rout">R&gt; varExpl(pca1)
+<pre class="rout"><code>
+R&gt; varExpl(pca1)
     PC1 
-0.05963</code></pre>
-</figure>
-<p>There’s not a whole lot more to principal curves, except a bit of fiddling and plenty of details on how those smoothers are fitted. I don’t want this post to turn into an even larger missive than it already is, so I’ll postpone those details to another post. In the meantime, I’ll show a principal curve fitted to the Abernethy Forest data I introduced at the end of the <a href="/2013/12/28/pcurve-1/">previous post</a>. I’ll quickly run through the code without much explanation as I’ll cover the details in part three of this series.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## Load the Abernethy Forest data</span><span class="w">
-</span><span class="n">data</span><span class="p">(</span><span class="n">abernethy</span><span class="p">)</span><span class="w">
-
-</span><span class="c1">## Remove the Depth and Age variables</span><span class="w">
-</span><span class="n">abernethy2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">abernethy</span><span class="p">[,</span><span class="w"> </span><span class="o">-</span><span class="p">(</span><span class="m">37</span><span class="o">:</span><span class="m">38</span><span class="p">)]</span><span class="w">
-
-</span><span class="c1">## Fit the principal curve varying complexity for each species</span><span class="w">
-</span><span class="n">aber.pc</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">prcurve</span><span class="p">(</span><span class="n">abernethy2</span><span class="p">,</span><span class="w"> </span><span class="n">trace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">vary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">penalty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1.4</span><span class="p">)</span><span class="w">
-</span><span class="n">aber.pc</span><span class="w">
-
-</span><span class="c1">## Plot</span><span class="w">
-</span><span class="n">op</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">mar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">5</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">0.1</span><span class="p">)</span><span class="w">
-</span><span class="n">plot</span><span class="p">(</span><span class="n">aber.pc</span><span class="p">)</span><span class="w">
-</span><span class="n">par</span><span class="p">(</span><span class="n">op</span><span class="p">)</span><span class="w">
-
-</span><span class="c1">## 3d plot</span><span class="w">
-</span><span class="n">plot3d</span><span class="p">(</span><span class="n">aber.pc</span><span class="p">)</span></code></pre>
-</figure>
+0.05963
+</code></pre>
+<p>There’s not a whole lot more to principal curves, except a bit of fiddling and plenty of details on how those smoothers are fitted. I don’t want this post to turn into an even larger missive than it already is, so I’ll postpone those details to another post. In the meantime, I’ll show a principal curve fitted to the Abernethy Forest data I introduced at the end of the <a href="../../../../2013/12/28/pcurve-1/">previous post</a>. I’ll quickly run through the code without much explanation as I’ll cover the details in part three of this series.</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Load the Abernethy Forest data</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(abernethy)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="do">## Remove the Depth and Age variables</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>abernethy2 <span class="ot">&lt;-</span> abernethy[, <span class="sc">-</span>(<span class="dv">37</span><span class="sc">:</span><span class="dv">38</span>)]</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="do">## Fit the principal curve varying complexity for each species</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>aber.pc <span class="ot">&lt;-</span> <span class="fu">prcurve</span>(abernethy2, <span class="at">trace =</span> <span class="cn">TRUE</span>, <span class="at">vary =</span> <span class="cn">TRUE</span>, <span class="at">penalty =</span> <span class="fl">1.4</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>aber.pc</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="do">## Plot</span></span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">2</span>) <span class="sc">+</span> <span class="fl">0.1</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(aber.pc)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(op)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="do">## 3d plot</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a><span class="fu">plot3d</span>(aber.pc)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The plot below (code not shown for this) shows how the responses of the main taxa in the data set vary as the algorithm iterates to convergence in six iterations. The major changes happen in the first 2 iterations.</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-spp-responses.gif" alt="Individual smoothers fitted to the Abernethy Forest data set for the 9 most abundant species." /><figcaption>Individual smoothers fitted to the Abernethy Forest data set for the 9 most abundant species.</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/prcurve-spp-responses.gif" class="img-fluid figure-img"></p>
+<figcaption>Individual smoothers fitted to the Abernethy Forest data set for the 9 most abundant species.</figcaption>
 </figure>
+</div>
 <p>The fitted PC is shown below</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/prcurve-abernethy-fitted-curve.png" alt="Principal curve fitted to the Abernethy Forest data set." /><figcaption>Principal curve fitted to the Abernethy Forest data set.</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/prcurve-abernethy-fitted-curve.png" class="img-fluid figure-img"></p>
+<figcaption>Principal curve fitted to the Abernethy Forest data set.</figcaption>
 </figure>
+</div>
 <p>and explains 96% of the variance in the data</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">R</span><span class="o">&gt;</span><span class="w"> </span><span class="n">aber.pc</span><span class="w">
-
-    </span><span class="n">Principal</span><span class="w"> </span><span class="n">Curve</span><span class="w"> </span><span class="n">Fitting</span><span class="w">
-
-</span><span class="n">Call</span><span class="o">:</span><span class="w"> </span><span class="n">prcurve</span><span class="p">(</span><span class="n">X</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">abernethy2</span><span class="p">,</span><span class="w"> </span><span class="n">vary</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">trace</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">penalty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1.4</span><span class="p">)</span><span class="w">
-
-</span><span class="n">Algorithm</span><span class="w"> </span><span class="n">converged</span><span class="w"> </span><span class="n">after</span><span class="w"> </span><span class="m">6</span><span class="w"> </span><span class="n">iterations</span><span class="w">
-
-           </span><span class="n">SumSq</span><span class="w"> </span><span class="n">Proportion</span><span class="w">
-</span><span class="n">Total</span><span class="w">     </span><span class="m">103234</span><span class="w">       </span><span class="m">1.00</span><span class="w">
-</span><span class="n">Explained</span><span class="w">  </span><span class="m">98864</span><span class="w">       </span><span class="m">0.96</span><span class="w">
-</span><span class="n">Residual</span><span class="w">    </span><span class="m">4370</span><span class="w">       </span><span class="m">0.04</span><span class="w">
-
-</span><span class="n">Fitted</span><span class="w"> </span><span class="n">curve</span><span class="w"> </span><span class="n">uses</span><span class="w"> </span><span class="m">218.339</span><span class="w"> </span><span class="n">degrees</span><span class="w"> </span><span class="n">of</span><span class="w"> </span><span class="n">freedom.</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>R<span class="sc">&gt;</span> aber.pc</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    Principal Curve Fitting</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>Call<span class="sc">:</span> <span class="fu">prcurve</span>(<span class="at">X =</span> abernethy2, <span class="at">vary =</span> <span class="cn">TRUE</span>, <span class="at">trace =</span> <span class="cn">TRUE</span>, <span class="at">penalty =</span> <span class="fl">1.4</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>Algorithm converged after <span class="dv">6</span> iterations</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>           SumSq Proportion</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>Total     <span class="dv">103234</span>       <span class="fl">1.00</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>Explained  <span class="dv">98864</span>       <span class="fl">0.96</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>Residual    <span class="dv">4370</span>       <span class="fl">0.04</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>Fitted curve uses <span class="fl">218.339</span> degrees of freedom.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>and we’d need 4 or 5 PCA axes to do as well as this, and even then we’d be in the unenviable position of having to visualize that 5d space.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">R</span><span class="o">&gt;</span><span class="w"> </span><span class="n">varExpl</span><span class="p">(</span><span class="n">rda</span><span class="p">(</span><span class="n">abernethy2</span><span class="p">),</span><span class="w"> </span><span class="n">axes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">5</span><span class="p">,</span><span class="w"> </span><span class="n">cumulative</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
-   </span><span class="n">PC1</span><span class="w">    </span><span class="n">PC2</span><span class="w">    </span><span class="n">PC3</span><span class="w">    </span><span class="n">PC4</span><span class="w">    </span><span class="n">PC5</span><span class="w"> 
-</span><span class="m">0.4650</span><span class="w"> </span><span class="m">0.8022</span><span class="w"> </span><span class="m">0.9059</span><span class="w"> </span><span class="m">0.9439</span><span class="w"> </span><span class="m">0.9703</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>R<span class="sc">&gt;</span> <span class="fu">varExpl</span>(<span class="fu">rda</span>(abernethy2), <span class="at">axes =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">5</span>, <span class="at">cumulative =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>   PC1    PC2    PC3    PC4    PC5 </span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fl">0.4650</span> <span class="fl">0.8022</span> <span class="fl">0.9059</span> <span class="fl">0.9439</span> <span class="fl">0.9703</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The principal curve, whilst using a larger number of degrees of freedom (~220 vs ~180 for a 5-axis PCA solution), embeds the same amount of information in a single variable, the arc length distance along the principal curve, which may be used as one would a PCA axis score.</p>
-<p>By way of some eye candy to close<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, the output of <code>plot3d(aber.pc)</code> is an <strong>rgl</strong> device window which contains a spin-able, zoom-able 3D representation of the data and the fitted curve. The axes of the plot are the first three principal components, the points are where the samples rfom the core are located in this reduced space and the orange line is the fitted principal curve. Rather than show a static image, I used the <strong>rgl</strong> package to spin the display and wrapped this up in a video, displayed below. The video can be streamed but weighs in at 11Mb (! — I struggled to keep the text legible), just so you know.</p>
-<video width="770" height="429" controls style="margin-left: auto; margin-right: auto; display: block; margin-top: 10px; margin-bottom: 10px;">
-<source src="https://www.fromthebottomoftheheap.net/assets/video/prcurve-movie.webm" type="video/webm">
-<p>Your browser does not support the video tag. </video></p>
+<p>By way of some eye candy to close<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, the output of <code>plot3d(aber.pc)</code> is an <strong>rgl</strong> device window which contains a spin-able, zoom-able 3D representation of the data and the fitted curve. The axes of the plot are the first three principal components, the points are where the samples rfom the core are located in this reduced space and the orange line is the fitted principal curve. Rather than show a static image, I used the <strong>rgl</strong> package to spin the display and wrapped this up in a video, displayed below. The video can be streamed but weighs in at 11Mb (! — I struggled to keep the text legible), just so you know.</p>
+<video width="770" height="429" controls="" style="margin-left: auto; margin-right: auto; display: block; margin-top: 10px; margin-bottom: 10px;">
+<source src="../../../../assets/video/prcurve-movie.webm" type="video/webm">
+<p>Your browser does not support the video tag. </p>
 <p>Seeing the curve (and the data) in three dimensions rather than the usual two is quite illuminating!</p>
 <p>That’s it for part 2. Next time I’ll take a closer look at the <code>prcurve()</code> function, what the options for fitting principal curves are, among other things.</p>
-<h3 id="references" class="unnumbered">References</h3>
-<div id="refs" class="references">
-<div id="ref-death_principal_1999">
-<p>De’ath, G. (1999). Principal curves: A new technique for indirect and direct gradient analysis. <em>Ecology</em> 80, 2237–2253. Available at: <a href="http://www.esajournals.org/doi/abs/10.1890/0012-9658(1999)080%5B2237:PCANTF%5D2.0.CO%3B2">http://www.esajournals.org/doi/abs/10.1890/0012-9658(1999)080%5B2237:PCANTF%5D2.0.CO%3B2</a> [Accessed May 31, 2013].</p>
+<section id="references" class="level3">
+<h3 data-anchor-id="references">References</h3>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot/">← Older: Decluttering ordination plots part 4: orditkplot()</a></span> <span class="text-end"><a href="../../../../2014/03/25/file-synchronisation-with-unison/">Newer: File synchronisation with Unison →</a></span></p>
 </div>
-<div id="ref-goodall_objective_1954">
-<p>Goodall, D. (1954). Objective methods for the classification of vegetation. III. an essay in the use of factor analysis. <em>Australian Journal of Botany</em> 2, 304–324. Available at: <a href="http://www.publish.csiro.au/paper/BT9540304">http://www.publish.csiro.au/paper/BT9540304</a> [Accessed June 3, 2013].</p>
-</div>
-<div id="ref-hastie_principal_1989">
-<p>Hastie, T., and Stuetzle, W. (1989). Principal curves. <em>Journal of the American Statistical Association</em> 84, 502–516. doi:<a href="https://doi.org/10.2307/2289936">10.2307/2289936</a>.</p>
-</div>
-<div id="ref-legendre_numerical_2012">
-<p>Legendre, P., and Legendre, L. (2012). <em>Numerical ecology</em>. 3rd ed. Elsevier.</p>
-</div>
-<div id="ref-noy-meir_principal_1970">
-<p>Noy-Meir, I., and Austin, M. P. (1970). Principal component ordination and simulated vegetational data. <em>Ecology</em> 51, 551–552. doi:<a href="https://doi.org/10.2307/1935398">10.2307/1935398</a>.</p>
-</div>
-<div id="ref-podani-miklos-2002">
-<p>Podani, J., and Miklós, I. (2002). Resemblance coefficients and the horseshoe effect in principal coordinates analysis. <em>Ecology</em> 83, 3331–3343. Available at: <a href="http://www.jstor.org/stable/3072083">http://www.jstor.org/stable/3072083</a>.</p>
-</div>
-<div id="ref-swan_examination_1970">
-<p>Swan, J. M. A. (1970). An examination of some ordination problems by use of simulated vegetational data. <em>Ecology</em> 51, 89–102. doi:<a href="https://doi.org/10.2307/1933602">10.2307/1933602</a>.</p>
-</div>
-</div>
-<section class="footnotes">
-<hr />
-<ol>
-<li id="fn1"><p>Well, not that much candy; I’m still getting to grips with <strong>rgl</strong> and creating videos from individual PNG frames…<a href="#fnref1" class="footnote-back">↩</a></p></li>
-</ol>
+
+
+
 </section>
 
-            <hr />
-            <h3>Comments</h3>
-            <div id="disqus_thread"></div>
-<script type="text/javascript">
-  var disqus_shortname = "fromthebottomoftheheap";
-  var disqus_url = "https://www.fromthebottomoftheheap.net/2014/01/09/pcurve-part-2/";
-  var disqus_title = "Summarising multivariate palaeoenvironmental data";
-  //var disqus_identifier = "/2014/01/09/pcurve-part-2";
 
-  (function() {
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</video><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-death_principal_1999" class="csl-entry" role="listitem">
+De’ath, G. (1999). Principal curves: A new technique for indirect and direct gradient analysis. <em>Ecology</em> 80, 2237–2253. Available at: <a href="http://www.esajournals.org/doi/abs/10.1890/0012-9658(1999)080%5B2237:PCANTF%5D2.0.CO%3B2">http://www.esajournals.org/doi/abs/10.1890/0012-9658(1999)080%5B2237:PCANTF%5D2.0.CO%3B2</a> [Accessed May 31, 2013].
+</div>
+<div id="ref-goodall_objective_1954" class="csl-entry" role="listitem">
+Goodall, D. (1954). Objective methods for the classification of vegetation. <span>III.</span> An essay in the use of factor analysis. <em>Australian Journal of Botany</em> 2, 304–324. Available at: <a href="http://www.publish.csiro.au/paper/BT9540304">http://www.publish.csiro.au/paper/BT9540304</a> [Accessed June 3, 2013].
+</div>
+<div id="ref-hastie_principal_1989" class="csl-entry" role="listitem">
+Hastie, T., and Stuetzle, W. (1989). Principal curves. <em>Journal of the American Statistical Association</em> 84, 502–516. doi:<a href="https://doi.org/10.2307/2289936">10.2307/2289936</a>.
+</div>
+<div id="ref-legendre_numerical_2012" class="csl-entry" role="listitem">
+Legendre, P., and Legendre, L. (2012). <em>Numerical ecology</em>. 3rd ed. Elsevier.
+</div>
+<div id="ref-noy-meir_principal_1970" class="csl-entry" role="listitem">
+Noy-Meir, I., and Austin, M. P. (1970). Principal component ordination and simulated vegetational data. <em>Ecology</em> 51, 551–552. doi:<a href="https://doi.org/10.2307/1935398">10.2307/1935398</a>.
+</div>
+<div id="ref-podani-miklos-2002" class="csl-entry" role="listitem">
+Podani, J., and Miklós, I. (2002). Resemblance coefficients and the horseshoe effect in principal coordinates analysis. <em>Ecology</em> 83, 3331–3343. Available at: <a href="http://www.jstor.org/stable/3072083">http://www.jstor.org/stable/3072083</a>.
+</div>
+<div id="ref-swan_examination_1970" class="csl-entry" role="listitem">
+Swan, J. M. A. (1970). An examination of some ordination problems by use of simulated vegetational data. <em>Ecology</em> 51, 89–102. doi:<a href="https://doi.org/10.2307/1933602">10.2307/1933602</a>.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
-
-            </div>
-            <div class="span2">
-                            <div class="side-snippet">
-                <h4>By Gavin Simpson</h4>
-              
-                <h4>09 January 2014</h4>
-              
-              </div>
-
-                            <div class="side-snippet">
-                <h4>Posted in</h4>
-                
-                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
-                
-              </div>
-       
-
-                            <div class="side-snippet">
-                <h4>Tagged</h4>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/palaeoecology/"><span class="label label-inverse">Palaeoecology</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/ordination/"><span class="label label-inverse">Ordination</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/principal-curves/"><span class="label label-inverse">Principal curves</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/analogue/"><span class="label label-inverse">analogue</span></a><br>
-                
-              </div>
-
-                          <div class="side-snippet">
-              <h4>Social</h4>
-              <p><a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 150px !important;" ></a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
-            </div>
-
-
-                          <div class="side-snippet">
-              <h4>Blogroll</h4>
-              <ul class="unstyled">
-                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://rweekly.org/">R Weekly</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
-              </ul>
-            </div>
-
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      </article>
-
-        
-
-    </div><!--/.fixed-container-->
-    
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="span2">
-            <h4>Menu</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
-            </ul>
-          </div>
-          <div class="span2">
-            <h4>R packages</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
-            </ul>        
-          </div>
-          <div class="span6">
-            <h4>Fineprint</h4>
-            <p><small>Copyright &copy; 2010&ndash;2024 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
-            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
-        <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script>
-        jQuery(function ($) {
-            $(".addToolTip").tooltip()
+<ol>
+<li id="fn1"><p>Well, not that much candy; I’m still getting to grips with <strong>rgl</strong> and creating videos from individual PNG frames…<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/fromthebottomoftheheap\.net");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
         });
-        // Fix suggested by Dependabot as I don't think i can upgrade to jq >=3.5.0 with this version of bootstrap
-        jQuery.htmlPrefilter = function( html ) {
-	return html;
-	};
-    </script>
-    
-    
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="preferred_color_scheme">
+<input type="hidden" id="giscus-alt-theme" value="preferred_color_scheme">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "gavinsimpson/fromthebottomoftheheap-comments";
+    script.dataset.repoId = "";
+    script.dataset.category = "Blog comments";
+    script.dataset.categoryId = "";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright © 2010–2026 Gavin Simpson</p>
+</div>   
+    <div class="nav-footer-center">
+<p>Content available under a <a href="../../../../permissions/">Creative Commons Attribution 4.0 licence</a>.</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:ucfagls@gmail.com">
+      <i class="bi bi-envelope" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://orcid.org/0000-0002-9084-8413">
+<p>ORCID</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
 
 
-  </body>
-</html>
 
 
+</body></html>

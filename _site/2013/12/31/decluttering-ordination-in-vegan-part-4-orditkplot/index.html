@@ -1,270 +1,365 @@
-  <!DOCTYPE html>
-<html lang="en">
-  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gavin Simpson">
+<meta name="dcterms.date" content="2013-12-31">
+<meta name="description" content="Earlier in this series I looked at the ordilabel() and then the orditorp() functions, and most recently the ordipointlabel() function in the vegan package as means to improve labelling in ordination plots. In this, the fourth and final post in the series I take a look at orditkp…">
+
+<title>Decluttering ordination plots part 4: orditkplot() – From the bottom of the heap</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../">
+<link href="../../../../assets/ico/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../site_libs/bootstrap/bootstrap-8fb4e4cb2a8747aefb233048377198cf.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-6FQL01W176');
 </script>
+<script data-ad-client="ca-pub-2908943772231164" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 
 
-    <meta charset="utf-8">
-    <title>Decluttering ordination plots part 4: orditkplot()</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Gavin Simpson">
-    
-    
-<!-- HTML5 metadata -->
+<meta property="og:title" content="Decluttering ordination plots part 4: orditkplot() – From the bottom of the heap">
+<meta property="og:description" content="Earlier in this series I looked at the ordilabel() and then the orditorp() functions, and most recently the ordipointlabel() function in the vegan package as means to improve labelling in ordination plots. In this, the fourth and final post in the series I take a look at orditkp…">
+<meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/orditkplot-screen-grab.png">
+<meta property="og:site_name" content="From the bottom of the heap">
+<meta property="og:image:height" content="676">
+<meta property="og:image:width" content="593">
+<meta name="twitter:title" content="Decluttering ordination plots part 4: orditkplot() – From the bottom of the heap">
+<meta name="twitter:description" content="Earlier in this series I looked at the ordilabel() and then the orditorp() functions, and most recently the ordipointlabel() function in the vegan package as means to improve labelling in ordination plots. In this, the fourth and final post in the series I take a look at orditkp…">
+<meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/orditkplot-screen-grab.png">
+<meta name="twitter:creator" content="@ucfagls">
+<meta name="twitter:site" content="@ucfagls">
+<meta name="twitter:image-height" content="676">
+<meta name="twitter:image-width" content="593">
+<meta name="twitter:card" content="summary_large_image">
+</head>
 
-<meta name="keywords" content="Graphics, Ordination, PCA, R, vegan, Interactive, Plots" />
+<body class="nav-fixed quarto-light">
 
-
-<meta name="description" content="Earlier in this series I looked at the ordilabel() and then the orditorp() functions, and most recently the ordipointlabel() function in the vegan package as means to improve labelling in ordination plots. In this, the fourth and final post in the series I take a look at orditkplot(). If you’ve created ordination diagrams before or been following the previous posts in the irregular series, you’ll have an appreciation for the problems of drawing plots that look, well, good! Without hand editing the diagrams, there is little that even ordipointlable() can do for you if you want a plot created automagically. orditkplot() sits between the automated methods for decluttering ordination plots I’ve looked at previously and hand-editing in dedicated drawing software like Inkscape or Illustrator, and allows some level of tweaking the locations of labelled points within R.
-" />
-
-<!-- RDFa Metadata (in DublinCore) -->
-<meta property="dc:title" content="Decluttering ordination plots part 4: orditkplot()" />
-<meta property="dc:creator" content="Gavin Simpson" />
-
-<meta property="dc:date" content="2013-12-31T00:00:00+01:00" />
-
-<meta property="dc:type" content="" /> <!-- article? entry?-->
-<meta property="dc:format" content="text/html" />
-<meta property="dc:language" content="en" />
-<meta property="dc:source" content="From the Bottom of the Heap" />
-<!-- RDFa Metadata (in OpenGraph) -->
-<meta property="og:title" content="Decluttering ordination plots part 4: orditkplot()" />
-<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
-<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
-<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
-
-<meta property="http://ogp.me/ns/article#published_time" content="2013-12-31T00:00:00+01:00" />
-
-<meta property="og:site_name" content="From the Bottom of the Heap" />
-<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot/" />
-<meta property="og:type" content="article" />
-
-<meta name="og:description" content="Earlier in this series I looked at the ordilabel() and then the orditorp() functions, and most recently the ordipointlabel() function in the vegan package as means to improve labelling in ordination plots. In this, the fourth and final post in the series I take a look at orditkplot(). If you’ve..." />
-
-<!-- Twitter Card Meta data -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site.id" content="@ucfagls" />
-<meta name="twitter:creator:id" content="@ucfagls" />
-<meta name="twitter:title" content="Decluttering ordination plots part 4: orditkplot()" />
-
-
-<meta name="twitter:description" content="Earlier in this series I looked at the ordilabel() and then the orditorp() functions, and most recently the ordipointlabel() function in the vegan package as means to improve labelling in ordinati..." />
-
-<!-- Google Scholar Metadata -->
-<meta name="resource_type" content="From the Bottom of the Heap"/>
-<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
-
-<meta name="citation_publication_date" content="31 Dec 2013"/>
-<meta name="citation_date" content="31 Dec 2013"/>
-
-<meta name="citation_author" content="Gavin Simpson"/>
-<meta name="citation_title" content="Decluttering ordination plots part 4: orditkplot()"/>
-
-    
-    <!-- Link to the Atom feeds -->
-    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
-    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
-    
-    <!-- Le styles -->
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
-      }
-      .sidebar-nav {
-        padding: 9px 0;
-      }
-    </style>
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
-
-    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
-    <!-- Le fav and touch icons -->
-    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
-    
-    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  </head>
-
-  <body>
-
-      <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
-              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> Resources <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/teaching/">Teaching</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/workshops/">Workshops</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/slides/">Slides</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../../index.html">
+    <span class="navbar-title">From the bottom of the heap</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="//index.html"> <i class="bi bi-house-door" role="img">
+</i> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//about/index.html"> <i class="bi bi-info-circle" role="img">
+</i> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//blog/index.html"> <i class="bi bi-chat-left-text" role="img">
+</i> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//publications/index.html"> <i class="bi bi-file-earmark-text" role="img">
+</i> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//research/index.html"> <i class="bi bi-tools" role="img">
+</i> 
+<span class="menu-text">Research</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-the-lab" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-funnel" role="img">
+</i> 
+ <span class="menu-text">The Lab</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-the-lab">    
+        <li>
+    <a class="dropdown-item" href="//lab/index.html">
+ <span class="dropdown-text">About</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/research/index.html">
+ <span class="dropdown-text">Research</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/members/index.html">
+ <span class="dropdown-text">Members</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/publications/index.html">
+ <span class="dropdown-text">Publications</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/join/index.html">
+ <span class="dropdown-text">Join the lab</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection" role="img">
+</i> 
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="//teaching/index.html">
+ <span class="dropdown-text">Teaching</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../workshops/">
+ <span class="dropdown-text">Workshops</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//slides/index.html">
+ <span class="dropdown-text">Slides</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-code" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-code-slash" role="img">
+</i> 
+ <span class="menu-text">Code</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-code">    
+        <li>
+    <a class="dropdown-item" href="//code/dper-scripts/index.html">
+ <span class="dropdown-text">DPER Scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//code/r-packages/index.html">
+ <span class="dropdown-text">R Packages</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../../feed.xml"> <i class="bi bi-rss" role="img" aria-label="RSS feed">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Decluttering ordination plots part 4: orditkplot()</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">R</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    Earlier in this series I looked at the ordilabel() and then the orditorp() functions, and most recently the ordipointlabel() function in the vegan package as means to improve labelling in ordination plots. In this, the fourth and final post in the series I take a look at orditkp…
+  </div>
+</div>
 
 
-    <div class="container">
-          
+<div class="quarto-title-meta">
 
-      <article>
-      <div class="row">
-        <!-- <div class="span8 offset2"> -->
-        <div class="span10">
-          <div class="clearfix">
-            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2014/01/09/pcurve-part-2/">Summarising multivariate palaeoenvironmental data</a></span>
-            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2013/12/28/pcurve-1/">Summarising multivariate palaeoenvironmental data</a> <i class="icon-arrow-right"></i></span>
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gavin Simpson </p>
           </div>
-          <div class="page-header">
-            <header>
-              <h1>Decluttering ordination plots part 4: orditkplot() </h1>
-            </header>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="span12">
-          <div class="row">
-            <div class="span10">
-              
-            <p>Earlier in this series I <a href="http://www.fromthebottomoftheheap.net/2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/">looked at</a> the <code>ordilabel()</code> and <a href="http://www.fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/">then the</a> <code>orditorp()</code> functions, and <a href="http://www.fromthebottomoftheheap.net/2013/06/27/decluttering-ordination-plots-in-vegan-part-3-ordipointlabel/">most recently</a> the <code>ordipointlabel()</code> function in the <strong><a href="http://cran.r-project.org/package=vegan">vegan</a></strong> package as means to improve labelling in ordination plots. In this, the fourth and final post in the series I take a look at <code>orditkplot()</code>. If you’ve created ordination diagrams before or been following the previous posts in the irregular series, you’ll have an appreciation for the problems of drawing plots that look, well, good! Without hand editing the diagrams, there is little that even <code>ordipointlable()</code> can do for you if you want a plot created automagically. <code>orditkplot()</code> sits between the automated methods for decluttering ordination plots I’ve looked at previously and hand-editing in dedicated drawing software like <a href="http://www.inkscape.org">Inkscape</a> or Illustrator, and allows some level of tweaking the locations of labelled points within R.</p>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 31, 2013</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+
+<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
+<section id="posted-in" class="level4">
+<h4 data-anchor-id="posted-in">Posted in</h4>
+<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
+</section>
+<section id="tagged" class="level4">
+<h4 data-anchor-id="tagged">Tagged</h4>
+<p><a href="../../../../tag/graphics/" class="badge text-bg-dark">Graphics</a> <a href="../../../../tag/ordination/" class="badge text-bg-dark">Ordination</a> <a href="../../../../tag/pca/" class="badge text-bg-dark">PCA</a> <a href="../../../../tag/r/" class="badge text-bg-dark">R</a> <a href="../../../../tag/vegan/" class="badge text-bg-dark">vegan</a> <a href="../../../../tag/interactive/" class="badge text-bg-dark">Interactive</a> <a href="../../../../tag/plots/" class="badge text-bg-dark">Plots</a></p>
+</section>
+</div></div><p>Earlier in this series I <a href="http://www.fromthebottomoftheheap.net/2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/">looked at</a> the <code>ordilabel()</code> and <a href="http://www.fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/">then the</a> <code>orditorp()</code> functions, and <a href="http://www.fromthebottomoftheheap.net/2013/06/27/decluttering-ordination-plots-in-vegan-part-3-ordipointlabel/">most recently</a> the <code>ordipointlabel()</code> function in the <strong><a href="http://cran.r-project.org/package=vegan">vegan</a></strong> package as means to improve labelling in ordination plots. In this, the fourth and final post in the series I take a look at <code>orditkplot()</code>. If you’ve created ordination diagrams before or been following the previous posts in the irregular series, you’ll have an appreciation for the problems of drawing plots that look, well, good! Without hand editing the diagrams, there is little that even <code>ordipointlable()</code> can do for you if you want a plot created automagically. <code>orditkplot()</code> sits between the automated methods for decluttering ordination plots I’ve looked at previously and hand-editing in dedicated drawing software like <a href="http://www.inkscape.org">Inkscape</a> or Illustrator, and allows some level of tweaking the locations of labelled points within R.</p>
 <p>To use <code>orditkplot()</code>, you’ll need an R installation that can use the <a href="http://www.tcl.tk">Tcl/Tk</a> ecosystem. On Windows this is probably taken care of for you as part of the Windows binaries. Installing Tcl and Tk on a Linux box is pretty straight-forward. The only difficulties I have come across are with MacOS X and that is probably because I don’t own any Apple kit and haven’t used it much. To check if your R can use Tcl/Tk, run <code>capabilities()</code> and look for the <code>tcltk</code> element. on my Linux laptop I have</p>
-<figure class="highlight">
-<pre><code class="language-rout" data-lang="rout">&gt; capabilities()
+<pre class="rout"><code>
+&gt; capabilities()
    jpeg      png     tiff    tcltk      X11     aqua http/ftp  sockets 
    TRUE     TRUE     TRUE     TRUE     TRUE    FALSE     TRUE     TRUE 
  libxml     fifo   cledit    iconv      NLS  profmem    cairo 
-   TRUE     TRUE     TRUE     TRUE     TRUE    FALSE     TRUE</code></pre>
-</figure>
+   TRUE     TRUE     TRUE     TRUE     TRUE    FALSE     TRUE
+</code></pre>
 <p>Assuming your R can use Tcl/Tk, we’ll begin.</p>
 <p>As with the previous posts, I’ll illustrate <code>orditkplot()</code> through a PCA of the Dutch Dune Meadow data set distributed with <strong>vegan</strong>. Load the package and the data and fit the PCA; we will use <code>scaling = 3</code> throughout</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## load vegan and the data</span><span class="w">
-</span><span class="n">require</span><span class="p">(</span><span class="s2">"vegan"</span><span class="p">)</span><span class="w">
-</span><span class="n">data</span><span class="p">(</span><span class="n">dune</span><span class="p">)</span><span class="w">
-
-</span><span class="n">ord</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rda</span><span class="p">(</span><span class="n">dune</span><span class="p">)</span><span class="w"> </span><span class="c1">## PCA of Dune data</span><span class="w">
-
-</span><span class="n">scl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="c1">## scaling = 3</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="do">## load vegan and the data</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(<span class="st">"vegan"</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(dune)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>ord <span class="ot">&lt;-</span> <span class="fu">rda</span>(dune) <span class="do">## PCA of Dune data</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>scl <span class="ot">&lt;-</span> <span class="dv">3</span> <span class="do">## scaling = 3</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>orditkplot()</code> will work with any of the ordination objects in <strong>vegan</strong>, but it is best to pass it something that is reasonably close to a good-looking layout. For that, I’ll use the configuration of points and labels that <code>ordipointlabel()</code> achieves. Create the base plot and store the returned object</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## base plot</span><span class="w">
-</span><span class="n">bplot</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ordipointlabel</span><span class="p">(</span><span class="n">ord</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="do">## base plot</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>bplot <span class="ot">&lt;-</span> <span class="fu">ordipointlabel</span>(ord)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This we pass to <code>orditkplot()</code></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## improve this via orditkplot</span><span class="w">
-</span><span class="n">orditkplot</span><span class="p">(</span><span class="n">bplot</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="do">## improve this via orditkplot</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">orditkplot</span>(bplot)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Note that when calling <code>orditkplot()</code>, you can specify a number of extra arguments that control how the configuration will be drawn on the Tk canvas, as well as pass in some graphical parameters from <code>?par</code>; read <code>?orditkplot</code> for details of which parameters are currently supported. Not all will affect the look of the rendered plot on the canvas but they do allow another level of control.</p>
 <p>Hopefully you will now have a new window on screen that looks like</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/orditkplot-screen-grab.png" alt="PCA biplot of the Dutch dune meadow data produced using orditkplot()" /><figcaption>PCA biplot of the Dutch dune meadow data produced using <code>orditkplot()</code></figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/orditkplot-screen-grab.png" class="img-fluid figure-img"></p>
+<figcaption>PCA biplot of the Dutch dune meadow data produced using <code>orditkplot()</code></figcaption>
 </figure>
+</div>
 <p>You can now move labels around on the plot and edit labels. These features are illustrated in the video below, in which I spend a few minutes editing the base plot so that there is no overlap in the labels.</p>
-<iframe src="https://player.vimeo.com/video/82920329?color=f43d00" width="500" height="544" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="margin-left: auto; margin-right: auto; display: block; margin-top: 10px; margin-bottom: 10px;">
+<iframe src="https://player.vimeo.com/video/82920329?color=f43d00" width="500" height="544" frameborder="0" webkitallowfullscreen="" mozallowfullscreen="" allowfullscreen="" style="margin-left: auto; margin-right: auto; display: block; margin-top: 10px; margin-bottom: 10px;">
 </iframe>
 <ul>
 <li>To move a label around, lift-click on the label and drag it to a new location. You’ll notice that the label is highlighted with a yellow background, and that as you move the label around, it is tethered to its score point by a thin line. This last feature allows you to move labels temporarily well out of the way whilst editing and not have to remember which labels belong to which points!</li>
@@ -273,9 +368,9 @@
 </ul>
 <p>The row of buttons along the bottom of the canvas window allow you to export the current plot to one of several graphics formats, dump the plot as a new R object in your session or close the canvas window. The buttons, in order, do</p>
 <ul>
-<li>The <strong>Copy to EPS</strong> button uses Tcl/Tk functions to render the plot on the canvas to an &lt;abbr class=“initialism”, title=“Encapsulated Postscript”&gt;EPS</abbr> file. How well this works out will depend on the capabilities of your OS and the Tcl/Tk version in use. A save dialogue box will open allowing to specify a filename for the plot and where the file will be created.</li>
-<li><p><strong>Export plot</strong> takes the R representation of the current Tcl/Tk plot and plots it to one of the following devices using <code>plot.orditkplot()</code>; &lt;abbr class=“initialism”, title=“Encapsulated Postscript”&gt;EPS</abbr>, &lt;abbr class=“initialism”, title=“Portable Document Format”&gt;PDF</abbr>, &lt;abbr class=“initialism”, title=“Portable Network Graphics”&gt;PNG</abbr>, &lt;abbr class=“initialism”, title=“Joint Photographic Expert Group”&gt;JPEG</abbr>, &lt;abbr class=“initialism”, title=“Bitmap file”&gt;BMP</abbr>, &lt;abbr class=“initialism”, title=“Tagged Image File Format”&gt;TIFF</abbr>.</p>
-In addition, the plot can be exported in <a href="http://www.xfig.org">Xfig</a> format via the same dialogue box. Choose the filetype wanted from the drop-down box, specify a filename and location for the saved file.</li>
+<li><p>The <strong>Copy to EPS</strong> button uses Tcl/Tk functions to render the plot on the canvas to an &lt;abbr class=“initialism”, title=“Encapsulated Postscript”&gt;EPS file. How well this works out will depend on the capabilities of your OS and the Tcl/Tk version in use. A save dialogue box will open allowing to specify a filename for the plot and where the file will be created.</p></li>
+<li><p><strong>Export plot</strong> takes the R representation of the current Tcl/Tk plot and plots it to one of the following devices using <code>plot.orditkplot()</code>; &lt;abbr class=“initialism”, title=“Encapsulated Postscript”&gt;EPS, &lt;abbr class=“initialism”, title=“Portable Document Format”&gt;PDF, &lt;abbr class=“initialism”, title=“Portable Network Graphics”&gt;PNG, &lt;abbr class=“initialism”, title=“Joint Photographic Expert Group”&gt;JPEG, &lt;abbr class=“initialism”, title=“Bitmap file”&gt;BMP, &lt;abbr class=“initialism”, title=“Tagged Image File Format”&gt;TIFF.</p>
+<p>In addition, the plot can be exported in <a href="http://www.xfig.org">Xfig</a> format via the same dialogue box. Choose the filetype wanted from the drop-down box, specify a filename and location for the saved file.</p></li>
 <li><p><strong>Dump to R</strong> creates an object of class <code>orditkplot</code> which is a representation of the layout and labels on the current canvas. This is a list with components</p>
 <ul>
 <li><code>labels</code> and <code>points</code>; numeric matrices of coordinates for the centres of the labels and points respectively. If you included site and species scores in the base plot, as I did above, then these matrices contain a mixture of both scores. There is no way to directly index the species or the site scores from each matrix.</li>
@@ -283,192 +378,501 @@ In addition, the plot can be exported in <a href="http://www.xfig.org">Xfig</a> 
 <li><code>args</code> contains vectors of other graphical parameters which control how the scores in <code>labels</code> and <code>points</code> are drawn. <code>tcol</code> and <code>tcex</code> control the colour and size of the labels for example, whilst <code>pcol</code> and <code>pcex</code> do the same for the points. This is how the distinction between species and site score points is preserved; they have different parameters controlling how they look. There are a number of other components in this list, including the axis limits.</li>
 <li><code>dim</code> contains the dimensions of the plot region, the box containing the points and labels.</li>
 </ul>
-All of these are sufficient to give a reasonably faithful representation of the plot as it looked on the Tcl/Tk canvas but on a R plot device. This object can be plotted via the <code>plot()</code> method <code>plot.orditkplot()</code>, and added to as if it were any other R plot.</li>
+<p>All of these are sufficient to give a reasonably faithful representation of the plot as it looked on the Tcl/Tk canvas but on a R plot device. This object can be plotted via the <code>plot()</code> method <code>plot.orditkplot()</code>, and added to as if it were any other R plot.</p></li>
 <li><p><strong>Dismiss</strong> closes the canvas window.</p></li>
 </ul>
 <p>At the end of the video I used the <strong>Dump to R</strong> feature to create object <code>bplot2</code>, which can be plotted on a graphics device</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">bplot2</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(bplot2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><strong>vegan</strong> also provides methods for the <code>points()</code> and <code>text()</code> generics, allowing you to build up a plot in <em>layers</em></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## build up plot</span><span class="w">
-</span><span class="n">plot</span><span class="p">(</span><span class="n">ord</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">)</span><span class="w">
-</span><span class="n">points</span><span class="p">(</span><span class="n">bplot2</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">bplot2</span><span class="o">$</span><span class="n">args</span><span class="o">$</span><span class="n">pch</span><span class="p">)</span><span class="w">
-</span><span class="n">text</span><span class="p">(</span><span class="n">bplot2</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"navy"</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="do">## build up plot</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(ord, <span class="at">type =</span> <span class="st">"n"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="fu">points</span>(bplot2, <span class="at">pch =</span> bplot2<span class="sc">$</span>args<span class="sc">$</span>pch)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="fu">text</span>(bplot2, <span class="at">cex =</span> <span class="fl">0.8</span>, <span class="at">col =</span> <span class="st">"navy"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The plot produced is shown below</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/orditkplot-build-up.png" alt="Plot produced by using points() and text() methods for class orditkplot." /><figcaption>Plot produced by using <code>points()</code> and <code>text()</code> methods for class <code>orditkplot</code>.</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/orditkplot-build-up.png" class="img-fluid figure-img"></p>
+<figcaption>Plot produced by using <code>points()</code> and <code>text()</code> methods for class <code>orditkplot</code>.</figcaption>
 </figure>
+</div>
 <p>In the example above, note that to distinguish between the species and the sites/sample points I needed to refer to the <code>$args$pch</code> component of the <code>bplot2</code> object. This is because</p>
 <ol type="1">
 <li>Once the points are on the Tcl/Tk canvas the correspondence between which are sites/samples and which are species is lost, and</li>
-<li>The <code>points()</code> method is inconsistent with the <code>plot()</code> method and uses the same plotting character for all points<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>.</li>
+<li>The <code>points()</code> method is inconsistent with the <code>plot()</code> method and uses the same plotting character for all points<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</li>
 </ol>
 <p>There is also a <code>scores()</code> method if you need to extract the locations of the labels or the points in the coordinate space of the plot.</p>
 <p>And with that, we’ve come to end of the brief tour of the tools that <strong>vegan</strong> provides to help produce ordination plots. If these don’t meet your needs, then you can export the plot as an EPS, PDF, or another vector format that can be edited in a vector drawing package like Inkscape. <strong>vegan</strong> provides lots of other functions to enhance ordination plots, and I’ll take a look at some of those next year. Use the comments to let me know if of any particular functions you’d like me to cover first.</p>
-<section class="footnotes">
-<hr />
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2013/12/28/pcurve-1/">← Older: Summarising multivariate palaeoenvironmental data</a></span> <span class="text-end"><a href="../../../../2014/01/09/pcurve-part-2/">Newer: Summarising multivariate palaeoenvironmental data →</a></span></p>
+</div>
+
+
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
 <ol>
-<li id="fn1"><p>Note to self: I should probably fix that…<a href="#fnref1" class="footnote-back">↩</a></p></li>
+<li id="fn1"><p>Note to self: I should probably fix that…<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
 </ol>
-</section>
-
-            <hr />
-            <h3>Comments</h3>
-            <div id="disqus_thread"></div>
-<script type="text/javascript">
-  var disqus_shortname = "fromthebottomoftheheap";
-  var disqus_url = "https://www.fromthebottomoftheheap.net/2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot/";
-  var disqus_title = "Decluttering ordination plots part 4: orditkplot()";
-  //var disqus_identifier = "/2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot";
-
-  (function() {
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-
-
-            </div>
-            <div class="span2">
-                            <div class="side-snippet">
-                <h4>By Gavin Simpson</h4>
-              
-                <h4>31 December 2013</h4>
-              
-              </div>
-
-                            <div class="side-snippet">
-                <h4>Posted in</h4>
-                
-                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
-                
-              </div>
-       
-
-                            <div class="side-snippet">
-                <h4>Tagged</h4>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/graphics/"><span class="label label-inverse">Graphics</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/ordination/"><span class="label label-inverse">Ordination</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/pca/"><span class="label label-inverse">PCA</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/r/"><span class="label label-inverse">R</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/vegan/"><span class="label label-inverse">vegan</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/interactive/"><span class="label label-inverse">Interactive</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/plots/"><span class="label label-inverse">Plots</span></a><br>
-                
-              </div>
-
-                          <div class="side-snippet">
-              <h4>Social</h4>
-              <p><a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 150px !important;" ></a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
-            </div>
-
-
-                          <div class="side-snippet">
-              <h4>Blogroll</h4>
-              <ul class="unstyled">
-                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://rweekly.org/">R Weekly</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
-              </ul>
-            </div>
-
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      </article>
-
-        
-
-    </div><!--/.fixed-container-->
-    
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="span2">
-            <h4>Menu</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
-            </ul>
-          </div>
-          <div class="span2">
-            <h4>R packages</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
-            </ul>        
-          </div>
-          <div class="span6">
-            <h4>Fineprint</h4>
-            <p><small>Copyright &copy; 2010&ndash;2024 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
-            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
-        <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script>
-        jQuery(function ($) {
-            $(".addToolTip").tooltip()
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/fromthebottomoftheheap\.net");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
         });
-        // Fix suggested by Dependabot as I don't think i can upgrade to jq >=3.5.0 with this version of bootstrap
-        jQuery.htmlPrefilter = function( html ) {
-	return html;
-	};
-    </script>
-    
-    
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="preferred_color_scheme">
+<input type="hidden" id="giscus-alt-theme" value="preferred_color_scheme">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "gavinsimpson/fromthebottomoftheheap-comments";
+    script.dataset.repoId = "";
+    script.dataset.category = "Blog comments";
+    script.dataset.categoryId = "";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright © 2010–2026 Gavin Simpson</p>
+</div>   
+    <div class="nav-footer-center">
+<p>Content available under a <a href="../../../../permissions/">Creative Commons Attribution 4.0 licence</a>.</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:ucfagls@gmail.com">
+      <i class="bi bi-envelope" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://orcid.org/0000-0002-9084-8413">
+<p>ORCID</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
 
 
-  </body>
-</html>
 
 
+</body></html>

@@ -1,296 +1,438 @@
-  <!DOCTYPE html>
-<html lang="en">
-  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gavin Simpson">
+<meta name="dcterms.date" content="2021-02-02">
+<meta name="description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (n…">
+
+<title>Using random effects in GAMs with mgcv – From the bottom of the heap</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../">
+<link href="../../../../assets/ico/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../site_libs/bootstrap/bootstrap-8fb4e4cb2a8747aefb233048377198cf.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-6FQL01W176');
 </script>
+<script data-ad-client="ca-pub-2908943772231164" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
-    <meta charset="utf-8">
-    <title>Using random effects in GAMs with mgcv</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Gavin Simpson">
-    
-    
-<!-- HTML5 metadata -->
-
-<meta name="keywords" content="GAM, mgcv, random effects, smooths, penalty, variance components" />
-
-
-<meta name="description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (nlme 📦) or one of lmer() or glmer() (lme4 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with gam(). brms 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use gam() or bam() from mgcv. In this post I’ll show you how to do just that.
-" />
-
-<!-- RDFa Metadata (in DublinCore) -->
-<meta property="dc:title" content="Using random effects in GAMs with mgcv" />
-<meta property="dc:creator" content="Gavin Simpson" />
-
-<meta property="dc:date" content="2021-02-02T17:50:00+01:00" />
-
-<meta property="dc:type" content="" /> <!-- article? entry?-->
-<meta property="dc:format" content="text/html" />
-<meta property="dc:language" content="en" />
-<meta property="dc:source" content="From the Bottom of the Heap" />
-<!-- RDFa Metadata (in OpenGraph) -->
-<meta property="og:title" content="Using random effects in GAMs with mgcv" />
-<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
-<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
-<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
-
-<meta property="http://ogp.me/ns/article#published_time" content="2021-02-02T17:50:00+01:00" />
-
-<meta property="og:site_name" content="From the Bottom of the Heap" />
-<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/" />
-<meta property="og:type" content="article" />
-
-<meta name="og:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme()..." />
-
-<!-- Twitter Card Meta data -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site.id" content="@ucfagls" />
-<meta name="twitter:creator:id" content="@ucfagls" />
-<meta name="twitter:title" content="Using random effects in GAMs with mgcv" />
-
-<meta name="twitter:image" content="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png" />
-
-
-<meta name="twitter:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the..." />
-
-<!-- Google Scholar Metadata -->
-<meta name="resource_type" content="From the Bottom of the Heap"/>
-<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
-
-<meta name="citation_publication_date" content="02 Feb 2021"/>
-<meta name="citation_date" content="02 Feb 2021"/>
-
-<meta name="citation_author" content="Gavin Simpson"/>
-<meta name="citation_title" content="Using random effects in GAMs with mgcv"/>
-
-    
-    <!-- Link to the Atom feeds -->
-    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
-    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
-    
-    <!-- Le styles -->
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
       }
-      .sidebar-nav {
-        padding: 9px 0;
-      }
-    </style>
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
-    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+<meta property="og:title" content="Using random effects in GAMs with mgcv – From the bottom of the heap">
+<meta property="og:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (n…">
+<meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png">
+<meta property="og:site_name" content="From the bottom of the heap">
+<meta property="og:image:height" content="340">
+<meta property="og:image:width" content="850">
+<meta name="twitter:title" content="Using random effects in GAMs with mgcv – From the bottom of the heap">
+<meta name="twitter:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (n…">
+<meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png">
+<meta name="twitter:creator" content="@ucfagls">
+<meta name="twitter:site" content="@ucfagls">
+<meta name="twitter:image-height" content="340">
+<meta name="twitter:image-width" content="850">
+<meta name="twitter:card" content="summary_large_image">
+</head>
 
-    <!-- Le fav and touch icons -->
-    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
-    
-    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  </head>
+<body class="nav-fixed quarto-light">
 
-  <body>
-
-      <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
-              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> Resources <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/teaching/">Teaching</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/workshops/">Workshops</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/slides/">Slides</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../../index.html">
+    <span class="navbar-title">From the bottom of the heap</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="//index.html"> <i class="bi bi-house-door" role="img">
+</i> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//about/index.html"> <i class="bi bi-info-circle" role="img">
+</i> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//blog/index.html"> <i class="bi bi-chat-left-text" role="img">
+</i> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//publications/index.html"> <i class="bi bi-file-earmark-text" role="img">
+</i> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//research/index.html"> <i class="bi bi-tools" role="img">
+</i> 
+<span class="menu-text">Research</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-the-lab" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-funnel" role="img">
+</i> 
+ <span class="menu-text">The Lab</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-the-lab">    
+        <li>
+    <a class="dropdown-item" href="//lab/index.html">
+ <span class="dropdown-text">About</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/research/index.html">
+ <span class="dropdown-text">Research</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/members/index.html">
+ <span class="dropdown-text">Members</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/publications/index.html">
+ <span class="dropdown-text">Publications</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/join/index.html">
+ <span class="dropdown-text">Join the lab</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection" role="img">
+</i> 
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="//teaching/index.html">
+ <span class="dropdown-text">Teaching</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../workshops/">
+ <span class="dropdown-text">Workshops</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//slides/index.html">
+ <span class="dropdown-text">Slides</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-code" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-code-slash" role="img">
+</i> 
+ <span class="menu-text">Code</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-code">    
+        <li>
+    <a class="dropdown-item" href="//code/dper-scripts/index.html">
+ <span class="dropdown-text">DPER Scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//code/r-packages/index.html">
+ <span class="dropdown-text">R Packages</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../../feed.xml"> <i class="bi bi-rss" role="img" aria-label="RSS feed">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Using random effects in GAMs with mgcv</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">R</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (n…
+  </div>
+</div>
 
 
-    <div class="container">
-          
+<div class="quarto-title-meta">
 
-      <article>
-      <div class="row">
-        <!-- <div class="span8 offset2"> -->
-        <div class="span10">
-          <div class="clearfix">
-            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2024/03/28/gratia-0-9-0/">gratia 0.9.0</a></span>
-            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/">Getting data from the Canada Covid-19 Tracker using R</a> <i class="icon-arrow-right"></i></span>
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gavin Simpson </p>
           </div>
-          <div class="page-header">
-            <header>
-              <h1>Using random effects in GAMs with mgcv </h1>
-            </header>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="span12">
-          <div class="row">
-            <div class="span10">
-              
-            <p>There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using <code>gamm()</code> from the <strong>mgcv</strong> 📦 or <code>gamm4()</code> from the <strong>gamm4</strong> 📦, which use <code>lme()</code> (<strong>nlme</strong> 📦) or one of <code>lmer()</code> or <code>glmer()</code> (<strong>lme4</strong> 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with <code>gam()</code>. <strong>brms</strong> 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use <code>gam()</code> or <code>bam()</code> from <strong>mgcv</strong>. In this post I’ll show you how to do just that.</p>
-<h2 id="smooths-as-random-effects">Smooths as random effects</h2>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">February 2, 2021</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+
+<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
+<section id="posted-in" class="level4">
+<h4 data-anchor-id="posted-in">Posted in</h4>
+<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
+</section>
+<section id="tagged" class="level4">
+<h4 data-anchor-id="tagged">Tagged</h4>
+<p><a href="../../../../tag/gam/" class="badge text-bg-dark">GAM</a> <a href="../../../../tag/mgcv/" class="badge text-bg-dark">mgcv</a> <a href="../../../../tag/random-effects/" class="badge text-bg-dark">random effects</a> <a href="../../../../tag/smooths/" class="badge text-bg-dark">smooths</a> <a href="../../../../tag/penalty/" class="badge text-bg-dark">penalty</a> <a href="../../../../tag/variance-components/" class="badge text-bg-dark">variance components</a></p>
+</section>
+</div></div><p>There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using <code>gamm()</code> from the <strong>mgcv</strong> 📦 or <code>gamm4()</code> from the <strong>gamm4</strong> 📦, which use <code>lme()</code> (<strong>nlme</strong> 📦) or one of <code>lmer()</code> or <code>glmer()</code> (<strong>lme4</strong> 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with <code>gam()</code>. <strong>brms</strong> 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use <code>gam()</code> or <code>bam()</code> from <strong>mgcv</strong>. In this post I’ll show you how to do just that.</p>
+<section id="smooths-as-random-effects" class="level2">
+<h2 data-anchor-id="smooths-as-random-effects">Smooths as random effects</h2>
 <p>The sorts of smooths we fit in <strong>mgcv</strong> are (typically) penalized smooths; we choose to use some number of basis functions <span class="math inline">\(k\)</span>, which sets an upper limit on the complexity — wiggliness — of the smooth, and then we estimate parameters for the model by maximizing a penalized log-likelihood. The log-likelihood of the model is a measure of the fit (or lack there of), while the penalty helps us avoid fitting overly complex smooths.</p>
-<p>In the sorts of models that can be fitted in <strong>mgcv</strong>, the penalty is a function of the model coefficients, <span class="math inline">\(\boldsymbol{\beta}\)</span>, and a penalty matrix<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>, which we write as <span class="math inline">\(\boldsymbol{S}\)</span>. The penalty then is <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span>. The penalty matrix measures the wiggliness of each basis function (on the diagonal), and how the wiggliness of one basis function affects the wiggliness of another (the off diagonals). Just as the <span class="math inline">\(\boldsymbol{\beta}\)</span> scale the individual basis functions, they also scale penalty values in the penalty matrix; if you were to choose large weights for the most wiggly basis functions, the overall penalty <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span> would increase by a lot more than if we used smaller weights for those really wiggly functions.</p>
+<p>In the sorts of models that can be fitted in <strong>mgcv</strong>, the penalty is a function of the model coefficients, <span class="math inline">\(\boldsymbol{\beta}\)</span>, and a penalty matrix<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>, which we write as <span class="math inline">\(\boldsymbol{S}\)</span>. The penalty then is <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span>. The penalty matrix measures the wiggliness of each basis function (on the diagonal), and how the wiggliness of one basis function affects the wiggliness of another (the off diagonals). Just as the <span class="math inline">\(\boldsymbol{\beta}\)</span> scale the individual basis functions, they also scale penalty values in the penalty matrix; if you were to choose large weights for the most wiggly basis functions, the overall penalty <span class="math inline">\(\boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span> would increase by a lot more than if we used smaller weights for those really wiggly functions.</p>
 <p>The penalty then acts to shrink the estimates of <span class="math inline">\(\boldsymbol{\beta}\)</span> away from the values they would take if we weren’t doing a penalized fit and were instead fixing the wiggliness of the smooth at the maximum value dictated by <span class="math inline">\(k\)</span>. Put another way, the penalty shrinks the estimates for <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero.</p>
 <p>Random effects also involve shrinkage. With a random effect we’re trying to model subject specific effects (subject-specific intercepts, or subject-specific “slopes” of covariates) without having to explicitly estimate a fixed effect parameter for each subject’s intercept or covariate effect. Instead we think of the subject-specific intercepts or “slopes” as coming from distribution, typically a Gaussian distribution, with mean 0 and some variance that is to be estimated. The larger this random effect variance, the greater the variation among subject-specific intercepts, “slopes” etc. The smaller the random effect variance, the closer to zero the estimated effects are pulled. As a result, random effects shrink to, varying degrees, the estimated subject-specific effects, and how much they do that is related to the random effect variance.</p>
 <p>If I abuse all standards of notation and represent the estimated random effects with <span class="math inline">\(\boldsymbol{\beta}\)</span>, you might get the feeling that perhaps there is some link between whats happening when we estimate random effects shrinking the <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero, and the penalty applied to smooths that shrinks the <span class="math inline">\(\boldsymbol{\beta}\)</span> towards zero. If you did, you’d be right, there is. And if so, there must be a penalty matrix that we can write down for a random effect — if we assume that each random intercept or “slope” is a basis function, the penalty matrix <span class="math inline">\(\mathbf{S}\)</span> is a simple diagonal matrix, one row and column per subject, with a constant value on the diagonal (and zeroes everywhere else):</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-penalty-example-1.png" alt="Penalty matrix corresponding to a random effect for a factor with 10 subjects (levels)." /><figcaption>Penalty matrix corresponding to a random effect for a factor with 10 subjects (levels).</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/random-effects-in-gams-penalty-example-1.png" class="img-fluid figure-img"></p>
+<figcaption>Penalty matrix corresponding to a random effect for a factor with 10 subjects (levels).</figcaption>
 </figure>
+</div>
 <p>To complete the picture, when we fit a GAM, we’re maximising the penalised log-likelihood over both the model parameters <span class="math inline">\(\boldsymbol{\beta}\)</span> and a smoothness parameter, <span class="math inline">\(\boldsymbol{\lambda}\)</span>. It’s <span class="math inline">\(\boldsymbol{\lambda}\)</span> that actually controls how much price we pay for the wiggliness penalty as we add <span class="math inline">\(\boldsymbol{\lambda} \boldsymbol{\beta}^{\mathsf{T}} \mathbf{S} \boldsymbol{\beta}\)</span> to the log-likelihood. It turns out that the variance of the random effect is equal to the scale parameter (the residual variance <span class="math inline">\(\sigma^{2}_{\varepsilon}\)</span> in a Gaussian model for example) divided by <span class="math inline">\(\boldsymbol{\lambda}\)</span>.</p>
 <p>This link between smooths and random effects is really cool; not only are we able to estimate smooths and GAMs using the machinery of mixed effects models, we can also estimate random effects using all the penalized spline machinery available for GAMs in <strong>mgcv</strong>.</p>
-<p>OK, so that was all really hand-wavy and skipped over a lot of math and theory<a href="#fn2" class="footnote-ref" id="fnref2"><sup>2</sup></a>, but I hope it gives you the intuition you need to understand how random effects are represented as smooths, through the identity penalty matrix.</p>
-<h2 id="fitting-random-effects-with-mgcv">Fitting random effects with mgcv</h2>
+<p>OK, so that was all really hand-wavy and skipped over a lot of math and theory<a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>, but I hope it gives you the intuition you need to understand how random effects are represented as smooths, through the identity penalty matrix.</p>
+</section>
+<section id="fitting-random-effects-with-mgcv" class="level2">
+<h2 data-anchor-id="fitting-random-effects-with-mgcv">Fitting random effects with mgcv</h2>
 <p>So much for the theory, let’s see how this all works in practice.</p>
-<p>By way of an example, I’m going to use a data set from a study on the effects of testosterone on the growth of rats from <span class="citation" data-cites="Molenberghs2000-vk">Molenberghs and Verbeke (2000)</span>, which was analysed in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (2013)</span>, from were I also obtained the data. In the experiment, 50 rats were randomly assigned to one of three groups; a control group or a group receiving low or high doses of Decapeptyl, which inhibits testosterone production. The experiment started when the rats were 45 days old and starting with the 50th day, the size of the rat’s head was measured via an X-ray image. You can download the data <a href="https://www.uni-goettingen.de/de/551625.html">here</a>.</p>
+<p>By way of an example, I’m going to use a data set from a study on the effects of testosterone on the growth of rats from <span class="citation" data-cites="Molenberghs2000-vk">Molenberghs and Verbeke (<a href="#ref-Molenberghs2000-vk" role="doc-biblioref">2000</a>)</span>, which was analysed in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (<a href="#ref-Fahrmeir2013-xu" role="doc-biblioref">2013</a>)</span>, from were I also obtained the data. In the experiment, 50 rats were randomly assigned to one of three groups; a control group or a group receiving low or high doses of Decapeptyl, which inhibits testosterone production. The experiment started when the rats were 45 days old and starting with the 50th day, the size of the rat’s head was measured via an X-ray image. You can download the data <a href="https://www.uni-goettingen.de/de/551625.html">here</a>.</p>
 <p>For the example, we’ll use the following packages</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">pkgs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">,</span><span class="w"> </span><span class="s2">"lme4"</span><span class="p">,</span><span class="w"> </span><span class="s2">"ggplot2"</span><span class="p">,</span><span class="w"> </span><span class="s2">"vroom"</span><span class="p">,</span><span class="w"> </span><span class="s2">"dplyr"</span><span class="p">,</span><span class="w"> </span><span class="s2">"forcats"</span><span class="p">,</span><span class="w"> </span><span class="s2">"tidyr"</span><span class="p">)</span><span class="w">
-</span><span class="c1">## install.packages(pkgs, Ncpus = 4)</span><span class="w">
-</span><span class="n">vapply</span><span class="p">(</span><span class="n">pkgs</span><span class="p">,</span><span class="w"> </span><span class="n">library</span><span class="p">,</span><span class="w"> </span><span class="n">logical</span><span class="p">(</span><span class="m">1</span><span class="p">),</span><span class="w"> </span><span class="n">character.only</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">logical.return</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w">
-       </span><span class="n">quietly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">   mgcv    lme4 ggplot2   vroom   dplyr forcats   tidyr 
-   TRUE    TRUE    TRUE    TRUE    TRUE    TRUE    TRUE </code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>pkgs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"mgcv"</span>, <span class="st">"lme4"</span>, <span class="st">"ggplot2"</span>, <span class="st">"vroom"</span>, <span class="st">"dplyr"</span>, <span class="st">"forcats"</span>, <span class="st">"tidyr"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages(pkgs, Ncpus = 4)</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">vapply</span>(pkgs, library, <span class="fu">logical</span>(<span class="dv">1</span>), <span class="at">character.only =</span> <span class="cn">TRUE</span>, <span class="at">logical.return =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">quietly =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+   mgcv    lme4 ggplot2   vroom   dplyr forcats   tidyr 
+   TRUE    TRUE    TRUE    TRUE    TRUE    TRUE    TRUE 
+</code></pre>
 <p>We’ll also need the development version of the <strong>gratia</strong> 📦, which we can install with the <strong>remotes</strong> 📦 (if you don’t have that installed, install it first)</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## install.packages("remotes")</span><span class="w">
-</span><span class="c1">## remotes::install_github('gavinsimpson/gratia')</span><span class="w">
-</span><span class="n">library</span><span class="p">(</span><span class="s1">'gratia'</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages("remotes")</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="do">## remotes::install_github('gavinsimpson/gratia')</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'gratia'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>We load the data — ignore the warning about new names as we deleted that column anyway</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">rats</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">vroom</span><span class="p">(</span><span class="s1">'rats.txt'</span><span class="p">,</span><span class="w"> </span><span class="n">delim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'   '</span><span class="p">,</span><span class="w"> </span><span class="n">col_types</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'dddddddddddd-'</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">New names:
-* `` -&gt; ...13</code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>rats <span class="ot">&lt;-</span> <span class="fu">vroom</span>(<span class="st">'rats.txt'</span>, <span class="at">delim =</span> <span class="st">'   '</span>, <span class="at">col_types =</span> <span class="st">'dddddddddddd-'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+New names:
+* `` -&gt; ...13
+</code></pre>
 <p>Next we need to prepare the data for modelling. The variable <code>transf_time</code> is the main covariate of interest. It relates to the age of the rats in days via the transformation</p>
 <p><span class="math display">\[\log (1 + (\mathtt{time} - 45) / 10)\]</span></p>
 <p>where <span class="math inline">\(\mathtt{time}\)</span> is the <code>time</code> variable in the data set. We also need to convert the <code>group</code> variable to a factor with useful levels to create a <code>treatment</code> variable and we convert <code>subject</code> — an identifier for each individual rat — a factor</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">rats</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rats</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
-    </span><span class="n">mutate</span><span class="p">(</span><span class="n">treatment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fct_recode</span><span class="p">(</span><span class="n">factor</span><span class="p">(</span><span class="n">group</span><span class="p">,</span><span class="w"> </span><span class="n">levels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">2</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">3</span><span class="p">)),</span><span class="w">
-                                  </span><span class="n">Low</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'1'</span><span class="p">,</span><span class="w">
-                                  </span><span class="n">High</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'3'</span><span class="p">,</span><span class="w">
-                                  </span><span class="n">Control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'2'</span><span class="p">),</span><span class="w">
-           </span><span class="n">subject</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">factor</span><span class="p">(</span><span class="n">subject</span><span class="p">))</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>rats <span class="ot">&lt;-</span> rats <span class="sc">%&gt;%</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">treatment =</span> <span class="fu">fct_recode</span>(<span class="fu">factor</span>(group, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">3</span>)),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">Low =</span> <span class="st">'1'</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">High =</span> <span class="st">'3'</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">Control =</span> <span class="st">'2'</span>),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">subject =</span> <span class="fu">factor</span>(subject))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The number of observations per rat is variable, with only 22 of the 50 rats having the complete seven measurements by day 110</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">rats</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
-    </span><span class="n">na.omit</span><span class="p">()</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
-    </span><span class="n">count</span><span class="p">(</span><span class="n">subject</span><span class="p">)</span><span class="w"> </span><span class="o">%&gt;%</span><span class="w">
-    </span><span class="n">count</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n_rats"</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text"># A tibble: 7 x 2
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>rats <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">na.omit</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(subject) <span class="sc">%&gt;%</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(n, <span class="at">name =</span> <span class="st">"n_rats"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+# A tibble: 7 x 2
       n n_rats
 * &lt;int&gt;  &lt;int&gt;
 1     1      4
@@ -299,27 +441,29 @@
 4     4      9
 5     5      5
 6     6      2
-7     7     22</code></pre>
-</figure>
+7     7     22
+</code></pre>
 <p>so there’ll be no averaging the response within subjects and doing an ANOVA.</p>
 <p>Before we fit the models an explore how to work with random effects in <strong>mgcv</strong>, we’ll plot the data</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">plt_labs</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Head height (distance in pixels)'</span><span class="p">,</span><span class="w">
-                 </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Age in days'</span><span class="p">,</span><span class="w">
-                 </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'Treatment'</span><span class="p">)</span><span class="w">
-</span><span class="n">ggplot</span><span class="p">(</span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">time</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">response</span><span class="p">,</span><span class="w">
-                 </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">treatment</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">facet_wrap</span><span class="p">(</span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">plt_labs</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>plt_labs <span class="ot">&lt;-</span> <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">'Head height (distance in pixels)'</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">x =</span> <span class="st">'Age in days'</span>,</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">colour =</span> <span class="st">'Treatment'</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(rats, <span class="fu">aes</span>(<span class="at">x =</span> time, <span class="at">y =</span> response,</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">group =</span> subject, <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> treatment, <span class="at">ncol =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+Warning: Removed 98 row(s) containing missing values (geom_path).
+</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/random-effects-in-gams-plot-rat-data-1.png" class="img-fluid figure-img"></p>
+<figcaption>Plot of the rat hormone therapy data</figcaption>
 </figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Warning: Removed 98 row(s) containing missing values (geom_path).</code></pre>
-</figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-rat-data-1.png" alt="Plot of the rat hormone therapy data" /><figcaption>Plot of the rat hormone therapy data</figcaption>
-</figure>
-<p>The model fitted in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (2013)</span> is</p>
+</div>
+<p>The model fitted in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (<a href="#ref-Fahrmeir2013-xu" role="doc-biblioref">2013</a>)</span> is</p>
 <p><span class="math display">\[y_{ij} = \beta_0 + \gamma_{0i} + \beta_1 L_i \cdot t_{ij} + \beta_2 H_i \cdot t_{ij} + \beta_3 C_i \cdot t_{ij} + \gamma_{1i} \cdot t_{ij} + \varepsilon_{ij}\]</span></p>
 <p>where</p>
 <ul>
@@ -330,23 +474,21 @@
 </ul>
 <p>If this isn’t very clear — it took me a little while to grok what this meant and translate it to R speak — note that each of <span class="math inline">\(\beta_1\)</span>, <span class="math inline">\(\beta_2\)</span>, and <span class="math inline">\(\beta_3\)</span> are associated with an interaction between the dummy variable coding for the treatment and the time variable. So we have a model with an intercept and three interaction terms with no main effects.</p>
 <p>In <code>lmer()</code> we can fit this model with (ignore the singular fit warning for now)</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">m1_lmer</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lmer</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="o">:</span><span class="n">transf_time</span><span class="w"> </span><span class="o">+</span><span class="w">
-                    </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">subject</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">0</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">transf_time</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">subject</span><span class="p">),</span><span class="w">
-                </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">boundary (singular) fit: see ?isSingular</code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>m1_lmer <span class="ot">&lt;-</span> <span class="fu">lmer</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                    (<span class="dv">1</span> <span class="sc">|</span> subject) <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> transf_time <span class="sc">|</span> subject),</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> rats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+boundary (singular) fit: see ?isSingular
+</code></pre>
 <p>If you’re not familiar with this model specification for the random effects, it specifies uncorrelated random effects for the subject-specific means (random intercept; <code>(1 | subject)</code>) and the subject_specific effects of <code>transf_time</code> (random slope; <code>(0 + transf_time | subject)</code>). The <code>0</code> in the formula for the latter suppresses the (random) intercept as we already included that as a separate term.</p>
 <p>The reason we’re fitting uncorrelated random effects is because that’s all <strong>mgcv</strong> can fit; there’s no way to encode a covariance term between the two random effects.</p>
 <p>The equivalent model fitted using <code>gam()</code> is</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">m1_gam</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="o">:</span><span class="n">transf_time</span><span class="w"> </span><span class="o">+</span><span class="w">
-                  </span><span class="n">s</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'re'</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-                  </span><span class="n">s</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">transf_time</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'re'</span><span class="p">),</span><span class="w">
-              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'REML'</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>m1_gam <span class="ot">&lt;-</span> <span class="fu">gam</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, <span class="at">bs =</span> <span class="st">'re'</span>) <span class="sc">+</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, transf_time, <span class="at">bs =</span> <span class="st">'re'</span>),</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> rats, <span class="at">method =</span> <span class="st">'REML'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Note:</p>
 <ol type="1">
 <li>we specify two separate <em>random effect</em> smooths, one per random term,</li>
@@ -354,56 +496,51 @@
 <li>any grouping variables <strong>must</strong> be coded as a factor — that’s why we converted <code>subject</code> (which is an integer vector) to a factor right after importing the data.</li>
 </ol>
 <p>Let’s compare the fixed effect terms; first for the <code>lmer()</code> version</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">fixef</span><span class="p">(</span><span class="n">m1_lmer</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">                 (Intercept) treatmentControl:transf_time 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fixef</span>(m1_lmer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+                 (Intercept) treatmentControl:transf_time 
                    68.607386                     6.871128 
     treatmentLow:transf_time    treatmentHigh:transf_time 
-                    7.506897                     7.313854 </code></pre>
-</figure>
+                    7.506897                     7.313854 
+</code></pre>
 <p>and for the <code>gam()</code> version</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">coef</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">)[</span><span class="m">1</span><span class="o">:</span><span class="m">4</span><span class="p">]</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">                 (Intercept) treatmentControl:transf_time 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(m1_gam)[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+                 (Intercept) treatmentControl:transf_time 
                    68.607385                     6.871130 
     treatmentLow:transf_time    treatmentHigh:transf_time 
-                    7.506897                     7.313859 </code></pre>
-</figure>
+                    7.506897                     7.313859 
+</code></pre>
 <p>which are close enough.</p>
 <p>Next let’s look at the estimated variances of the random effect terms. First for the <code>lmer()</code> model:</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m1_lmer</span><span class="p">)</span><span class="o">$</span><span class="n">varcor</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text"> Groups    Name        Std.Dev.
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_lmer)<span class="sc">$</span>varcor</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+ Groups    Name        Std.Dev.
  subject   (Intercept) 1.8881  
  subject.1 transf_time 0.0000  
- Residual              1.2020  </code></pre>
-</figure>
+ Residual              1.2020  
+</code></pre>
 <p>and now for the <code>gam()</code> model</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">variance_comp</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text"># A tibble: 3 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">variance_comp</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+# A tibble: 3 x 5
   component               variance std_dev lower_ci upper_ci
   &lt;chr&gt;                      &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
 1 s(subject)             3.56      1.89    1.51e+ 0  2.36e 0
 2 s(subject,transf_time) 0.0000257 0.00507 8.21e-42  3.14e36
-3 scale                  1.44      1.20    1.09e+ 0  1.33e 0</code></pre>
-</figure>
+3 scale                  1.44      1.20    1.09e+ 0  1.33e 0
+</code></pre>
 <p>Apart from being as close for the differences not to matter, we should also note that the variance for the rat-specific effect of <code>transf_time</code> is effectively 0. This is likely the cause of the singular fit warning from <code>lmer()</code>. The <code>lower_ci</code> and <code>upper_ci</code> variables indicate the limits of a 95% confidence interval on the standard deviation of each variance component; the coverage can be controlled via the <code>coverage</code> argument to <code>variance_comp()</code>. The confidence interval for the rat-specific time effect variance is huge, again indicating that there really isn’t much variation at all in this component.</p>
 <p>Here we used the <code>variance_comp()</code> function from <strong>gratia</strong> to extract the variance components, which expresses the random effects as their equivalent variance components that you’d see in a mixed model output. <code>variance_comp()</code> is a simple wrapper to <code>mgcv::gam.vcomp()</code>, which is doing all the hard work, but <code>variance_comp()</code> suppresses the annoying printed output produced by <code>gam.vcomp()</code> and returns the variance components as a tibble.</p>
 <p>You can see a nicer version of the variance components for <code>lmer()</code> by printing the whole <code>summary()</code> but it produces a lot of output; the bit we are interested in just now is in the section labelled <em>Random effects:</em></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m1_lmer</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Linear mixed model fit by REML ['lmerMod']
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_lmer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+Linear mixed model fit by REML ['lmerMod']
 Formula: response ~ treatment:transf_time + (1 | subject) + (0 + transf_time |  
     subject)
    Data: rats
@@ -434,14 +571,14 @@ trtmntCnt:_ -0.340
 trtmntLw:t_ -0.351  0.119       
 trtmntHgh:_ -0.327  0.111  0.115
 optimizer (nloptwrap) convergence code: 0 (OK)
-boundary (singular) fit: see ?isSingular</code></pre>
-</figure>
+boundary (singular) fit: see ?isSingular
+</code></pre>
 <p>One of the nice things about the output from the <code>gam()</code> model is that the <code>summary()</code> contains a test for the random effects</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Family: gaussian 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+
+Family: gaussian 
 Link function: identity 
 
 Formula:
@@ -465,292 +602,612 @@ s(subject,transf_time)  0.001387     47  0.00   0.744
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 R-sq.(adj) =  0.926   Deviance explained =   94%
--REML =  466.2  Scale est. = 1.4448    n = 252</code></pre>
-</figure>
-<p>This test is due to <span class="citation" data-cites="Wood2013-gz">Wood (2013)</span>. It is based on a likelihood ratio test and uses a reference distribution that is appropriate for testing a null hypothesis that is on the boundary of the parameter space (the null, that the variance is 0, is on the lower boundary of possible values for the parameter — you can’t have a negative variance!)</p>
+-REML =  466.2  Scale est. = 1.4448    n = 252
+</code></pre>
+<p>This test is due to <span class="citation" data-cites="Wood2013-gz">Wood (<a href="#ref-Wood2013-gz" role="doc-biblioref">2013</a>)</span>. It is based on a likelihood ratio test and uses a reference distribution that is appropriate for testing a null hypothesis that is on the boundary of the parameter space (the null, that the variance is 0, is on the lower boundary of possible values for the parameter — you can’t have a negative variance!)</p>
 <p>There is little evidence in support of the rat-specific time effects, reflecting what we saw when we looked at the variance components above.</p>
 <p>If we look at the estimated degrees of freedom (EDF; the <code>edf</code> column) for each of the “smooths” we see the shrinkage in action. The <code>Ref.df</code> column contains the maximum degrees of freedom for each term, used in the calculation of the <em>p</em> value. The rat-specific mean distances — the <code>s(subject)</code> term — have only been shrunk a little to an EDF of ~43.7. In contrast, the EDF for the rat-specific effects of time has been shrunk to effectively zero.</p>
 <p>The EDFs for smooths can be extracted from a fitted model with <code>edf()</code></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">edf</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text"># A tibble: 2 x 2
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">edf</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+# A tibble: 2 x 2
   smooth                      edf
   &lt;chr&gt;                     &lt;dbl&gt;
 1 s(subject)             43.7    
-2 s(subject,transf_time)  0.00139</code></pre>
-</figure>
+2 s(subject,transf_time)  0.00139
+</code></pre>
 <p>To plot the estimated time effects for each rat, we need to produce a new data frame with values of the range of <code>transf_time</code> for each rat, and include the relevant treatment value for the rat also. We do this with <code>expand()</code> and <code>nesting()</code> from the <strong>tidyr</strong> 📦.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">new_data</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">tidyr</span><span class="o">::</span><span class="n">expand</span><span class="p">(</span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">nesting</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">treatment</span><span class="p">),</span><span class="w">
-                          </span><span class="n">transf_time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">unique</span><span class="p">(</span><span class="n">transf_time</span><span class="p">))</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>new_data <span class="ot">&lt;-</span> tidyr<span class="sc">::</span><span class="fu">expand</span>(rats, <span class="fu">nesting</span>(subject, treatment),</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">transf_time =</span> <span class="fu">unique</span>(transf_time))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>which we then use to predict from the model</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">m1_pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">bind_cols</span><span class="p">(</span><span class="n">new_data</span><span class="p">,</span><span class="w">
-                     </span><span class="n">as.data.frame</span><span class="p">(</span><span class="n">predict</span><span class="p">(</span><span class="n">m1_gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">new_data</span><span class="p">,</span><span class="w">
-                                           </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)))</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>m1_pred <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(new_data,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">as.data.frame</span>(<span class="fu">predict</span>(m1_gam, <span class="at">newdata =</span> new_data,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>                                           <span class="at">se.fit =</span> <span class="cn">TRUE</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>which gives us something we can plot easily with <strong>ggplot</strong></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">m1_pred</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">transf_time</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subject</span><span class="p">,</span><span class="w">
-                    </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">treatment</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">facet_wrap</span><span class="p">(</span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">plt_labs</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(m1_pred, <span class="fu">aes</span>(<span class="at">x =</span> transf_time, <span class="at">y =</span> fit, <span class="at">group =</span> subject,</span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> treatment) <span class="sc">+</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png" class="img-fluid figure-img"></p>
+<figcaption>Fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png" alt="Fitted growth curves from the mixed effect model fitted using gam()" /><figcaption>Fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
-</figure>
+</div>
 <p>We can also compare the fitted curves with the observed data</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">m1_pred</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">transf_time</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">subject</span><span class="p">,</span><span class="w">
-                    </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">treatment</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_point</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">response</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">facet_wrap</span><span class="p">(</span><span class="o">~</span><span class="w"> </span><span class="n">subject</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">plt_labs</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(m1_pred, <span class="fu">aes</span>(<span class="at">x =</span> transf_time, <span class="at">y =</span> fit, <span class="at">group =</span> subject,</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">data =</span> rats, <span class="fu">aes</span>(<span class="at">y =</span> response)) <span class="sc">+</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> subject) <span class="sc">+</span></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+Warning: Removed 98 rows containing missing values (geom_point).
+</code></pre>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/random-effects-in-gams-plot-m1-gam-compare-1.png" class="img-fluid figure-img"></p>
+<figcaption>Observed values and fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
 </figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Warning: Removed 98 rows containing missing values (geom_point).</code></pre>
-</figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-compare-1.png" alt="Observed values and fitted growth curves from the mixed effect model fitted using gam()" /><figcaption>Observed values and fitted growth curves from the mixed effect model fitted using <code>gam()</code></figcaption>
-</figure>
+</div>
 <p>A simpler model, which drops the rat-specific effects of <code>transf_time</code> is</p>
 <p><span class="math display">\[y_{ij} = \beta_0 + \gamma_{0i} + \beta_1 L_i \cdot t_{ij} + \beta_2 H_i \cdot t_{ij} + \beta_3 C_i \cdot t_{ij} + \varepsilon_{ij}\]</span></p>
 <p>which drops the <span class="math inline">\(\gamma_{qi} \cdot t_{ij}\)</span> term, excluding the rat-specific time effects from the model.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">m2_lmer</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">lmer</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="o">:</span><span class="n">transf_time</span><span class="w"> </span><span class="o">+</span><span class="w">
-                    </span><span class="p">(</span><span class="m">1</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">subject</span><span class="p">),</span><span class="w">
-                </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">)</span><span class="w">
-</span><span class="n">m2_gam</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">response</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">treatment</span><span class="o">:</span><span class="n">transf_time</span><span class="w"> </span><span class="o">+</span><span class="w">
-                  </span><span class="n">s</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'re'</span><span class="p">),</span><span class="w">
-              </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">rats</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'REML'</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>m2_lmer <span class="ot">&lt;-</span> <span class="fu">lmer</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>                    (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> rats)</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>m2_gam <span class="ot">&lt;-</span> <span class="fu">gam</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, <span class="at">bs =</span> <span class="st">'re'</span>),</span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> rats, <span class="at">method =</span> <span class="st">'REML'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>As we should now expected, the two models have estimated variance components that are essentially equivalent. First for the <code>lmer()</code> fit:</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m2_lmer</span><span class="p">)</span><span class="o">$</span><span class="n">varcor</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text"> Groups   Name        Std.Dev.
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2_lmer)<span class="sc">$</span>varcor</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+ Groups   Name        Std.Dev.
  subject  (Intercept) 1.8881  
- Residual             1.2020  </code></pre>
-</figure>
+ Residual             1.2020  
+</code></pre>
 <p>and now for the <code>gam()</code> version</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">variance_comp</span><span class="p">(</span><span class="n">m2_gam</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text"># A tibble: 2 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">variance_comp</span>(m2_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+# A tibble: 2 x 5
   component  variance std_dev lower_ci upper_ci
   &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
 1 s(subject)     3.56    1.89     1.51     2.36
-2 scale          1.44    1.20     1.09     1.33</code></pre>
-</figure>
-<p>We could use the <code>anova()</code> method for <code>"gam"</code> fits but for fully penalized terms like random effects, the test isn’t very good and <em>p</em> values can be badly biased. Wood (2017, p. 315) says of the test “As expected, the test is clearly useless for comparing models differing in [their] random effect structure.” So, maybe give this one a miss.</p>
+2 scale          1.44    1.20     1.09     1.33
+</code></pre>
+<p>We could use the <code>anova()</code> method for <code>"gam"</code> fits but for fully penalized terms like random effects, the test isn’t very good and <em>p</em> values can be badly biased. Wood (2017, p.&nbsp;315) says of the test “As expected, the test is clearly useless for comparing models differing in [their] random effect structure.” So, maybe give this one a miss.</p>
 <p>Using <code>AIC()</code> to compare the models is also an option:</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">AIC</span><span class="p">(</span><span class="n">m2_gam</span><span class="p">,</span><span class="w"> </span><span class="n">m1_gam</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">             df      AIC
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(m2_gam, m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+             df      AIC
 m2_gam 48.98553 852.9313
-m1_gam 48.98931 852.9371</code></pre>
-</figure>
+m1_gam 48.98931 852.9371
+</code></pre>
 <p>AIC clearly favours the simpler model as the fits of the two models are essentially the same. Note that because the EDF of the <code>s(subject, transf_time)</code> was so close to zero, we don’t pay much of a penalty for including this term in the model, and hence the AICs of the two models are very similar (typically we’d expect that where two models have the same fit, the AIC for the more complex one would be the larger value).</p>
 <p>Note that the AIC computed for the <code>gam()</code> model is a <em>conditional</em> AIC, where the likelihood is of all model coefficients set to their maximum penalized likelihood estimates. The AIC for an <code>lmer()</code> fit is a <em>marginal</em> AIC, where all the penalized coefficients are viewed as random effects and integrated out of the joint density of the response and random effects.</p>
 <p>The conditional AIC for the <code>gam()</code> fit would be anti-conservative, especially so in the case of models containing random effects. The upshot of that is that the <em>conditional</em> AIC would typically choose a model with a random effects structure that isn’t in the true model if no steps were taking to account for smoothness parameter selection in the EDF calculation. The <code>AIC()</code> method for <code>gam()</code> fits applies a suitable correction to the model EDF to account for smoothness parameter selection, resulting in an information criterion that has mostly good properties.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">draw</span><span class="p">(</span><span class="n">m2_gam</span><span class="p">,</span><span class="w"> </span><span class="n">parametric</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">draw</span>(m2_gam, <span class="at">parametric =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/random-effects-in-gams-draw-gam-model-1.png" class="img-fluid figure-img"></p>
+<figcaption>QQ-plot of the rat-specific mean distance effects</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-draw-gam-model-1.png" alt="QQ-plot of the rat-specific mean distance effects" /><figcaption>QQ-plot of the rat-specific mean distance effects</figcaption>
-</figure>
+</div>
 <p>We need <code>parametric = FALSE</code> here because at the time of writing there is a bug in the code that handles parametric fixed effects.</p>
-<h2 id="its-not-all-good-news">It’s not all good news</h2>
+</section>
+<section id="its-not-all-good-news" class="level2">
+<h2 data-anchor-id="its-not-all-good-news">It’s not all good news</h2>
 <p>It all seems a little too good to be true, doesn’t it! We have a way to fit models with random effects that works well, allows for tests of random effect terms against a null of 0 variance, and which allows us to use all the extended families that <code>gam()</code> allows including some complex distributional model families.</p>
 <p>Well, as they say, there is no free lunch; the main issue with fitting random effects as smooths within <code>gam()</code> fits is to do with efficiency. <code>lmer()</code> and <code>glmer()</code> use very efficient algorithms for fitting the model, including the use of sparse matrices for the model terms. Because <code>gam()</code> fits need the full penalty matrix for each random effect, and <code>gam()</code> currently doesn’t use any sparse matrices for efficient computation, <code>gam()</code> fits are going to get very slow as the number of random effects increases: the larger the number of subjects (levels) the slower things will get. The same will happen the greater the number of complex random effect terms you include the model.</p>
 <p>Basically, if you have random effects with many hundreds or thousands of levels (subjects), expect the time it takes to fit your <code>gam()</code> to increase dramatically, and expect the memory usage to increase markedly too.</p>
 <p>Also, running <code>summary()</code> on a model with random effects with many levels or lots of random effects terms is also going to be slow: the test for the random effect terms is quite computationally expensive. If you are mostly interested in the other model terms, setting the <code>re.test</code> argument to <code>FALSE</code> will skip the tests for random effects (and other terms with zero dimension null space), allowing the summary for the other terms to be computed quickly.</p>
-<h2 id="fin">Fin</h2>
+</section>
+<section id="fin" class="level2">
+<h2 data-anchor-id="fin">Fin</h2>
 <p>In this post I showed how random effects can be represented as smooths and how to use them practically in in <code>gam()</code> models. I hope you found it useful. If you have any comments or questions, let me know them in the comments below.</p>
-<h3 id="references" class="unnumbered">References</h3>
-<div id="refs" class="references">
-<div id="ref-Fahrmeir2013-xu">
-<p>Fahrmeir, L., Kneib, T., Lang, S., and Marx, B. (2013). <em>Regression: Models, methods and applications</em>. Springer Berlin Heidelberg doi:<a href="https://doi.org/10.1007/978-3-642-34333-9">10.1007/978-3-642-34333-9</a>.</p>
+<section id="references" class="level3">
+<h3 data-anchor-id="references">References</h3>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/">← Older: Getting data from the Canada Covid-19 Tracker using R</a></span> <span class="text-end"><a href="../../../../2024/03/28/gratia-0-9-0/">Newer: gratia 0.9.0 →</a></span></p>
 </div>
-<div id="ref-Molenberghs2000-vk">
-<p>Molenberghs, G., and Verbeke, G. (2000). <em>Linear mixed models for longitudinal data</em>. Springer, New York, NY doi:<a href="https://doi.org/10.1007/978-1-4419-0300-6">10.1007/978-1-4419-0300-6</a>.</p>
-</div>
-<div id="ref-Wood2013-gz">
-<p>Wood, S. N. (2013). A simple test for random effects in regression models. <em>Biometrika</em> 100, 1005–1010. doi:<a href="https://doi.org/10.1093/biomet/ast038">10.1093/biomet/ast038</a>.</p>
-</div>
-<div id="ref-Wood2017-qi">
-<p>Wood, S. N. (2017). <em>Generalized Additive Models: An introduction with R, second edition</em>. CRC Press.</p>
-</div>
-</div>
-<section class="footnotes">
-<hr />
-<ol>
-<li id="fn1"><p>or matrices; smooths can have multiple penalty matrices that are stacked block-diagonally in <span class="math inline">\(\mathbf{S}\)</span>. For simplicity’s sake I’m just going to assume a single penalty matrix.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-<li id="fn2"><p>You can read about this in brief in §5.8 of <span class="citation" data-cites="Wood2017-qi">Wood (2017)</span> and follow up via references therein<a href="#fnref2" class="footnote-back">↩</a></p></li>
-</ol>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
+
+</section>
 </section>
 
-            <hr />
-            <h3>Comments</h3>
-            <div id="disqus_thread"></div>
-<script type="text/javascript">
-  var disqus_shortname = "fromthebottomoftheheap";
-  var disqus_url = "https://www.fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/";
-  var disqus_title = "Using random effects in GAMs with mgcv";
-  //var disqus_identifier = "/2021/02/02/random-effects-in-gams";
 
-  (function() {
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-Fahrmeir2013-xu" class="csl-entry" role="listitem">
+Fahrmeir, L., Kneib, T., Lang, S., and Marx, B. (2013). <em>Regression: Models, methods and applications</em>. Springer Berlin Heidelberg doi:<a href="https://doi.org/10.1007/978-3-642-34333-9">10.1007/978-3-642-34333-9</a>.
+</div>
+<div id="ref-Molenberghs2000-vk" class="csl-entry" role="listitem">
+Molenberghs, G., and Verbeke, G. (2000). <em>Linear mixed models for longitudinal data</em>. Springer, New York, NY doi:<a href="https://doi.org/10.1007/978-1-4419-0300-6">10.1007/978-1-4419-0300-6</a>.
+</div>
+<div id="ref-Wood2013-gz" class="csl-entry" role="listitem">
+Wood, S. N. (2013). A simple test for random effects in regression models. <em>Biometrika</em> 100, 1005–1010. doi:<a href="https://doi.org/10.1093/biomet/ast038">10.1093/biomet/ast038</a>.
+</div>
+<div id="ref-Wood2017-qi" class="csl-entry" role="listitem">
+Wood, S. N. (2017). <em><span>Generalized Additive Models</span>: An introduction with <span>R</span>, second edition</em>. CRC Press.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
-
-            </div>
-            <div class="span2">
-                            <div class="side-snippet">
-                <h4>By Gavin Simpson</h4>
-              
-                <h4>02 February 2021</h4>
-              
-              </div>
-
-                            <div class="side-snippet">
-                <h4>Posted in</h4>
-                
-                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
-                
-              </div>
-       
-
-                            <div class="side-snippet">
-                <h4>Tagged</h4>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/mgcv/"><span class="label label-inverse">mgcv</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/random-effects/"><span class="label label-inverse">random effects</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/smooths/"><span class="label label-inverse">smooths</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/penalty/"><span class="label label-inverse">penalty</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/variance-components/"><span class="label label-inverse">variance components</span></a><br>
-                
-              </div>
-
-                          <div class="side-snippet">
-              <h4>Social</h4>
-              <p><a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 150px !important;" ></a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
-            </div>
-
-
-                          <div class="side-snippet">
-              <h4>Blogroll</h4>
-              <ul class="unstyled">
-                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://rweekly.org/">R Weekly</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
-              </ul>
-            </div>
-
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      </article>
-
-        
-
-    </div><!--/.fixed-container-->
-    
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="span2">
-            <h4>Menu</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
-            </ul>
-          </div>
-          <div class="span2">
-            <h4>R packages</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
-            </ul>        
-          </div>
-          <div class="span6">
-            <h4>Fineprint</h4>
-            <p><small>Copyright &copy; 2010&ndash;2024 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
-            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
-        <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script>
-        jQuery(function ($) {
-            $(".addToolTip").tooltip()
+<ol>
+<li id="fn1"><p>or matrices; smooths can have multiple penalty matrices that are stacked block-diagonally in <span class="math inline">\(\mathbf{S}\)</span>. For simplicity’s sake I’m just going to assume a single penalty matrix.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+<li id="fn2"><p>You can read about this in brief in §5.8 of <span class="citation" data-cites="Wood2017-qi">Wood (<a href="#ref-Wood2017-qi" role="doc-biblioref">2017</a>)</span> and follow up via references therein<a href="#fnref2" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/fromthebottomoftheheap\.net");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
         });
-        // Fix suggested by Dependabot as I don't think i can upgrade to jq >=3.5.0 with this version of bootstrap
-        jQuery.htmlPrefilter = function( html ) {
-	return html;
-	};
-    </script>
-    
-    
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="preferred_color_scheme">
+<input type="hidden" id="giscus-alt-theme" value="preferred_color_scheme">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "gavinsimpson/fromthebottomoftheheap-comments";
+    script.dataset.repoId = "";
+    script.dataset.category = "Blog comments";
+    script.dataset.categoryId = "";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright © 2010–2026 Gavin Simpson</p>
+</div>   
+    <div class="nav-footer-center">
+<p>Content available under a <a href="../../../../permissions/">Creative Commons Attribution 4.0 licence</a>.</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:ucfagls@gmail.com">
+      <i class="bi bi-envelope" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://orcid.org/0000-0002-9084-8413">
+<p>ORCID</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
 
 
-  </body>
-</html>
 
 
+</body></html>

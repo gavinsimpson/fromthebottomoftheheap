@@ -1,266 +1,404 @@
-  <!DOCTYPE html>
-<html lang="en">
-  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gavin Simpson">
+<meta name="dcterms.date" content="2016-12-15">
+<meta name="description" content="Eighteen months ago I wrote a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalised spline. It was a nice post that attracted some interest. It was also wrong…">
+
+<title>Simultaneous intervals for smooths revisited – From the bottom of the heap</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../">
+<link href="../../../../assets/ico/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../site_libs/bootstrap/bootstrap-8fb4e4cb2a8747aefb233048377198cf.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-6FQL01W176');
 </script>
+<script data-ad-client="ca-pub-2908943772231164" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
-    <meta charset="utf-8">
-    <title>Simultaneous intervals for smooths revisited</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Gavin Simpson">
-    
-    
-<!-- HTML5 metadata -->
-
-<meta name="keywords" content="GAM, models, simultaneous intervals, splines, smoothers, Bayesian, confidence intervals" />
-
-
-<meta name="description" content="Eighteen months ago I wrote a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalised spline. It was a nice post that attracted some interest. It was also wrong. I have no idea what I was thinking when I thought the intervals described in that post were simultaneous. Here I hope to rectify that past mistake.
-I’ll tackle the issue of simultaneous intervals for the derivatives of penalised spline in a follow-up post. Here, I demonstrate one way to compute a simultaneous interval for a penalised spline in a fitted GAM. As example data, I’ll use the strontium isotope data set included in the SemiPar package, and which is extensively analyzed in the monograph Semiparametric Regression (Ruppert et al., 2003). First, load the packages we’ll need as well as the data, which is data set fossil. If you don’t have SemiPar installed, install it using install.packages("SemiPar") before proceeding
-
-
-Ruppert, D., Wand, M. P., and Carroll, R. J. (2003). Semiparametric regression. Cambridge University Press.
-
-
-" />
-
-<!-- RDFa Metadata (in DublinCore) -->
-<meta property="dc:title" content="Simultaneous intervals for smooths revisited" />
-<meta property="dc:creator" content="Gavin Simpson" />
-
-<meta property="dc:date" content="2016-12-15T00:00:00+01:00" />
-
-<meta property="dc:type" content="" /> <!-- article? entry?-->
-<meta property="dc:format" content="text/html" />
-<meta property="dc:language" content="en" />
-<meta property="dc:source" content="From the Bottom of the Heap" />
-<!-- RDFa Metadata (in OpenGraph) -->
-<meta property="og:title" content="Simultaneous intervals for smooths revisited" />
-<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
-<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
-<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
-
-<meta property="http://ogp.me/ns/article#published_time" content="2016-12-15T00:00:00+01:00" />
-
-<meta property="og:site_name" content="From the Bottom of the Heap" />
-<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/" />
-<meta property="og:type" content="article" />
-
-<meta name="og:description" content="Eighteen months ago I wrote a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalised spline. It was a nice post that attracted some interest. It was also wrong. I have..." />
-
-<!-- Twitter Card Meta data -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site.id" content="@ucfagls" />
-<meta name="twitter:creator:id" content="@ucfagls" />
-<meta name="twitter:title" content="Simultaneous intervals for smooths revisited" />
-
-
-<meta name="twitter:description" content="Eighteen months ago I wrote a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a p..." />
-
-<!-- Google Scholar Metadata -->
-<meta name="resource_type" content="From the Bottom of the Heap"/>
-<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
-
-<meta name="citation_publication_date" content="15 Dec 2016"/>
-<meta name="citation_date" content="15 Dec 2016"/>
-
-<meta name="citation_author" content="Gavin Simpson"/>
-<meta name="citation_title" content="Simultaneous intervals for smooths revisited"/>
-
-    
-    <!-- Link to the Atom feeds -->
-    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
-    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
-    
-    <!-- Le styles -->
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
       }
-      .sidebar-nav {
-        padding: 9px 0;
-      }
-    </style>
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
-    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+<meta property="og:title" content="Simultaneous intervals for smooths revisited – From the bottom of the heap">
+<meta property="og:description" content="Eighteen months ago I wrote a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalised spline. It was a nice post that attracted some interest. It was also wrong…">
+<meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-plot-fossil-data-1.png">
+<meta property="og:site_name" content="From the bottom of the heap">
+<meta property="og:image:height" content="340">
+<meta property="og:image:width" content="680">
+<meta name="twitter:title" content="Simultaneous intervals for smooths revisited – From the bottom of the heap">
+<meta name="twitter:description" content="Eighteen months ago I wrote a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalised spline. It was a nice post that attracted some interest. It was also wrong…">
+<meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-plot-fossil-data-1.png">
+<meta name="twitter:creator" content="@ucfagls">
+<meta name="twitter:site" content="@ucfagls">
+<meta name="twitter:image-height" content="340">
+<meta name="twitter:image-width" content="680">
+<meta name="twitter:card" content="summary_large_image">
+</head>
 
-    <!-- Le fav and touch icons -->
-    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
-    
-    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  </head>
+<body class="nav-fixed quarto-light">
 
-  <body>
-
-      <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
-              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> Resources <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/teaching/">Teaching</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/workshops/">Workshops</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/slides/">Slides</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../../../index.html">
+    <span class="navbar-title">From the bottom of the heap</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="//index.html"> <i class="bi bi-house-door" role="img">
+</i> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//about/index.html"> <i class="bi bi-info-circle" role="img">
+</i> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//blog/index.html"> <i class="bi bi-chat-left-text" role="img">
+</i> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//publications/index.html"> <i class="bi bi-file-earmark-text" role="img">
+</i> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="//research/index.html"> <i class="bi bi-tools" role="img">
+</i> 
+<span class="menu-text">Research</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-the-lab" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-funnel" role="img">
+</i> 
+ <span class="menu-text">The Lab</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-the-lab">    
+        <li>
+    <a class="dropdown-item" href="//lab/index.html">
+ <span class="dropdown-text">About</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/research/index.html">
+ <span class="dropdown-text">Research</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/members/index.html">
+ <span class="dropdown-text">Members</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/publications/index.html">
+ <span class="dropdown-text">Publications</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//lab/join/index.html">
+ <span class="dropdown-text">Join the lab</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection" role="img">
+</i> 
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="//teaching/index.html">
+ <span class="dropdown-text">Teaching</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../workshops/">
+ <span class="dropdown-text">Workshops</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//slides/index.html">
+ <span class="dropdown-text">Slides</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-code" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-code-slash" role="img">
+</i> 
+ <span class="menu-text">Code</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-code">    
+        <li>
+    <a class="dropdown-item" href="//code/dper-scripts/index.html">
+ <span class="dropdown-text">DPER Scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="//code/r-packages/index.html">
+ <span class="dropdown-text">R Packages</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../../feed.xml"> <i class="bi bi-rss" role="img" aria-label="RSS feed">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Simultaneous intervals for smooths revisited</h1>
+<p class="subtitle lead">correcting a silly mistake</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">R</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    Eighteen months ago I wrote a post in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalised spline. It was a nice post that attracted some interest. It was also wrong…
+  </div>
+</div>
 
 
-    <div class="container">
-          
+<div class="quarto-title-meta">
 
-      <article>
-      <div class="row">
-        <!-- <div class="span8 offset2"> -->
-        <div class="span10">
-          <div class="clearfix">
-            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2016/12/16/pangaea-r-open-palaeo-data/">Pangaea and R and open palaeo data</a></span>
-            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2016/07/02/isec-2016-talk/">ISEC 2016 Talk</a> <i class="icon-arrow-right"></i></span>
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gavin Simpson </p>
           </div>
-          <div class="page-header">
-            <header>
-              <h1>Simultaneous intervals for smooths revisited <small>correcting a silly mistake</small></h1>
-            </header>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="span12">
-          <div class="row">
-            <div class="span10">
-              
-            <p>Eighteen months ago I <a href="https://www.fromthebottomoftheheap.net/2014/06/16/simultaneous-confidence-intervals-for-derivatives/">wrote a post</a> in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalised spline. It was a nice post that attracted some interest. It was also wrong. I have no idea what I was thinking when I thought the intervals described in that post were simultaneous. Here I hope to rectify that past mistake.</p>
-<p>I’ll tackle the issue of simultaneous intervals for the derivatives of penalised spline in a follow-up post. Here, I demonstrate one way to compute a simultaneous interval for a penalised spline in a fitted GAM. As example data, I’ll use the strontium isotope data set included in the <strong>SemiPar</strong> package, and which is extensively analyzed in the monograph <em>Semiparametric Regression</em> <span class="citation" data-cites="Ruppert2003-pt">(Ruppert et al., 2003)</span>. First, load the packages we’ll need as well as the data, which is data set <code>fossil</code>. If you don’t have <strong>SemiPar</strong> installed, install it using <code>install.packages("SemiPar")</code> before proceeding</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span><span class="w">
-</span><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span><span class="w">
-</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">
-</span><span class="n">data</span><span class="p">(</span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"SemiPar"</span><span class="p">)</span></code></pre>
-</figure>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 15, 2016</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+
+<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
+<section id="posted-in" class="level4">
+<h4 data-anchor-id="posted-in">Posted in</h4>
+<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
+</section>
+<section id="tagged" class="level4">
+<h4 data-anchor-id="tagged">Tagged</h4>
+<p><a href="../../../../tag/gam/" class="badge text-bg-dark">GAM</a> <a href="../../../../tag/models/" class="badge text-bg-dark">models</a> <a href="../../../../tag/simultaneous-intervals/" class="badge text-bg-dark">simultaneous intervals</a> <a href="../../../../tag/splines/" class="badge text-bg-dark">splines</a> <a href="../../../../tag/smoothers/" class="badge text-bg-dark">smoothers</a> <a href="../../../../tag/bayesian/" class="badge text-bg-dark">Bayesian</a> <a href="../../../../tag/confidence-intervals/" class="badge text-bg-dark">confidence intervals</a></p>
+</section>
+</div></div><p>Eighteen months ago I <a href="../../../../2014/06/16/simultaneous-confidence-intervals-for-derivatives/">wrote a post</a> in which I described the use of simulation from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the derivatives of a penalised spline. It was a nice post that attracted some interest. It was also wrong. I have no idea what I was thinking when I thought the intervals described in that post were simultaneous. Here I hope to rectify that past mistake.</p>
+<p>I’ll tackle the issue of simultaneous intervals for the derivatives of penalised spline in a follow-up post. Here, I demonstrate one way to compute a simultaneous interval for a penalised spline in a fitted GAM. As example data, I’ll use the strontium isotope data set included in the <strong>SemiPar</strong> package, and which is extensively analyzed in the monograph <em>Semiparametric Regression</em> <span class="citation" data-cites="Ruppert2003-pt">(<a href="#ref-Ruppert2003-pt" role="doc-biblioref">Ruppert et al., 2003</a>)</span>. First, load the packages we’ll need as well as the data, which is data set <code>fossil</code>. If you don’t have <strong>SemiPar</strong> installed, install it using <code>install.packages("SemiPar")</code> before proceeding</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"mgcv"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(fossil, <span class="at">package =</span> <span class="st">"SemiPar"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The <code>fossil</code> data set includes two variables and is a time series of strontium isotope measurements on samples from a sediment core. The data are shown below using <code>ggplot()</code></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">strontium.ratio</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_point</span><span class="p">()</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(fossil, <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> strontium.ratio)) <span class="sc">+</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/simultaneous-intervals-revisited-plot-fossil-data-1.png" class="img-fluid figure-img"></p>
+<figcaption>The strontium isotope example data used in the post</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-plot-fossil-data-1.png" alt="The strontium isotope example data used in the post" /><figcaption>The strontium isotope example data used in the post</figcaption>
-</figure>
+</div>
 <p>The aim of the analysis of these data is to model how the measured strontium isotope ratio changed through time, using a GAM to estimate the clearly non-linear change in the response. I won’t cover how the GAM is fitted and what all the options are here, but a reasonable GAM for these data is fitted using <strong>mgcv</strong> and <code>gam()</code></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">strontium.ratio</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">gam</span>(strontium.ratio <span class="sc">~</span> <span class="fu">s</span>(age, <span class="at">k =</span> <span class="dv">20</span>), <span class="at">data =</span> fossil, <span class="at">method =</span> <span class="st">"REML"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The essentially arbitrary default for <code>k</code>, the basis dimension of the spline, is changed to <code>20</code> as there is a modest amount of non-linearity in the strontium isotopes ratio time series. By using <code>method = "REML"</code>, the penalised spline model is expressed as a linear mixed model with the wiggly bits of the spline treated as random effects, and is estimated using restricted maximum likelihood; <code>method = "ML"</code> would also work here.</p>
 <p>The fitted model uses ~12 effective degrees of freedom (which wouldn’t have been achievable with the default of <code>k = 10</code>!)</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">summary</span><span class="p">(</span><span class="n">m</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Family: gaussian 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+
+Family: gaussian 
 Link function: identity 
 
 Formula:
@@ -279,17 +417,19 @@ s(age) 11.52  13.88 62.07  &lt;2e-16 ***
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 R-sq.(adj) =  0.891   Deviance explained = 90.3%
--REML = -932.05  Scale est. = 6.2839e-10  n = 106</code></pre>
-</figure>
+-REML = -932.05  Scale est. = 6.2839e-10  n = 106
+</code></pre>
 <p>The fitted spline captures the main variation in strontium isotope ratio values; the output from <code>plot.gam()</code> is shown below</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">shade</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">seWithMean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">residuals</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">pch</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">16</span><span class="p">,</span><span class="w"> </span><span class="n">cex</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.8</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m, <span class="at">shade =</span> <span class="cn">TRUE</span>, <span class="at">seWithMean =</span> <span class="cn">TRUE</span>, <span class="at">residuals =</span> <span class="cn">TRUE</span>, <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/simultaneous-intervals-revisited-gam-plot-1.png" class="img-fluid figure-img"></p>
+<figcaption>The fitted penalised spline with approximate 95% point-wise confidence interval, as produced with <code>plot.gam()</code></figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-gam-plot-1.png" alt="The fitted penalised spline with approximate 95% point-wise confidence interval, as produced with plot.gam()" /><figcaption>The fitted penalised spline with approximate 95% point-wise confidence interval, as produced with <code>plot.gam()</code></figcaption>
-</figure>
-<p>The confidence interval shown around the fitted spline is a 95% Bayesian credible interval. For reasons that don’t need to concern us right now, this interval has a surprising frequentist interpretation as a 95% <em>“across the function”</em> interval <span class="citation" data-cites="Nychka1988-rz Marra2012-bq">(Marra and Wood, 2012; Nychka, 1988)</span>; under repeated resampling from the population 95% of such confidence intervals will contain the true function. Such “across the function” intervals are quite intuitive, but, as we’ll see shortly, they don’t reflect the uncertainty in the fitted function; far fewer than 95% of splines drawn from the posterior distribution of the fitted GAM would lie within the confidence interval shown in the plot above.</p>
-<p>How to compute a simultaneous interval for a spline is a well studied problem and a number of solutions have been proposed in the literature. Here I follow <span class="citation" data-cites="Ruppert2003-pt">Ruppert et al. (2003)</span> and use a simulation-based approach to generate a simultaneous interval. We proceed by considering a simultaneous confidence interval for a function <span class="math inline">\(f(x)\)</span> at a set of <span class="math inline">\(M\)</span> locations in <span class="math inline">\(x\)</span>; we’ll refer to these locations, following the notation of <span class="citation" data-cites="Ruppert2003-pt">Ruppert et al. (2003)</span> by</p>
+</div>
+<p>The confidence interval shown around the fitted spline is a 95% Bayesian credible interval. For reasons that don’t need to concern us right now, this interval has a surprising frequentist interpretation as a 95% <em>“across the function”</em> interval <span class="citation" data-cites="Nychka1988-rz Marra2012-bq">(<a href="#ref-Marra2012-bq" role="doc-biblioref">Marra and Wood, 2012</a>; <a href="#ref-Nychka1988-rz" role="doc-biblioref">Nychka, 1988</a>)</span>; under repeated resampling from the population 95% of such confidence intervals will contain the true function. Such “across the function” intervals are quite intuitive, but, as we’ll see shortly, they don’t reflect the uncertainty in the fitted function; far fewer than 95% of splines drawn from the posterior distribution of the fitted GAM would lie within the confidence interval shown in the plot above.</p>
+<p>How to compute a simultaneous interval for a spline is a well studied problem and a number of solutions have been proposed in the literature. Here I follow <span class="citation" data-cites="Ruppert2003-pt">Ruppert et al. (<a href="#ref-Ruppert2003-pt" role="doc-biblioref">2003</a>)</span> and use a simulation-based approach to generate a simultaneous interval. We proceed by considering a simultaneous confidence interval for a function <span class="math inline">\(f(x)\)</span> at a set of <span class="math inline">\(M\)</span> locations in <span class="math inline">\(x\)</span>; we’ll refer to these locations, following the notation of <span class="citation" data-cites="Ruppert2003-pt">Ruppert et al. (<a href="#ref-Ruppert2003-pt" role="doc-biblioref">2003</a>)</span> by</p>
 <p><span class="math display">\[
 \mathbf{g} = (g_1, g_2, \ldots, g_M)
 \]</span></p>
@@ -338,293 +478,605 @@ R-sq.(adj) =  0.891   Deviance explained = 90.3%
            \mathbf{\hat{u}} - \mathbf{u} \\
          \end{bmatrix} \right )_\ell}{\widehat{\mathrm{st.dev}} (\hat{f}(g_{\ell}) - f(g_{\ell}))} \right |
 \]</span></p>
-<p>Yep, that was <em>exactly</em> my reaction when I first read this section of <span class="citation" data-cites="Ruppert2003-pt">Ruppert et al. (2003)</span>!</p>
+<p>Yep, that was <em>exactly</em> my reaction when I first read this section of <span class="citation" data-cites="Ruppert2003-pt">Ruppert et al. (<a href="#ref-Ruppert2003-pt" role="doc-biblioref">2003</a>)</span>!</p>
 <p>Let’s deal with the left-hand side of the equation first. The <span class="math inline">\(\sup\)</span> refers to the <em>supremum</em> or the <em>least upper bound</em>; this is the least value of <span class="math inline">\(\mathcal{X}\)</span>, the set of all values of which we observed subset <span class="math inline">\(x\)</span>, that is <em>greater</em> than all of the values in the subset. Often this is the maximum value of the subset. This is what is indicated by the right-hand side of the equation; we want the maximum (absolute) value of the ratio over all values in <span class="math inline">\(\mathbf{g}\)</span>.</p>
 <p>The fractions in both sides of the equation correspond to the standardized deviation between the true function and the model estimate, and we consider the <em>maximum absolute</em> standardized deviation. We don’t usually know the distribution of the maximum absolute standardized deviation but we need this to access its quantiles. However, we can closely approximate the distribution via simulation. The difference here is that rather than simulating from the posterior of the model as we have done in earlier posts on this blog, this time we simulate from the multivariate normal distribution with mean vector <span class="math inline">\(\mathbf{0}\)</span> and covariance matrix <span class="math inline">\(\mathbf{V_{b}}\)</span>, the Bayesian covariance matrix of the fitted model. For each simulation we find the maximum absolute standardized deviation of the fitted function from the true function over the grid of <span class="math inline">\(x\)</span> values we are considering. Then we collect all these maxima, sort them and either take the 1 - <span class="math inline">\(\alpha\)</span> probability quantile of the maxima, or the maximum with rank <span class="math inline">\(\lceil (1 - \alpha) / N \rceil\)</span>.</p>
 <p>OK, that’s enough of words and crazy equations. Implementing this in R is going to be easier than those equations might suggest. I’ll run through the code we need line by line. First we define a simple function to generate random values from a multivariate normal: this is in the manual for <strong>mgcv</strong> and saves us loading another package just for this:</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">rmvn</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">n</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="p">,</span><span class="w"> </span><span class="n">sig</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="c1">## MVN random deviates</span><span class="w">
-    </span><span class="n">L</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">mroot</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span><span class="w">
-    </span><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ncol</span><span class="p">(</span><span class="n">L</span><span class="p">)</span><span class="w">
-    </span><span class="n">t</span><span class="p">(</span><span class="n">mu</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">L</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">matrix</span><span class="p">(</span><span class="n">rnorm</span><span class="p">(</span><span class="n">m</span><span class="o">*</span><span class="n">n</span><span class="p">),</span><span class="w"> </span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="p">))</span><span class="w">
-</span><span class="p">}</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>rmvn <span class="ot">&lt;-</span> <span class="cf">function</span>(n, mu, sig) { <span class="do">## MVN random deviates</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    L <span class="ot">&lt;-</span> <span class="fu">mroot</span>(sig)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    m <span class="ot">&lt;-</span> <span class="fu">ncol</span>(L)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">t</span>(mu <span class="sc">+</span> L <span class="sc">%*%</span> <span class="fu">matrix</span>(<span class="fu">rnorm</span>(m<span class="sc">*</span>n), m, n))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Next we extract a few things that we need from the fitted GAM</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">Vb</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">vcov</span><span class="p">(</span><span class="n">m</span><span class="p">)</span><span class="w">
-</span><span class="n">newd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">fossil</span><span class="p">,</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="nf">min</span><span class="p">(</span><span class="n">age</span><span class="p">),</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">age</span><span class="p">),</span><span class="w"> </span><span class="n">length</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">200</span><span class="p">)))</span><span class="w">
-</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
-</span><span class="n">se.fit</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">pred</span><span class="o">$</span><span class="n">se.fit</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>Vb <span class="ot">&lt;-</span> <span class="fu">vcov</span>(m)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>newd <span class="ot">&lt;-</span> <span class="fu">with</span>(fossil, <span class="fu">data.frame</span>(<span class="at">age =</span> <span class="fu">seq</span>(<span class="fu">min</span>(age), <span class="fu">max</span>(age), <span class="at">length =</span> <span class="dv">200</span>)))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(m, newd, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>se.fit <span class="ot">&lt;-</span> pred<span class="sc">$</span>se.fit</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The first is the Bayesian covariance matrix of the model coefficients, <span class="math inline">\(\mathbf{V_b}\)</span>. This <span class="math inline">\(\mathbf{V_b}\)</span> is conditional upon the smoothing parameter(s). If you want a version that adjusts for the smoothing parameters being estimated rather than known values, add <code>unconditional = TRUE</code> to the <code>vcov()</code> call. Second, we define our grid of <span class="math inline">\(x\)</span> values over which we want a confidence band. Then we generate predictions and standard errors from the model for the grid of values. The last line just extracts out the standard errors of the fitted values for use later.</p>
 <p>Now we are ready to generate simulations of the maximum absolute standardized deviation of the fitted model from the true model. We set the pseudo-random seed to make the results reproducible and specify the number of simulations to generate.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">set.seed</span><span class="p">(</span><span class="m">42</span><span class="p">)</span><span class="w">
-</span><span class="n">N</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">10000</span></code></pre>
-</figure>
-<p>Next, we want <code>N</code> draws from <span class="math inline">\(\begin{bmatrix}  \boldsymbol{\hat{\beta}} - \boldsymbol{\beta} \\  \mathbf{\hat{u}} - \mathbf{u} \\  \end{bmatrix}\)</span>, which is approximately distributed multivariate normal with mean vector <span class="math inline">\(\mathbf{0}\)</span> and covariance matrix <code>Vb</code></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">BUdiff</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rmvn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">nrow</span><span class="p">(</span><span class="n">Vb</span><span class="p">)),</span><span class="w"> </span><span class="n">sig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Vb</span><span class="p">)</span></code></pre>
-</figure>
-<p>Now we calculate <span class="math inline">\(\hat{f}(x) - f(x)\)</span>, which is given by <span class="math inline">\(\mathbf{C_g} \begin{bmatrix}  \boldsymbol{\hat{\beta}} - \boldsymbol{\beta} \\  \mathbf{\hat{u}} - \mathbf{u} \\  \end{bmatrix}\)</span> evaluated at the grid of <span class="math inline">\(x\)</span> values</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">Cg</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="p">,</span><span class="w"> </span><span class="n">newd</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"lpmatrix"</span><span class="p">)</span><span class="w">
-</span><span class="n">simDev</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Cg</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">BUdiff</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>N <span class="ot">&lt;-</span> <span class="dv">10000</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Next, we want <code>N</code> draws from <span class="math inline">\(\begin{bmatrix}
+    \boldsymbol{\hat{\beta}} - \boldsymbol{\beta} \\
+    \mathbf{\hat{u}} - \mathbf{u} \\
+    \end{bmatrix}\)</span>, which is approximately distributed multivariate normal with mean vector <span class="math inline">\(\mathbf{0}\)</span> and covariance matrix <code>Vb</code></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>BUdiff <span class="ot">&lt;-</span> <span class="fu">rmvn</span>(N, <span class="at">mu =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">nrow</span>(Vb)), <span class="at">sig =</span> Vb)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Now we calculate <span class="math inline">\(\hat{f}(x) - f(x)\)</span>, which is given by <span class="math inline">\(\mathbf{C_g} \begin{bmatrix}
+    \boldsymbol{\hat{\beta}} - \boldsymbol{\beta} \\
+    \mathbf{\hat{u}} - \mathbf{u} \\
+    \end{bmatrix}\)</span> evaluated at the grid of <span class="math inline">\(x\)</span> values</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>Cg <span class="ot">&lt;-</span> <span class="fu">predict</span>(m, newd, <span class="at">type =</span> <span class="st">"lpmatrix"</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>simDev <span class="ot">&lt;-</span> Cg <span class="sc">%*%</span> <span class="fu">t</span>(BUdiff)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The first line evaluates the basis function at <span class="math inline">\(\mathbf{g}\)</span> and the second line computes the deviations between the fitted and true parameters. Then we find the absolute values of the standardized deviations from the true model. Here we do this in a single step for all simulations using <code>sweep()</code></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">absDev</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">abs</span><span class="p">(</span><span class="n">sweep</span><span class="p">(</span><span class="n">simDev</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="p">,</span><span class="w"> </span><span class="n">FUN</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"/"</span><span class="p">))</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>absDev <span class="ot">&lt;-</span> <span class="fu">abs</span>(<span class="fu">sweep</span>(simDev, <span class="dv">1</span>, se.fit, <span class="at">FUN =</span> <span class="st">"/"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The maximum of the absolute standardized deviations at the grid of <span class="math inline">\(x\)</span> values for each simulation is computed via an <code>apply()</code> call</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">masd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">apply</span><span class="p">(</span><span class="n">absDev</span><span class="p">,</span><span class="w"> </span><span class="m">2L</span><span class="p">,</span><span class="w"> </span><span class="n">max</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>masd <span class="ot">&lt;-</span> <span class="fu">apply</span>(absDev, <span class="dv">2</span>L, max)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The last step is to find the critical value used to scale the standard errors to yield the simultaneous interval; here we calculate the critical value for a 95% simultaneous confidence interval/band</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">crit</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">quantile</span><span class="p">(</span><span class="n">masd</span><span class="p">,</span><span class="w"> </span><span class="n">prob</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.95</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">8</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>crit <span class="ot">&lt;-</span> <span class="fu">quantile</span>(masd, <span class="at">prob =</span> <span class="fl">0.95</span>, <span class="at">type =</span> <span class="dv">8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The critical value estimated above is 3.205. Intervals generated using this value will be 1.6 times larger than the point-wise interval shown above.</p>
 <p>Now that we have the critical value, we can calculate the simultaneous confidence interval. In the code block below I first add the grid of values (<code>newd</code>) to the fitted values and standard errors at those new values and then augment this with upper and lower limits for a 95% simultaneous confidence interval (<code>uprS</code> and <code>lwrS</code>), as well as the usual 95% point-wise intervals for comparison (<code>uprP</code> and <code>lwrP</code>). Then I plot the two intervals:</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">cbind</span><span class="p">(</span><span class="n">data.frame</span><span class="p">(</span><span class="n">pred</span><span class="p">),</span><span class="w"> </span><span class="n">newd</span><span class="p">),</span><span class="w">
-                  </span><span class="n">uprP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">),</span><span class="w">
-                  </span><span class="n">lwrP</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">),</span><span class="w">
-                  </span><span class="n">uprS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="p">(</span><span class="n">crit</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">),</span><span class="w">
-                  </span><span class="n">lwrS</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="p">(</span><span class="n">crit</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">se.fit</span><span class="p">))</span><span class="w">
-</span><span class="n">ggplot</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">age</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwrS</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">uprS</span><span class="p">),</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwrP</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">uprP</span><span class="p">),</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Strontium isotope ratio"</span><span class="p">,</span><span class="w">
-         </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Age [Ma BP]"</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">transform</span>(<span class="fu">cbind</span>(<span class="fu">data.frame</span>(pred), newd),</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">uprP =</span> fit <span class="sc">+</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit),</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">lwrP =</span> fit <span class="sc">-</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit),</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">uprS =</span> fit <span class="sc">+</span> (crit <span class="sc">*</span> se.fit),</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">lwrS =</span> fit <span class="sc">-</span> (crit <span class="sc">*</span> se.fit))</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pred, <span class="fu">aes</span>(<span class="at">x =</span> age)) <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lwrS, <span class="at">ymax =</span> uprS), <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">fill =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lwrP, <span class="at">ymax =</span> uprP), <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">fill =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Strontium isotope ratio"</span>,</span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Age [Ma BP]"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/simultaneous-intervals-revisited-confidence-intervals-1.png" class="img-fluid figure-img"></p>
+<figcaption>Comparison of point-wise and simultaneous 95% confidence intervals for the fitted GAM</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-confidence-intervals-1.png" alt="Comparison of point-wise and simultaneous 95% confidence intervals for the fitted GAM" /><figcaption>Comparison of point-wise and simultaneous 95% confidence intervals for the fitted GAM</figcaption>
-</figure>
+</div>
 <p>Finally, I’m going to look at the coverage properties of the interval we just created, which is something I should have done in the older post as it would have shown, as we’ll see, that the old interval I wrote about wasn’t even close to having the correct coverage properties.</p>
 <p>Start by drawing a large sample from the posterior distribution of the fitted model. Note that this time, we’re simulating from a multivariate normal with mean vector given by the estimated model coefficients</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">sims</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rmvn</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">mu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">coef</span><span class="p">(</span><span class="n">m</span><span class="p">),</span><span class="w"> </span><span class="n">sig</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Vb</span><span class="p">)</span><span class="w">
-</span><span class="n">fits</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">Cg</span><span class="w"> </span><span class="o">%*%</span><span class="w"> </span><span class="n">t</span><span class="p">(</span><span class="n">sims</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>sims <span class="ot">&lt;-</span> <span class="fu">rmvn</span>(N, <span class="at">mu =</span> <span class="fu">coef</span>(m), <span class="at">sig =</span> Vb)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>fits <span class="ot">&lt;-</span> Cg <span class="sc">%*%</span> <span class="fu">t</span>(sims)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p><code>fits</code> now contains N = 10<sup>4</sup> draws from the model posterior. Before we look at how many of the 10<sup>4</sup> samples from the posterior are entirely contained within the simultaneous interval, choose 30 at random and stack them in so-called tidy form for use with <code>ggplot()</code></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">nrnd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="m">30</span><span class="w">
-</span><span class="n">rnd</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">sample</span><span class="p">(</span><span class="n">N</span><span class="p">,</span><span class="w"> </span><span class="n">nrnd</span><span class="p">)</span><span class="w">
-</span><span class="n">stackFits</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">stack</span><span class="p">(</span><span class="n">as.data.frame</span><span class="p">(</span><span class="n">fits</span><span class="p">[,</span><span class="w"> </span><span class="n">rnd</span><span class="p">]))</span><span class="w">
-</span><span class="n">stackFits</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">stackFits</span><span class="p">,</span><span class="w"> </span><span class="n">age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">newd</span><span class="o">$</span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">rnd</span><span class="p">)))</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>nrnd <span class="ot">&lt;-</span> <span class="dv">30</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>rnd <span class="ot">&lt;-</span> <span class="fu">sample</span>(N, nrnd)</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>stackFits <span class="ot">&lt;-</span> <span class="fu">stack</span>(<span class="fu">as.data.frame</span>(fits[, rnd]))</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>stackFits <span class="ot">&lt;-</span> <span class="fu">transform</span>(stackFits, <span class="at">age =</span> <span class="fu">rep</span>(newd<span class="sc">$</span>age, <span class="fu">length</span>(rnd)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>What we’ve done in this post can be summarized in the figure below</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">ggplot</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fit</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwrS</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">uprS</span><span class="p">),</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_ribbon</span><span class="p">(</span><span class="n">aes</span><span class="p">(</span><span class="n">ymin</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">lwrP</span><span class="p">,</span><span class="w"> </span><span class="n">ymax</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">uprP</span><span class="p">),</span><span class="w"> </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.2</span><span class="p">,</span><span class="w"> </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_path</span><span class="p">(</span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_path</span><span class="p">(</span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">stackFits</span><span class="p">,</span><span class="w"> </span><span class="n">mapping</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">values</span><span class="p">,</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">age</span><span class="p">,</span><span class="w"> </span><span class="n">group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ind</span><span class="p">),</span><span class="w">
-              </span><span class="n">alpha</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0.4</span><span class="p">,</span><span class="w"> </span><span class="n">colour</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"grey20"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">labs</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Strontium isotope ratio"</span><span class="p">,</span><span class="w">
-         </span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Age [Ma BP]"</span><span class="p">,</span><span class="w">
-         </span><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"Point-wise &amp; Simultaneous 95% confidence intervals for fitted GAM"</span><span class="p">,</span><span class="w">
-         </span><span class="n">subtitle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">sprintf</span><span class="p">(</span><span class="s2">"Each line is one of %i draws from the Bayesian posterior distribution of the model"</span><span class="p">,</span><span class="w"> </span><span class="n">nrnd</span><span class="p">))</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(pred, <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> fit)) <span class="sc">+</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lwrS, <span class="at">ymax =</span> uprS), <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">fill =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">ymin =</span> lwrP, <span class="at">ymax =</span> uprP), <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">fill =</span> <span class="st">"red"</span>) <span class="sc">+</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_path</span>(<span class="at">lwd =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_path</span>(<span class="at">data =</span> stackFits, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">y =</span> values, <span class="at">x =</span> age, <span class="at">group =</span> ind),</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">colour =</span> <span class="st">"grey20"</span>) <span class="sc">+</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Strontium isotope ratio"</span>,</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>         <span class="at">x =</span> <span class="st">"Age [Ma BP]"</span>,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"Point-wise &amp; Simultaneous 95% confidence intervals for fitted GAM"</span>,</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>         <span class="at">subtitle =</span> <span class="fu">sprintf</span>(<span class="st">"Each line is one of %i draws from the Bayesian posterior distribution of the model"</span>, nrnd))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/simultaneous-intervals-revisited-plot-intervals-and-posterior-draws-1.png" class="img-fluid figure-img"></p>
+<figcaption>Summary plot showing 30 random draws from the model posterior and approximate 95% simultaneous and point-wise confidence intervals for the the fitted GAM</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/simultaneous-intervals-revisited-plot-intervals-and-posterior-draws-1.png" alt="Summary plot showing 30 random draws from the model posterior and approximate 95% simultaneous and point-wise confidence intervals for the the fitted GAM" /><figcaption>Summary plot showing 30 random draws from the model posterior and approximate 95% simultaneous and point-wise confidence intervals for the the fitted GAM</figcaption>
-</figure>
+</div>
 <p>It shows the fitted model and the 95% simultaneous and point-wise confidence intervals, and is augmented with 30 draws from the posterior distribution of the GAM. As you can see, many of the lines lie outside the point-wise confidence interval. The situation is quite different with the simultaneous interval; only a couple of the posterior draws go outside of the 95% simultaneous interval, which is what we’d expect for a 95% interval. So that’s encouraging!</p>
 <p>As a final check we’ll look at the proportion of all the posterior simulations that lie entirely within the simultaneous interval. To facilitate this we create a little wrapper function, <code>inCI()</code>, which returns <code>TRUE</code> if all the evaluation points <span class="math inline">\(\mathbf{g}\)</span> lie within the stated interval and <code>FALSE</code> otherwise. This is then applied to each posterior simulation (column of <code>fits</code>) and we do this for the simultaneous intervals and the point-wise version. The final two lines work out what proportion of the posterior simulations lie within the two confidence intervals.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">inCI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">upr</span><span class="p">,</span><span class="w"> </span><span class="n">lwr</span><span class="p">)</span><span class="w"> </span><span class="p">{</span><span class="w">
-    </span><span class="nf">all</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">&gt;=</span><span class="w"> </span><span class="n">lwr</span><span class="w"> </span><span class="o">&amp;</span><span class="w"> </span><span class="n">x</span><span class="w"> </span><span class="o">&lt;=</span><span class="w"> </span><span class="n">upr</span><span class="p">)</span><span class="w">
-</span><span class="p">}</span><span class="w">
-
-</span><span class="n">fitsInPCI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">apply</span><span class="p">(</span><span class="n">fits</span><span class="p">,</span><span class="w"> </span><span class="m">2L</span><span class="p">,</span><span class="w"> </span><span class="n">inCI</span><span class="p">,</span><span class="w"> </span><span class="n">upr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="o">$</span><span class="n">uprP</span><span class="p">,</span><span class="w"> </span><span class="n">lwr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="o">$</span><span class="n">lwrP</span><span class="p">)</span><span class="w">
-</span><span class="n">fitsInSCI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">apply</span><span class="p">(</span><span class="n">fits</span><span class="p">,</span><span class="w"> </span><span class="m">2L</span><span class="p">,</span><span class="w"> </span><span class="n">inCI</span><span class="p">,</span><span class="w"> </span><span class="n">upr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="o">$</span><span class="n">uprS</span><span class="p">,</span><span class="w"> </span><span class="n">lwr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="o">$</span><span class="n">lwrS</span><span class="p">)</span><span class="w">
-
-</span><span class="nf">sum</span><span class="p">(</span><span class="n">fitsInPCI</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">fitsInPCI</span><span class="p">)</span><span class="w">      </span><span class="c1"># Point-wise</span><span class="w">
-</span><span class="nf">sum</span><span class="p">(</span><span class="n">fitsInSCI</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">fitsInSCI</span><span class="p">)</span><span class="w">      </span><span class="c1"># Simultaneous</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">[1] 0.3028
-[1] 0.9526</code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>inCI <span class="ot">&lt;-</span> <span class="cf">function</span>(x, upr, lwr) {</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">all</span>(x <span class="sc">&gt;=</span> lwr <span class="sc">&amp;</span> x <span class="sc">&lt;=</span> upr)</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>fitsInPCI <span class="ot">&lt;-</span> <span class="fu">apply</span>(fits, <span class="dv">2</span>L, inCI, <span class="at">upr =</span> pred<span class="sc">$</span>uprP, <span class="at">lwr =</span> pred<span class="sc">$</span>lwrP)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>fitsInSCI <span class="ot">&lt;-</span> <span class="fu">apply</span>(fits, <span class="dv">2</span>L, inCI, <span class="at">upr =</span> pred<span class="sc">$</span>uprS, <span class="at">lwr =</span> pred<span class="sc">$</span>lwrS)</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(fitsInPCI) <span class="sc">/</span> <span class="fu">length</span>(fitsInPCI)      <span class="co"># Point-wise</span></span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(fitsInSCI) <span class="sc">/</span> <span class="fu">length</span>(fitsInSCI)      <span class="co"># Simultaneous</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+[1] 0.3028
+[1] 0.9526
+</code></pre>
 <p>As you can see, the point-wise confidence interval includes just a small proportion of the posterior simulations, but the simultaneous interval contains approximately the right number of simulations for a 95% interval.</p>
 <p>So how bad are the intervals I created in the old post? They should as bad as the 95% point-wise interval, and they are</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">oldCI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">apply</span><span class="p">(</span><span class="n">fits</span><span class="p">,</span><span class="w"> </span><span class="m">1L</span><span class="p">,</span><span class="w"> </span><span class="n">quantile</span><span class="p">,</span><span class="w"> </span><span class="n">probs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0.025</span><span class="p">,</span><span class="w"> </span><span class="m">0.975</span><span class="p">))</span><span class="w">
-</span><span class="n">pred</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span><span class="w"> </span><span class="n">lwrOld</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">oldCI</span><span class="p">[</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="p">],</span><span class="w"> </span><span class="n">uprOld</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">oldCI</span><span class="p">[</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="p">])</span><span class="w">
-</span><span class="n">fitsInOldCI</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">apply</span><span class="p">(</span><span class="n">fits</span><span class="p">,</span><span class="w"> </span><span class="m">2L</span><span class="p">,</span><span class="w"> </span><span class="n">inCI</span><span class="p">,</span><span class="w"> </span><span class="n">upr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="o">$</span><span class="n">uprOld</span><span class="p">,</span><span class="w"> </span><span class="n">lwr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pred</span><span class="o">$</span><span class="n">lwrOld</span><span class="p">)</span><span class="w">
-</span><span class="nf">sum</span><span class="p">(</span><span class="n">fitsInOldCI</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">fitsInOldCI</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">[1] 0.2655</code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>oldCI <span class="ot">&lt;-</span> <span class="fu">apply</span>(fits, <span class="dv">1</span>L, quantile, <span class="at">probs =</span> <span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>))</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">transform</span>(pred, <span class="at">lwrOld =</span> oldCI[<span class="dv">1</span>, ], <span class="at">uprOld =</span> oldCI[<span class="dv">2</span>, ])</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>fitsInOldCI <span class="ot">&lt;-</span> <span class="fu">apply</span>(fits, <span class="dv">2</span>L, inCI, <span class="at">upr =</span> pred<span class="sc">$</span>uprOld, <span class="at">lwr =</span> pred<span class="sc">$</span>lwrOld)</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(fitsInOldCI) <span class="sc">/</span> <span class="fu">length</span>(fitsInOldCI)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>
+[1] 0.2655
+</code></pre>
 <p>So, there we have it — a proper 95% simultaneous confidence interval for a penalised spline. Now I just need to go back to that old post and strike out all reference to <em>simultaneous</em>…</p>
-<h3 id="references" class="unnumbered">References</h3>
-<div id="refs" class="references">
-<div id="ref-Marra2012-bq">
-<p>Marra, G., and Wood, S. N. (2012). Coverage properties of confidence intervals for generalized additive model components. <em>Scandinavian journal of statistics, theory and applications</em> 39, 53–74. doi:<a href="https://doi.org/10.1111/j.1467-9469.2011.00760.x">10.1111/j.1467-9469.2011.00760.x</a>.</p>
+<section id="references" class="level3">
+<h3 data-anchor-id="references">References</h3>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2016/07/02/isec-2016-talk/">← Older: ISEC 2016 Talk</a></span> <span class="text-end"><a href="../../../../2016/12/16/pangaea-r-open-palaeo-data/">Newer: Pangaea and R and open palaeo data →</a></span></p>
 </div>
-<div id="ref-Nychka1988-rz">
-<p>Nychka, D. (1988). Bayesian confidence intervals for smoothing splines. <em>Journal of the American Statistical Association</em> 83, 1134–1143. doi:<a href="https://doi.org/10.1080/01621459.1988.10478711">10.1080/01621459.1988.10478711</a>.</p>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-Marra2012-bq" class="csl-entry" role="listitem">
+Marra, G., and Wood, S. N. (2012). Coverage properties of confidence intervals for generalized additive model components. <em>Scandinavian journal of statistics, theory and applications</em> 39, 53–74. doi:<a href="https://doi.org/10.1111/j.1467-9469.2011.00760.x">10.1111/j.1467-9469.2011.00760.x</a>.
 </div>
-<div id="ref-Ruppert2003-pt">
-<p>Ruppert, D., Wand, M. P., and Carroll, R. J. (2003). <em>Semiparametric regression</em>. Cambridge University Press.</p>
+<div id="ref-Nychka1988-rz" class="csl-entry" role="listitem">
+Nychka, D. (1988). Bayesian confidence intervals for smoothing splines. <em>Journal of the American Statistical Association</em> 83, 1134–1143. doi:<a href="https://doi.org/10.1080/01621459.1988.10478711">10.1080/01621459.1988.10478711</a>.
 </div>
+<div id="ref-Ruppert2003-pt" class="csl-entry" role="listitem">
+Ruppert, D., Wand, M. P., and Carroll, R. J. (2003). <em>Semiparametric regression</em>. Cambridge University Press.
 </div>
-
-            <hr />
-            <h3>Comments</h3>
-            <div id="disqus_thread"></div>
-<script type="text/javascript">
-  var disqus_shortname = "fromthebottomoftheheap";
-  var disqus_url = "https://www.fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/";
-  var disqus_title = "Simultaneous intervals for smooths revisited";
-  //var disqus_identifier = "/2016/12/15/simultaneous-interval-revisited";
-
-  (function() {
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-
-
-            </div>
-            <div class="span2">
-                            <div class="side-snippet">
-                <h4>By Gavin Simpson</h4>
-              
-                <h4>15 December 2016</h4>
-              
-              </div>
-
-                            <div class="side-snippet">
-                <h4>Posted in</h4>
-                
-                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
-                
-              </div>
-       
-
-                            <div class="side-snippet">
-                <h4>Tagged</h4>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/models/"><span class="label label-inverse">models</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/simultaneous-intervals/"><span class="label label-inverse">simultaneous intervals</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/splines/"><span class="label label-inverse">splines</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/smoothers/"><span class="label label-inverse">smoothers</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/bayesian/"><span class="label label-inverse">Bayesian</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/confidence-intervals/"><span class="label label-inverse">confidence intervals</span></a><br>
-                
-              </div>
-
-                          <div class="side-snippet">
-              <h4>Social</h4>
-              <p><a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 150px !important;" ></a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
-            </div>
-
-
-                          <div class="side-snippet">
-              <h4>Blogroll</h4>
-              <ul class="unstyled">
-                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://rweekly.org/">R Weekly</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
-              </ul>
-            </div>
-
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      </article>
-
-        
-
-    </div><!--/.fixed-container-->
-    
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="span2">
-            <h4>Menu</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
-            </ul>
-          </div>
-          <div class="span2">
-            <h4>R packages</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
-            </ul>        
-          </div>
-          <div class="span6">
-            <h4>Fineprint</h4>
-            <p><small>Copyright &copy; 2010&ndash;2024 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
-            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
-        <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script>
-        jQuery(function ($) {
-            $(".addToolTip").tooltip()
+</div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/fromthebottomoftheheap\.net");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
         });
-        // Fix suggested by Dependabot as I don't think i can upgrade to jq >=3.5.0 with this version of bootstrap
-        jQuery.htmlPrefilter = function( html ) {
-	return html;
-	};
-    </script>
-    
-    
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="preferred_color_scheme">
+<input type="hidden" id="giscus-alt-theme" value="preferred_color_scheme">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "gavinsimpson/fromthebottomoftheheap-comments";
+    script.dataset.repoId = "";
+    script.dataset.category = "Blog comments";
+    script.dataset.categoryId = "";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright © 2010–2026 Gavin Simpson</p>
+</div>   
+    <div class="nav-footer-center">
+<p>Content available under a <a href="../../../../permissions/">Creative Commons Attribution 4.0 licence</a>.</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:ucfagls@gmail.com">
+      <i class="bi bi-envelope" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://orcid.org/0000-0002-9084-8413">
+<p>ORCID</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
 
 
-  </body>
-</html>
 
 
+</body></html>
