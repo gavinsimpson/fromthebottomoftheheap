@@ -168,14 +168,24 @@ def open_export(path: Path):
     return gzip.open(path, "rb") if path.suffix == ".gz" else path.open("rb")
 
 
-def parse_export(path: Path, routes: set[str], unique_slugs: dict[str, str]) -> tuple[dict[str, dict], list[dict]]:
+def parse_export(
+    path: Path, routes: set[str], unique_slugs: dict[str, str]
+) -> tuple[dict[str, dict], list[dict], dict]:
     with open_export(path) as handle:
         root = ET.parse(handle).getroot()
 
     threads: dict[str, dict] = {}
+    thread_records: dict[str, dict] = {}
     for node in (child for child in root if local_name(child.tag) == "thread"):
         identifier = node.attrib.get(DSQ_ID, "")
         route = post_path(text_of(node, "link"), routes, unique_slugs)
+        if identifier:
+            thread_records[identifier] = {
+                "route": route,
+                "title": text_of(node, "title"),
+                "link": text_of(node, "link"),
+                "deleted": truth(text_of(node, "isDeleted")),
+            }
         if identifier and route and not truth(text_of(node, "isDeleted")):
             threads[identifier] = {
                 "route": route,
@@ -184,16 +194,34 @@ def parse_export(path: Path, routes: set[str], unique_slugs: dict[str, str]) -> 
             }
 
     comments: list[dict] = []
+    skipped = {
+        "missing_id": 0,
+        "deleted": 0,
+        "spam": 0,
+        "unapproved": 0,
+        "unmapped_thread": 0,
+    }
+    unmapped_counts: dict[str, int] = {}
     for order, node in enumerate(child for child in root if local_name(child.tag) == "post"):
         identifier = node.attrib.get(DSQ_ID, "")
         thread = child_of(node, "thread")
         thread_id = "" if thread is None else thread.attrib.get(DSQ_ID, "")
-        if not identifier or thread_id not in threads:
+        if not identifier:
+            skipped["missing_id"] += 1
             continue
-        if truth(text_of(node, "isDeleted")) or truth(text_of(node, "isSpam")):
+        if truth(text_of(node, "isDeleted")):
+            skipped["deleted"] += 1
+            continue
+        if truth(text_of(node, "isSpam")):
+            skipped["spam"] += 1
             continue
         approved_text = text_of(node, "isApproved")
         if approved_text and not truth(approved_text):
+            skipped["unapproved"] += 1
+            continue
+        if thread_id not in threads:
+            skipped["unmapped_thread"] += 1
+            unmapped_counts[thread_id] = unmapped_counts.get(thread_id, 0) + 1
             continue
         author = child_of(node, "author")
         parent = child_of(node, "parent")
@@ -209,7 +237,26 @@ def parse_export(path: Path, routes: set[str], unique_slugs: dict[str, str]) -> 
                 "order": order,
             }
         )
-    return threads, comments
+    unmapped_threads = []
+    for thread_id, count in sorted(unmapped_counts.items()):
+        record = thread_records.get(thread_id, {})
+        unmapped_threads.append(
+            {
+                "thread_id": thread_id,
+                "title": record.get("title", ""),
+                "link": record.get("link", ""),
+                "eligible_comments": count,
+                "thread_deleted": record.get("deleted", False),
+            }
+        )
+    audit = {
+        "raw_threads": sum(local_name(child.tag) == "thread" for child in root),
+        "active_mapped_threads": len(threads),
+        "raw_comments": sum(local_name(child.tag) == "post" for child in root),
+        "skipped_comments": skipped,
+        "unmapped_threads": unmapped_threads,
+    }
+    return threads, comments, audit
 
 
 def gh_graphql(query: str, variables: dict) -> dict:
@@ -233,7 +280,8 @@ def repo_info(owner: str, name: str, category: str) -> tuple[str, str]:
     return result["id"], categories[category]
 
 
-def create_discussion(repo_id: str, category_id: str, route: str, source_url: str) -> str:
+def create_discussion(repo_id: str, category_id: str, route: str) -> str:
+    source_url = f"https://fromthebottomoftheheap.net{route}"
     body = f"Legacy blog discussion for [{route}]({source_url}). Comments below were migrated from Disqus."
     result = gh_graphql(
         "mutation($repositoryId:ID!,$categoryId:ID!,$title:String!,$body:String!){createDiscussion(input:{repositoryId:$repositoryId,categoryId:$categoryId,title:$title,body:$body}){discussion{id}}}",
@@ -253,12 +301,16 @@ def add_comment(discussion_id: str, body: str, reply_to: str = "") -> str:
     return result["data"]["addDiscussionComment"]["comment"]["id"]
 
 
-def attributed_body(comment: dict, parent: dict | None = None) -> str:
+def attributed_body(
+    comment: dict, parent: dict | None = None, unavailable_parent_id: str = ""
+) -> str:
     author_url = comment["url"] if comment["url"].startswith(("https://", "http://")) else ""
     author = f"[{comment['name']}]({author_url})" if author_url else comment["name"]
     prefix = f"**Legacy comment by {author} — {comment['created_at']} UTC**"
     if parent is not None:
         prefix += f"  \n_Replying to {parent['name']} (legacy Disqus comment {parent['id']})._"
+    elif unavailable_parent_id:
+        prefix += f"  \n_Replying to unavailable legacy Disqus comment {unavailable_parent_id}._"
     return f"{prefix}\n\n{comment['message']}".strip()
 
 
@@ -278,12 +330,39 @@ def main() -> int:
     if not args.manifest.exists():
         parser.error("post manifest does not exist")
     routes, unique_slugs = load_post_routes(args.manifest)
-    threads, comments = parse_export(args.export, routes, unique_slugs)
+    threads, comments, audit = parse_export(args.export, routes, unique_slugs)
     populated = sorted({comment["thread_id"] for comment in comments})
+    populated_routes = {threads[key]["route"] for key in populated}
+    route_thread_counts = {
+        route: sum(threads[key]["route"] == route for key in populated)
+        for route in populated_routes
+    }
+    comments_by_id = {comment["id"]: comment for comment in comments}
+    replies = [comment for comment in comments if comment["parent_id"]]
     report = {
         "mode": "apply" if args.apply else "dry-run",
         "approved_comments": len(comments),
-        "populated_posts": len(populated),
+        "populated_posts": len(populated_routes),
+        "populated_disqus_threads": len(populated),
+        "duplicate_comment_ids": len(comments) - len(comments_by_id),
+        "canonical_route_collisions": sum(count > 1 for count in route_thread_counts.values()),
+        "replies": {
+            "total": len(replies),
+            "direct": sum(
+                comment["parent_id"] in comments_by_id
+                and not comments_by_id[comment["parent_id"]]["parent_id"]
+                for comment in replies
+            ),
+            "deep_to_flatten": sum(
+                comment["parent_id"] in comments_by_id
+                and bool(comments_by_id[comment["parent_id"]]["parent_id"])
+                for comment in replies
+            ),
+            "parent_unavailable": sum(
+                comment["parent_id"] not in comments_by_id for comment in replies
+            ),
+        },
+        "audit": audit,
         "routes": {threads[key]["route"]: sum(c["thread_id"] == key for c in comments) for key in populated},
     }
     args.report.parent.mkdir(parents=True, exist_ok=True)
@@ -291,6 +370,8 @@ def main() -> int:
     print(json.dumps(report, indent=2, sort_keys=True))
     if not args.apply:
         return 0
+    if report["duplicate_comment_ids"] or report["canonical_route_collisions"]:
+        raise RuntimeError("refusing live import because the dry-run found duplicate IDs or route collisions")
 
     owner, name = args.repo.split("/", 1)
     repo_id, category_id = repo_info(owner, name, args.category)
@@ -298,13 +379,11 @@ def main() -> int:
         ledger = json.loads(args.ledger.read_text(encoding="utf-8"))
     else:
         ledger = {"discussions": {}, "comments": {}}
-    comments_by_id = {comment["id"]: comment for comment in comments}
-
     for thread_id in populated:
         thread = threads[thread_id]
         discussion_id = ledger["discussions"].get(thread_id)
         if not discussion_id:
-            discussion_id = create_discussion(repo_id, category_id, thread["route"], thread["link"])
+            discussion_id = create_discussion(repo_id, category_id, thread["route"])
             ledger["discussions"][thread_id] = discussion_id
             args.ledger.parent.mkdir(parents=True, exist_ok=True)
             args.ledger.write_text(json.dumps(ledger, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -316,6 +395,7 @@ def main() -> int:
             parent = comments_by_id.get(comment["parent_id"])
             reply_to = ""
             attributed_parent = None
+            unavailable_parent_id = ""
             if parent is not None:
                 parent_gh = ledger["comments"].get(parent["id"], "")
                 grandparent = comments_by_id.get(parent["parent_id"])
@@ -323,7 +403,13 @@ def main() -> int:
                     reply_to = parent_gh
                 else:
                     attributed_parent = parent
-            github_id = add_comment(discussion_id, attributed_body(comment, attributed_parent), reply_to)
+            elif comment["parent_id"]:
+                unavailable_parent_id = comment["parent_id"]
+            github_id = add_comment(
+                discussion_id,
+                attributed_body(comment, attributed_parent, unavailable_parent_id),
+                reply_to,
+            )
             ledger["comments"][comment["id"]] = github_id
             args.ledger.write_text(json.dumps(ledger, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return 0

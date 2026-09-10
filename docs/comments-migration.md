@@ -35,7 +35,9 @@ python3 scripts/import-disqus.py /path/outside/git/disqus-export.xml.gz
 ```
 
 Review `migration-private/disqus-dry-run.json`, especially the approved comment
-count, populated-post count, and route map. Test with a small export first.
+count, populated-post count, exclusions, reply audit, and route map. Comments on
+retired or otherwise unmapped URLs are listed in `audit.unmapped_threads` rather
+than silently discarded. Test with a small export first.
 
 After authenticating the GitHub CLI as the maintainer and reviewing the report:
 
@@ -66,4 +68,3 @@ original authors.
 The dry-run and final live export totals must match before production cutover.
 Spot-check several nested discussions on a Netlify deploy preview and verify
 that Giscus loads the matching discussion on its canonical post URL.
-
