@@ -14,8 +14,14 @@ SPEC.loader.exec_module(IMPORTER)
 class ImportDisqusTests(unittest.TestCase):
     def test_native_namespaces_filters_and_manifest_aliases(self):
         routes, unique_slugs = IMPORTER.load_post_routes(ROOT / "migration" / "post-manifest.csv")
+        aliases = IMPORTER.load_route_aliases(
+            ROOT / "migration" / "disqus-route-aliases.csv", routes
+        )
         threads, comments, audit = IMPORTER.parse_export(
-            ROOT / "tests" / "fixtures" / "native-export-fixture.xml", routes, unique_slugs
+            ROOT / "tests" / "fixtures" / "native-export-fixture.xml",
+            routes,
+            unique_slugs,
+            aliases,
         )
         self.assertEqual(threads["thread-1"]["route"], "/2024/03/28/gratia-0-9-0/")
         self.assertEqual([comment["id"] for comment in comments], ["comment-1", "comment-2", "comment-3"])
@@ -27,6 +33,15 @@ class ImportDisqusTests(unittest.TestCase):
         self.assertEqual(audit["raw_comments"], 6)
         self.assertEqual(audit["skipped_comments"]["deleted"], 1)
         self.assertEqual(audit["skipped_comments"]["spam"], 1)
+        self.assertEqual(
+            IMPORTER.post_path(
+                "http://www.fromthebottomoftheheap.net/2011/10/21/228/",
+                routes,
+                unique_slugs,
+                aliases,
+            ),
+            "/2011/10/21/generating-sets-of-permutations/",
+        )
 
     def test_html_is_converted_without_active_content(self):
         markdown = IMPORTER.to_markdown('<p><strong>Safe</strong></p><script>bad()</script>')

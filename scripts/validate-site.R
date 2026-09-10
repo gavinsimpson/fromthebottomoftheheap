@@ -4,12 +4,12 @@ options(warn = 2)
 root <- normalizePath(getwd(), mustWork = TRUE)
 
 manifest <- read.csv(file.path(root, "migration", "post-manifest.csv"), stringsAsFactors = FALSE)
-if (nrow(manifest) != 103L) stop("Expected 103 historical posts, found ", nrow(manifest))
+if (nrow(manifest) != 104L) stop("Expected 104 historical posts, found ", nrow(manifest))
 if (sum(manifest$archived_rmd) != 37L) stop("Expected 37 archived Rmd posts")
 if (anyDuplicated(manifest$qmd) || anyDuplicated(manifest$url)) stop("Historical QMD paths and URLs must be unique")
 dated_qmd <- list.files(root, pattern = "^index\\.qmd$", recursive = TRUE, full.names = TRUE)
 dated_qmd <- dated_qmd[grepl("/20[0-9]{2}/[0-9]{2}/[0-9]{2}/[^/]+/index\\.qmd$", dated_qmd)]
-if (length(dated_qmd) != 103L) stop("Expected exactly 103 canonical dated QMD pages")
+if (length(dated_qmd) != 104L) stop("Expected exactly 104 canonical dated QMD pages")
 
 hashes <- read.delim(file.path(root, "migration", "rmd-md5.tsv"), stringsAsFactors = FALSE)
 current <- tools::md5sum(file.path(root, hashes$path))
@@ -96,7 +96,7 @@ if (length(missing_baseline)) stop("Missing baseline routes: ", paste(missing_ba
 home <- readLines(file.path(root, "_site", "index.html"), warn = FALSE)
 blog <- readLines(file.path(root, "_site", "blog", "index.html"), warn = FALSE)
 if (sum(grepl('class="quarto-post ', home, fixed = TRUE)) != 10L) stop("Home page must list exactly ten posts")
-if (sum(grepl('data-index="', blog, fixed = TRUE)) != 103L) stop("Blog archive must list exactly 103 posts")
+if (sum(grepl('data-index="', blog, fixed = TRUE)) != 104L) stop("Blog archive must list exactly 104 posts")
 if (any(grepl("publications/365papers", home, fixed = TRUE))) stop("Home listing contains non-post content")
 
 post_html <- file.path(root, "_site", sub("^/", "", manifest$url), "index.html")
@@ -110,6 +110,22 @@ if (any(grepl("A historical post attempted to execute R code", rendered, fixed =
 }
 if (!all(vapply(post_html, function(path) any(grepl("giscus.app/client.js", readLines(path, warn = FALSE), fixed = TRUE)), logical(1L)))) {
   stop("Giscus is not enabled on every historical post")
+}
+giscus_ids <- c(
+  'script.dataset.repoId = "R_kgDOUUVJuA";',
+  'script.dataset.categoryId = "DIC_kwDOUUVJuM4DFRne";'
+)
+if (!all(vapply(post_html, function(path) {
+  lines <- readLines(path, warn = FALSE)
+  all(vapply(giscus_ids, function(value) any(grepl(value, lines, fixed = TRUE)), logical(1L)))
+}, logical(1L)))) {
+  stop("Giscus repository or category IDs are missing from a historical post")
+}
+
+netlify <- paste(readLines(file.path(root, "netlify.toml"), warn = FALSE), collapse = "\n")
+if (!grepl('from = "/2011/10/21/228/"', netlify, fixed = TRUE) ||
+    !grepl('to = "/2011/10/21/generating-sets-of-permutations/"', netlify, fixed = TRUE)) {
+  stop("Missing Netlify redirect for the recovered WordPress post")
 }
 
 bootstrap_js <- list.files(file.path(root, "_site", "site_libs", "bootstrap"), pattern = "bootstrap.*\\.js$", full.names = TRUE)
@@ -129,4 +145,4 @@ if (length(setdiff(dated_paths, r_routes))) stop("The R compatibility feed conta
 link_status <- system2("python3", c("scripts/check-links.py", "_site"))
 if (!identical(link_status, 0L)) stop("Rendered internal-link validation failed")
 
-message("Validated 103 historical posts, 37 immutable Rmd archives, 385 baseline routes, feeds, Bootstrap, Giscus, and links.")
+message("Validated 104 historical posts, 37 immutable Rmd archives, 386 baseline routes, feeds, Bootstrap, Giscus, and links.")

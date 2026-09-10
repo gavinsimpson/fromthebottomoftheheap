@@ -71,10 +71,33 @@ def load_post_routes(path: Path) -> tuple[set[str], dict[str, str]]:
     return routes, unique_slugs
 
 
-def post_path(url: str, routes: set[str], unique_slugs: dict[str, str]) -> str | None:
+def load_route_aliases(path: Path, routes: set[str]) -> dict[str, str]:
+    if not path.exists():
+        raise RuntimeError(f"Disqus route alias file does not exist: {path}")
+    aliases: dict[str, str] = {}
+    with path.open(newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle):
+            legacy = canonical_path(row.get("legacy_url", ""))
+            canonical = canonical_path(row.get("canonical_url", ""))
+            if not legacy or canonical not in routes:
+                raise RuntimeError(f"Invalid Disqus route alias: {row}")
+            if legacy in aliases and aliases[legacy] != canonical:
+                raise RuntimeError(f"Conflicting Disqus route alias: {legacy}")
+            aliases[legacy] = canonical
+    return aliases
+
+
+def post_path(
+    url: str,
+    routes: set[str],
+    unique_slugs: dict[str, str],
+    aliases: dict[str, str] | None = None,
+) -> str | None:
     route = canonical_path(url)
     if route in routes:
         return route
+    if route and aliases and route in aliases:
+        return aliases[route]
     if route:
         return unique_slugs.get(route.rstrip("/").rsplit("/", 1)[-1])
     return None
@@ -169,7 +192,10 @@ def open_export(path: Path):
 
 
 def parse_export(
-    path: Path, routes: set[str], unique_slugs: dict[str, str]
+    path: Path,
+    routes: set[str],
+    unique_slugs: dict[str, str],
+    aliases: dict[str, str] | None = None,
 ) -> tuple[dict[str, dict], list[dict], dict]:
     with open_export(path) as handle:
         root = ET.parse(handle).getroot()
@@ -178,7 +204,7 @@ def parse_export(
     thread_records: dict[str, dict] = {}
     for node in (child for child in root if local_name(child.tag) == "thread"):
         identifier = node.attrib.get(DSQ_ID, "")
-        route = post_path(text_of(node, "link"), routes, unique_slugs)
+        route = post_path(text_of(node, "link"), routes, unique_slugs, aliases)
         if identifier:
             thread_records[identifier] = {
                 "route": route,
@@ -320,6 +346,9 @@ def main() -> int:
     parser.add_argument("--repo", default="gavinsimpson/fromthebottomoftheheap-comments")
     parser.add_argument("--category", default="Blog comments")
     parser.add_argument("--manifest", type=Path, default=Path("migration/post-manifest.csv"))
+    parser.add_argument(
+        "--aliases", type=Path, default=Path("migration/disqus-route-aliases.csv")
+    )
     parser.add_argument("--ledger", type=Path, default=Path("migration-private/disqus-ledger.json"))
     parser.add_argument("--report", type=Path, default=Path("migration-private/disqus-dry-run.json"))
     parser.add_argument("--apply", action="store_true", help="Create discussions and comments")
@@ -330,7 +359,10 @@ def main() -> int:
     if not args.manifest.exists():
         parser.error("post manifest does not exist")
     routes, unique_slugs = load_post_routes(args.manifest)
-    threads, comments, audit = parse_export(args.export, routes, unique_slugs)
+    aliases = load_route_aliases(args.aliases, routes)
+    threads, comments, audit = parse_export(
+        args.export, routes, unique_slugs, aliases
+    )
     populated = sorted({comment["thread_id"] for comment in comments})
     populated_routes = {threads[key]["route"] for key in populated}
     route_thread_counts = {

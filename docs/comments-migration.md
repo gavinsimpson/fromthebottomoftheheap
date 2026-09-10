@@ -51,6 +51,8 @@ The importer:
 - accepts native `.xml` and `.xml.gz` exports;
 - selects non-deleted, non-spam comments and honors `isApproved` when present;
 - maps the old apex or `www` URL to a canonical trailing-slash pathname;
+- applies reviewed legacy aliases from `migration/disqus-route-aliases.csv`,
+  including the recovered WordPress-era `/2011/10/21/228/` post;
 - never copies export email addresses, IP addresses, usernames, or private
   profile data;
 - converts conservative, safe HTML to GitHub Markdown;
