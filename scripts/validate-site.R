@@ -224,6 +224,12 @@ if (!grepl("pre:not\\(\\.sourceCode\\)[[:space:]]*\\{[^}]*padding:[[:space:]]*0?
 if (!grepl("\\.post-taxonomy[[:space:]]+\\.badge[[:space:]]*\\{[^}]*text-decoration:[[:space:]]*none", theme_text, perl = TRUE)) {
   stop("Post taxonomy pills must not be underlined")
 }
+if (!grepl("\\.quarto-title[[:space:]]+\\.quarto-categories[[:space:]]*\\{[^}]*display:[[:space:]]*none", theme_text, perl = TRUE)) {
+  stop("The duplicate, unlinked Quarto category display must be hidden")
+}
+if (!grepl("\\.post-taxonomy[[:space:]]*>[[:space:]]*section[[:space:]]*\\{[^}]*display:[[:space:]]*flex", theme_text, perl = TRUE)) {
+  stop("Post taxonomy headings and pills must use the compact inline layout")
+}
 if (!grepl("#quarto-document-content[[:space:]]+\\.post-links[[:space:]]*\\{[^}]*order:[[:space:]]*1", theme_text, perl = TRUE)) {
   stop("Post sidebar must follow the article content on narrow screens")
 }
