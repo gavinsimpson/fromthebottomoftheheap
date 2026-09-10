@@ -144,6 +144,12 @@ if (any(grepl("assets/css/bootstrap.css|assets/js/bootstrap.js|class=.[^\"]*span
   stop("Obsolete Bootstrap 2 assets or grid classes remain in rendered posts")
 }
 if (any(grepl("\\{%|\\{\\{", rendered))) stop("Unresolved Liquid syntax remains in rendered posts")
+if (any(grepl("<p>[^\n]*\\*[[:space:]]+<(?:code|a|em|strong)", rendered, perl = TRUE))) {
+  stop("A Markdown bullet marker was rendered literally inside a post paragraph")
+}
+if (any(grepl("\\([^)]*\\)\\[https?://[^]]+\\]", rendered, perl = TRUE))) {
+  stop("A reversed Markdown link was rendered literally inside a post")
+}
 if (any(grepl("A historical post attempted to execute R code", rendered, fixed = TRUE))) {
   stop("The historical execution sentinel leaked into rendered output")
 }
