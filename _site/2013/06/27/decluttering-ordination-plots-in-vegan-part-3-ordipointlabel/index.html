@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-b2ec05e4921fc46d0fb14aded6476364.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-36b84a577a4416043458954b50f0c3df.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -318,7 +318,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 data-anchor-id="tagged">Tagged</h4>
 <p><a href="../../../../tag/graphics/" class="badge text-bg-dark">Graphics</a> <a href="../../../../tag/ordination/" class="badge text-bg-dark">Ordination</a> <a href="../../../../tag/pca/" class="badge text-bg-dark">PCA</a> <a href="../../../../tag/r/" class="badge text-bg-dark">R</a> <a href="../../../../tag/vegan/" class="badge text-bg-dark">vegan</a> <a href="../../../../tag/simulated-annealing/" class="badge text-bg-dark">Simulated annealing</a> <a href="../../../../tag/optimization/" class="badge text-bg-dark">Optimization</a></p>
 </section>
-</div></div><p>Previously in this series I looked at <a href="http://www.fromthebottomoftheheap.net/2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/">first</a> the <code>ordilabel()</code> and <a href="http://www.fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/">then</a> <code>orditorp()</code> functions in the <strong><a href="http://cran.r-project.org/package=vegan">vegan</a></strong> package as means to improve labelling in ordination plots. In this the third in the series I take a look at <code>ordipointlabel()</code>.</p>
+</div><div class="post-links">
+<section id="social" class="level4 side-snippet">
+<h4 data-anchor-id="social">Social</h4>
+<p>
+<a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank" rel="noopener"><img class="buy-me-coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee"></a>
+</p>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a>
+</li>
+<li>
+<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">@ucfagls</a>
+</li>
+<li>
+<i class="bi bi-github" aria-hidden="true"></i><a href="https://github.com/gavinsimpson">gavinsimpson</a>
+</li>
+<li>
+<i class="bi bi-person-badge" aria-hidden="true"></i><a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a>
+</li>
+<li>
+<i class="bi bi-rss" aria-hidden="true"></i><a href="../../../../feed.xml" type="application/atom+xml">Subscribe</a>
+</li>
+</ul>
+</section>
+<section id="blogroll" class="level4 side-snippet">
+<h4 data-anchor-id="blogroll">Blogroll</h4>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://downwithtime.wordpress.com/">Down With time</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://recology.info/">Recology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://rweekly.org/">R Weekly</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://www.r-bloggers.com/">R Bloggers</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a>
+</li>
+</ul>
+</section>
+</div></div>
+<p>Previously in this series I looked at <a href="http://www.fromthebottomoftheheap.net/2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/">first</a> the <code>ordilabel()</code> and <a href="http://www.fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/">then</a> <code>orditorp()</code> functions in the <strong><a href="http://cran.r-project.org/package=vegan">vegan</a></strong> package as means to improve labelling in ordination plots. In this the third in the series I take a look at <code>ordipointlabel()</code>.</p>
 <p>Numerical optimisation algorithms take a problem, such as the optimal placement of labels on an ordination plot, and from a starting point iteratively improve the solution to the problem until it can’t be improved any further. Many optimisation algorithms will only accept a better solution as the next update step in the optimisation. As a result, such algorithms tend not to explore widely the solution space from the starting location and can get stuck in a local optimum because they will only accept better solutions; once you are walking downhill in a particular valley you have to stop at the bottom of that valley if you can only walk downhill, even if a better solution is just over a slight rise.</p>
 <p>Simulated annealing (SANN) is a stochastic optimisation algorithm. In simulated annealing, the next step in the optimisation is selected probabilistically from the solution space; better solutions are favoured, but worse solutions can also be accepted. This feature allows simulated annealing to explore the solution space during the early iterations. As iterations proceed, the chance that a worse solution will be accepted as the next step is gradually reduced in a way that akin to the gradual cooling used when annealing in metallurgy to minimise defects in the worked metal. As a result the algorithm gradually focuses in on a good solution. There is still no guarantee that this solution is is the globally best solution but the chances of getting stuck in a poor local optimum are reduced.</p>
 <p><code>ordipointlabel()</code> uses SANN to optimise the difficult problem of locating labels to minimise their overlap in the ordination plot. It is modelled after the <code>pointLabel()</code> function of the <strong><a href="http://cran.r-project.org/package=maptools">maptools</a></strong> package.</p>

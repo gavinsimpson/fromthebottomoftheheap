@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-b2ec05e4921fc46d0fb14aded6476364.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-36b84a577a4416043458954b50f0c3df.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -318,7 +318,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 data-anchor-id="tagged">Tagged</h4>
 <p><a href="../../../../tag/r/" class="badge text-bg-dark">R</a> <a href="../../../../tag/time-series/" class="badge text-bg-dark">Time series</a> <a href="../../../../tag/smoothing/" class="badge text-bg-dark">Smoothing</a> <a href="../../../../tag/additive-models/" class="badge text-bg-dark">Additive models</a></p>
 </section>
-</div></div><p>Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit.</p>
+</div><div class="post-links">
+<section id="social" class="level4 side-snippet">
+<h4 data-anchor-id="social">Social</h4>
+<p>
+<a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank" rel="noopener"><img class="buy-me-coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee"></a>
+</p>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a>
+</li>
+<li>
+<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">@ucfagls</a>
+</li>
+<li>
+<i class="bi bi-github" aria-hidden="true"></i><a href="https://github.com/gavinsimpson">gavinsimpson</a>
+</li>
+<li>
+<i class="bi bi-person-badge" aria-hidden="true"></i><a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a>
+</li>
+<li>
+<i class="bi bi-rss" aria-hidden="true"></i><a href="../../../../feed.xml" type="application/atom+xml">Subscribe</a>
+</li>
+</ul>
+</section>
+<section id="blogroll" class="level4 side-snippet">
+<h4 data-anchor-id="blogroll">Blogroll</h4>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://downwithtime.wordpress.com/">Down With time</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://recology.info/">Recology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://rweekly.org/">R Weekly</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://www.r-bloggers.com/">R Bloggers</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a>
+</li>
+</ul>
+</section>
+</div></div>
+<p>Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit.</p>
 <p>Unless we specifically tell the software that the data aren’t independent it will perform smoothness selection assuming that we have \( n \) independent observations. The risk then is that too-complex a smooth term is fitted to the data — it is no-longer a case of updating the fitted model, the model itself will be over-fitted. In this post I want to illustrate the problem of smoothing correlated data with an example from a chapter in a text book that a reviewer alerted to me to some time back.</p>
 <p>The example comes from Kohn, Schimek and Smith (2000) that I have cooked up using R. Kohn et al consider the model \( f(x_{t}) = 1280 x_{t}^4 (1 - x_{t})^4 \), where \( t = 1, 2, \ldots, 100 \), and \( x_{t} = t/100 \). To this, errors \( e_{t} \) are generated from a first-order auto-regressive (AR(1)) process with \( \phi_{1} = 0.3713\) to produce a random sample from the model such that \( y_{t} = f(x_{t}) + e_{t}\). We can generate a sample of data from this model with the following R code</p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">321</span>)</span>

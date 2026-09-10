@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-b2ec05e4921fc46d0fb14aded6476364.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-36b84a577a4416043458954b50f0c3df.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -318,7 +318,64 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h4 data-anchor-id="tagged">Tagged</h4>
 <p><a href="../../../../tag/climate-change/" class="badge text-bg-dark">Climate Change</a> <a href="../../../../tag/science/" class="badge text-bg-dark">Science</a> <a href="../../../../tag/time-series/" class="badge text-bg-dark">Time series</a></p>
 </section>
-</div></div><p><a href="http://www.fromthebottomoftheheap.net/2011/06/11/global-warming-since-1995-now-significant/" title="Global warming since 1995 'now significant'">Earlier, I looked at the HadCRUT3vgl data</a> set using generalized least squares to investigate whether the trend in temperature since 1995 was statistically significant. Here I want to follow-up one of the points from the earlier posting; namely using a statistical technique that fits a local, and not global, model to the entire time series and see how that informs our knowledge of trends in the recent period. In this post, I’ll be using the <strong>mgcv</strong> and <strong>nlme</strong> packages plus some custom functions I wrote to produce diagnostics plots of <code>gamm()</code> time series models and to compute derivatives of fitted splines using the method of finite differences. The latter can be loaded into R from my <a href="http://github.com" title="github website">github</a> <a href="https://github.com/gavinsimpson/random_code" title="My github repository">repository</a></p>
+</div><div class="post-links">
+<section id="social" class="level4 side-snippet">
+<h4 data-anchor-id="social">Social</h4>
+<p>
+<a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank" rel="noopener"><img class="buy-me-coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee"></a>
+</p>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a>
+</li>
+<li>
+<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">@ucfagls</a>
+</li>
+<li>
+<i class="bi bi-github" aria-hidden="true"></i><a href="https://github.com/gavinsimpson">gavinsimpson</a>
+</li>
+<li>
+<i class="bi bi-person-badge" aria-hidden="true"></i><a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a>
+</li>
+<li>
+<i class="bi bi-rss" aria-hidden="true"></i><a href="../../../../feed.xml" type="application/atom+xml">Subscribe</a>
+</li>
+</ul>
+</section>
+<section id="blogroll" class="level4 side-snippet">
+<h4 data-anchor-id="blogroll">Blogroll</h4>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://downwithtime.wordpress.com/">Down With time</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://recology.info/">Recology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://rweekly.org/">R Weekly</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://www.r-bloggers.com/">R Bloggers</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a>
+</li>
+</ul>
+</section>
+</div></div>
+<p><a href="http://www.fromthebottomoftheheap.net/2011/06/11/global-warming-since-1995-now-significant/" title="Global warming since 1995 'now significant'">Earlier, I looked at the HadCRUT3vgl data</a> set using generalized least squares to investigate whether the trend in temperature since 1995 was statistically significant. Here I want to follow-up one of the points from the earlier posting; namely using a statistical technique that fits a local, and not global, model to the entire time series and see how that informs our knowledge of trends in the recent period. In this post, I’ll be using the <strong>mgcv</strong> and <strong>nlme</strong> packages plus some custom functions I wrote to produce diagnostics plots of <code>gamm()</code> time series models and to compute derivatives of fitted splines using the method of finite differences. The latter can be loaded into R from my <a href="http://github.com" title="github website">github</a> <a href="https://github.com/gavinsimpson/random_code" title="My github repository">repository</a></p>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## load the packages and code we need</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(mgcv)</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">require</span>(nlme)</span>

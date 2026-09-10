@@ -101,7 +101,7 @@ div.csl-indent {
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-b2ec05e4921fc46d0fb14aded6476364.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-36b84a577a4416043458954b50f0c3df.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -337,7 +337,64 @@ div.csl-indent {
 <h4 data-anchor-id="tagged">Tagged</h4>
 <p><a href="../../../../tag/gam/" class="badge text-bg-dark">GAM</a> <a href="../../../../tag/splines/" class="badge text-bg-dark">splines</a> <a href="../../../../tag/b-splines/" class="badge text-bg-dark">B splines</a> <a href="../../../../tag/mgcv/" class="badge text-bg-dark">mgcv</a> <a href="../../../../tag/extrapolation/" class="badge text-bg-dark">extrapolation</a> <a href="../../../../tag/penalty/" class="badge text-bg-dark">penalty</a></p>
 </section>
-</div></div><p>An issue that often crops up when modelling with generlaized additive models (GAMs), especially with time series or spatial data, is how to extrapolate beyond the range of the data used to train the model? The issue arises because GAMs use splines to learn from the data using basis functions. The splines themselves are built from basis functions that are typically setup in terms of the data used to fit the model. If there are no basis functions beyond the range of the input data, what exactly is being used if we want to extrapolate? A related issue is that of the wiggliness penalty; depending on the type of basis used, the penalty could extend over the entire real line (-∞–∞), or only over the range of the input data. In this post I want to take a practical look the extrapolation behaviour of splines in GAMs fitted with the <strong>mgcv</strong> package for R. In particular I want to illustrate how flexible the B spline basis is.</p>
+</div><div class="post-links">
+<section id="social" class="level4 side-snippet">
+<h4 data-anchor-id="social">Social</h4>
+<p>
+<a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank" rel="noopener"><img class="buy-me-coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee"></a>
+</p>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a>
+</li>
+<li>
+<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">@ucfagls</a>
+</li>
+<li>
+<i class="bi bi-github" aria-hidden="true"></i><a href="https://github.com/gavinsimpson">gavinsimpson</a>
+</li>
+<li>
+<i class="bi bi-person-badge" aria-hidden="true"></i><a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a>
+</li>
+<li>
+<i class="bi bi-rss" aria-hidden="true"></i><a href="../../../../feed.xml" type="application/atom+xml">Subscribe</a>
+</li>
+</ul>
+</section>
+<section id="blogroll" class="level4 side-snippet">
+<h4 data-anchor-id="blogroll">Blogroll</h4>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://downwithtime.wordpress.com/">Down With time</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://recology.info/">Recology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://rweekly.org/">R Weekly</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://www.r-bloggers.com/">R Bloggers</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a>
+</li>
+</ul>
+</section>
+</div></div>
+<p>An issue that often crops up when modelling with generlaized additive models (GAMs), especially with time series or spatial data, is how to extrapolate beyond the range of the data used to train the model? The issue arises because GAMs use splines to learn from the data using basis functions. The splines themselves are built from basis functions that are typically setup in terms of the data used to fit the model. If there are no basis functions beyond the range of the input data, what exactly is being used if we want to extrapolate? A related issue is that of the wiggliness penalty; depending on the type of basis used, the penalty could extend over the entire real line (-∞–∞), or only over the range of the input data. In this post I want to take a practical look the extrapolation behaviour of splines in GAMs fitted with the <strong>mgcv</strong> package for R. In particular I want to illustrate how flexible the B spline basis is.</p>
 <p>A lot of what I discuss in the post draws heavily on the help page in <strong>mgcv</strong> for the B spline basis — <code>?mgcv::b.spline</code> — and a recent email discussion with Alex Hayes, Dave Miller, and Eric Pedersen, though what I write here reflects my own input to that discussion.</p>
 <p>I was initially minded to look into this again after reading a <a href="https://arxiv.org/abs/2004.11408">new preprint</a> on low-rank approximations to a Gaussian process [GP; <span class="citation" data-cites="Riutort-Mayol2020-ih">Riutort-Mayol et al. (<a href="#ref-Riutort-Mayol2020-ih" role="doc-biblioref">2020</a>)</span>], where, among other things, the authors compare the behaviour of the exact GP model with their low-rank version and with a thin plate regression spline (TPRS). The TPRS is the sort of thing you’d get by default with <strong>mgcv</strong> and <code>s()</code>, but as the other models were all fully Bayesian, the TPRS model was fitted using <code>brm()</code> from the <strong>brms</strong> package so that all the models were comparable, ultimately being fitted in <strong>Stan</strong>. The TPRS model didn’t do a very good job of fitting the test observations when extrapolating beyond the limits of the data. I wondered if we could do any better with the B spline basis in <strong>mgcv</strong> as I knew it had extra flexibility for short extrapolation beyond the data, but I’d never really looked into how it worked or what the respective behaviour was.</p>
 <p>If you want to recreate elements of the rest of the post, you’ll need the following packages installed:</p>

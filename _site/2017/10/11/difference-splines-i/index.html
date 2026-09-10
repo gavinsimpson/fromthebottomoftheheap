@@ -101,7 +101,7 @@ div.csl-indent {
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-b2ec05e4921fc46d0fb14aded6476364.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-36b84a577a4416043458954b50f0c3df.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -367,7 +367,64 @@ window.Quarto = {
 <h4 data-anchor-id="tagged">Tagged</h4>
 <p><a href="../../../../tag/gam/" class="badge text-bg-dark">GAM</a> <a href="../../../../tag/smooths/" class="badge text-bg-dark">smooths</a> <a href="../../../../tag/factor-smooth-interactions/" class="badge text-bg-dark">factor-smooth interactions</a> <a href="../../../../tag/mgcv/" class="badge text-bg-dark">mgcv</a> <a href="../../../../tag/difference-smooths/" class="badge text-bg-dark">difference smooths</a></p>
 </section>
-</div></div><p>One of the really appealing features of the <strong>mgcv</strong> package for fitting GAMs is the functionality it exposes for fitting quite complex models, models that lie well beyond what many of us may have learned about what GAMs can do. One of those features that I use a lot is the ability to model the smooth effects of some covariate <span class="math inline">\(x\)</span> in the different levels of a factor. Having estimated a separate smoother for each level of the factor, the obvious question is, which smooths are different? In this post I’ll take a look at one way to do this using <code>by</code>-variable smooths.</p>
+</div><div class="post-links">
+<section id="social" class="level4 side-snippet">
+<h4 data-anchor-id="social">Social</h4>
+<p>
+<a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank" rel="noopener"><img class="buy-me-coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee"></a>
+</p>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a>
+</li>
+<li>
+<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">@ucfagls</a>
+</li>
+<li>
+<i class="bi bi-github" aria-hidden="true"></i><a href="https://github.com/gavinsimpson">gavinsimpson</a>
+</li>
+<li>
+<i class="bi bi-person-badge" aria-hidden="true"></i><a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a>
+</li>
+<li>
+<i class="bi bi-rss" aria-hidden="true"></i><a href="../../../../feed.xml" type="application/atom+xml">Subscribe</a>
+</li>
+</ul>
+</section>
+<section id="blogroll" class="level4 side-snippet">
+<h4 data-anchor-id="blogroll">Blogroll</h4>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://downwithtime.wordpress.com/">Down With time</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://recology.info/">Recology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://rweekly.org/">R Weekly</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://www.r-bloggers.com/">R Bloggers</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a>
+</li>
+</ul>
+</section>
+</div></div>
+<p>One of the really appealing features of the <strong>mgcv</strong> package for fitting GAMs is the functionality it exposes for fitting quite complex models, models that lie well beyond what many of us may have learned about what GAMs can do. One of those features that I use a lot is the ability to model the smooth effects of some covariate <span class="math inline">\(x\)</span> in the different levels of a factor. Having estimated a separate smoother for each level of the factor, the obvious question is, which smooths are different? In this post I’ll take a look at one way to do this using <code>by</code>-variable smooths.</p>
 <p>With <strong>mgcv</strong>, smooths are included in model formulae using the <code>s()</code> function. If you want to have the smooth equivalent of a continuous-factor interaction, one way to achieve this is via the <code>by</code> argument to <code>s()</code>. If you pass a factor to <code>by</code>, <strong>mgcv</strong> sets up the model matrix in such a way that you get a separate smoother for each level of the <code>by</code> factor. Each of these smoothers gets its own smoothness parameter — so you can fit a wiggly function in level <em>foo</em> and a smooth function in level <em>bar</em>, with each level’s function being learned from the data associated with that level.</p>
 <p>I used this technique in a <a href="http://doi.org/10.1016/j.gca.2010.12.026">paper</a> I wrote with my colleagues at UCL, Neil Rose, Handong Yang, and Simon Turner <span class="citation" data-cites="Rose2012-pl">(<a href="#ref-Rose2012-pl" role="doc-biblioref">Rose et al., 2012</a>)</span>. Neil, Handong, and Simon had collected sediment cores from several Scottish lochs and measured metal concentrations, especially of lead (Pb) and mercury (Hg), in sediment slices covering the last 200 years. The aim of the study was to investigate sediment profiles of these metals in three regions of Scotland; north east, north west, and south west. A pair of lochs in each region was selected, one in a catchment with visibly eroding peat/soil, and the other in a catchment without erosion. The different regions represented variations in historical deposition levels, whilst the hypothesis was that cores from eroded and non-eroded catchments would show differential responses to reductions in emissions of Pb and Hg to the atmosphere. The difference, it was hypothesised, was that the eroding soil acts as a secondary source of pollutants to the lake. You can read more about it in the <a href="http://doi.org/10.1016/j.gca.2010.12.026">paper</a> — if you’re interested but don’t have access to the journal, send me an email and I’ll pass on a pdf.</p>
 <p>It was relatively simple to fit splines to each sediment profile, but once I’d done this, how were we going to estimate the difference between the fitted trends? Thankfully, I already had the answer as Simon Wood had supplied code to do it to an OP on the R-Help listserver some years previous. That answer involved <code>by</code>-variable smoothers, which I was already using, and the use of the <span class="math inline">\(Xp\)</span> matrix of the fitted GAM.</p>

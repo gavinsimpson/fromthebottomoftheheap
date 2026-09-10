@@ -144,6 +144,12 @@ if (!grepl("Here, I describe what I broke as well as outline some of the major n
 }
 
 post_html <- file.path(root, "_site", sub("^/", "", manifest$url), "index.html")
+post_sidebar_include <- "{{< include ../../../../includes/social-blogroll.qmd >}}"
+if (!all(vapply(manifest$qmd, function(path) {
+  any(grepl(post_sidebar_include, readLines(file.path(root, path), warn = FALSE), fixed = TRUE))
+}, logical(1L)))) {
+  stop("The shared Social and Blogroll sidebar is missing from a historical post source")
+}
 rendered <- unlist(lapply(post_html, function(path) readLines(path, warn = FALSE)), use.names = FALSE)
 if (any(grepl('class="description"', rendered, fixed = TRUE))) {
   theme_text <- paste(readLines(file.path(root, "theme.scss"), warn = FALSE), collapse = "\n")
@@ -166,6 +172,14 @@ if (any(grepl("A historical post attempted to execute R code", rendered, fixed =
 }
 if (!all(vapply(post_html, function(path) any(grepl("giscus.app/client.js", readLines(path, warn = FALSE), fixed = TRUE)), logical(1L)))) {
   stop("Giscus is not enabled on every historical post")
+}
+if (!all(vapply(post_html, function(path) {
+  lines <- readLines(path, warn = FALSE)
+  all(vapply(c("buymeacoffee.com/gavinsimpson", ">Social</h4>", ">Blogroll</h4>"), function(value) {
+    any(grepl(value, lines, fixed = TRUE))
+  }, logical(1L)))
+}, logical(1L)))) {
+  stop("The rendered Social, Buy Me a Coffee, or Blogroll sidebar is missing from a historical post")
 }
 giscus_ids <- c(
   'script.dataset.repoId = "R_kgDOUUVJuA";',
@@ -213,6 +227,13 @@ if (!grepl("\\.post-taxonomy[[:space:]]+\\.badge[[:space:]]*\\{[^}]*text-decorat
 
 for (feed in c("feed.xml", "feed-R.xml")) {
   if (!file.exists(file.path(root, "_site", feed))) stop("Missing compatibility feed: ", feed)
+}
+for (feed in c("index.xml", "feed.xml", "feed-R/index.xml", "feed-R.xml")) {
+  feed_text <- paste(readLines(file.path(root, "_site", feed), warn = FALSE), collapse = "\n")
+  if (grepl('class="post-links"', feed_text, fixed = TRUE) ||
+      grepl("buymeacoffee.com/gavinsimpson", feed_text, fixed = TRUE)) {
+    stop("Post sidebar content leaked into feed: ", feed)
+  }
 }
 r_routes <- manifest$url[tolower(manifest$category) == "r"]
 r_feed <- paste(readLines(file.path(root, "_site", "feed-R.xml"), warn = FALSE), collapse = "\n")

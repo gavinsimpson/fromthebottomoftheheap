@@ -117,7 +117,15 @@ post_margin <- function(category, tags) {
   if (length(tags)) {
     out <- c(out, "#### Tagged", paste0("[", tags, "](/tag/", vapply(tags, slugify, character(1L)), "/){.badge .text-bg-dark}"))
   }
-  c(out, ":::", "")
+  c(
+    out,
+    ":::",
+    "",
+    "::: {.column-margin .post-links}",
+    "{{< include ../../../../includes/social-blogroll.qmd >}}",
+    ":::",
+    ""
+  )
 }
 
 replace_liquid <- function(body, excerpt = NULL) {
@@ -248,7 +256,7 @@ for (i in seq_along(md_files)) {
   ))
 
   body <- c(
-    post_margin(original_meta$category, original_meta$tags),
+    post_margin(meta$category, meta$tags),
     replace_liquid(parsed$body, original_meta$excerpt),
     post_navigation(i)
   )
