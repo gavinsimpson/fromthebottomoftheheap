@@ -145,4 +145,13 @@ if (length(setdiff(dated_paths, r_routes))) stop("The R compatibility feed conta
 link_status <- system2("python3", c("scripts/check-links.py", "_site"))
 if (!identical(link_status, 0L)) stop("Rendered internal-link validation failed")
 
+html_files <- list.files(file.path(root, "_site"), pattern = "\\.html$", recursive = TRUE, full.names = TRUE)
+protocol_relative_links <- vapply(html_files, function(path) {
+  any(grepl('href=["\\x27]//[^/]', readLines(path, warn = FALSE), perl = TRUE))
+}, logical(1L))
+if (any(protocol_relative_links)) {
+  stop("Rendered pages contain protocol-relative internal links: ",
+       paste(sub(paste0("^", root, "/_site/"), "", html_files[protocol_relative_links]), collapse = ", "))
+}
+
 message("Validated 104 historical posts, 37 immutable Rmd archives, 386 baseline routes, feeds, Bootstrap, Giscus, and links.")
