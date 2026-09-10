@@ -133,6 +133,21 @@ if (!length(bootstrap_js) || !any(grepl("Bootstrap v5.3.1", unlist(lapply(bootst
   stop("Rendered site is not using Quarto's supported Bootstrap 5.3.1 bundle")
 }
 
+syntax_css <- list.files(file.path(root, "_site", "site_libs", "quarto-html"),
+                         pattern = "quarto-syntax-highlighting-.*\\.css$", full.names = TRUE)
+syntax_lines <- unlist(lapply(syntax_css, readLines, warn = FALSE))
+monokai_tokens <- c("#f92672", "#e6db74", "#a6e22e", "#ae81ff")
+if (!length(syntax_css) || !all(vapply(monokai_tokens, function(value) {
+  any(grepl(value, syntax_lines, fixed = TRUE))
+}, logical(1L)))) {
+  stop("Rendered site does not use the expected Monokai syntax palette")
+}
+
+theme_lines <- readLines(file.path(root, "theme.scss"), warn = FALSE)
+if (any(grepl("^code:not\\(\\.sourceCode\\)", theme_lines))) {
+  stop("Inline-code styling must not apply to code inside preformatted blocks")
+}
+
 for (feed in c("feed.xml", "feed-R.xml")) {
   if (!file.exists(file.path(root, "_site", feed))) stop("Missing compatibility feed: ", feed)
 }
