@@ -224,6 +224,9 @@ if (!grepl("pre:not\\(\\.sourceCode\\)[[:space:]]*\\{[^}]*padding:[[:space:]]*0?
 if (!grepl("\\.post-taxonomy[[:space:]]+\\.badge[[:space:]]*\\{[^}]*text-decoration:[[:space:]]*none", theme_text, perl = TRUE)) {
   stop("Post taxonomy pills must not be underlined")
 }
+if (!grepl("#quarto-document-content[[:space:]]+\\.post-links[[:space:]]*\\{[^}]*order:[[:space:]]*1", theme_text, perl = TRUE)) {
+  stop("Post sidebar must follow the article content on narrow screens")
+}
 
 for (feed in c("feed.xml", "feed-R.xml")) {
   if (!file.exists(file.path(root, "_site", feed))) stop("Missing compatibility feed: ", feed)
