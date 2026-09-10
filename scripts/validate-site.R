@@ -230,6 +230,13 @@ if (!grepl("\\.quarto-title[[:space:]]+\\.quarto-categories[[:space:]]*\\{[^}]*d
 if (!grepl("\\.post-taxonomy[[:space:]]*>[[:space:]]*section[[:space:]]*\\{[^}]*display:[[:space:]]*flex", theme_text, perl = TRUE)) {
   stop("Post taxonomy headings and pills must use the compact inline layout")
 }
+if (!grepl("\\.post-taxonomy[[:space:]]*\\{[^}]*border-left:[[:space:]]*4px[[:space:]]+solid[[:space:]]+#f43d00", theme_text, perl = TRUE)) {
+  stop("Consolidated post metadata must retain the orange left border")
+}
+metadata_script <- paste(readLines(file.path(root, "assets", "js", "post-metadata.js"), warn = FALSE), collapse = "\n")
+if (!grepl("taxonomy.prepend(metadata)", metadata_script, fixed = TRUE)) {
+  stop("Post author and date must move into the taxonomy block")
+}
 if (!grepl("#quarto-document-content[[:space:]]+\\.post-links[[:space:]]*\\{[^}]*order:[[:space:]]*1", theme_text, perl = TRUE)) {
   stop("Post sidebar must follow the article content on narrow screens")
 }
