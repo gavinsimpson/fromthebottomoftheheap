@@ -16,6 +16,7 @@ commands <- list(
   c("quarto", "render"),
   c("Rscript", "scripts/compatibility-files.R"),
   c("Rscript", "scripts/validate-site.R"),
+  c("Rscript", "tests/test-publications.R"),
   c("python3", "tests/test-import-disqus.py")
 )
 
