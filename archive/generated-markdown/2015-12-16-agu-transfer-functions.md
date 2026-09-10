@@ -13,7 +13,7 @@ tags:
 - Lakes
 - AGU
 active: blog
-category: science
+category: Science
 ---
 
 Transfer functions have had a bit of a hard time of late following Steve Juggins [-@Juggins2013-dc] convincing demonstration that 1) secondary gradients can influence your model, and 2) that variation down-core in a secondary variable can induce a signal in the thing being reconstructed. This was followed up by further comment on diatom-TP reconstructions [@Juggins2013-gf], and not to be left out, chironomid transfer functions have come in from some heat, if the last (that I went to) IPS meeting was any indication. In a session at the 2015 Fall Meeting of the AGU, my interest was piqued by [Yarrow Axford](http://www.earth.northwestern.edu/~yarrow/)'s talk using chironomid temperature reconstructions, but not for the reasons you might be thinking.

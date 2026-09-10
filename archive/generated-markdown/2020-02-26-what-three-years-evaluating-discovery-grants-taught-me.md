@@ -13,7 +13,7 @@ tags:
 - HQP
 - Canada
 active: blog
-category: science
+category: Science
 twitterimg: "my-trusty-copy-of-the-grid.jpg"
 ---
 

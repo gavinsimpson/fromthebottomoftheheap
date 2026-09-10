@@ -223,7 +223,10 @@ for (i in seq_along(md_files)) {
   if (!is.null(meta$subtitle)) meta$subtitle <- as.character(meta$subtitle)
   if (!is.null(meta$excerpt)) meta$excerpt <- escape_social_handles(as.character(meta$excerpt))
   meta$description <- escape_social_handles(listing_description(parsed$body))
-  if (!is.null(meta$category)) meta$category <- as.character(meta$category)
+  if (!is.null(meta$category)) {
+    meta$category <- as.character(meta$category)
+    if (tolower(meta$category) == "science") meta$category <- "Science"
+  }
   if (is.null(meta$image) && !is.null(meta$twitterimg) && nzchar(as.character(meta$twitterimg))) {
     meta$image <- paste0("/assets/img/posts/", as.character(meta$twitterimg))
   }
@@ -291,7 +294,7 @@ for (i in seq_along(md_files)) {
       collapse = ";"
     ),
     permalink = url,
-    category = if (is.null(original_meta$category)) "" else as.character(original_meta$category),
+    category = if (is.null(meta$category)) "" else as.character(meta$category),
     tags = if (is.null(original_meta$tags)) "" else paste(unlist(original_meta$tags), collapse = "|"),
     archived_rmd = file.exists(rmd),
     hidden_chunks = chunk_count,

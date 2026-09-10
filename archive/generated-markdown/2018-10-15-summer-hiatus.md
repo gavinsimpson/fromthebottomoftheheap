@@ -7,7 +7,7 @@ type: post
 tags:
 - work
 active: blog
-category: science
+category: Science
 date: 2018-10-15 13:00:00
 excerpt_separator: <!--more-->
 ---

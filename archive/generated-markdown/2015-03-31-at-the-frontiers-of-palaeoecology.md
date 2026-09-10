@@ -10,7 +10,7 @@ tags:
 - R
 - Time series
 active: blog
-category: science
+category: Science
 ---
 
 A couple of weeks ago, I had the pleasure of attending and 

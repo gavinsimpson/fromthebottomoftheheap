@@ -20,6 +20,17 @@ post_descriptions <- vapply(dated_qmd, function(path) {
 if (any(!nzchar(post_descriptions))) stop("Every historical post must have a listing description")
 if (any(endsWith(post_descriptions, "…"))) stop("Historical post descriptions must not be truncated")
 
+post_categories <- vapply(dated_qmd, function(path) {
+  lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
+  yaml_end <- which(trimws(lines[-1L]) == "---")[[1L]] + 1L
+  metadata <- yaml::yaml.load(paste(lines[2L:(yaml_end - 1L)], collapse = "\n"))
+  if (is.null(metadata$category)) "" else as.character(metadata$category)
+}, character(1L))
+if (any(tolower(manifest$category) == "science" & manifest$category != "Science", na.rm = TRUE) ||
+    any(tolower(post_categories) == "science" & post_categories != "Science")) {
+  stop("Science categories must use canonical capitalization")
+}
+
 leading_blank_fences <- dated_qmd[vapply(dated_qmd, function(path) {
   lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
   starts <- grep("^```[^[:space:]{]+[[:space:]]*$", lines, perl = TRUE)
@@ -191,6 +202,13 @@ if (!length(syntax_css) || !all(vapply(monokai_tokens, function(value) {
 theme_lines <- readLines(file.path(root, "theme.scss"), warn = FALSE)
 if (any(grepl("^code:not\\(\\.sourceCode\\)", theme_lines))) {
   stop("Inline-code styling must not apply to code inside preformatted blocks")
+}
+theme_text <- paste(theme_lines, collapse = "\n")
+if (!grepl("pre:not\\(\\.sourceCode\\)[[:space:]]*\\{[^}]*padding:[[:space:]]*0?\\.4em", theme_text, perl = TRUE)) {
+  stop("Plain output blocks must match source-code block padding")
+}
+if (!grepl("\\.post-taxonomy[[:space:]]+\\.badge[[:space:]]*\\{[^}]*text-decoration:[[:space:]]*none", theme_text, perl = TRUE)) {
+  stop("Post taxonomy pills must not be underlined")
 }
 
 for (feed in c("feed.xml", "feed-R.xml")) {

@@ -12,7 +12,7 @@ tags:
 - Science
 - Rants
 active: blog
-category: science
+category: Science
 ---
 
 Via [Twitter](https://twitter.com/geschichtenpost/status/1075747221625339904) I recently found out that [EarthArXiv](https://eartharxiv.github.io/index.html), a new preprint server for the geosciences doesn't accept software paper submissions. Actually, EarthArXiv [doesn't accept quite a few types of publication](https://eartharxiv.github.io/moderation.html) --- some justifiably, like *ad hominem* attack pieces, others unjustifiably like correspondence or opinion pieces. I find this general stance very odd indeed; commentary, editorial or opinion pieces and software papers are accepted in a large number of the general and specialized journals that serve the geoscience field, so why wouldn't EarthArxiv want to host these prior to publication of the version of record in one of those journals?

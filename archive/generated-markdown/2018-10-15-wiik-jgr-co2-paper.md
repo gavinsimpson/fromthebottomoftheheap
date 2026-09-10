@@ -16,7 +16,7 @@ tags:
 - DIC
 - pH
 active: blog
-category: science
+category: Science
 date: 2018-10-15 17:00:00
 twitterimg: wiik-et-al-2018-figure-4.png
 ---
