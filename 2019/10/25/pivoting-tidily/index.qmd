@@ -11,11 +11,16 @@ tags:
   - tidyverse
   - pivoting
 category: R
-description: One of the fun bits of my job is that I have actual time dedicated to
-  helping colleagues and grad students with statistical or computational problems.
-  Recently I've been helping one of our Lab Instructors with some data that from their
-  Plant Physiology Lab course. Whilst I was w…
 image: /assets/img/posts/pivoting-tidily-plot-1.png
+description: >-
+  One of the fun bits of my job is that I have actual time dedicated to helping colleagues and
+  grad students with statistical or computational problems. Recently I've been helping one of our
+  Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was
+  writing some R code to import the raw data for the lab from an Excel sheet, it occurred to me
+  that this would be a good excuse to look at the new pivotlonger() and pivotwider() functions
+  from the tidyr package. In this post I show how these new functions facilitate common data
+  processing steps; I was personally surprised how little data wrangling was actually needed in
+  the end to read in the data from the lab.
 author: Gavin Simpson
 categories:
   - R
@@ -82,7 +87,6 @@ To start we will need to import the data from the `.xls` sheet, which I'll do us
 
 
 ```r
-
 library('curl')    # download files
 library('readxl')  # read from Excel sheets
 library('tidyr')   # data processing
@@ -104,7 +108,6 @@ Now we have our plant data within R, stored in a data frame
 
 
 ```r
-
 plant
 
 ```
@@ -112,7 +115,6 @@ plant
 
 
 ```text
-
 # A tibble: 24 x 12
    treatment cultivar plantid `height:0` `internodes:0` `height:7`
    <chr>     <chr>      <dbl>      <dbl>          <dbl>      <dbl>
@@ -143,7 +145,6 @@ So, to get our wide plant data into a longer format we would do this
 
 
 ```r
-
 pivot_longer(plant, -(1:3), names_to = "variable")
 
 ```
@@ -151,7 +152,6 @@ pivot_longer(plant, -(1:3), names_to = "variable")
 
 
 ```text
-
 # A tibble: 216 x 5
    treatment cultivar plantid variable       value
    <chr>     <chr>      <dbl> <chr>          <dbl>
@@ -177,7 +177,6 @@ Thankfully, this is such a common operation that `pivot_longer()` (and it's pred
 
 
 ```r
-
 pivot_longer(plant, -(1:3), names_sep = ":", names_to = c("variable","day"))
 
 ```
@@ -185,7 +184,6 @@ pivot_longer(plant, -(1:3), names_sep = ":", names_to = c("variable","day"))
 
 
 ```text
-
 # A tibble: 216 x 6
    treatment cultivar plantid variable   day    value
    <chr>     <chr>      <dbl> <chr>      <chr>  <dbl>
@@ -209,7 +207,6 @@ Those of you with good eyes may have noticed another problem that we will encoun
 
 
 ```r
-
 plant <- pivot_longer(plant, -(1:3), names_sep = ":", names_to = c("variable","day"),
                       names_ptypes = list(day = integer()))
 plant
@@ -219,7 +216,6 @@ plant
 
 
 ```text
-
 # A tibble: 216 x 6
    treatment cultivar plantid variable     day  value
    <chr>     <chr>      <dbl> <chr>      <int>  <dbl>
@@ -248,7 +244,6 @@ What we want is to create new columns for `height`, `internodes` and `freshwt` a
 
 
 ```r
-
 plant <- pivot_wider(plant, names_from = variable, values_from = value)
 plant
 
@@ -257,7 +252,6 @@ plant
 
 
 ```text
-
 # A tibble: 96 x 7
    treatment cultivar plantid   day height internodes freshwt
    <chr>     <chr>      <dbl> <int>  <dbl>      <dbl>   <dbl>
@@ -286,7 +280,6 @@ We can do those data processing steps quite easily now we have the data imported
 
 
 ```r
-
 plant <- mutate(plant,
                 id = paste0(cultivar, "_", treatment, "_", plantid),
                 treatment = fct_relevel(treatment, 'control'))
@@ -297,7 +290,6 @@ plant
 
 
 ```text
-
 # A tibble: 96 x 8
    treatment cultivar plantid   day height internodes freshwt id          
    <fct>     <chr>      <dbl> <int>  <dbl>      <dbl>   <dbl> <chr>       
@@ -323,7 +315,6 @@ If you're interested, this is what the data look like, for a single cultivar and
 
 
 ```r
-
 ggplot(plant, aes(x = day, y = height, group = id, colour = treatment)) +
     geom_point() +
     geom_line() +

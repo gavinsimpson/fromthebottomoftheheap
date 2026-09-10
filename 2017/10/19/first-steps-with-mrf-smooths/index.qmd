@@ -10,10 +10,19 @@ tags:
   - smooth
   - R
 category: R
-description: One of the specialist smoother types in the mgcv package is the Markov
-  Random Field (MRF) smooth. This smoother essentially allows you to model spatial
-  data with an intrinsic Gaussian Markov random field (GMRF). GRMFs are often used
-  for spatial data measured over discrete spatia…
+description: >-
+  One of the specialist smoother types in the mgcv package is the Markov Random Field (MRF)
+  smooth. This smoother essentially allows you to model spatial data with an intrinsic Gaussian
+  Markov random field (GMRF). GRMFs are often used for spatial data measured over discrete
+  spatial regions. MRFs are quite flexible as you can think about them as representing an
+  undirected graph whose nodes are your samples and the connections between the nodes are
+  specified via a neighbourhood structure. I've become interested in using these MRF smooths to
+  include information about relationships between species. However, these smooths are not widely
+  documented in the smoothing literature so working out how best to use them to do what we want
+  has been a little tricky once you move beyond the typical spatial examples. As a result I've
+  been fiddling with these smooths, fitting them to some spatial data I came across in a tutorial
+  Regional Smoothing in R from The Pudding. In this post I take a quick look at how to use the
+  MRF smooth in mgcv to model a discrete spatial data set from the US Census Bureau.
 author: Gavin Simpson
 categories:
   - R
@@ -66,7 +75,6 @@ This post will make use of the following set of package; load them now, as shown
 
 
 ```r
-
 library('rgdal')
 library('proj4')
 library('spdep')
@@ -81,7 +89,6 @@ Assuming you have extracted the shapefile, we load it into R using `readOGR()`
 
 
 ```r
-
 shp <- readOGR('.', 'us_county_hs_only')
 
 ```
@@ -90,7 +97,6 @@ and do some data munging
 
 
 ```r
-
 ## select only mainland US counties
 states <- c(1,4:6, 8:13, 16:42, 44:51, 53:56)
 shp <- shp[shp$STATEFP %in% sprintf('%02i', states), ]
@@ -122,7 +128,6 @@ Options 1 and 3 aren't easily doable as far I can see --- `gam()` isn't expectin
 
 
 ```r
-
 nb <- poly2nb(shp, row.names = df$GEOID)
 names(nb) <- attr(nb, "region.id")
 
@@ -132,7 +137,6 @@ The result of the previous chunk is a list whose names map on to the levels of t
 
 
 ```r
-
 str(nb[1:6])
 
 ```
@@ -140,7 +144,6 @@ str(nb[1:6])
 
 
 ```text
-
 List of 6
  $ 19107: int [1:6] 1417 1464 1632 2277 2278 2851
  $ 19189: int [1:6] 551 1414 2151 2452 2846 2849
@@ -157,7 +160,6 @@ The full rank MRF model is estimated using
 
 
 ```r
-
 ctrl <- gam.control(nthreads = 6) # use 6 parallel threads, reduce if fewer physical CPU cores
 m1 <- gam(hsd ~ s(GEOID, bs = 'mrf', xt = list(nb = nb)), # define MRF smooth
           data = df,
@@ -175,7 +177,6 @@ The final model uses in the region of 1700 effective degrees of freedom. This is
 
 
 ```r
-
 summary(m1)
 
 ```
@@ -183,8 +184,6 @@ summary(m1)
 
 
 ```text
-
-
 Family: Beta regression(179.532) 
 Link function: logit 
 
@@ -212,7 +211,6 @@ Whilst the penalty enforces smoothness, further smoothness can be enforced by fi
 
 
 ```r
-
 ## rank 300 MRF
 m2 <- gam(hsd ~ s(GEOID, bs = 'mrf', k = 300, xt = list(nb = nb)),
           data = df, method = 'REML', control = ctrl,
@@ -228,7 +226,6 @@ To visualise the different fits we need to generate predicted values on the resp
 
 
 ```r
-
 df <- transform(df,
                 mrfFull     = predict(m1, type = 'response'),
                 mrfRrank300 = predict(m2, type = 'response'),
@@ -240,7 +237,6 @@ Before we can plot these fitted values we need to merge `df` with the fortified 
 
 
 ```r
-
 ## merge data with fortified shapefile
 mdata <- left_join(shpf, df, by = c('id' = 'GEOID'))
 
@@ -249,7 +245,6 @@ mdata <- left_join(shpf, df, by = c('id' = 'GEOID'))
 
 
 ```text
-
 Warning: Column `id`/`GEOID` joining character vector and factor, coercing
 into character vector
 
@@ -259,7 +254,6 @@ To facilitate plotting with **ggplot2** I begin by creating some fixed plot comp
 
 
 ```r
-
 theme_map <- function(...) {
     theme_minimal() +
     theme(...,
@@ -296,7 +290,6 @@ Fitted values from the full rank MRF are shown below
 
 
 ```r
-
 ggplot(mdata, aes(x = long, y = lat, group = group)) +
     geom_polygon(aes(fill = mrfFull)) +
     geom_path(col = 'black', alpha = 0.5, size = 0.1) +
@@ -313,7 +306,6 @@ Smoother surfaces can be achieved via the reduced rank MRFs. First the rank 300 
 
 
 ```r
-
 ggplot(mdata, aes(x = long, y = lat, group = group)) +
     geom_polygon(aes(fill = mrfRrank300)) +
     geom_path(col = 'black', alpha = 0.5, size = 0.1) +
@@ -328,7 +320,6 @@ and next the rank 30 MRF
 
 
 ```r
-
 ggplot(mdata, aes(x = long, y = lat, group = group)) +
     geom_polygon(aes(fill = mrfRrank30)) +
     geom_path(col = 'black', alpha = 0.5, size = 0.1) +

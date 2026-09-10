@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2017-05-01">
-<meta name="description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail …">
+<meta name="description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. I’ve broken it into two and in this, the second part, I look at Possion models.">
 
 <title>Prediction intervals for GLMs part II – From the bottom of the heap</title>
 <style>
@@ -101,7 +101,7 @@ div.csl-indent {
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -170,13 +170,13 @@ window.Quarto = {
 </script>
 
 <meta property="og:title" content="Prediction intervals for GLMs part II – From the bottom of the heap">
-<meta property="og:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail …">
+<meta property="og:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. I’ve broken it into two and in this, the second part, I look at Possion models.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/glm-prediction-intervals-ii-plot-wildflowers-1.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="510">
 <meta property="og:image:width" content="680">
 <meta name="twitter:title" content="Prediction intervals for GLMs part II – From the bottom of the heap">
-<meta name="twitter:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail …">
+<meta name="twitter:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. I’ve broken it into two and in this, the second part, I look at Possion models.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/glm-prediction-intervals-ii-plot-wildflowers-1.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -191,11 +191,6 @@ window.Quarto = {
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -333,7 +328,7 @@ window.Quarto = {
 
 <div>
   <div class="description">
-    One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail …
+    One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. I’ve broken it into two and in this, the second part, I look at Possion models.
   </div>
 </div>
 
@@ -374,22 +369,18 @@ window.Quarto = {
 </section>
 </div></div><p>One of my more popular <a href="http://stackoverflow.com/a/14424417/429846">answers</a> on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something hereon my blog that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. I’ve broken it into two and in this, the second part, I look at Possion models.</p>
 <p>The second example — purely because I happen to have it handy from teaching this semester — is from <span class="citation" data-cites="Korner-Nievergelt2015-tk">Korner-Nievergelt et al. (<a href="#ref-Korner-Nievergelt2015-tk" role="doc-biblioref">2015</a>)</span>, and concerns the number of breeding pairs of the common whitethroat (<em>Silvia communis</em>). This species likes to inhabit field margins and fallow lands and has been adversely affected by intensive agricultural activities reducing these types of habitat on the landscape. As a mitigiation effort, wildflower fields are sown and left largely unmanaged for several years. The data come from a study looking at how the number of breeding pairs of common whitethroat change as the composition and structure of the plant community changes over time. The data are in the <strong>blmeco</strong> package available on CRAN.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages("blmeco") # first, if not already installed</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"blmeco"</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(wildflowerfields)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages("blmeco") # first, if not already installed</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"blmeco"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(wildflowerfields)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The example in <span class="citation" data-cites="Korner-Nievergelt2015-tk">Korner-Nievergelt et al. (<a href="#ref-Korner-Nievergelt2015-tk" role="doc-biblioref">2015</a>)</span> uses a Poisson GLM with a quadratic effect of the variable <code>age</code>. Instead I’ll use a Poisson GAM, but in all other respects the analysis follows that from the text book (only the year 2007 data are used, field size transformed to hectares).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"mgcv"</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>wf <span class="ot">&lt;-</span> <span class="fu">transform</span>(<span class="fu">subset</span>(wildflowerfields, year <span class="sc">==</span> <span class="dv">2007</span>), <span class="at">size =</span> size <span class="sc">/</span> <span class="dv">100</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>wf <span class="ot">&lt;-</span> <span class="fu">transform</span>(wf, <span class="at">size.z =</span> (size <span class="sc">-</span> <span class="fu">mean</span>(size)) <span class="sc">/</span> <span class="fu">sd</span>(size))</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">gam</span>(bp <span class="sc">~</span> <span class="fu">s</span>(age, <span class="at">k =</span> <span class="dv">6</span>) <span class="sc">+</span> size.z <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(size)), <span class="at">data =</span> wf, <span class="at">family =</span> poisson, <span class="at">method =</span> <span class="st">"REML"</span>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-
-Family: poisson 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"mgcv"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>wf <span class="ot">&lt;-</span> <span class="fu">transform</span>(<span class="fu">subset</span>(wildflowerfields, year <span class="sc">==</span> <span class="dv">2007</span>), <span class="at">size =</span> size <span class="sc">/</span> <span class="dv">100</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>wf <span class="ot">&lt;-</span> <span class="fu">transform</span>(wf, <span class="at">size.z =</span> (size <span class="sc">-</span> <span class="fu">mean</span>(size)) <span class="sc">/</span> <span class="fu">sd</span>(size))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">gam</span>(bp <span class="sc">~</span> <span class="fu">s</span>(age, <span class="at">k =</span> <span class="dv">6</span>) <span class="sc">+</span> size.z <span class="sc">+</span> <span class="fu">offset</span>(<span class="fu">log</span>(size)), <span class="at">data =</span> wf, <span class="at">family =</span> poisson, <span class="at">method =</span> <span class="st">"REML"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mod)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Family: poisson 
 Link function: log 
 
 Formula:
@@ -412,21 +403,20 @@ R-sq.(adj) =  0.207   Deviance explained = 46.3%
 -REML = 33.589  Scale est. = 1         n = 41
 </code></pre>
 <p>The primary variable of interest shows a moderate amount of non-linearity, similar to that of the quadratic effect of <code>age</code> in the version from the text book, though the effect of field age is weak at best. The fitted model is illustrated graphically below, holding <code>size</code> constant at the mean field size</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>ilink <span class="ot">&lt;-</span> <span class="fu">family</span>(mod)<span class="sc">$</span>linkinv</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>newd <span class="ot">&lt;-</span> <span class="fu">with</span>(wf, <span class="fu">expand.grid</span>(<span class="at">age =</span> <span class="fu">seq</span>(<span class="fu">min</span>(age), <span class="fu">max</span>(age), <span class="at">length =</span> <span class="dv">300</span>),</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>                             <span class="at">size =</span> <span class="dv">1</span>, <span class="at">size.z =</span> <span class="dv">0</span>))</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>newd <span class="ot">&lt;-</span> <span class="fu">cbind</span>(newd, <span class="fu">as.data.frame</span>(<span class="fu">predict</span>(mod, newd, <span class="at">type =</span> <span class="st">"link"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)))</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>newd <span class="ot">&lt;-</span> <span class="fu">transform</span>(newd, <span class="at">fitted =</span> <span class="fu">ilink</span>(fit), <span class="at">upper =</span> <span class="fu">ilink</span>(fit <span class="sc">+</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit)),</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">lower =</span> <span class="fu">ilink</span>(fit <span class="sc">-</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit)))</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(wf, <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> bp<span class="sc">/</span>size)) <span class="sc">+</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="at">data =</span> newd, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">ymin =</span> lower, <span class="at">ymax =</span> upper, <span class="at">x =</span> age),</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                <span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="at">data =</span> newd, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">y =</span> fitted)) <span class="sc">+</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">height =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Age [years]"</span>, <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"Number of Breeding Pairs ["</span> <span class="sc">*</span> pairs <span class="sc">~</span> ha<span class="sc">^</span>{<span class="sc">-</span><span class="dv">1</span>} <span class="sc">*</span> <span class="st">"]"</span>),</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"Common Whitethroat densities in Wildflower Fields"</span>,</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>         <span class="at">subtitle =</span> <span class="st">"Estimated densities for average field of ~1.8 ha"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>ilink <span class="ot">&lt;-</span> <span class="fu">family</span>(mod)<span class="sc">$</span>linkinv</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>newd <span class="ot">&lt;-</span> <span class="fu">with</span>(wf, <span class="fu">expand.grid</span>(<span class="at">age =</span> <span class="fu">seq</span>(<span class="fu">min</span>(age), <span class="fu">max</span>(age), <span class="at">length =</span> <span class="dv">300</span>),</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">size =</span> <span class="dv">1</span>, <span class="at">size.z =</span> <span class="dv">0</span>))</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>newd <span class="ot">&lt;-</span> <span class="fu">cbind</span>(newd, <span class="fu">as.data.frame</span>(<span class="fu">predict</span>(mod, newd, <span class="at">type =</span> <span class="st">"link"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)))</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>newd <span class="ot">&lt;-</span> <span class="fu">transform</span>(newd, <span class="at">fitted =</span> <span class="fu">ilink</span>(fit), <span class="at">upper =</span> <span class="fu">ilink</span>(fit <span class="sc">+</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit)),</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">lower =</span> <span class="fu">ilink</span>(fit <span class="sc">-</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit)))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(wf, <span class="fu">aes</span>(<span class="at">x =</span> age, <span class="at">y =</span> bp<span class="sc">/</span>size)) <span class="sc">+</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="at">data =</span> newd, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">ymin =</span> lower, <span class="at">ymax =</span> upper, <span class="at">x =</span> age),</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                <span class="at">alpha =</span> <span class="fl">0.1</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="at">data =</span> newd, <span class="at">mapping =</span> <span class="fu">aes</span>(<span class="at">y =</span> fitted)) <span class="sc">+</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_jitter</span>(<span class="at">width =</span> <span class="fl">0.1</span>, <span class="at">height =</span> <span class="dv">0</span>) <span class="sc">+</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Age [years]"</span>, <span class="at">y =</span> <span class="fu">expression</span>(<span class="st">"Number of Breeding Pairs ["</span> <span class="sc">*</span> pairs <span class="sc">~</span> ha<span class="sc">^</span>{<span class="sc">-</span><span class="dv">1</span>} <span class="sc">*</span> <span class="st">"]"</span>),</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>         <span class="at">title =</span> <span class="st">"Common Whitethroat densities in Wildflower Fields"</span>,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>         <span class="at">subtitle =</span> <span class="st">"Estimated densities for average field of ~1.8 ha"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/glm-prediction-intervals-ii-plot-wildflowers-1.png" class="img-fluid figure-img"></p>
@@ -439,41 +429,31 @@ R-sq.(adj) =  0.207   Deviance explained = 46.3%
 <p>We have estimated the expected number of breeding pairs given the age of the field and it’s size. We also have a (pointwise) 95% confidence interval on that expectation. As before, this isn’t a prediction interval, so what would one of those look like in this case? Somewhat similar to those we created for the binomial GLM earlier, except now we have posterior densities (the probability density implied by the Poisson distribution with <span class="math inline">\(\lambda\)</span> given as a function of field age) for all the integers 0–∞, although once we get above 10 breeding pairs the density is going to be effectively 0 even if not technically so.</p>
 <p>Note that I said integers above; we can’t have 2.5 breeding pairs <em>as a prediction</em>. Hence any prediction interval is really talking about points of probability for each integer <span class="math inline">\(\in \{0, 1, 2, \infty\}\)</span> (even if we might consider a much smaller upper limit than that) not a continuous interval. Having said that, perhaps I’m being to pedantic? In some instances, the upper and lower 2.5<sup>th</sup> and 97.5<sup>th</sup> probability quantiles of the implied Poisson distribution do begin to look more like a prediction interval.</p>
 <p>To illustrate I’ll work my way through some code to illustrate some ways of thinking about what the fitted model says in terms of predicting the numbers of breeding pairs of common whitethroats. First a little bit of prep; I’ll illustrate various intervals for two hypothetical fields or average size, one created two years ago and a second five years ago.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">age =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">5</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">size.z =</span> <span class="dv">0</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">as.data.frame</span>(<span class="fu">predict</span>(mod, p, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)), <span class="fu">c</span>(<span class="st">"fit"</span>, <span class="st">"se"</span>))</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">cbind</span>(p, pred)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">transform</span>(p, <span class="at">lower =</span> <span class="fu">ilink</span>(fit <span class="sc">-</span> (<span class="dv">2</span> <span class="sc">*</span> se)),</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>               <span class="at">lambda =</span> <span class="fu">ilink</span>(fit), <span class="at">upper =</span> <span class="fu">ilink</span>(fit <span class="sc">+</span> (<span class="dv">2</span> <span class="sc">*</span> se)))</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-  age size size.z        fit        se      lower    lambda     upper
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">age =</span> <span class="fu">c</span>(<span class="dv">2</span>, <span class="dv">5</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">size.z =</span> <span class="dv">0</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>pred <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">as.data.frame</span>(<span class="fu">predict</span>(mod, p, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)), <span class="fu">c</span>(<span class="st">"fit"</span>, <span class="st">"se"</span>))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">cbind</span>(p, pred)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">transform</span>(p, <span class="at">lower =</span> <span class="fu">ilink</span>(fit <span class="sc">-</span> (<span class="dv">2</span> <span class="sc">*</span> se)),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>               <span class="at">lambda =</span> <span class="fu">ilink</span>(fit), <span class="at">upper =</span> <span class="fu">ilink</span>(fit <span class="sc">+</span> (<span class="dv">2</span> <span class="sc">*</span> se)))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>  age size size.z        fit        se      lower    lambda     upper
 1   2    1      0 -1.7184424 0.5805902 0.05615594 0.1793453 0.5727752
 2   5    1      0 -0.1295676 0.3260103 0.45767855 0.8784752 1.6861589
 </code></pre>
 <p><code>p</code> contains the estimated value of <span class="math inline">\(\lambda\)</span> (the expected number of breeding pairs), and the upper and lower 95% pointwise interval about this expected count, for the two fields. First, the 95% interval for the model estimated <span class="math inline">\(\lambda\)</span> for the younger of the two fields, based on <code>qpois()</code>, the quantile function of the conditional distribution of the number of breeding pairs given field age</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">qpois</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">lambda =</span> p[<span class="dv">1</span>, <span class="st">"lambda"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 0 1
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">qpois</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">lambda =</span> p[<span class="dv">1</span>, <span class="st">"lambda"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0 1
 </code></pre>
 <p>Hence we might expect either 0, 1 breeding pairs. But, we haven’t accounted for the uncertainty in the estimated <span class="math inline">\(\lambda\)</span>. At the lower end of of the 95% interval on the estimated <span class="math inline">\(\lambda\)</span> the prediction interval would be</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">qpois</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">lambda =</span> p[<span class="dv">1</span>, <span class="st">"lower"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 0 1
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">qpois</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">lambda =</span> p[<span class="dv">1</span>, <span class="st">"lower"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0 1
 </code></pre>
 <p>and</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">qpois</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">lambda =</span> p[<span class="dv">1</span>, <span class="st">"upper"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 0 2
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">qpois</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">lambda =</span> p[<span class="dv">1</span>, <span class="st">"upper"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0 2
 </code></pre>
 <p>for the upper end, leading to a prediction interval of 0–2 breeding pairs. The same prediction interval for the five year old field would be</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">qpois</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">lambda =</span> <span class="fu">c</span>(p[<span class="dv">2</span>, <span class="st">"lower"</span>], p[<span class="dv">2</span>, <span class="st">"upper"</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 0 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">qpois</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">lambda =</span> <span class="fu">c</span>(p[<span class="dv">2</span>, <span class="st">"lower"</span>], p[<span class="dv">2</span>, <span class="st">"upper"</span>]))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0 5
 </code></pre>
 <p>We can also look at the probability densities of the poisson distribution for the estimated value of <span class="math inline">\(\lambda\)</span> and its 95% confidence interval. The table below shows these probability densities for a two-year old field</p>
 <table class="caption-top table">

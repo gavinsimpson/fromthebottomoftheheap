@@ -5,11 +5,14 @@ tags:
   - rarefaction
   - plots
 category: R
-description: I was sent an email this week by a vegan user who wanted to draw rarefaction
-  curves using rarecurve() but with different colours for each curve. The solution
-  to this one is quite easy as rarecurve() has argument col so the user could supply
-  the appropriate vector of colours to u…
 date: 2015-04-16 12:00:00
+description: >-
+  I was sent an email this week by a vegan user who wanted to draw rarefaction curves using
+  rarecurve() but with different colours for each curve. The solution to this one is quite easy
+  as rarecurve() has argument col so the user could supply the appropriate vector of colours to
+  use when plotting. However, they wanted to distinguish all 26 of their samples, which is
+  certainly stretching the limits of perception if we only used colour. Instead we can vary other
+  parameters of the plotted curves to help with identifying individual samples.
 author: Gavin Simpson
 categories:
   - R
@@ -45,7 +48,6 @@ To illustrate, I'll use the Barro Colorado Island data set `BIC` that comes with
 
 
 ```r
-
 library("vegan")
 
 ```
@@ -53,7 +55,6 @@ library("vegan")
 
 
 ```text
-
 Loading required package: permute
 Loading required package: lattice
 This is vegan 2.2-1
@@ -63,7 +64,6 @@ This is vegan 2.2-1
 
 
 ```r
-
 data(BCI, package = "vegan")
 BCI2 <- BCI[1:26, ]
 raremax <- min(rowSums(BCI2))
@@ -74,7 +74,6 @@ raremax
 
 
 ```text
-
 [1] 340
 
 ```
@@ -85,7 +84,6 @@ To set up the parameters we might use for plotting, `expand.grid()` is a useful 
 
 
 ```r
-
 col <- c("black", "darkred", "forestgreen", "orange", "blue", "yellow", "hotpink")
 lty <- c("solid", "dashed", "longdash", "dotdash")
 pars <- expand.grid(col = col, lty = lty, stringsAsFactors = FALSE)
@@ -96,7 +94,6 @@ head(pars)
 
 
 ```text
-
           col   lty
 1       black solid
 2     darkred solid
@@ -111,7 +108,6 @@ Then we can call `rarecurve()` as follows with the new graphical parameters
 
 
 ```r
-
 out <- with(pars[1:26, ],
             rarecurve(BCI2, step = 20, sample = raremax, col = col,
                       lty = lty, label = FALSE))
@@ -124,7 +120,6 @@ Note that I saved the output from `rarecurve()` in object `out`. This object con
 
 
 ```r
-
 col <- c("black", "darkred", "forestgreen", "hotpink", "blue")
 lty <- c("solid", "dashed", "dotdash")
 lwd <- c(1, 2)
@@ -137,7 +132,6 @@ head(pars)
 
 
 ```text
-
           col    lty lwd
 1       black  solid   1
 2     darkred  solid   1
@@ -154,7 +148,6 @@ Using the information in `out` returned by `rarecurve()` we can get almost the s
 
 
 ```r
-
 Nmax <- sapply(out, function(x) max(attr(x, "Subsample")))
 Smax <- sapply(out, max)
 plot(c(1, max(Nmax)), c(1, max(Smax)), xlab = "Sample Size",
@@ -174,7 +167,6 @@ Having done this, I don't believe this is a useful graphic because we're trying 
 
 
 ```r
-
 col <- c("darkred", "forestgreen", "hotpink", "blue")
 set.seed(3)
 grp <- factor(sample(seq_along(col), nrow(BCI2), replace = TRUE))
@@ -186,7 +178,6 @@ The code above creates a grouping factor `grp` for illustration purposes; in rea
 
 
 ```r
-
 plot(c(1, max(Nmax)), c(1, max(Smax)), xlab = "Sample Size",
      ylab = "Species", type = "n")
 abline(v = raremax)

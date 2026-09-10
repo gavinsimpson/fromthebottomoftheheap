@@ -12,11 +12,20 @@ tags:
   - extreme values
   - statistical modelling
 category: R
-description: Quite some years ago, whilst working on the EU Sixth Framework project
-  Euro-limpacs, I organized a workshop on statistical methods for analyzing time series
-  data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop
-  (UCL Department of Statistical Scie…
 date: 2017-01-25 12:00:00
+description: >-
+  Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I
+  organized a workshop on statistical methods for analyzing time series data. One of the sessions
+  was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical
+  Science). That intro certainly whet my appetite but I never quite found the time to dig into
+  the arcane world of extreme value theory. Two recent events rekindled my interest in extremes;
+  Simon Wood quietly introduced into his mgcv package a family function for the generalized
+  extreme value distribution (GEV), and I was asked to review a paper on extremes in time series.
+  Since then I've been investigating options for fitting models for extremes to environmental
+  time series, especially those that allow for time-varying effects of covariates on the
+  parameters of the GEV. One of the first things I did was sit down with mgcv to get a feel for
+  the gevlss() family function that Simon had added to the package by repeating an analysis of a
+  classic example data set that had been performed using the VGAM package of Thomas Yee.
 author: Gavin Simpson
 categories:
   - R
@@ -58,7 +67,6 @@ The analysis I wanted to recreate was reported in a 2007 paper by Thomas Yee and
 
 
 ```r
-
 ## install.packages("ismev")               # if not installed!
 data(fremantle, package = "ismev")
 head(fremantle)
@@ -68,7 +76,6 @@ head(fremantle)
 
 
 ```text
-
   Year SeaLevel   SOI
 1 1897     1.58 -0.67
 2 1898     1.71  0.57
@@ -83,7 +90,6 @@ The data contain 86 observations of the annual maximum sea level (in meters) ove
 
 
 ```r
-
 library("mgcv")
 library("ggplot2")
 library("cowplot")                      # install.packages("cowplot") If not installed !
@@ -158,7 +164,6 @@ One final tweak is required; the estimates of the intercept terms for $\mu$ and 
 
 
 ```r
-
 fremantle <- transform(fremantle, cYear = Year - median(Year))
 
 ```
@@ -167,7 +172,6 @@ With that out of the way, the model is fitted with relative ease as follows
 
 
 ```r
-
 m1 <- gam(list(SeaLevel ~ s(cYear) + s(SOI),
                ~ s(cYear) + s(SOI),
                ~ 1),
@@ -180,8 +184,6 @@ summary(m1)
 
 
 ```text
-
-
 Family: gevlss 
 Link function: identity identity identity 
 
@@ -222,7 +224,6 @@ The smooth terms are listed next, and with the exception of the smooth of `Year`
 
 
 ```r
-
 plot(m1, pages = 1, scheme = 1, scale = 0, seWithMean = TRUE)
 
 ```
@@ -237,7 +238,6 @@ We can use the new b-spline basis to achieve something similar to (the same as ?
 
 
 ```r
-
 knots <- with(fremantle, list(cYear = c(min(Year) - c(10, 0), 1945, max(Year) + c(0, 10)) - median(Year)))
 
 ```
@@ -246,7 +246,6 @@ The GAM can then be specified as before with three formulas. The type of smooth 
 
 
 ```r
-
 m2 <- gam(list(SeaLevel ~ cYear + SOI,
                ~ s(cYear, bs = "bs", m = 1, k = 3) + SOI,
                ~ 1),
@@ -261,8 +260,6 @@ summary(m2)
 
 
 ```text
-
-
 Family: gevlss 
 Link function: identity identity identity 
 
@@ -297,7 +294,6 @@ The summary output indicates significant linear parametric effects of `cYear` an
 
 
 ```r
-
 lldif <- unclass(logLik(m1) - logLik(m2))
 dfdif <- df.residual(m2) - df.residual(m1)
 pchisq(2 * lldif, df = dfdif, lower.tail = FALSE)
@@ -307,7 +303,6 @@ pchisq(2 * lldif, df = dfdif, lower.tail = FALSE)
 
 
 ```text
-
 [1] 0.3693541
 attr(,"df")
 [1] 9.1958
@@ -320,7 +315,6 @@ The fitted piece-wise linear smooth can be plotted using the `plot()` method as 
 
 
 ```r
-
 plot(m2, pages = 1, scheme = 1, seWithMean = FALSE, all.terms = TRUE)
 
 ```
@@ -333,7 +327,6 @@ If we wanted an entirely data-driven approach to fitting the smooth of `Year` in
 
 
 ```r
-
 m3 <- gam(list(SeaLevel ~ cYear + SOI,
                ~ s(cYear, bs = "ad") + SOI,
                ~ 1),
@@ -347,8 +340,6 @@ summary(m3)
 
 
 ```text
-
-
 Family: gevlss 
 Link function: identity identity identity 
 
@@ -383,7 +374,6 @@ Again, there is some evidence of a trend in the variance of the sea-level maxima
 
 
 ```r
-
 plot(m3, pages = 1, scheme = 1, seWithMean = FALSE, all.terms = TRUE)
 
 ```

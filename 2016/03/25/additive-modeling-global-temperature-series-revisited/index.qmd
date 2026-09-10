@@ -8,11 +8,15 @@ tags:
   - Global temperatures
   - Climate change
 category: R
-description: Quite some time ago, back in 2011, I wrote a post that used an additive
-  model to fit a smooth trend to the then-current Hadley Centre/CRU global temperature
-  time series data set. Since then the media and scientific papers have been full
-  of reports of record warm temperatures in …
 date: 2016-03-25 12:00:00
+description: >-
+  Quite some time ago, back in 2011, I wrote a post that used an additive model to fit a smooth
+  trend to the then-current Hadley Centre/CRU global temperature time series data set. Since then
+  the media and scientific papers have been full of reports of record warm temperatures in the
+  past couple of years, of controversies (imagined) regarding data-changes to suit the hypothesis
+  of human induce global warming, and the brouhaha over whether global warming had stalled; the
+  great global warming hiatus or pause. So it seemed like a good time to revisit that analysis
+  and update it using the latest HadCRUT data.
 author: Gavin Simpson
 categories:
   - R
@@ -53,7 +57,6 @@ First, I grab the data [@Morice2012-wk] from the Hadley Centre's website and loa
 
 
 ```r
-
 library("curl")
 tmpf <- tempfile()
 curl_download("http://www.metoffice.gov.uk/hadobs/hadcrut4/data/current/time_series/HadCRUT.4.4.0.0.annual_ns_avg.txt", tmpf)
@@ -74,7 +77,6 @@ The data set contains a partial set of observations for 2016, but seeing as that
 
 
 ```r
-
 gtemp <- head(gtemp, -1)                # -1 drops the last row
 
 ```
@@ -83,7 +85,6 @@ The data are shown below
 
 
 ```r
-
 library("ggplot2")
 theme_set(theme_bw())
 p1 <- ggplot(gtemp, aes(x = Year, y = Temperature)) +
@@ -98,7 +99,6 @@ The model described above can be fitted using the `gamm()` function in the **mgc
 
 
 ```r
-
 library("mgcv")
 
 ```
@@ -106,7 +106,6 @@ library("mgcv")
 
 
 ```text
-
 Loading required package: nlme
 
 ```
@@ -114,7 +113,6 @@ Loading required package: nlme
 
 
 ```text
-
 This is mgcv 1.8-12. For overview type 'help("mgcv-package")'.
 
 ```
@@ -122,7 +120,6 @@ This is mgcv 1.8-12. For overview type 'help("mgcv-package")'.
 
 
 ```r
-
 m1 <- gamm(Temperature ~ s(Year), data = gtemp, correlation = corARMA(form = ~ Year, p = 1))
 m2 <- gamm(Temperature ~ s(Year), data = gtemp, correlation = corARMA(form = ~ Year, p = 2))
 
@@ -132,7 +129,6 @@ A generalised likelihood ratio test suggests little support for the more complex
 
 
 ```r
-
 anova(m1$lme, m2$lme)
 
 ```
@@ -140,7 +136,6 @@ anova(m1$lme, m2$lme)
 
 
 ```text
-
        Model df       AIC       BIC   logLik   Test L.Ratio p-value
 m1$lme     1  5 -277.7465 -262.1866 143.8733                       
 m2$lme     2  6 -278.2519 -259.5799 145.1259 1 vs 2 2.50538  0.1135
@@ -151,7 +146,6 @@ The AR(1) has successfully modelled most of the residual correlation
 
 
 ```r
-
 ACF <- acf(resid(m1$lme, type = "normalized"), plot = FALSE)
 ACF <- setNames(data.frame(unclass(ACF)[c("acf", "lag")]), c("ACF","Lag"))
 ggplot(ACF, aes(x = Lag, y = ACF)) +
@@ -166,7 +160,6 @@ Before drawing the fitted trend, I want to put a simultaneous confidence interva
 
 
 ```r
-
 tmpf <- tempfile()
 curl_download("https://gist.githubusercontent.com/gavinsimpson/d23ae67e653d5bfff652/raw/25fd719c3ab699e48927e286934045622d33b3bf/simulate.gamm.R", tmpf)
 source(tmpf)
@@ -187,7 +180,6 @@ Having arranged the fitted values and upper and lower simultaneous confidence in
 
 
 ```r
-
 p1 + geom_ribbon(data = newd, aes(ymin = lower, ymax = upper, x = Year, y = fitted),
                  alpha = 0.2, fill = "grey") +
     geom_line(data = newd, aes(y = fitted, x = Year))
@@ -200,7 +192,6 @@ Whilst the simultaneous confidence interval shows the uncertainty in the fitted 
 
 
 ```r
-
 set.seed(42)
 S <- 50
 sims2 <- setNames(data.frame(sims[, sample(10000, S)]), paste0("sim", seq_len(S)))
@@ -220,7 +211,6 @@ An instructive visualisation for the period of the purported pause or hiatus in 
 
 
 ```r
-
 ggplot(sims2, aes(x = Year, y = Temperature, group = Simulation)) +
     geom_line(alpha = 0.5) + xlim(c(1995, 2015)) + ylim(c(0.2, 0.75))
 
@@ -229,7 +219,6 @@ ggplot(sims2, aes(x = Year, y = Temperature, group = Simulation)) +
 
 
 ```text
-
 Warning: Removed 8750 rows containing missing values (geom_path).
 
 ```
@@ -244,7 +233,6 @@ The code below uses some functions I wrote to compute the first derivatives of G
 
 
 ```r
-
 tmpf <- tempfile()
 curl_download("https://gist.githubusercontent.com/gavinsimpson/ca18c9c789ef5237dbc6/raw/295fc5cf7366c831ab166efaee42093a80622fa8/derivSimulCI.R", tmpf)
 source(tmpf)
@@ -256,7 +244,6 @@ fd <- derivSimulCI(m1, samples = 10000, n = 200)
 
 
 ```text
-
 Loading required package: MASS
 
 ```
@@ -264,7 +251,6 @@ Loading required package: MASS
 
 
 ```r
-
 CI <- apply(fd[[1]]$simulations, 1, quantile, probs = c(0.025, 0.975))
 sigD <- signifD(fd[["Year"]]$deriv, fd[["Year"]]$deriv, CI[2, ], CI[1, ],
                 eval = 0)
@@ -281,7 +267,6 @@ A **ggplot2** version of the derivatives is produced using the code below. The t
 
 
 ```r
-
 ggplot(newd, aes(x = Year, y = derivative)) +
     geom_ribbon(aes(ymax = fdUpper, ymin = fdLower), alpha = 0.3, fill = "grey") +
     geom_line() +
@@ -295,7 +280,6 @@ ggplot(newd, aes(x = Year, y = derivative)) +
 
 
 ```text
-
 Warning: Removed 74 rows containing missing values (geom_path).
 
 ```
@@ -303,7 +287,6 @@ Warning: Removed 74 rows containing missing values (geom_path).
 
 
 ```text
-
 Warning: Removed 190 rows containing missing values (geom_path).
 
 ```
@@ -316,7 +299,6 @@ First I generate another 10,000 simulations from the posterior of the fitted mod
 
 
 ```r
-
 set.seed(123)
 nsim <- 10000
 pauseD <- derivSimulCI(m1, samples = nsim,
@@ -338,7 +320,6 @@ We can also look at the smallest derivative for each year over all of the 10,000
 
 
 ```r
-
 minD <- aggregate(Derivative ~ Year, data = annSlopes, FUN = min)
 ggplot(minD, aes(x = Year, y = Derivative)) +
     geom_point()
@@ -351,7 +332,6 @@ Only 4 of the 18 years have a single simulation with a derivative less than 0. W
 
 
 ```r
-
 library("viridis")
 ggplot(annSlopes, aes(x = Derivative, group = Year, colour = Year)) +
     geom_line(stat = "density", trim = TRUE) + scale_color_viridis(option = "magma") +

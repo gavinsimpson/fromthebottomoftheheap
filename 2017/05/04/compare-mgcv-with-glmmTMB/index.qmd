@@ -12,10 +12,15 @@ tags:
   - negative binomial
   - zero inflation
 category: R
-description: A couple of days ago, Mollie Brooks and coauthors posted a preprint on
-  BioRχiv illustrating the use of the glmmTMB R package for fitting zero-inflated
-  GLMMs [@Brooks2017-so]. In the paper, glmmTMB is compared with several other GLMM-fitting
-  packages. mgcv has recently gained the…
+description: >-
+  A couple of days ago, Mollie Brooks and coauthors posted a preprint on BioRχiv illustrating the
+  use of the glmmTMB R package for fitting zero-inflated GLMMs [\@Brooks2017-so]. In the paper,
+  glmmTMB is compared with several other GLMM-fitting packages. mgcv has recently gained the
+  ability to fit a wider range of families beyond the exponential family of distributions,
+  including zero-inflated Poisson models. mgcv can also fit simple GLMMs through a spline
+  equivalent of a Gaussian random effect. So, whilst I was waiting on some Bayesian GAMs to
+  finish sampling, I decided to see how mgcv compared against glmmTMB on the two examples used in
+  the paper.
 author: Gavin Simpson
 categories:
   - R
@@ -59,7 +64,6 @@ For this post I'll be using  a couple of packages beyond **glmmTMB** and **mgcv*
 
 
 ```r
-
 library("glmmTMB")
 library("mgcv")
 library("ggplot2")
@@ -88,7 +92,6 @@ The best fitting model of those presented was a negative binomial model, whilst 
 
 
 ```r
-
 nbgam2 <- gam(count ~ spp * mined + s(site, bs = "re"), data = Salamanders,
               family = nb, method = "ML")
 nbm2 <- glmmTMB(count ~ spp * mined + (1 | site), data = Salamanders,
@@ -104,7 +107,6 @@ The figure below compares the coefficient estimates returned by `glmmTMB()` and 
 
 
 ```r
-
 nb2.coefs <- data.frame(estimate = c(coef(summary(nbm2))$cond[, "Estimate"], coef(nbgam2)[c(1:14)]),
                         model    = rep(c("glmmTMB", "mgcv::gam"), each = 14),
                         term     = rep(names(coef(nbgam2)[c(1:14)]), 2))
@@ -124,7 +126,6 @@ The values (posterior modes, or means) for the `site` random effect can also be 
 
 
 ```r
-
 nbgam2.r <- coef(nbgam2)[-c(1:14)]
 nbm2.r   <- ranef(nbm2)$cond$site[,1]
 nms <- sub("s\\(site\\)\\.", "Site ", names(nbgam2.r))
@@ -150,7 +151,6 @@ The `summary()` output for the `glmmTMB()` model conveniently provides some addi
 
 
 ```r
-
 summary(nbm2)
 
 ```
@@ -158,7 +158,6 @@ summary(nbm2)
 
 
 ```text
-
  Family: nbinom2  ( log )
 Formula:          count ~ spp * mined + (1 | site)
 Data: Salamanders
@@ -200,7 +199,6 @@ Now the `gam()` version, conveniently with a confidence interval
 
 
 ```r
-
 gam.vcomp(nbgam2)
 
 ```
@@ -208,8 +206,6 @@ gam.vcomp(nbgam2)
 
 
 ```text
-
-
 Standard deviations and 0.95 confidence intervals:
 
           std.dev    lower     upper
@@ -223,7 +219,6 @@ One further analysis that @Brooks2017-so do with the `Salamander` data (in their
 
 
 ```r
-
 ## glmmTMB()
 zipm3 <- glmmTMB(count ~ spp * mined + (1 | site), zi = ~ spp * mined,
                  data = Salamanders, family = poisson)
@@ -241,7 +236,6 @@ To recreate part of Figure B.3 in Appendix B [@Brooks2017-so], the code below pr
 
 
 ```r
-
 ## Newdata
 newd0 <- newd <- as.data.frame(cbind(unique(Salamanders[, c("mined","spp")]), site = "R -1"))
 rownames(newd0) <- rownames(newd) <- NULL
@@ -253,7 +247,6 @@ head(pred)
 
 
 ```text
-
         [,1]       [,2]
 1 0.36061171 -3.7727169
 2 0.94857203  0.3875087
@@ -268,7 +261,6 @@ The first column is the predicted value of the response from the Poisson part of
 
 
 ```r
-
 ilink <- binomial(link = "cloglog")$linkinv
 newd <- transform(newd, fitted = exp(pred[,1]) * ilink(pred[,2]))
 
@@ -278,7 +270,6 @@ A plot of the predicted values is then easily produced
 
 
 ```r
-
 ggplot(newd, aes(x = spp, y = fitted, colour = mined)) +
     geom_point()
 
@@ -294,7 +285,6 @@ The `Owls` data are also available in the **glmmTMB** package, which I load and 
 
 
 ```r
-
 data(Owls, package = "glmmTMB")
 names(Owls) <- sub("SiblingNegotiation", "NCalls", names(Owls))
 Owls <- transform(Owls, cArrivalTime = ArrivalTime - mean(ArrivalTime))
@@ -310,7 +300,6 @@ The constant zero-inflation models are fitted using the `ziformula` argument for
 
 
 ```r
-
 m1.tmb <- glmmTMB(NCalls ~ (FoodTreatment + cArrivalTime) * SexParent + offset(logBroodSize) + (1 | Nest),
                   ziformula = ~ 1, data = Owls, family = poisson)
 m1.gam <- gam(list(NCalls ~ (FoodTreatment + cArrivalTime) * SexParent + offset(logBroodSize) + s(Nest, bs = "re"),
@@ -325,7 +314,6 @@ To compare the estimates of the model coefficients I wrote a little function to 
 
 
 ```r
-
 createCoeftab <- function(TMB, GAM, GAMrange) {
     bTMB <- fixef(TMB)$cond[-1]
     bGAM <- coef(GAM)[GAMrange]
@@ -349,7 +337,6 @@ Passing each of the models to `createCoeftab()`
 
 
 ```r
-
 m1.coefs <- createCoeftab(m1.tmb, m1.gam, GAMrange = 2:6)
 
 ```
@@ -358,7 +345,6 @@ results in a tidy data frame suitable for plotting with `ggplot()`.
 
 
 ```r
-
 ggplot(m1.coefs, aes(x = estimate, y = term, colour = model, shape = model, xmax = upper, xmin = lower)) +
     geom_pointrangeh(position = position_dodgev(height = 0.3)) +
     labs(y = NULL,
@@ -377,7 +363,6 @@ The more-complex models with covariates in the ZI linear predictor are fitted ne
 
 
 ```r
-
 m2.tmb <- glmmTMB(NCalls ~ (FoodTreatment + cArrivalTime) * SexParent +
                       offset(logBroodSize) + (1 | Nest),
                   ziformula = ~ FoodTreatment + (1 | Nest), data = Owls, family = poisson)
@@ -392,7 +377,6 @@ As before, we gather the model coefficients
 
 
 ```r
-
 m2.coefs <- createCoeftab(m2.tmb, m2.gam, GAMrange = 2:6)
 
 ```
@@ -401,7 +385,6 @@ and plot them
 
 
 ```r
-
 ggplot(m2.coefs, aes(x = estimate, y = term, colour = model, shape = model,
                      xmax = upper, xmin = lower)) +
     geom_pointrangeh(position = position_dodgev(height = 0.3)) +

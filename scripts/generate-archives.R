@@ -13,13 +13,14 @@ write_post_listing <- function(path, prefix, home = FALSE) {
     if (home) "title: From the bottom of the heap" else "title: Blog posts",
     if (home) "subtitle: the musings of a geographer" else NULL,
     "listing:",
+    if (home) "  id: posts" else NULL,
     "  contents:",
     contents,
     "  sort: date desc",
     paste0("  type: ", if (home) "default" else "table"),
     if (home) "  max-items: 10" else NULL,
     if (!home) "  fields: [date, title, subtitle, category]" else NULL,
-    "  categories: true",
+    paste0("  categories: ", if (home) "false" else "true"),
     if (home) c(
       "  feed:",
       "    type: full",
@@ -28,8 +29,25 @@ write_post_listing <- function(path, prefix, home = FALSE) {
     ) else NULL,
     "comments: false",
     "page-layout: full",
+    if (home) "body-classes: home-page" else NULL,
     "---",
-    if (home) c("", "::: {.more-posts}", "[More posts →](/blog/)", ":::") else NULL
+    if (home) c(
+      "",
+      "::: {.home-layout}",
+      "::: {.home-posts}",
+      "::: {#posts}",
+      ":::",
+      "",
+      "::: {.more-posts}",
+      "[More posts →](/blog/)",
+      ":::",
+      ":::",
+      "",
+      "::: {.home-sidebar}",
+      "{{< include includes/social-blogroll.qmd >}}",
+      ":::",
+      ":::"
+    ) else NULL
   )
   writeLines(lines, file.path(root, path), useBytes = TRUE)
 }

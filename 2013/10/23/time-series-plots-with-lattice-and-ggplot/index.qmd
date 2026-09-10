@@ -9,11 +9,18 @@ tags:
   - lattice
   - ggplot2
 category: R
-description: I recently coauthored a couple of papers on trends in environmental data
-  [@monteith-ecol-ind-trends; @curtis-ecol-ind-trends], which we estimated using GAMs
-  . Both papers included plots like the one shown below wherein we show the estimated
-  trend and associated point-wise 95% co…
 date: 2013-10-23 12:00:00
+description: >-
+  I recently coauthored a couple of papers on trends in environmental data
+  [\@monteith-ecol-ind-trends; \@curtis-ecol-ind-trends], which we estimated using GAMs . Both
+  papers included plots like the one shown below wherein we show the estimated trend and
+  associated point-wise 95% confidence interval, plus some other markings. The coloured sections
+  show where the estimated trend is changing in a statistically significantly manner, i.e. where
+  a 95% confidence interval on the first derivative (rate of change) of the trend does not
+  include 0. That particular figure and the others in the papers were drawn using the lattice
+  package [\@lattice-book], but I could just have easily used ggplot2 [\@ggplot2-book] instead. I
+  was recently asked via email how I produced the figures in the paper. Rather than just reply to
+  that email, I thought I'd knock up a quick post for my blog to show how it was done.
 author: Gavin Simpson
 categories:
   - R
@@ -51,7 +58,6 @@ I recently coauthored a couple of papers on trends in environmental data [@monte
 For the purposes of this post, I'm not going to show how we fitted the time series models. Instead I'm just going to show some dummy data (two random walks) that illustrate how the data need to be arranged for the plotting code I'm going to use. To start then, create the dummy data we'll use to draw some plots
 
 ```r
-
 set.seed(1)
 tdat <- data.frame(Site = rep(paste0("Site", c("A","B")),
                               each = 100),
@@ -70,7 +76,6 @@ tdat$Signif[take[2]:(take[2]+25)] <- tdat$Fitted[take[2]:(take[2]+25)]
 This results in the following data frame
 
 ```rout
-
 R> head(tdat)
    Site       Date  Fitted Signif  Upper   Lower
 1 SiteA 2013-10-23 -0.6265     NA 0.8735 -2.1265
@@ -104,7 +109,6 @@ With that done, we can start plotting. I'll show the **lattice** version first a
 Start by loading **lattice**
 
 ```r
-
 library("lattice")
 
 ```
@@ -112,7 +116,6 @@ library("lattice")
 The key to creating the sort of plot shown in Figure 1 is to recognise that each of the lines we want to draw can be viewed as a separate y-axis variable. **lattice** allows for this by specifying multiple values on the left-hand-side of the formula used to describe the plot. We also need to facet the plot on `Site`. To draw the figure we use `xyplot()`
 
 ```r
-
 xyplot(Fitted + Upper + Lower + Signif ~ Date | Site,
        data = tdat,
        type = "l",
@@ -132,7 +135,6 @@ The resulting figure is shown below
 Now we move on to drawing the plot using **ggplot2** Start by loading loading the package
 
 ```r
-
 library("ggplot2")
 
 ```
@@ -140,7 +142,6 @@ library("ggplot2")
 With **ggplot2** the key is to notice that each of the lines we want to draw on each panel can be drawn using different `geom_line()` *layers*, added sequentially to the plot. With each additional layer, we can override the default `mapping` by changing the `y` data in each layer using `aes()` within the `geom_line()` call. The code to create the plot is shown below.
 
 ```r
-
 ggplot(tdat, aes(x = Date, y = Fitted, group = Site)) +
     geom_line() +
     geom_line(mapping = aes(y = Upper), lty = "dashed") +

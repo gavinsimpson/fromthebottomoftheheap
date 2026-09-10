@@ -17,11 +17,9 @@ excerpt: |-
 
 
   What can I have possibly against this? What *is* wrong with using LOESS for palaeo data?
-description: Locally weighted scatterplot smoothing (LOWESS) or local regression (LOESS)
-  is widely used to highlight "signal" in variables from stratigraphic sequences.
-  It is a user-friendly way of fitting a local model that derives its form from the
-  data themselves rather than having to be …
 date: 2012-07-24 12:00:00
+description: >-
+  What can I have possibly against this? What is wrong with using LOESS for palaeo data?
 author: Gavin Simpson
 categories:
   - R
@@ -72,7 +70,6 @@ Why is this an issue? Well, the reason for fitting LOESS (or any smoother/model)
 Consider the example data from the [earlier blog post](/2011/07/21/smoothing-temporally-correlated-data/ "Smoothing temporally correlated data") from Kohn et al (2000), where the aim is to uncover the known model from observations drawn from this model with moderate AR(1) noise. The data sample is generated using the following code:
 
 ```r
-
 set.seed(321)
 n <- 100
 time <- 1:n
@@ -85,7 +82,6 @@ y <- as.numeric(Y + arima.sim(list(ar = 0.3713), n = n))
 Several R functions can fit LOESS-like models (e.g. `lowess()` and `loess()`in base R but note these two are not the same type of LOESS model). The code chunk and figure below show three fits using different values for the span parameter.
 
 ```r
-
 ## fit LOESS models
 lo1 <- loess(y ~ xt) ## span = 0.75
 lo2 <- update(lo1, span = 0.25)
@@ -98,7 +94,6 @@ lo3 <- update(lo1, span = 0.5)
 The plot was produced using
 
 ```r
-
 COL <- "darkorange1"
 layout(matrix(1:4, nrow = 2))
 plot(y ~ xt, xlab = expression(x[t]), ylab = expression(y[t]),
@@ -120,7 +115,6 @@ layout(1)
 There is little to choose between \\( \\lambda \\) = 0.75 and \\( \\lambda \\) = 0.5 if we are comparing them with the known model (the dashed line), but suppose we don't know the true model? The optimal \\( \\lambda \\) according to GCV can be determined using a function modified from a posting to R-Help by Michael Friendly (the original function did more than compute GCV)
 
 ```r
-
 loessGCV <- function (x) {
     ## Modified from code by Michael Friendly
     ## http://tolstoy.newcastle.edu.au/R/help/05/11/15899.html
@@ -140,7 +134,6 @@ loessGCV <- function (x) {
 The `optimize()` function can be used to find the value of \\( \\lambda \\) that achieves minimal GCV. A small wrapper function is required to link `optimize()` with `loessGCV()`
 
 ```r
-
 bestLoess <- function(model, spans = c(.05, .95)) {
     f <- function(span) {
         mod <- update(model, span = span)
@@ -155,7 +148,6 @@ bestLoess <- function(model, spans = c(.05, .95)) {
 The optimal \\( \\lambda \\) is chosen using `bestLoess()`. The optimal \\( \\lambda \\) is about 0.18 with a GCV of around 0.009
 
 ```rout
-
 > best
 $minimum
 [1] 0.1813552
@@ -168,7 +160,6 @@ $objective
 Our original LOESS model can be updated to use this \\( \\lambda \\)
 
 ```r
-
 lo.gcv <- update(lo1, span = best$minimum)
 
 ```

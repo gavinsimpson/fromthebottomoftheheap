@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2014-11-03">
-<meta name="description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan p…">
+<meta name="description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the permute package. Jari also cooked up a standard interface that we can use to drop this and some extra features neatly into any function we want; this allows us to have permutation tests run on many CPU cores in parallel, splitting the computational burden and reducing the run time of tests, and also a mechanism that allows users to pass a matrix of user-defined permutations to be used in tests. These new features are now fully working in the development version of vegan, which you can find on github, and which should be released to CRAN shortly. Ahead of the release, I’m preparing some examples to show off the new capabilities; first off I look at data from a randomized, complete block design experiment analysed using RDA &amp; restricted permutations.">
 
 <title>Analysing a randomised complete block design with vegan – From the bottom of the heap</title>
 <style>
@@ -101,7 +101,7 @@ div.csl-indent {
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -141,13 +141,13 @@ div.csl-indent {
 
 
 <meta property="og:title" content="Analysing a randomised complete block design with vegan – From the bottom of the heap">
-<meta property="og:description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan p…">
+<meta property="og:description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the permute package. Jari also cooked up a standard interface that we can use to drop this and some extra features neatly into any function we want; this allows us to have permutation tests run on many CPU cores in parallel, splitting the computational burden and reducing the run time of tests, and also a mechanism that allows users to pass a matrix of user-defined permutations to be used in tests. These new features are now fully working in the development version of vegan, which you can find on github, and which should be released to CRAN shortly. Ahead of the release, I’m preparing some examples to show off the new capabilities; first off I look at data from a randomized, complete block design experiment analysed using RDA &amp; restricted permutations.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/randomized-complete-block-design-and-vegan-biplot-1.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="595">
 <meta property="og:image:width" content="595">
 <meta name="twitter:title" content="Analysing a randomised complete block design with vegan – From the bottom of the heap">
-<meta name="twitter:description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan p…">
+<meta name="twitter:description" content="It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the permute package. Jari also cooked up a standard interface that we can use to drop this and some extra features neatly into any function we want; this allows us to have permutation tests run on many CPU cores in parallel, splitting the computational burden and reducing the run time of tests, and also a mechanism that allows users to pass a matrix of user-defined permutations to be used in tests. These new features are now fully working in the development version of vegan, which you can find on github, and which should be released to CRAN shortly. Ahead of the release, I’m preparing some examples to show off the new capabilities; first off I look at data from a randomized, complete block design experiment analysed using RDA &amp; restricted permutations.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/randomized-complete-block-design-and-vegan-biplot-1.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -162,11 +162,6 @@ div.csl-indent {
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -303,7 +298,7 @@ div.csl-indent {
 
 <div>
   <div class="description">
-    It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan p…
+    It has been a long time coming. Vegan now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the permute package. Jari also cooked up a standard interface that we can use to drop this and some extra features neatly into any function we want; this allows us to have permutation tests run on many CPU cores in parallel, splitting the computational burden and reducing the run time of tests, and also a mechanism that allows users to pass a matrix of user-defined permutations to be used in tests. These new features are now fully working in the development version of vegan, which you can find on github, and which should be released to CRAN shortly. Ahead of the release, I’m preparing some examples to show off the new capabilities; first off I look at data from a randomized, complete block design experiment analysed using RDA &amp; restricted permutations.
   </div>
 </div>
 
@@ -344,17 +339,13 @@ div.csl-indent {
 </section>
 </div></div><p>It has been a long time coming. <a href="http://cran.r-project.org/package=vegan"><strong>Vegan</strong></a> now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the <a href="http://cran.r-project.org/package=permute"><strong>permute</strong></a> package. Jari also cooked up a standard interface that we can use to drop this and some extra features neatly into any function we want; this allows us to have permutation tests run on many CPU cores in parallel, splitting the computational burden and reducing the run time of tests, and also a mechanism that allows users to pass a matrix of user-defined permutations to be used in tests. These new features are now fully working in the development version of <strong>vegan</strong>, which you can find on <a href="https://github.com/vegandevs/vegan">github</a>, and which should be released to CRAN shortly. Ahead of the release, I’m preparing some examples to show off the new capabilities; first off I look at data from a randomized, complete block design experiment analysed using RDA &amp; restricted permutations.</p>
 <p>To follow this example locally you’ll need to have version 2.1-43 or later of <strong>vegan</strong> installed. You can grab the <a href="https://github.com/vegandevs/vegan">sources from github</a> and build it yourself, or grab a Windows binary from the <a href="https://ci.appveyor.com/project/gavinsimpson/vegan/branch/master/artifacts">Appveyor Continuous integration service</a> that we’re using to test on that platform — you want the <code>.zip</code> file from the Artefacts. Once you’ve sorted out the installation, we can begin.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"vegan"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Loading required package: permute
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"vegan"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Loading required package: permute
 Loading required package: lattice
 This is vegan 2.1-43
 </code></pre>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"gdata"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-gdata: read.xls support for 'XLS' (Excel 97-2004) files ENABLED.
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"gdata"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>gdata: read.xls support for 'XLS' (Excel 97-2004) files ENABLED.
 
 gdata: read.xls support for 'XLSX' (Excel 2007+) files ENABLED.
 
@@ -379,30 +370,25 @@ The following object is masked from 'package:utils':
 </ul>
 <p>The treatments were replicated replicated in four, randomised complete blocks.</p>
 <p>The data are available from the accompanying website to the book <em>Multivariate Analysis of Ecological Data using CANOCO 5</em> <span class="citation" data-cites="Smilauer2014-ac">(<a href="#ref-Smilauer2014-ac" role="doc-biblioref">Šmilauer and Lepš, 2014</a>)</span>. They are supplied as XLS format files in a ZIP archive. We can read these into R directly from the website with a little bit of effort</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="do">## Download the data zip</span></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>furl <span class="ot">&lt;-</span> <span class="st">"http://regent.prf.jcu.cz/maed2/chap15.zip"</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>td <span class="ot">&lt;-</span> <span class="fu">tempdir</span>()</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>tf <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">tmpdir =</span> td, <span class="at">fileext =</span> <span class="st">".zip"</span>)</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(furl, tf)</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="do">## list the files in the zip, we want the xls version (file 3)</span></span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>fname <span class="ot">&lt;-</span> <span class="fu">unzip</span>(tf, <span class="at">list =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>Name[<span class="dv">3</span>]</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>(tf, <span class="at">files =</span> fname, <span class="at">exdir =</span> td, <span class="at">overwrite =</span> <span class="cn">TRUE</span>) <span class="co"># unzip</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>datpath <span class="ot">&lt;-</span> <span class="fu">file.path</span>(td, fname)                        <span class="co"># path to xls</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="do">## read the xls file, sheet 2 contains species data, sheet 3 the env</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>spp <span class="ot">&lt;-</span> <span class="fu">read.xls</span>(datpath, <span class="at">sheet =</span> <span class="dv">2</span>, <span class="at">skip =</span> <span class="dv">1</span>, <span class="at">row.names =</span> <span class="dv">1</span>)</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>env <span class="ot">&lt;-</span> <span class="fu">read.xls</span>(datpath, <span class="at">sheet =</span> <span class="dv">3</span>, <span class="at">row.names =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="do">## Download the data zip</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>furl <span class="ot">&lt;-</span> <span class="st">"http://regent.prf.jcu.cz/maed2/chap15.zip"</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>td <span class="ot">&lt;-</span> <span class="fu">tempdir</span>()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>tf <span class="ot">&lt;-</span> <span class="fu">tempfile</span>(<span class="at">tmpdir =</span> td, <span class="at">fileext =</span> <span class="st">".zip"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">download.file</span>(furl, tf)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="do">## list the files in the zip, we want the xls version (file 3)</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>fname <span class="ot">&lt;-</span> <span class="fu">unzip</span>(tf, <span class="at">list =</span> <span class="cn">TRUE</span>)<span class="sc">$</span>Name[<span class="dv">3</span>]</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">unzip</span>(tf, <span class="at">files =</span> fname, <span class="at">exdir =</span> td, <span class="at">overwrite =</span> <span class="cn">TRUE</span>) <span class="co"># unzip</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>datpath <span class="ot">&lt;-</span> <span class="fu">file.path</span>(td, fname)                        <span class="co"># path to xls</span></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="do">## read the xls file, sheet 2 contains species data, sheet 3 the env</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>spp <span class="ot">&lt;-</span> <span class="fu">read.xls</span>(datpath, <span class="at">sheet =</span> <span class="dv">2</span>, <span class="at">skip =</span> <span class="dv">1</span>, <span class="at">row.names =</span> <span class="dv">1</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>env <span class="ot">&lt;-</span> <span class="fu">read.xls</span>(datpath, <span class="at">sheet =</span> <span class="dv">3</span>, <span class="at">row.names =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The <code>block</code> variable is currently coded as an integer and needs converting to a factor if we are to use it correctly in the analysis</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>env <span class="ot">&lt;-</span> <span class="fu">transform</span>(env, <span class="at">block =</span> <span class="fu">factor</span>(block))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>env <span class="ot">&lt;-</span> <span class="fu">transform</span>(env, <span class="at">block =</span> <span class="fu">factor</span>(block))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The gradient lengths are short,</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">decorana</span>(spp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-
-Call:
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">decorana</span>(spp)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Call:
 decorana(veg = spp) 
 
 Detrended correspondence analysis with 26 segments.
@@ -421,11 +407,9 @@ Axis lengths    1.9821 1.4140 1.15480 0.87680
 </ol>
 <p>There is an important difference between the two approach, one which I’ll touch on shortly.</p>
 <p>We’ll proceed by fitting the model, conditioning on <code>block</code> to remove between block differences</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">rda</span>(spp <span class="sc">~</span> treatment <span class="sc">+</span> <span class="fu">Condition</span>(block), <span class="at">data =</span> env)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>mod1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Call: rda(formula = spp ~ treatment + Condition(block), data =
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>mod1 <span class="ot">&lt;-</span> <span class="fu">rda</span>(spp <span class="sc">~</span> treatment <span class="sc">+</span> <span class="fu">Condition</span>(block), <span class="at">data =</span> env)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>mod1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Call: rda(formula = spp ~ treatment + Condition(block), data =
 env)
 
                Inertia Proportion Rank
@@ -444,10 +428,8 @@ Eigenvalues for unconstrained axes:
 226.83 139.51  72.77  30.11   9.81   9.14   2.80   2.19   1.73 
 </code></pre>
 <p>There is a strong single, linear gradient in the data as evidenced by the relative magnitudes of the eigenvalues (here expressed as proportions of the total variance)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">eigenvals</span>(mod1) <span class="sc">/</span> mod1<span class="sc">$</span>tot.chi</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-      RDA1       RDA2       RDA3        PC1        PC2        PC3 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">eigenvals</span>(mod1) <span class="sc">/</span> mod1<span class="sc">$</span>tot.chi</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>      RDA1       RDA2       RDA3        PC1        PC2        PC3 
 0.28746238 0.03111202 0.01432998 0.22893569 0.14080915 0.07344450 
        PC4        PC5        PC6        PC7        PC8        PC9 
 0.03038815 0.00989932 0.00922185 0.00282396 0.00221132 0.00174669 
@@ -455,8 +437,7 @@ Eigenvalues for unconstrained axes:
 <section id="design-based-permutations" class="level2">
 <h2 data-anchor-id="design-based-permutations">Design-based permutations</h2>
 <p>A <em>design</em>-based permutation test of these data would be on conditioned on the <code>block</code> variable, by restricting permutation of sample only <em>within</em> the levels of <code>block</code>. In this situation, samples are never permuted between blocks, only within. We can set up this type of permutation design as follows</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">how</span>(<span class="at">blocks =</span> env<span class="sc">$</span>block, <span class="at">nperm =</span> <span class="dv">999</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>h <span class="ot">&lt;-</span> <span class="fu">how</span>(<span class="at">blocks =</span> env<span class="sc">$</span>block, <span class="at">nperm =</span> <span class="dv">999</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Note that we could use the <code>plots</code> argument instead of <code>blocks</code> to restrict the permutations in the same way, but using <code>blocks</code> is simpler. I also set the required number of permutations for the test here.</p>
 <p>Constrained ordinations in <strong>vegan</strong> are tested using the <code>anova()</code> function. New in the development version of the package is the <code>permutations</code> argument, which is the key to supplying instructions on how you want to permute to <code>anova()</code>. <code>permutations</code> can take a number of different types of instruction</p>
 <ol type="1">
@@ -465,12 +446,10 @@ Eigenvalues for unconstrained axes:
 <li><p>a matrix of user-specified permutations, 1 row per permutation.</p></li>
 </ol>
 <p>To perform the design-based permutation we’ll pass <code>h</code>, created earlier, to <code>anova()</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">anova</span>(mod1, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>)</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>p1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Permutation test for rda under reduced model
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">anova</span>(mod1, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>p1</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Permutation test for rda under reduced model
 Blocks:  env$block 
 Permutation: free
 Number of permutations: 999
@@ -484,16 +463,12 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 </code></pre>
 <p>Note that I’ve run this on three cores in parallel; this is another new feature of the development version of <strong>vegan</strong> and can considerably reduce the time needed to run permutation tests. I have four cores on my laptop but left one free for the other software I have running.</p>
 <p>The overall permutation test indicates no significant effect of treatment on the abundance of seedlings. We can test individual axes by adding <code>by = "axis"</code> to the <code>anova()</code> call</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">24</span>)</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>p1axis <span class="ot">&lt;-</span> <span class="fu">anova</span>(mod1, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>, <span class="at">by =</span> <span class="st">"axis"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Loading required package: parallel
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">24</span>)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>p1axis <span class="ot">&lt;-</span> <span class="fu">anova</span>(mod1, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>, <span class="at">by =</span> <span class="st">"axis"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Loading required package: parallel
 </code></pre>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>p1axis</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Permutation test for rda under reduced model
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>p1axis</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Permutation test for rda under reduced model
 Marginal tests for axes
 Blocks:  env$block 
 Permutation: free
@@ -509,12 +484,11 @@ Residual  9   494.88
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 </code></pre>
 <p>This confirms the earlier impression that there is a single, linear gradient in the data set. A biplot shows that this axis of variation is associated with the Moss (&amp; Litter) removal treatment. The variation between the other treatments lies primarily along axis two and is substantially less than that associated with the Moss &amp; Litter removal.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mod1, <span class="at">display =</span> <span class="fu">c</span>(<span class="st">"species"</span>, <span class="st">"cn"</span>), <span class="at">scaling =</span> <span class="dv">1</span>, <span class="at">type =</span> <span class="st">"n"</span>,</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">10.5</span>, <span class="fl">1.5</span>))</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="fu">text</span>(mod1, <span class="at">display =</span> <span class="st">"species"</span>, <span class="at">scaling =</span> <span class="dv">1</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a><span class="fu">text</span>(mod1, <span class="at">display =</span> <span class="st">"cn"</span>, <span class="at">scaling =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="st">"blue"</span>, <span class="at">cex =</span> <span class="fl">1.2</span>,</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>     <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Litter+Moss"</span>, <span class="st">"Litter"</span>, <span class="st">"Removal"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mod1, <span class="at">display =</span> <span class="fu">c</span>(<span class="st">"species"</span>, <span class="st">"cn"</span>), <span class="at">scaling =</span> <span class="dv">1</span>, <span class="at">type =</span> <span class="st">"n"</span>,</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlim =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">10.5</span>, <span class="fl">1.5</span>))</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="fu">text</span>(mod1, <span class="at">display =</span> <span class="st">"species"</span>, <span class="at">scaling =</span> <span class="dv">1</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a><span class="fu">text</span>(mod1, <span class="at">display =</span> <span class="st">"cn"</span>, <span class="at">scaling =</span> <span class="dv">1</span>, <span class="at">col =</span> <span class="st">"blue"</span>, <span class="at">cex =</span> <span class="fl">1.2</span>,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Control"</span>, <span class="st">"Litter+Moss"</span>, <span class="st">"Litter"</span>, <span class="st">"Removal"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/randomized-complete-block-design-and-vegan-biplot-1.png" class="img-fluid figure-img"></p>
@@ -527,19 +501,15 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 <h2 data-anchor-id="model-based-permutation">Model-based permutation</h2>
 <p>The alternative permutation approach, known as model-based permutations, and would employ free permutation of residuals after the effects of the covariables have been accounted for. This is justified because under the null hypothesis, the residuals are freely exchangeable once the effects of the covariables are removed. There is a clear advantage of model-based permutations over design-based permutations; where the sample size is small, as it is here, there tends to be few blocks and the resulting design-based permutation test relatively weak compared to the model-based version.</p>
 <p>It is simple to switch to model-based permutations, be setting the blocks indicator in the permutation design to <code>NULL</code>, removing the blocking structure from the design</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setBlocks</span>(h) <span class="ot">&lt;-</span> <span class="cn">NULL</span>                    <span class="co"># remove blocking</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">getBlocks</span>(h)                            <span class="co"># confirm</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-NULL
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">setBlocks</span>(h) <span class="ot">&lt;-</span> <span class="cn">NULL</span>                    <span class="co"># remove blocking</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">getBlocks</span>(h)                            <span class="co"># confirm</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>NULL
 </code></pre>
 <p>Next we repeat the permutation test using the modified <code>h</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">51</span>)</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">anova</span>(mod1, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>)</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Permutation test for rda under reduced model
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">51</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">anova</span>(mod1, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>p2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Permutation test for rda under reduced model
 Permutation: free
 Number of permutations: 999
 
@@ -551,12 +521,10 @@ Residual  9   494.88
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 </code></pre>
 <p>The estimated <em>p</em> value is slightly smaller now. The difference between treatments is predominantly in the Moss &amp; Litter removal with differences between the control and the other treatments lying along the insignificant axes</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">83</span>)</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>p2axis <span class="ot">&lt;-</span> <span class="fu">anova</span>(mod1, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>, <span class="at">by =</span> <span class="st">"axis"</span>)</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>p2axis</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Permutation test for rda under reduced model
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">83</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>p2axis <span class="ot">&lt;-</span> <span class="fu">anova</span>(mod1, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>, <span class="at">by =</span> <span class="st">"axis"</span>)</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>p2axis</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Permutation test for rda under reduced model
 Marginal tests for axes
 Permutation: free
 Number of permutations: 999
@@ -574,17 +542,15 @@ Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 <section id="chages-in-relative-seedling-composition" class="level2">
 <h2 data-anchor-id="chages-in-relative-seedling-composition">Chages in relative seedling composition</h2>
 <p>As mentioned earlier, interest is also, perhaps predominantly, in whether any of the treatments have different species composition. To test this hypothesis we standardise by the sample (row) norm using <code>decostand()</code>. Alternatively we could have used <code>method = "total"</code> to work with proportional abundances. We then repeat the earlier steps, this time using only model-based permutations owing to their greater power.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>spp.norm <span class="ot">&lt;-</span> <span class="fu">decostand</span>(spp, <span class="at">method =</span> <span class="st">"normalize"</span>, <span class="at">MARGIN =</span> <span class="dv">1</span>)</span>
-<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">rda</span>(spp.norm <span class="sc">~</span> treatment <span class="sc">+</span> <span class="fu">Condition</span>(block), <span class="at">data =</span> env)</span>
-<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>mod2</span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a><span class="fu">eigenvals</span>(mod2) <span class="sc">/</span> mod2<span class="sc">$</span>tot.chi</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">76</span>)</span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(mod2, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Call: rda(formula = spp.norm ~ treatment + Condition(block), data
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>spp.norm <span class="ot">&lt;-</span> <span class="fu">decostand</span>(spp, <span class="at">method =</span> <span class="st">"normalize"</span>, <span class="at">MARGIN =</span> <span class="dv">1</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>mod2 <span class="ot">&lt;-</span> <span class="fu">rda</span>(spp.norm <span class="sc">~</span> treatment <span class="sc">+</span> <span class="fu">Condition</span>(block), <span class="at">data =</span> env)</span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>mod2</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a><span class="fu">eigenvals</span>(mod2) <span class="sc">/</span> mod2<span class="sc">$</span>tot.chi</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">76</span>)</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a><span class="fu">anova</span>(mod2, <span class="at">permutations =</span> h, <span class="at">parallel =</span> <span class="dv">3</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Call: rda(formula = spp.norm ~ treatment + Condition(block), data
 = env)
 
               Inertia Proportion Rank

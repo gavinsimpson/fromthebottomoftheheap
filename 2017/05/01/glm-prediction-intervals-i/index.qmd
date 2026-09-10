@@ -9,10 +9,18 @@ tags:
   - statistical modelling
   - logistic regression
 category: R
-description: One of my more popular answers on StackOverflow concerns the issue of
-  prediction intervals for a generalized linear model (GLM). My answer really only
-  addresses how to compute confidence intervals for parameters but in the comments
-  I discuss the more substantive points raised by…
+description: >-
+  One of my more popular answers on StackOverflow concerns the issue of prediction intervals for
+  a generalized linear model (GLM). My answer really only addresses how to compute confidence
+  intervals for parameters but in the comments I discuss the more substantive points raised by
+  the OP in their question. Lately there's been a bit of back and forth between Jarrett Byrnes
+  and myself about what a prediction "interval" for a GLM might mean. Comments, even on
+  StackOverflow, aren't a good place for a discussion so I thought I'd post something here that
+  went into a bit more detail as to why, for some common types of GLMs, prediction intervals
+  aren't that useful and require a lot more thinking about what they mean and how they should be
+  calculated. For illustration, I thought I'd use some small teaching example data sets, but
+  whilst writing the post it started to get a little on the long side. So, I've broken it into
+  two and in this part I look at logistic regression.
 author: Gavin Simpson
 categories:
   - R
@@ -50,7 +58,6 @@ The first example concerns a small experiment on the rare insectivorous pitcher 
 
 
 ```r
-
 darlurl <- "http://harvardforest.fas.harvard.edu/sites/harvardforest.fas.harvard.edu/files/ellison-pubs/2004/DarlingtoniaData3.txt"
 darl <- setNames(read.fwf(darlurl, widths = c(8,9), header = FALSE, skip = 1L),
                  c("leafHeight", "visited"))
@@ -62,7 +69,6 @@ Kernel density estimates of the distributions of the leaf heights for visited an
 
 
 ```r
-
 library("ggplot2")
 theme_set(theme_bw())
 
@@ -78,7 +84,6 @@ We're interested in modelling the probability of leaf visitation as a function o
 
 
 ```r
-
 m <- glm(visited ~ leafHeight, data = darl, family = binomial)
 summary(m)
 
@@ -87,8 +92,6 @@ summary(m)
 
 
 ```text
-
-
 Call:
 glm(formula = visited ~ leafHeight, family = binomial, data = darl)
 
@@ -119,7 +122,6 @@ How the probability of visitation varies as a function of leaf height, as estima
 
 
 ```r
-
 ilink <- family(m)$linkinv
 pd <- with(darl,
            data.frame(leafHeight = seq(min(leafHeight), max(leafHeight),
@@ -147,7 +149,6 @@ To create a prediction interval for a value of `leafHeight`, we could look at th
 
 
 ```r
-
 with(pd, qbinom(c(0.025, 0.975), size = 1, prob = head(Fitted, 1L)))
 with(pd, qbinom(c(0.025, 0.975), size = 1, prob = tail(Fitted, 1L)))
 
@@ -156,7 +157,6 @@ with(pd, qbinom(c(0.025, 0.975), size = 1, prob = tail(Fitted, 1L)))
 
 
 ```text
-
 [1] 0 0
 [1] 0 1
 
@@ -168,7 +168,6 @@ But this isn't quite what we want; we've only explore the quantiles of the distr
 
 
 ```r
-
 with(pd, qbinom(c(0.025, 0.975), size = 1, prob = c(head(Lower, 1L), head(Upper, 1L))))
 with(pd, qbinom(c(0.025, 0.975), size = 1, prob = c(tail(Lower, 1L), tail(Upper, 1L))))
 
@@ -177,7 +176,6 @@ with(pd, qbinom(c(0.025, 0.975), size = 1, prob = c(tail(Lower, 1L), tail(Upper,
 
 
 ```text
-
 [1] 0 1
 [1] 0 1
 
@@ -189,7 +187,6 @@ Another way to use the fitted model is via what it says about the posterior dens
 
 
 ```r
-
 db <- with(pd, matrix(dbinom(x = rep(c(0,1), each = 2), size = 1,
                              prob = Fitted[c(1, 100)]),
                       ncol = 2))
@@ -202,7 +199,6 @@ round(db, 4)
 
 
 ```text
-
                 NotVisited Visited
 leafHeight = 14     0.9966  0.0034
 leafHeight = 84     0.0831  0.9169
@@ -215,7 +211,6 @@ However, these values are exactly what we get if we just take the fitted probabi
 
 
 ```r
-
 with(pd, Fitted[c(1, 100)])
 
 ```
@@ -223,7 +218,6 @@ with(pd, Fitted[c(1, 100)])
 
 
 ```text
-
 [1] 0.003410958 0.916879065
 
 ```
@@ -232,7 +226,6 @@ These values are for the visited outcome, but subtract them from 1 and you have 
 
 
 ```r
-
 with(pd, 1 - Fitted[c(1, 100)])
 
 ```
@@ -240,7 +233,6 @@ with(pd, 1 - Fitted[c(1, 100)])
 
 
 ```text
-
 [1] 0.99658904 0.08312093
 
 ```
@@ -260,7 +252,6 @@ One more thing we can do with the fitted model is simulate random outcomes from 
 
 
 ```r
-
 nrand <- 10000
 set.seed(1)
 table(rbinom(nrand, size = 1, prob = with(pd, Fitted[1]))) / nrand
@@ -270,8 +261,6 @@ table(rbinom(nrand, size = 1, prob = with(pd, Fitted[1]))) / nrand
 
 
 ```text
-
-
      0      1 
 0.9977 0.0023 
 
@@ -281,7 +270,6 @@ and then for the largest observed leaf height
  
 
 ```r
-
 set.seed(1)
 table(rbinom(nrand, size = 1, prob = with(pd, Fitted[100]))) / nrand
 
@@ -290,8 +278,6 @@ table(rbinom(nrand, size = 1, prob = with(pd, Fitted[100]))) / nrand
 
 
 ```text
-
-
      0      1 
 0.0867 0.9133 
 

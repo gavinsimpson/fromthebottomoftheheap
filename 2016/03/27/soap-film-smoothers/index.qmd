@@ -10,11 +10,24 @@ tags:
   - Lake
   - Bathymetry
 category: R
-description: A number of years ago, whilst I was still working at ENSIS, the consultancy
-  arm of the ECRC at UCL, I worked on a project for the (then) Countryside Council
-  for Wales (CCW; now part of Natural Resources Wales). I don't recall why they were
-  doing this project, but we were tasked …
 date: 2016-03-27 12:00:00
+description: >-
+  A number of years ago, whilst I was still working at ENSIS, the consultancy arm of the ECRC at
+  UCL, I worked on a project for the (then) Countryside Council for Wales (CCW; now part of
+  Natural Resources Wales). I don't recall why they were doing this project, but we were tasked
+  with producing a standardised set of bathymetric maps for Welsh lakes. The brief called for the
+  bathymetries to be provided in standard GIS formats. Either CCW's project manager or the
+  project lead at ENSIS had proposed to use inverse distance weighting (IWD) to smooth the point
+  bathymetric measurements. This probably stemmed from the person that initiatied our bathymetric
+  programme at ENSIS being a GIS wizard, schooled in the ways of ArcGIS. My involvement was
+  mainly data processing of the IDW results. I was however, at the time, also somewhat familiar
+  with the problem of finite area smoothing^[smoothing over a domain with known boundaries, like
+  a lake] and had read a paper of Simon Wood's on his then new soap-film smoother
+  [\@Wood2008-gy]. So, as well as writing scripts to process and present the IDW-based bathymetry
+  data in the report, I snuck a task into the work programme that allowed me to investigate using
+  soap-film smoothers for modelling lake bathymetric data. The timing was never great to write up
+  this method (two children and a move to Canada have occurred since the end of this project), so
+  I've not done anything with the idea. Until now...
 author: Gavin Simpson
 categories:
   - R
@@ -93,7 +106,6 @@ below^[See the example in `?fs.test` after loading package **mgcv**].
 
 
 ```r
-
 library("mgcv")
 fsb <- fs.boundary()
 m <- 300
@@ -187,7 +199,6 @@ The figure below shows lake depth soundings from the [Comeston Park Lakes](https
 
 
 ```r
-
 library("rgdal")
 
 ## Update this if I can post the Comeston data
@@ -224,7 +235,6 @@ information of zero depths.
 
 
 ```r
-
 library("mgcv")
 crds <- coordinates(outline)[[1]][[1]]
 tprs <- gam(-depth ~ s(os_x, os_y, k = 60), data = depth, method = "REML")
@@ -235,8 +245,6 @@ summary(tprs)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -275,7 +283,6 @@ basically
 
 
 ```r
-
 grid.x <- with(tprs$var.summary,
                seq(min(c(os_x, crds[,1])), max(c(os_x, crds[,1])), by = 2.5))
 grid.y <- with(tprs$var.summary,
@@ -294,7 +301,6 @@ The TPRS fitted surface is plotted with the observed data using
 
 
 ```r
-
 ggplot(foutline, aes(x = long, y = lat)) +
     geom_raster(data = tmp, aes(x = os_x, y = os_y, fill = Depth)) +
     geom_path() +
@@ -335,7 +341,6 @@ create this from the `coordinates()` object created earlier.
 
 
 ```r
-
 bound <- list(list(x = crds[,1], y = crds[,2], f = rep(0, nrow(crds))))
 
 ```
@@ -357,7 +362,6 @@ that are contained within the lake boundary.
 
 
 ```r
-
 N <- 10
 gx <- seq(min(crds[,1]), max(crds[,1]), len = N)
 gy <- seq(min(crds[,2]), max(crds[,2]), len = N)
@@ -401,7 +405,6 @@ soap-film basis is specified using `bs = "so"`.
 
 
 ```r
-
 m2 <- gam(-depth ~ s(os_x, os_y, bs = "so", xt = list(bnd = bound)),
           data = depth, method = "REML", knots = knots)
 
@@ -415,7 +418,6 @@ respectively).
 
 
 ```r
-
 summary(m2)
 
 ```
@@ -423,8 +425,6 @@ summary(m2)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -452,7 +452,6 @@ Soap-film GAMs come with their own `plot()` method
 
 
 ```r
-
 lims <- apply(crds, 2, range)
 ylim <- lims[,2]
 xlim <- lims[,1]
@@ -488,7 +487,6 @@ hence dropped from any plotting or subsequent analysis.
 
 
 ```r
-
 pdata2 <- transform(pdata[, 1:2], Depth = predict(m2, newdata = pdata))
 
 ggplot(foutline, aes(x = long, y = lat)) +
@@ -533,7 +531,6 @@ soap-film data.
 
 
 ```r
-
 inlake <- with(pdata, inSide(bound, os_x, os_y))
 pdata <- pdata[inlake, ]
 

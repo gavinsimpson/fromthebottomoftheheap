@@ -16,11 +16,18 @@ alert: The post below makes use of the **tsgam** package, development of which h
   from Github, but is not receiving any updates or bug fixes at this time. The code
   below should not need any major changes to work with **gratia**; if something isn't
   working however, please let me know.
-description: Eighteen months ago I screwed up! I'd written a post in which I described
-  the use of simulation from the posterior distribution of a fitted GAM to derive
-  simultaneous confidence intervals for the derivatives of a penalized spline. It
-  was a nice post that attracted some interest.…
 date: 2017-03-21 12:00:00
+description: >-
+  Eighteen months ago I screwed up! I'd written a post in which I described the use of simulation
+  from the posterior distribution of a fitted GAM to derive simultaneous confidence intervals for
+  the derivatives of a penalized spline. It was a nice post that attracted some interest. It was
+  also wrong. In December I corrected the first part of that mistake by illustrating one approach
+  to compute an actual simultaneous interval, but only for the fitted smoother. At the time I
+  thought that the approach I outlined would translate to the derivatives but I was being lazy
+  then Christmas came and went and I was back to teaching --- you know how it goes. Anyway, in
+  this post I hope to finally rectify my past stupidity and show how the approach used to
+  generate simultaneous intervals from the December 2016 post can be applied to the derivatives
+  of a spline.
 author: Gavin Simpson
 categories:
   - R
@@ -77,7 +84,6 @@ Assuming you have the **devtools** package installed, you can install **tsgam** 
 
 
 ```r
-
 devtools::install_github("gavinsimpson/tsgam")
 
 ```
@@ -86,7 +92,6 @@ As example data, I'll again use the strontium isotope data set included in the *
 
 
 ```r
-
 library("mgcv")                         # fit the GAM
 library("tsgam")                        # code for derivatives & intervals
 library("ggplot2")                      # package for nice plots
@@ -99,7 +104,6 @@ The `fossil` data set includes two variables and is a time series of strontium i
 
 
 ```r
-
 ggplot(fossil, aes(x = age, y = strontium.ratio)) +
     geom_point() + scale_x_reverse()
 
@@ -111,7 +115,6 @@ The aim of the analysis of these data is to model how the measured strontium iso
 
 
 ```r
-
 fossil <- transform(fossil, negAge = -age)
 
 ```
@@ -120,7 +123,6 @@ As per the previous post a reasonable GAM for these data is fitted using **mgcv*
 
 
 ```r
-
 m <- gam(strontium.ratio ~ s(negAge, k = 20), data = fossil, method = "REML")
 
 ```
@@ -129,7 +131,6 @@ Having fitted the model we should do some evaluation of it but I'm going to skip
 
 
 ```r
-
 ## parameters for testing
 UNCONDITIONAL <- FALSE # unconditional or conditional on estimating smooth params?
 N <- 10000             # number of posterior draws
@@ -142,7 +143,6 @@ To facilitate checking that this interval has the correct coverage properties I'
 
 
 ```r
-
 ## where are we going to predict at?
 newd <- with(fossil, data.frame(negAge = seq(min(negAge), max(negAge), length = n)))
 
@@ -152,7 +152,6 @@ The `fderiv()` function in **tsgam** computes the first derivative of any spline
 
 
 ```r
-
 fd <- fderiv(m, newdata = newd, eps = EPS, unconditional = UNCONDITIONAL)
 
 ```
@@ -161,7 +160,6 @@ fd <- fderiv(m, newdata = newd, eps = EPS, unconditional = UNCONDITIONAL)
 
 
 ```r
-
 str(fd, max = 1)
 
 ```
@@ -169,7 +167,6 @@ str(fd, max = 1)
 
 
 ```text
-
 List of 6
  $ derivatives  :List of 1
  $ terms        : chr "negAge"
@@ -186,7 +183,6 @@ contains a component `derivatives` that contains the evaluated derivatives for a
 
 
 ```r
-
 set.seed(42)                            # set the seed to make this repeatable 
 sint <- confint(fd, type = "simultaneous", nsim = N)
 
@@ -196,7 +192,6 @@ To make it easier to work with the results I wrote the `confint()` method so tha
 
 
 ```r
-
 head(sint)
 
 ```
@@ -204,7 +199,6 @@ head(sint)
 
 
 ```text
-
     term     lower      est    upper
 1 negAge -0.000053 -6.1e-06 0.000041
 2 negAge -0.000053 -6.1e-06 0.000041
@@ -219,7 +213,6 @@ The estimated derivative plus its 95% simultaneous confidence interval are shown
 
 
 ```r
-
 ggplot(cbind(sint, age = -newd$negAge),
        aes(x = age, y = est)) +
     geom_hline(aes(yintercept = 0)) +
@@ -257,7 +250,6 @@ To do that I'm going to simulate a large number, `N`, of draws from the posterio
 
 
 ```r
-
 Vb <- vcov(m, unconditional = UNCONDITIONAL)
 set.seed(24)
 sims <- MASS::mvrnorm(N, mu = coef(m), Sigma = Vb)
@@ -273,7 +265,6 @@ The code above basically makes a large number of draws from the model posterior 
 
 
 ```r
-
 set.seed(2)
 matplot(derivs[, sample(N, 50)], type = "l", lty = "solid")
 
@@ -287,7 +278,6 @@ To check this is the case, we reuse the the `inCI()` function that checks if a d
 
 
 ```r
-
 inCI <- function(x, upr, lwr) {
     all(x >= lwr & x <= upr)
 }
@@ -298,7 +288,6 @@ As each *column* of `derivs` contains a different draw, we want to apply `inCI()
 
 
 ```r
-
 fitsInCI <- with(sint, apply(derivs, 2L, inCI, upr = upper, lwr = lower))
 
 ```
@@ -307,7 +296,6 @@ fitsInCI <- with(sint, apply(derivs, 2L, inCI, upr = upper, lwr = lower))
 
 
 ```r
-
 sum(fitsInCI) / length(fitsInCI)
 
 ```
@@ -315,7 +303,6 @@ sum(fitsInCI) / length(fitsInCI)
 
 
 ```text
-
 [1] 0.95
 
 ```

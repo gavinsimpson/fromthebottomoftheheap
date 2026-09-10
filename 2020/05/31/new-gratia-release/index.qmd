@@ -7,11 +7,13 @@ tags:
   - R
   - package
 category: R
-description: After a slight snafu related to the 1.0.0 release of dplyr, a new version
-  of gratia is out and available on CRAN. This release brings a number of new features,
-  including differences of smooths, partial residuals on partial plots of univariate
-  smooths, and a number of utility fun…
 image: /assets/img/posts/gratia-0-4-1-release-plot-difference-smooths-1.png
+description: >-
+  After a slight snafu related to the 1.0.0 release of dplyr, a new version of gratia is out and
+  available on CRAN. This release brings a number of new features, including differences of
+  smooths, partial residuals on partial plots of univariate smooths, and a number of utility
+  functions, while under the hood gratia works for a wider range of models that can be fitted by
+  mgcv.
 author: Gavin Simpson
 categories:
   - R
@@ -50,7 +52,6 @@ The `draw()` method for `gam()` and related models produces partial effects plot
 
 
 ```r
-
 df1 <- data_sim("eg1", n = 400, seed = 42)
 m1 <- gam(y ~ s(x0) + s(x1) + s(x2) + s(x3), data = df1, method = "REML")
 draw(m1, residuals = TRUE)
@@ -71,7 +72,6 @@ For example, the response data modelled above came from the following four funct
 
 
 ```r
-
 df1 %>% mutate(id = seq_len(nrow(df1))) %>%
   select(id, x0:x3, f0:f3) %>%
   pivot_longer(x0:f3, names_sep = 1, names_to = c("var", "fun")) %>%
@@ -92,7 +92,6 @@ The **mgcv** example for factor-smooth interactions using the `by` mechanism can
 
 
 ```r
-
 df <- data_sim("eg4", n = 1000, seed = 42)
 m2 <- gam(y ~ fac + s(x2, by = fac) + s(x0), data = df, method = "REML")
 
@@ -102,7 +101,6 @@ m2 <- gam(y ~ fac + s(x2, by = fac) + s(x0), data = df, method = "REML")
 
 
 ```r
-
 sm_diffs <- difference_smooths(m2, smooth = "s(x2)")
 sm_diffs
 
@@ -111,7 +109,6 @@ sm_diffs
 
 
 ```text
-
 # A tibble: 300 x 9
    smooth by    level_1 level_2  diff    se   lower upper      x2
    <chr>  <chr> <chr>   <chr>   <dbl> <dbl>   <dbl> <dbl>   <dbl>
@@ -133,7 +130,6 @@ There is a `draw()` method for objects returned by `difference_smooths()`, which
 
 
 ```r
-
 draw(sm_diffs)
 
 ```
@@ -148,7 +144,6 @@ Two new utility functions are in the current release, `add_fitted()` and `add_re
 
 
 ```r
-
 df1 %>% add_fitted(m1, value = ".fitted") %>%
   add_residuals(m1, value = ".resid")
 
@@ -157,7 +152,6 @@ df1 %>% add_fitted(m1, value = ".fitted") %>%
 
 
 ```text
-
 # A tibble: 400 x 12
        y    x0     x1    x2    x3     f    f0    f1     f2    f3 .fitted .resid
    <dbl> <dbl>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>  <dbl> <dbl>   <dbl>  <dbl>

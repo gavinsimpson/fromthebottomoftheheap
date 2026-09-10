@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2021-02-02">
-<meta name="description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (n…">
+<meta name="description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (nlme 📦) or one of lmer() or glmer() (lme4 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with gam(). brms 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use gam() or bam() from mgcv. In this post I’ll show you how to do just that.">
 
 <title>Using random effects in GAMs with mgcv – From the bottom of the heap</title>
 <style>
@@ -101,7 +101,7 @@ div.csl-indent {
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -170,13 +170,13 @@ window.Quarto = {
 </script>
 
 <meta property="og:title" content="Using random effects in GAMs with mgcv – From the bottom of the heap">
-<meta property="og:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (n…">
+<meta property="og:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (nlme 📦) or one of lmer() or glmer() (lme4 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with gam(). brms 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use gam() or bam() from mgcv. In this post I’ll show you how to do just that.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="340">
 <meta property="og:image:width" content="850">
 <meta name="twitter:title" content="Using random effects in GAMs with mgcv – From the bottom of the heap">
-<meta name="twitter:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (n…">
+<meta name="twitter:description" content="There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (nlme 📦) or one of lmer() or glmer() (lme4 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with gam(). brms 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use gam() or bam() from mgcv. In this post I’ll show you how to do just that.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -191,11 +191,6 @@ window.Quarto = {
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -332,7 +327,7 @@ window.Quarto = {
 
 <div>
   <div class="description">
-    There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (n…
+    There are lots of choices for fitting generalized linear mixed effects models within R, but if you want to include smooth functions of covariates, the choices are limited. One option is to fit the model using gamm() from the mgcv 📦 or gamm4() from the gamm4 📦, which use lme() (nlme 📦) or one of lmer() or glmer() (lme4 📦) under the hood respectively. The problem with doing things that way is that you get PQL fitting for non-Gaussian models (😱) and the range of families for handling non-Gaussian responses is quite limited, especially compared with the extended families now available with gam(). brms 📦 is a good option if you don’t want to do everything by hand, but the MCMC can be slow. Instead, we could use the equivalence between smooths and random effects and use gam() or bam() from mgcv. In this post I’ll show you how to do just that.
   </div>
 </div>
 
@@ -394,45 +389,37 @@ window.Quarto = {
 <p>So much for the theory, let’s see how this all works in practice.</p>
 <p>By way of an example, I’m going to use a data set from a study on the effects of testosterone on the growth of rats from <span class="citation" data-cites="Molenberghs2000-vk">Molenberghs and Verbeke (<a href="#ref-Molenberghs2000-vk" role="doc-biblioref">2000</a>)</span>, which was analysed in <span class="citation" data-cites="Fahrmeir2013-xu">Fahrmeir et al. (<a href="#ref-Fahrmeir2013-xu" role="doc-biblioref">2013</a>)</span>, from were I also obtained the data. In the experiment, 50 rats were randomly assigned to one of three groups; a control group or a group receiving low or high doses of Decapeptyl, which inhibits testosterone production. The experiment started when the rats were 45 days old and starting with the 50th day, the size of the rat’s head was measured via an X-ray image. You can download the data <a href="https://www.uni-goettingen.de/de/551625.html">here</a>.</p>
 <p>For the example, we’ll use the following packages</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>pkgs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"mgcv"</span>, <span class="st">"lme4"</span>, <span class="st">"ggplot2"</span>, <span class="st">"vroom"</span>, <span class="st">"dplyr"</span>, <span class="st">"forcats"</span>, <span class="st">"tidyr"</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages(pkgs, Ncpus = 4)</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">vapply</span>(pkgs, library, <span class="fu">logical</span>(<span class="dv">1</span>), <span class="at">character.only =</span> <span class="cn">TRUE</span>, <span class="at">logical.return =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">quietly =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-   mgcv    lme4 ggplot2   vroom   dplyr forcats   tidyr 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pkgs <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"mgcv"</span>, <span class="st">"lme4"</span>, <span class="st">"ggplot2"</span>, <span class="st">"vroom"</span>, <span class="st">"dplyr"</span>, <span class="st">"forcats"</span>, <span class="st">"tidyr"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages(pkgs, Ncpus = 4)</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">vapply</span>(pkgs, library, <span class="fu">logical</span>(<span class="dv">1</span>), <span class="at">character.only =</span> <span class="cn">TRUE</span>, <span class="at">logical.return =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>       <span class="at">quietly =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>   mgcv    lme4 ggplot2   vroom   dplyr forcats   tidyr 
    TRUE    TRUE    TRUE    TRUE    TRUE    TRUE    TRUE 
 </code></pre>
 <p>We’ll also need the development version of the <strong>gratia</strong> 📦, which we can install with the <strong>remotes</strong> 📦 (if you don’t have that installed, install it first)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages("remotes")</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="do">## remotes::install_github('gavinsimpson/gratia')</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'gratia'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages("remotes")</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="do">## remotes::install_github('gavinsimpson/gratia')</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'gratia'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>We load the data — ignore the warning about new names as we deleted that column anyway</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>rats <span class="ot">&lt;-</span> <span class="fu">vroom</span>(<span class="st">'rats.txt'</span>, <span class="at">delim =</span> <span class="st">'   '</span>, <span class="at">col_types =</span> <span class="st">'dddddddddddd-'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-New names:
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>rats <span class="ot">&lt;-</span> <span class="fu">vroom</span>(<span class="st">'rats.txt'</span>, <span class="at">delim =</span> <span class="st">'   '</span>, <span class="at">col_types =</span> <span class="st">'dddddddddddd-'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>New names:
 * `` -&gt; ...13
 </code></pre>
 <p>Next we need to prepare the data for modelling. The variable <code>transf_time</code> is the main covariate of interest. It relates to the age of the rats in days via the transformation</p>
 <p><span class="math display">\[\log (1 + (\mathtt{time} - 45) / 10)\]</span></p>
 <p>where <span class="math inline">\(\mathtt{time}\)</span> is the <code>time</code> variable in the data set. We also need to convert the <code>group</code> variable to a factor with useful levels to create a <code>treatment</code> variable and we convert <code>subject</code> — an identifier for each individual rat — a factor</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>rats <span class="ot">&lt;-</span> rats <span class="sc">%&gt;%</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">treatment =</span> <span class="fu">fct_recode</span>(<span class="fu">factor</span>(group, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">3</span>)),</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">Low =</span> <span class="st">'1'</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">High =</span> <span class="st">'3'</span>,</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">Control =</span> <span class="st">'2'</span>),</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>           <span class="at">subject =</span> <span class="fu">factor</span>(subject))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>rats <span class="ot">&lt;-</span> rats <span class="sc">%&gt;%</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">treatment =</span> <span class="fu">fct_recode</span>(<span class="fu">factor</span>(group, <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">1</span>,<span class="dv">3</span>)),</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">Low =</span> <span class="st">'1'</span>,</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">High =</span> <span class="st">'3'</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                  <span class="at">Control =</span> <span class="st">'2'</span>),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>           <span class="at">subject =</span> <span class="fu">factor</span>(subject))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The number of observations per rat is variable, with only 22 of the 50 rats having the complete seven measurements by day 110</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>rats <span class="sc">%&gt;%</span></span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">na.omit</span>() <span class="sc">%&gt;%</span></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(subject) <span class="sc">%&gt;%</span></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(n, <span class="at">name =</span> <span class="st">"n_rats"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 7 x 2
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>rats <span class="sc">%&gt;%</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">na.omit</span>() <span class="sc">%&gt;%</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(subject) <span class="sc">%&gt;%</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">count</span>(n, <span class="at">name =</span> <span class="st">"n_rats"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 7 x 2
       n n_rats
 * &lt;int&gt;  &lt;int&gt;
 1     1      4
@@ -445,17 +432,15 @@ New names:
 </code></pre>
 <p>so there’ll be no averaging the response within subjects and doing an ANOVA.</p>
 <p>Before we fit the models an explore how to work with random effects in <strong>mgcv</strong>, we’ll plot the data</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>plt_labs <span class="ot">&lt;-</span> <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">'Head height (distance in pixels)'</span>,</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">x =</span> <span class="st">'Age in days'</span>,</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">colour =</span> <span class="st">'Treatment'</span>)</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(rats, <span class="fu">aes</span>(<span class="at">x =</span> time, <span class="at">y =</span> response,</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">group =</span> subject, <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> treatment, <span class="at">ncol =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Warning: Removed 98 row(s) containing missing values (geom_path).
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>plt_labs <span class="ot">&lt;-</span> <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">'Head height (distance in pixels)'</span>,</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">x =</span> <span class="st">'Age in days'</span>,</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">colour =</span> <span class="st">'Treatment'</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(rats, <span class="fu">aes</span>(<span class="at">x =</span> time, <span class="at">y =</span> response,</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">group =</span> subject, <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> treatment, <span class="at">ncol =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Warning: Removed 98 row(s) containing missing values (geom_path).
 </code></pre>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -474,21 +459,18 @@ Warning: Removed 98 row(s) containing missing values (geom_path).
 </ul>
 <p>If this isn’t very clear — it took me a little while to grok what this meant and translate it to R speak — note that each of <span class="math inline">\(\beta_1\)</span>, <span class="math inline">\(\beta_2\)</span>, and <span class="math inline">\(\beta_3\)</span> are associated with an interaction between the dummy variable coding for the treatment and the time variable. So we have a model with an intercept and three interaction terms with no main effects.</p>
 <p>In <code>lmer()</code> we can fit this model with (ignore the singular fit warning for now)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>m1_lmer <span class="ot">&lt;-</span> <span class="fu">lmer</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                    (<span class="dv">1</span> <span class="sc">|</span> subject) <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> transf_time <span class="sc">|</span> subject),</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> rats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-boundary (singular) fit: see ?isSingular
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>m1_lmer <span class="ot">&lt;-</span> <span class="fu">lmer</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>                    (<span class="dv">1</span> <span class="sc">|</span> subject) <span class="sc">+</span> (<span class="dv">0</span> <span class="sc">+</span> transf_time <span class="sc">|</span> subject),</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> rats)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>boundary (singular) fit: see ?isSingular
 </code></pre>
 <p>If you’re not familiar with this model specification for the random effects, it specifies uncorrelated random effects for the subject-specific means (random intercept; <code>(1 | subject)</code>) and the subject_specific effects of <code>transf_time</code> (random slope; <code>(0 + transf_time | subject)</code>). The <code>0</code> in the formula for the latter suppresses the (random) intercept as we already included that as a separate term.</p>
 <p>The reason we’re fitting uncorrelated random effects is because that’s all <strong>mgcv</strong> can fit; there’s no way to encode a covariance term between the two random effects.</p>
 <p>The equivalent model fitted using <code>gam()</code> is</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>m1_gam <span class="ot">&lt;-</span> <span class="fu">gam</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, <span class="at">bs =</span> <span class="st">'re'</span>) <span class="sc">+</span></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, transf_time, <span class="at">bs =</span> <span class="st">'re'</span>),</span>
-<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> rats, <span class="at">method =</span> <span class="st">'REML'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>m1_gam <span class="ot">&lt;-</span> <span class="fu">gam</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, <span class="at">bs =</span> <span class="st">'re'</span>) <span class="sc">+</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, transf_time, <span class="at">bs =</span> <span class="st">'re'</span>),</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> rats, <span class="at">method =</span> <span class="st">'REML'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Note:</p>
 <ol type="1">
 <li>we specify two separate <em>random effect</em> smooths, one per random term,</li>
@@ -496,38 +478,30 @@ boundary (singular) fit: see ?isSingular
 <li>any grouping variables <strong>must</strong> be coded as a factor — that’s why we converted <code>subject</code> (which is an integer vector) to a factor right after importing the data.</li>
 </ol>
 <p>Let’s compare the fixed effect terms; first for the <code>lmer()</code> version</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">fixef</span>(m1_lmer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-                 (Intercept) treatmentControl:transf_time 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fixef</span>(m1_lmer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>                 (Intercept) treatmentControl:transf_time 
                    68.607386                     6.871128 
     treatmentLow:transf_time    treatmentHigh:transf_time 
                     7.506897                     7.313854 
 </code></pre>
 <p>and for the <code>gam()</code> version</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(m1_gam)[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-                 (Intercept) treatmentControl:transf_time 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(m1_gam)[<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>                 (Intercept) treatmentControl:transf_time 
                    68.607385                     6.871130 
     treatmentLow:transf_time    treatmentHigh:transf_time 
                     7.506897                     7.313859 
 </code></pre>
 <p>which are close enough.</p>
 <p>Next let’s look at the estimated variances of the random effect terms. First for the <code>lmer()</code> model:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_lmer)<span class="sc">$</span>varcor</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
- Groups    Name        Std.Dev.
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_lmer)<span class="sc">$</span>varcor</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code> Groups    Name        Std.Dev.
  subject   (Intercept) 1.8881  
  subject.1 transf_time 0.0000  
  Residual              1.2020  
 </code></pre>
 <p>and now for the <code>gam()</code> model</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">variance_comp</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 3 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">variance_comp</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 3 x 5
   component               variance std_dev lower_ci upper_ci
   &lt;chr&gt;                      &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
 1 s(subject)             3.56      1.89    1.51e+ 0  2.36e 0
@@ -537,10 +511,8 @@ boundary (singular) fit: see ?isSingular
 <p>Apart from being as close for the differences not to matter, we should also note that the variance for the rat-specific effect of <code>transf_time</code> is effectively 0. This is likely the cause of the singular fit warning from <code>lmer()</code>. The <code>lower_ci</code> and <code>upper_ci</code> variables indicate the limits of a 95% confidence interval on the standard deviation of each variance component; the coverage can be controlled via the <code>coverage</code> argument to <code>variance_comp()</code>. The confidence interval for the rat-specific time effect variance is huge, again indicating that there really isn’t much variation at all in this component.</p>
 <p>Here we used the <code>variance_comp()</code> function from <strong>gratia</strong> to extract the variance components, which expresses the random effects as their equivalent variance components that you’d see in a mixed model output. <code>variance_comp()</code> is a simple wrapper to <code>mgcv::gam.vcomp()</code>, which is doing all the hard work, but <code>variance_comp()</code> suppresses the annoying printed output produced by <code>gam.vcomp()</code> and returns the variance components as a tibble.</p>
 <p>You can see a nicer version of the variance components for <code>lmer()</code> by printing the whole <code>summary()</code> but it produces a lot of output; the bit we are interested in just now is in the section labelled <em>Random effects:</em></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_lmer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Linear mixed model fit by REML ['lmerMod']
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_lmer)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Linear mixed model fit by REML ['lmerMod']
 Formula: response ~ treatment:transf_time + (1 | subject) + (0 + transf_time |  
     subject)
    Data: rats
@@ -574,11 +546,8 @@ optimizer (nloptwrap) convergence code: 0 (OK)
 boundary (singular) fit: see ?isSingular
 </code></pre>
 <p>One of the nice things about the output from the <code>gam()</code> model is that the <code>summary()</code> contains a test for the random effects</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-
-Family: gaussian 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Family: gaussian 
 Link function: identity 
 
 Formula:
@@ -608,31 +577,26 @@ R-sq.(adj) =  0.926   Deviance explained =   94%
 <p>There is little evidence in support of the rat-specific time effects, reflecting what we saw when we looked at the variance components above.</p>
 <p>If we look at the estimated degrees of freedom (EDF; the <code>edf</code> column) for each of the “smooths” we see the shrinkage in action. The <code>Ref.df</code> column contains the maximum degrees of freedom for each term, used in the calculation of the <em>p</em> value. The rat-specific mean distances — the <code>s(subject)</code> term — have only been shrunk a little to an EDF of ~43.7. In contrast, the EDF for the rat-specific effects of time has been shrunk to effectively zero.</p>
 <p>The EDFs for smooths can be extracted from a fitted model with <code>edf()</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="fu">edf</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 2 x 2
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">edf</span>(m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 2 x 2
   smooth                      edf
   &lt;chr&gt;                     &lt;dbl&gt;
 1 s(subject)             43.7    
 2 s(subject,transf_time)  0.00139
 </code></pre>
 <p>To plot the estimated time effects for each rat, we need to produce a new data frame with values of the range of <code>transf_time</code> for each rat, and include the relevant treatment value for the rat also. We do this with <code>expand()</code> and <code>nesting()</code> from the <strong>tidyr</strong> 📦.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>new_data <span class="ot">&lt;-</span> tidyr<span class="sc">::</span><span class="fu">expand</span>(rats, <span class="fu">nesting</span>(subject, treatment),</span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>                          <span class="at">transf_time =</span> <span class="fu">unique</span>(transf_time))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>new_data <span class="ot">&lt;-</span> tidyr<span class="sc">::</span><span class="fu">expand</span>(rats, <span class="fu">nesting</span>(subject, treatment),</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>                          <span class="at">transf_time =</span> <span class="fu">unique</span>(transf_time))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>which we then use to predict from the model</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>m1_pred <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(new_data,</span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">as.data.frame</span>(<span class="fu">predict</span>(m1_gam, <span class="at">newdata =</span> new_data,</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>                                           <span class="at">se.fit =</span> <span class="cn">TRUE</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>m1_pred <span class="ot">&lt;-</span> <span class="fu">bind_cols</span>(new_data,</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>                     <span class="fu">as.data.frame</span>(<span class="fu">predict</span>(m1_gam, <span class="at">newdata =</span> new_data,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>                                           <span class="at">se.fit =</span> <span class="cn">TRUE</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>which gives us something we can plot easily with <strong>ggplot</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(m1_pred, <span class="fu">aes</span>(<span class="at">x =</span> transf_time, <span class="at">y =</span> fit, <span class="at">group =</span> subject,</span>
-<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
-<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> treatment) <span class="sc">+</span></span>
-<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(m1_pred, <span class="fu">aes</span>(<span class="at">x =</span> transf_time, <span class="at">y =</span> fit, <span class="at">group =</span> subject,</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> treatment) <span class="sc">+</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/random-effects-in-gams-plot-m1-gam-predicted-1.png" class="img-fluid figure-img"></p>
@@ -640,15 +604,13 @@ R-sq.(adj) =  0.926   Deviance explained =   94%
 </figure>
 </div>
 <p>We can also compare the fitted curves with the observed data</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(m1_pred, <span class="fu">aes</span>(<span class="at">x =</span> transf_time, <span class="at">y =</span> fit, <span class="at">group =</span> subject,</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">data =</span> rats, <span class="fu">aes</span>(<span class="at">y =</span> response)) <span class="sc">+</span></span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> subject) <span class="sc">+</span></span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Warning: Removed 98 rows containing missing values (geom_point).
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(m1_pred, <span class="fu">aes</span>(<span class="at">x =</span> transf_time, <span class="at">y =</span> fit, <span class="at">group =</span> subject,</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>                    <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>(<span class="at">data =</span> rats, <span class="fu">aes</span>(<span class="at">y =</span> response)) <span class="sc">+</span></span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">facet_wrap</span>(<span class="sc">~</span> subject) <span class="sc">+</span></span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>    plt_labs</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Warning: Removed 98 rows containing missing values (geom_point).
 </code></pre>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -659,26 +621,21 @@ Warning: Removed 98 rows containing missing values (geom_point).
 <p>A simpler model, which drops the rat-specific effects of <code>transf_time</code> is</p>
 <p><span class="math display">\[y_{ij} = \beta_0 + \gamma_{0i} + \beta_1 L_i \cdot t_{ij} + \beta_2 H_i \cdot t_{ij} + \beta_3 C_i \cdot t_{ij} + \varepsilon_{ij}\]</span></p>
 <p>which drops the <span class="math inline">\(\gamma_{qi} \cdot t_{ij}\)</span> term, excluding the rat-specific time effects from the model.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>m2_lmer <span class="ot">&lt;-</span> <span class="fu">lmer</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
-<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>                    (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
-<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> rats)</span>
-<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>m2_gam <span class="ot">&lt;-</span> <span class="fu">gam</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
-<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, <span class="at">bs =</span> <span class="st">'re'</span>),</span>
-<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> rats, <span class="at">method =</span> <span class="st">'REML'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>m2_lmer <span class="ot">&lt;-</span> <span class="fu">lmer</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>                    (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">data =</span> rats)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>m2_gam <span class="ot">&lt;-</span> <span class="fu">gam</span>(response <span class="sc">~</span> treatment<span class="sc">:</span>transf_time <span class="sc">+</span></span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>                  <span class="fu">s</span>(subject, <span class="at">bs =</span> <span class="st">'re'</span>),</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>              <span class="at">data =</span> rats, <span class="at">method =</span> <span class="st">'REML'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>As we should now expected, the two models have estimated variance components that are essentially equivalent. First for the <code>lmer()</code> fit:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2_lmer)<span class="sc">$</span>varcor</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
- Groups   Name        Std.Dev.
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2_lmer)<span class="sc">$</span>varcor</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code> Groups   Name        Std.Dev.
  subject  (Intercept) 1.8881  
  Residual             1.2020  
 </code></pre>
 <p>and now for the <code>gam()</code> version</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="fu">variance_comp</span>(m2_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 2 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">variance_comp</span>(m2_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 2 x 5
   component  variance std_dev lower_ci upper_ci
   &lt;chr&gt;         &lt;dbl&gt;   &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
 1 s(subject)     3.56    1.89     1.51     2.36
@@ -686,18 +643,15 @@ Warning: Removed 98 rows containing missing values (geom_point).
 </code></pre>
 <p>We could use the <code>anova()</code> method for <code>"gam"</code> fits but for fully penalized terms like random effects, the test isn’t very good and <em>p</em> values can be badly biased. Wood (2017, p.&nbsp;315) says of the test “As expected, the test is clearly useless for comparing models differing in [their] random effect structure.” So, maybe give this one a miss.</p>
 <p>Using <code>AIC()</code> to compare the models is also an option:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(m2_gam, m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-             df      AIC
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="fu">AIC</span>(m2_gam, m1_gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>             df      AIC
 m2_gam 48.98553 852.9313
 m1_gam 48.98931 852.9371
 </code></pre>
 <p>AIC clearly favours the simpler model as the fits of the two models are essentially the same. Note that because the EDF of the <code>s(subject, transf_time)</code> was so close to zero, we don’t pay much of a penalty for including this term in the model, and hence the AICs of the two models are very similar (typically we’d expect that where two models have the same fit, the AIC for the more complex one would be the larger value).</p>
 <p>Note that the AIC computed for the <code>gam()</code> model is a <em>conditional</em> AIC, where the likelihood is of all model coefficients set to their maximum penalized likelihood estimates. The AIC for an <code>lmer()</code> fit is a <em>marginal</em> AIC, where all the penalized coefficients are viewed as random effects and integrated out of the joint density of the response and random effects.</p>
 <p>The conditional AIC for the <code>gam()</code> fit would be anti-conservative, especially so in the case of models containing random effects. The upshot of that is that the <em>conditional</em> AIC would typically choose a model with a random effects structure that isn’t in the true model if no steps were taking to account for smoothness parameter selection in the EDF calculation. The <code>AIC()</code> method for <code>gam()</code> fits applies a suitable correction to the model EDF to account for smoothness parameter selection, resulting in an information criterion that has mostly good properties.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="fu">draw</span>(m2_gam, <span class="at">parametric =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="fu">draw</span>(m2_gam, <span class="at">parametric =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/random-effects-in-gams-draw-gam-model-1.png" class="img-fluid figure-img"></p>

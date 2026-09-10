@@ -12,11 +12,16 @@ tags:
   - models
   - ggplot
 category: R
-description: Assessing the fit of a count regression model is not necessarily a straightforward
-  enterprise; often we just look at residuals, which invariably contain patterns of
-  some form due to the discrete nature of the observations, or we plot observed versus
-  fitted values as a scatter pl…
 date: 2016-06-07 12:00:00
+description: >-
+  Assessing the fit of a count regression model is not necessarily a straightforward enterprise;
+  often we just look at residuals, which invariably contain patterns of some form due to the
+  discrete nature of the observations, or we plot observed versus fitted values as a scatter
+  plot. Recently, while perusing the latest statistics offerings on ArXiv I came across
+  \@Kleiber2016-pt who propose the rootogram as an improved approach to the assessment of fit of
+  a count regression model. The paper is illustrated using R and the authors' countreg package
+  (currently on R-Forge only). Here, I thought I'd take a quick look at the rootogram with some
+  simulated species abundance data.
 author: Gavin Simpson
 categories:
   - R
@@ -68,7 +73,6 @@ Load *coenocliner* and set up
 
 
 ```r
-
 library("coenocliner")
 
 ## parameters for simulating
@@ -89,7 +93,6 @@ Now we can simulate counts for the 100 locations along the gradient for each of 
 
 
 ```r
-
 pois <- coenocline(locs, responseModel = "beta", params = pars, countModel = "poisson")
 nb   <- coenocline(locs, responseModel = "beta", params = pars, countModel = "negbin",
                    countParams = list(alpha = nb.alpha))
@@ -102,7 +105,6 @@ and combine them into a data frame with the gradient locations
 
 
 ```r
-
 df <- setNames(cbind.data.frame(locs, pois, nb, zinb),
                c("x", "yPois", "yNegBin", "yZINB"))
 
@@ -112,7 +114,6 @@ To each of these I'm going to fit a Poisson GLM to show how rootograms can facil
 
 
 ```r
-
 glm.pois <- glm(yPois ~ poly(x, 2), data = df, family = poisson)
 glm.nb   <- glm(yNegBin ~ poly(x, 2), data = df, family = poisson)
 glm.zinb <- glm(yZINB ~ poly(x, 2), data = df, family = poisson)
@@ -127,7 +128,6 @@ Load the *countreg* package and *ggplot*. If you don't have *countreg* installed
 
 
 ```r
-
 library("countreg")
 library("ggplot2")
 
@@ -147,7 +147,6 @@ Generate the three rootograms
 
 
 ```r
-
 root.pois <- rootogram(glm.pois, style = "hanging", plot = FALSE)
 root.nb   <- rootogram(glm.nb, style = "hanging", plot = FALSE)
 root.zinb <- rootogram(glm.zinb, style = "hanging", plot = FALSE)
@@ -158,7 +157,6 @@ and gather them into an object for plotting --- notice I'm using the `autoplot()
 
 
 ```r
-
 ylims <- ylim(-2, 7)  # common scale for comparison
 plot_grid(autoplot(root.pois) + ylims, autoplot(root.nb) + ylims, 
           autoplot(root.zinb) + ylims, ncol = 3, labels = "auto")
@@ -185,7 +183,6 @@ It is useful to compare rootograms showing the fits for incorrect and correct mo
 
 
 ```r
-
 library("MASS")
 glm2.nb   <- glm.nb(yNegBin ~ poly(x, 2), data = df)
 glm2.zinb <- zeroinfl(yZINB ~ poly(x, 2) | 1, data = df, dist = "negbin")
@@ -199,7 +196,6 @@ First, we look at the negative binomial data and compare rootograms of the Poiss
 
 
 ```r
-
 plot_grid(autoplot(root.nb) + ylims, autoplot(root2.nb) + ylims, ncol = 2, labels = "auto")
 
 ```
@@ -212,7 +208,6 @@ Next we compare rootograms for the fits of the Poisson GLM and ZINB model
 
 
 ```r
-
 ylims <- ylim(-2, 8.5)
 plot_grid(autoplot(root.zinb) + ylims, autoplot(root2.zinb) + ylims, ncol = 2, labels = "auto")
 
@@ -226,7 +221,6 @@ Suspended rootograms are also recommended by @Kleiber2016-pt. These rootograms s
 
 
 ```r
-
 autoplot(rootogram(glm2.zinb, style = "suspended", plot = FALSE))
 
 ```
@@ -237,7 +231,6 @@ Standing histograms are not recommended by @Kleiber2016-pt as they simply show t
 
 
 ```r
-
 autoplot(rootogram(glm2.zinb, style = "standing", plot = FALSE))
 
 ```
@@ -248,7 +241,6 @@ A neat feature of the *countreg* package is that rootograms can be combined usin
 
 
 ```r
-
 autoplot(c(root.nb, root2.nb))
 
 ```

@@ -7,11 +7,17 @@ tags:
   - download
   - opendata
 category: R
-description: A while back I wrote some code to download climate data from Government
-  of Canada's historical climate/weather data website for one of our students. In
-  May this year (2016) the Government of Canada changed their website a little and
-  the API code that responded to requests had ch…
 date: 2016-05-24 12:00:00
+description: >-
+  A while back I wrote some code to download climate data from Government of Canada's historical
+  climate/weather data website for one of our students. In May this year (2016) the Government of
+  Canada changed their website a little and the API code that responded to requests had changed
+  URL and some of the GET parameters had also changed. In fixing those functions I also noted
+  that the original code only downloaded hourly data and not all useful weather variables are
+  recorded hourly; precipitation for example is only in the daily and monthly data formats. This
+  post updates the earlier one, explaining what changed and how the code has been updated. As an
+  added benefit, the functions can now handle downloading daily and monthly data files as well as
+  the hourly files that the original could handle.
 author: Gavin Simpson
 categories:
   - R
@@ -51,7 +57,6 @@ The `genURLS()` function now has an extra argument `timeframe` which allows you 
 
 
 ```r
-
 genURLS <- function(id, start, end, timeframe = c("hourly", "daily", "monthly")) {
     years <- seq(start, end, by = 1)
     nyears <- length(years)
@@ -87,7 +92,6 @@ could generate the URLs we'd need to visit as follows
 
 
 ```r
-
 regina <- genURLS(28011, 2014, 2014)
 length(regina$urls)
 head(regina$urls)
@@ -97,7 +101,6 @@ head(regina$urls)
 
 
 ```text
-
 [1] 12
 [1] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&Year=2014&Month=1&Day=14&format=csv&timeframe=1&submit=%20Download+Data"
 [2] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&Year=2014&Month=2&Day=14&format=csv&timeframe=1&submit=%20Download+Data"
@@ -112,7 +115,6 @@ The function that downloads and reads in the data was `getData()`.
 
 
 ```r
-
 getData <- function(stations, folder, timeframe = c("hourly", "daily", "monthly"), verbose = TRUE, delete = TRUE) {
     timeframe <- match.arg(timeframe)
     ## form URLS
@@ -278,7 +280,6 @@ First we create a data frame of station information
 
 
 ```r
-
 stations <- data.frame(StationID = c(51441, 2925),
                        start = rep(2014, 2),
                        end = rep(2014, 2))
@@ -290,7 +291,6 @@ cache downloaded CSVs in
 
 
 ```r
-
 met <- getData(stations, folder = "./csv", verbose = FALSE)
 
 ```
@@ -298,7 +298,6 @@ met <- getData(stations, folder = "./csv", verbose = FALSE)
 
 
 ```text
-
 Warning in getData(stations, folder = "./csv", verbose = FALSE):
 Directory: ./csv doesn't exist. Will create it
 
@@ -317,7 +316,6 @@ failures
 
 
 ```r
-
 any(failed <- sapply(met, is.character))
 
 ```
@@ -325,7 +323,6 @@ any(failed <- sapply(met, is.character))
 
 
 ```text
-
 [1] FALSE
 
 ```
@@ -335,7 +332,6 @@ into `met` to extract the URLs that encountered problems, e.g.
 
 
 ```r
-
 unlist(met[failed])
 
 ```
@@ -345,7 +341,6 @@ into a data frame using `rbind()`
 
 
 ```r
-
 met <- do.call("rbind", met)
 
 ```
@@ -354,7 +349,6 @@ The data now looks like this
 
 
 ```r
-
 head(met)
 
 ```
@@ -362,7 +356,6 @@ head(met)
 
 
 ```text
-
   StationID        Date/Time Year Month Day  Time Data Quality Temp (degC)
 1     51441 2014-01-01 00:00 2014     1   1 00:00       \u0087       -23.3
 2     51441 2014-01-01 01:00 2014     1   1 01:00       \u0087       -23.1

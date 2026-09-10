@@ -13,11 +13,14 @@ excerpt: Something I have been doing a lot of work with recently are time series
   smoothing such data, however, there is an additional problem that needs to be addressed
   when we are determining the complexity of the fitted smooths as part of the model
   fit.
-description: Something I have been doing a lot of work with recently are time series
-  data, to which I have been fitting additive models to describe trends and other
-  features of the data. When modelling temporally dependent data, we often need to
-  adjust our fitted models to account for the la…
 date: 2011-07-21 12:00:00
+description: >-
+  Something I have been doing a lot of work with recently are time series data, to which I have
+  been fitting additive models to describe trends and other features of the data. When modelling
+  temporally dependent data, we often need to adjust our fitted models to account for the lack of
+  independence in the model residuals. When smoothing such data, however, there is an additional
+  problem that needs to be addressed when we are determining the complexity of the fitted smooths
+  as part of the model fit.
 author: Gavin Simpson
 categories:
   - R
@@ -53,7 +56,6 @@ Unless we specifically tell the software that the data aren't independent it wil
 The example comes from Kohn, Schimek and Smith (2000) that I have cooked up using R. Kohn et al consider the model \\( f(x\_{t}) = 1280 x\_{t}\^4 (1 - x\_{t})\^4 \\), where \\( t = 1, 2, \\ldots, 100 \\), and \\( x\_{t} = t/100 \\). To this, errors \\( e\_{t} \\) are generated from a first-order auto-regressive (AR(1)) process with \\( \\phi\_{1} = 0.3713\\) to produce a random sample from the model such that \\( y\_{t} = f(x\_{t}) + e\_{t}\\). We can generate a sample of data from this model with the following R code
 
 ```r
-
 set.seed(321)
 n <- 100
 time <- 1:n
@@ -71,7 +73,6 @@ To these data, I will fit a cubic smoothing spline via `smooth.spline()` and an 
 of \\( \\phi\_{1}\\) be estimated as one of the model parameters, whilst the degree of smoothness is being estimated during fitting. The three models are fitted with the following three lines of R code:
 
 ```r
-
 m1 <- smooth.spline(xt, y)
 m2 <- gam(y ~ s(xt, k = 20))
 m3 <- gamm(y ~ s(xt, k = 20), correlation = corAR1(form = ~ time))
@@ -91,7 +92,6 @@ of \\( x\_{t}\\) where there are few data to constrain the fit. The
 code used to produce the figure is shown below
 
 ```r
-
 edf2 <- summary(m2)$edf
 edf3 <- summary(m3$gam)$edf
 
@@ -115,7 +115,6 @@ legend("topleft",
 The `intervals()` function can be used to extract the estimate for \\( \\phi\_{1} \\) and a 95% confidence interval on the estimate:
 
 ```rout
-
 > intervals(m3$lme, which = "var-cov") ## edited for brevity
 ....
  Correlation structure:

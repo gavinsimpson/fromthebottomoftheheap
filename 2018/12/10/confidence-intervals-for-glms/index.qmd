@@ -9,10 +9,17 @@ tags:
   - model
   - R
 category: R
-description: You've estimated a GLM or a related model (GLMM, GAM, etc.) for your
-  latest paper and, like a good researcher, you want to visualise the model and show
-  the uncertainty in it. In general this is done using confidence intervals with typically
-  95% converage. If you remember a littl…
+description: >-
+  You've estimated a GLM or a related model (GLMM, GAM, etc.) for your latest paper and, like a
+  good researcher, you want to visualise the model and show the uncertainty in it. In general
+  this is done using confidence intervals with typically 95% converage. If you remember a little
+  bit of theory from your stats classes, you may recall that such an interval can be produced by
+  adding to and subtracting from the fitted values 2 times their standard error. Unfortunately
+  this only really works like this for a linear model. If I had a dollar (even a Canadian one)
+  for every time I've seen someone present graphs of estimated abundance of some species where
+  the confidence interval includes negative abundances, I'd be rich! Here, following the rule of
+  "if I'm asked more than once I should write a blog post about it!" I'm going to show a simple
+  way to correctly compute a confidence interval for a GLM or a related model.
 author: Gavin Simpson
 categories:
   - R
@@ -61,7 +68,6 @@ To illustrate, I'll use a simple data set on wasp visits to leaves of the Cobra 
 
 
 ```r
-
 ## packages
 library('readr')
 library('tibble')
@@ -80,7 +86,6 @@ Let's jump right in and fit the GLM, a logistic regression model
 
 
 ```r
-
 mod <- glm(lvisited ~ leafHeight, data = wasp, family = binomial())
 summary(mod)
 
@@ -89,8 +94,6 @@ summary(mod)
 
 
 ```text
-
-
 Call:
 glm(formula = lvisited ~ leafHeight, family = binomial(), data = wasp)
 
@@ -119,7 +122,6 @@ Now create a basic plot of the data and estimated model
 
 
 ```r
-
 ## some data to predict at: 100 values over the range of leafHeight
 ndata <- with(wasp, data_frame(leafHeight = seq(min(leafHeight), max(leafHeight),
                                                 length = 100)))
@@ -142,7 +144,6 @@ Next, to illustrate the issue, I'll create the confidence interval the *wrong* w
 
 
 ```r
-
 ## add standard errors
 ndata <- add_column(ndata, wrong_se = predict(mod, newdata = ndata, type = 'response',
                                               se.fit = TRUE)$se.fit)
@@ -155,7 +156,6 @@ and plot the resulting interval
 
 
 ```r
-
 plt + geom_ribbon(data = ndata, aes(ymin = wrong_lwr, ymax = wrong_upr),
                   alpha = 0.1)
 
@@ -185,7 +185,6 @@ For the logistic regression model we fitted earlier, the family object is the sa
 
 
 ```r
-
 fam <- family(mod)
 fam
 str(fam)
@@ -195,8 +194,6 @@ str(fam)
 
 
 ```text
-
-
 Family: binomial 
 Link function: logit 
 
@@ -221,7 +218,6 @@ If you look closely you'll see a component named `linkinv` which is indicated to
 
 
 ```r
-
 ilink <- fam$linkinv
 ilink
 
@@ -230,7 +226,6 @@ ilink
 
 
 ```text
-
 function (eta) 
 .Call(C_logit_linkinv, eta)
 <environment: namespace:stats>
@@ -241,7 +236,6 @@ we see something very simple involving an argument named `eta`, which stands for
 
 
 ```r
-
 poisson()$linkinv
 
 ```
@@ -249,7 +243,6 @@ poisson()$linkinv
 
 
 ```text
-
 function (eta) 
 pmax(exp(eta), .Machine$double.eps)
 <environment: namespace:stats>
@@ -267,7 +260,6 @@ For the wasp visitation logistic regression model then, we can do this using the
 
 
 ```r
-
 ## grad the inverse link function
 ilink <- family(mod)$linkinv
 ## add fit and se.fit on the **link** scale
@@ -286,7 +278,6 @@ ndata
 
 
 ```text
-
 # A tibble: 100 x 10
    leafHeight     fit wrong_se wrong_upr wrong_lwr fit_link se_link
         <dbl>   <dbl>    <dbl>     <dbl>     <dbl>    <dbl>   <dbl>
@@ -309,7 +300,6 @@ and now we can draw this interval on our plot from before
 
 
 ```r
-
 plt + geom_ribbon(data = ndata,
                   aes(ymin = right_lwr, ymax = right_upr),
                   alpha = 0.1)
@@ -324,7 +314,6 @@ If you want different coverage for the intervals, replace the `2` in the code wi
 
 
 ```r
-
 qnorm(0.005, lower.tail = FALSE) # for a 99% interval (0.5% in each tail)
 
 ```
@@ -332,7 +321,6 @@ qnorm(0.005, lower.tail = FALSE) # for a 99% interval (0.5% in each tail)
 
 
 ```text
-
 [1] 2.575829
 
 ```
@@ -341,7 +329,6 @@ and if we're being picky, if you have a small sample size and fitted a Gaussian 
 
 
 ```r
-
 qt(0.025, df = df.residual(mod), lower.tail = FALSE)
 
 ```
@@ -349,7 +336,6 @@ qt(0.025, df = df.residual(mod), lower.tail = FALSE)
 
 
 ```text
-
 [1] 2.021075
 
 ```

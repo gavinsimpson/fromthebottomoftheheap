@@ -18,11 +18,12 @@ excerpt: |-
 
 
   Why deshrinking?
-description: Weighted averaging regression and calibration is the most widely used
-  method for developing a palaeolimnological transfer function. Such models are used
-  to reconstruct properties of the past lake environment such as pH, total phosphorus,
-  and water temperature with, it has to be …
 date: 2013-01-05 12:00:00
+description: >-
+  Weighted averaging regression and calibration is the most widely used method for developing a
+  palaeolimnological transfer function. Such models are used to reconstruct properties of the
+  past lake environment such as pH, total phosphorus, and water temperature with, it has to be
+  said, varying degrees of success and usefulness.
 author: Gavin Simpson
 categories:
   - R
@@ -68,7 +69,6 @@ Well, in a WA model, averages of the response are effectively taken twice; i) fi
 The effect of taking averages twice is to shrink the range of possible estimates from a WA model. This can be illustrated using some of the tools from [analogue](http://bit.ly/VFk6Le). First load the package and the SWAP example data set
 
 ```r
-
 ## load analogue...
 require(analogue)
 ## ...and some example data
@@ -81,7 +81,6 @@ Next, compute the WA pH optima
 for each diatom taxon
 
 ```r
-
 opt <- optima(swapdiat, swappH) ## compute WA optima
 
 ```
@@ -89,7 +88,6 @@ opt <- optima(swapdiat, swappH) ## compute WA optima
 The final step is to use some simple matrix algebra to give the raw WA estimates of the pH for each SWAP sample (site). (Note that the `swapdiat` object needs to be cast as a matrix for the matrix algebra step, which we do using `data.matrix()`)
 
 ```r
-
 diat <- data.matrix(swapdiat)  ## convert to a matrix
 pred <- ((diat %*% opt) / rowSums(diat))[, 1] ## compute raw WA estimates
 
@@ -106,7 +104,6 @@ From the above we can see that there are three types of pH value:
 A quick look at the range of the pH values for each stage shows the shrinkage problem resulting from averaging
 
 ```r
-
 r.obs <- range(swappH)
 r.opt <- range(opt)
 r.wa <- range(pred)
@@ -114,7 +111,6 @@ r.wa <- range(pred)
 ```
 
 ```rout
-
 > rbind(r.obs, r.opt, r.wa)
           [,1]    [,2]
 r.obs 4.330000 7.25000
@@ -153,7 +149,6 @@ So what does this look like? The figure below shows the raw WA pH estimates and 
 The monotonic deshrinking and the plot were produced using
 
 ```r
-
 ## do the monotonic deshrinking
 mono <- deshrink(swappH, pred, type = "monotonic")$env
 
@@ -175,7 +170,6 @@ In this example, there appears to be two relationships between the raw WA estima
 The inverse and classicial deshrinking values were computed using
 
 ```r
-
 inv <- deshrink(swappH, pred, type = "inverse")$env
 cla <- deshrink(swappH, pred, type = "classical")$env
 

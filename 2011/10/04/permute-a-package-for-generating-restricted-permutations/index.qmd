@@ -18,11 +18,14 @@ excerpt: Multivariate ordination methods are commonly used in ecology to investi
   test the statistical significance of terms in the model. Other techniques likewise
   lack the appropriate theory, such as the Mantel test, vector fitting into ordination
   space, among many others.
-description: Multivariate ordination methods are commonly used in ecology to investigate
-  patterns in species composition in space or time. Constrained ordination methods
-  such as redundancy analysis (RDA) and canonical correspondence analysis (CCA) are
-  effectively just multiple regressions, b…
 date: 2011-10-04 12:00:00
+description: >-
+  Multivariate ordination methods are commonly used in ecology to investigate patterns in species
+  composition in space or time. Constrained ordination methods such as redundancy analysis (RDA)
+  and canonical correspondence analysis (CCA) are effectively just multiple regressions, but we
+  lack the parametric theory to adequately test the statistical significance of terms in the
+  model. Other techniques likewise lack the appropriate theory, such as the Mantel test, vector
+  fitting into ordination space, among many others.
 author: Gavin Simpson
 categories:
   - R
@@ -73,7 +76,6 @@ To get you started though, here is a quick, simple example of doing a randomisat
 We consider a small data set of mandible length measurements on specimens of the [golden jackal (*Canis aureus*)](http://en.wikipedia.org/wiki/Golden_jackal "the Golden Jackal page on Wikipedia") from the British Museum of Natural History, London, UK. These data were collected as part of a study comparing prehistoric and modern canids (Higham et al. 1980), and were previously analysed by Manly (2007). There are ten measurements of mandible length on both male and female specimens. The data are available in the `jackal` data frame supplied with **permute**. Load the package and the data set
 
 ```r
-
 > require(permute)
 > data(jackal)
 > jackal
@@ -83,7 +85,6 @@ We consider a small data set of mandible length measurements on specimens of the
 The interest is in whether there is a difference in the mean mandible length between male and female golden jackals. The null hypothesis is that there is zero difference in mandible length between the two sexes or that females have larger mandibles. The alternative hypothesis is that males have larger mandibles. The usual statistical test of this hypothesis is a one-sided *t* test, which can be applied using `t.test()`
 
 ```rout
-
 > jack.t <- t.test(Length ~ Sex, data = jackal, var.equal = TRUE,
 +    alternative = "greater")
 > jack.t
@@ -104,7 +105,6 @@ sample estimates:
 A permutation-based test can be used to test the same Null hypothesis, but without some of the assumptions of the *t* test, most importantly the assumption that the data are a random sample from the population of golden jackals. With a permutation test, we are free to choose any suitable test statistic. We could use the *t* statistic, but the difference in means of the Female and Male groups will suffice. To implement this we build a function that will compute the difference of means for the Male and Female groups:
 
 ```r
-
 meanDif <- function(x, grp) {
     mean(x[grp == "Male"]) - mean(x[grp == "Female"])
 }
@@ -114,7 +114,6 @@ meanDif <- function(x, grp) {
 This function can be used in a `for()` loop to generate the permutation distribution of the test statistic under the Null hypothesis. We will perform 4999 random permutations, so we allocate a vector of length 5000 to hold the resulting difference of means. Under the Null hypothesis, the observed difference of means is just one of the possible values so we count it as part of the Null distribution (hence the length of 5000). In the code chunk below, `Djackal` will contain the 5000 differences of means for the Null distribution, `N` holds the number of observations in the `jackal` data set. Then we seed the pseudo-random number generator to get reproducible results and initiate a loop to generate the Null distribution, of which more in a minute. The last line adds the observed difference of means to the Null distribution
 
 ```rout
-
 > Djackal <- numeric(length = 5000)
 > N <- nrow(jackal)
 > set.seed(42)
@@ -129,7 +128,6 @@ This function can be used in a `for()` loop to generate the permutation distribu
 The loop runs over the values {1,...4999} and generates a randomisation of the `N` rows in the `jackal` data frame using the `shuffle()` function. The second line in the loop computes the difference in mean mandible length for the permuted data. `shuffle()` is one of the key functions available in **permute**. When called, as here, with a single argument (the number of observations) it returns a random permutation of the integers {1, ..., `N`}. In fact, it works very much as a wrapper for the base R function `sample()`:
 
 ```rout
-
 > set.seed(2)
 > (r1 <- shuffle(10))
  [1]  2  7  5 10  6  8  1  3  4  9
@@ -144,7 +142,6 @@ The loop runs over the values {1,...4999} and generates a randomisation of the `
 In future posts I'll talk more about `shuffle()` and some of the other key functions in **permute**. For now, we'll rush ahead and look at the results of the permutation test. A histogram of the Null distribution showing the observed difference of means via a rug plot can be produced using
 
 ```rout
-
 > hist(Djackal, main = "",
 +      xlab = expression("Mean difference (Male - Female) in mm"))
 > rug(Djackal[5000], col = "red", lwd = 2)
@@ -158,7 +155,6 @@ The resulting figure looks like the one shown below
 The observed difference of mean mandible length is located in the extreme right tail of the Null distribution. The number of permuted difference of mean lengths that are equal to or greater than the observed difference is 12, yielding a permutational *p* value of 0.0024
 
 ```rout
-
 > (Dbig <- sum(Djackal >= Djackal[5000]))
 [1] 12
 > Dbig/length(Djackal)

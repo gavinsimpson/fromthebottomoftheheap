@@ -7,11 +7,13 @@ tags:
 category: R
 alert: <strong>Updated</strong> The URL to the HadCRUT3v data set changed following
   the release of version 4 of the data set (12 January 2015).
-description: Earlier, I looked at the HadCRUT3vgl data set using generalized least
-  squares to investigate whether the trend in temperature since 1995 was statistically
-  significant. Here I want to follow-up one of the points from the earlier posting;
-  namely using a statistical technique that …
 date: 2011-06-12 12:00:00
+description: >-
+  (If the download code above doesn't work for you &mdash; it does on my Linux machine &mdash;
+  then download the files using your browser and source() in the usual way.) Next, load the data
+  and process the file as per the earlier post (see here for details). The last lines of code
+  plot the data (note that I only intend to use the annual means in this posting — dealing with
+  monthly data needs a few extra steps to model the seasonal variation in the data).
 author: Gavin Simpson
 categories:
   - R
@@ -43,7 +45,6 @@ comments:
 In this post, I'll be using the **mgcv** and **nlme** packages plus some custom functions I wrote to produce diagnostics plots of `gamm()` time series models and to compute derivatives of fitted splines using the method of finite differences. The latter can be loaded into R from my [github](http://github.com "github website") [repository](https://github.com/gavinsimpson/random_code "My github repository")
 
 ```r
-
 ## load the packages and code we need
 require(mgcv)
 require(nlme)
@@ -63,7 +64,6 @@ source(tmp)
 [here](/2011/06/11/global-warming-since-1995-now-significant/ "Global warming since 1995 &apos;now significant&apos;") for details). The last lines of code plot the data (note that I only intend to use the annual means in this posting — dealing with monthly data needs a few extra steps to model the seasonal variation in the data).
 
 ```r
-
 ## Global temperatures
 URL <- url("http://www.cru.uea.ac.uk/cru/data/temperature/HadCRUT3v-gl.dat")
 gtemp <- read.table(URL, fill = TRUE)
@@ -95,7 +95,6 @@ The additive model (without any correlation structure at this stage) is
 fitted and summarised as follows 
 
 ```rout
-
 > ## Fit a smoother for Year to the data
 > m1 <- gamm(Annual ~ s(Year, k = 20), data = gtemp)
 > summary(m1$gam)
@@ -126,7 +125,6 @@ This smoother explains 88% of the variance in the data, uses almost 12 degrees o
 smoother are likely to be overly narrow. The ACF and partial ACF can be used to determine what types of time series model might be required for the residuals
 
 ```r
-
 ## look at autocorrelation in residuals:
 acf(resid(m1$lme, type = "normalized"))
 ## ...wait... look at the plot, only then do...
@@ -138,7 +136,6 @@ pacf(resid(m1$lme, type = "normalized"))
 Given the form of the ACF and pACF plots, AR terms will probably be best, so we fit models with AR(1) and AR(2) terms. To do this, we add a `correlation` argument to the model calls
 
 ```r
-
 ## ...so fit the AR1
 m2 <- gamm(Annual ~ s(Year, k = 30), data = gtemp,
            correlation = corARMA(form = ~ Year, p = 1))
@@ -151,7 +148,6 @@ m3 <- gamm(Annual ~ s(Year, k = 30), data = gtemp,
 We can use the `anova()` method for `"lme"` objects to assess whether the models with the correlation structures fit the data better than the original model
 
 ```rout
-
 > anova(m1$lme, m2$lme, m3$lme)
        Model df       AIC       BIC   logLik   Test   L.Ratio p-value
 m1$lme     1  4 -273.6235 -261.2978 140.8117                         
@@ -163,7 +159,6 @@ m3$lme     3  6 -298.7174 -280.2290 155.3587 2 vs 3  0.981852  0.3217
 The AR(1) model provides the best fit to the data, being a significant improvement over the model without a correlation structure. AIC and BIC also both favour the AR(1) model over the AR(2) or the original model. The `plot()` method for `"gam"` objects can be used to view the fitted smoother; here I superimpose the residuals and alter the plotting character and size
 
 ```r
-
 plot(m2$gam, residuals = TRUE, pch = 19, cex = 0.75)
 
 ```
@@ -175,7 +170,6 @@ to produce this plot
 Some diagnostic plots can be be produced using my `tsDiagGamm()` function (loaded earlier)
 
 ```r
-
 with(gtemp, tsDiagGamm(m2, timevar = Year, observed = Annual))
 
 ```
@@ -187,7 +181,6 @@ which produces this figure:
 There do not seem to be any causes for concern in the diagnostics. Finally, we can compare the fits of the original model and the model with AR(1) residuals. I use a general procedure to draw the fitted smooths on the original data, but predicting from each model at 200 equally spaced time points over the period of the data
 
 ```r
-
 plot(Annual ~ Year, data = gtemp, type = "p", ylab = ylab)
 pdat <- with(gtemp,
              data.frame(Year = seq(min(Year), max(Year),
@@ -214,7 +207,6 @@ An approach answering this question is to compute the first derivatives of the f
 The computations are not too involved and have been incorporated into a `Deriv()` function. We evaluate the trend at 200 equally spaced points. This function has a `plot()` method that draws a time series of first derivatives with a confidence interval. Periods where zero is not included in confidence interval can be coloured to show important periods of change (red for decreasing, and blue for increasing). The `sizer` argument turns on/off the colouring and `alpha` determines the coverage for the confidence interval.
 
 ```r
-
 m2.d <- Deriv(m2, n = 200)
 plot(m2.d, sizer = TRUE, alpha = 0.01)
 
@@ -226,7 +218,6 @@ plot(m2.d, sizer = TRUE, alpha = 0.01)
 We can manipulate the output from the `Deriv()` function to superimpose periods of significant change in temperature, as shown above on the first derivative plot, on the fitted trend:
 
 ```r
-
 plot(Annual ~ Year, data = gtemp, type = "p", ylab = ylab)
 lines(p2 ~ Year, data = pdat)
 CI <- confint(m2.d, alpha = 0.01)
@@ -250,7 +241,6 @@ posting](/2011/06/11/global-warming-since-1995-now-significant/ "Global warming 
 The **MASS** package contains function `mvrnorm()`, which allows us to draw samples from a multivariate normal distribution initialized using the model coefficients (`coef(m2$gam)`) and the variance-covariance matrix of the coefficients (`vcov(m2$gam)`). We set a seed for the random number generator to make the results reproducible, and take 1000 draws from this distribution
 
 ```r
-
 ## simulate from posterior distribution of beta
 Rbeta <- mvrnorm(n = 1000, coef(m2$gam), vcov(m2$gam))
 Xp <- predict(m2$gam, newdata = pdat, type = "lpmatrix")
@@ -263,7 +253,6 @@ The \\( X\_{p} \\) matrix is a matrix such that when multiplied by the vector of
 Next, I select, at random, 25 of these trends to illustrate the sorts of variation in the fitted trends
 
 ```r
-
 ## plot the observation and 25 of the 1000 trends
 set.seed(321)
 want <- sample(1000, 25)
@@ -278,7 +267,6 @@ matlines(pdat$Year, sim1[,want], col = "black", lty = 1, pch = NA)
 What do simulated trends suggest for the most recent period that has been the interest of many? The following code focusses on the post 1990 data and shows 50 of the simulated trends
 
 ```r
-
 set.seed(321)
 want <- sample(1000, 50)
 rwant <- with(pdat, which(Year >= 2000))

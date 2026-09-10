@@ -12,10 +12,13 @@ tags:
   - counts
   - GAM
 category: R
-description: One of my more popular answers on StackOverflow concerns the issue of
-  prediction intervals for a generalized linear model (GLM). Comments, even on StackOverflow,
-  aren't a good place for a discussion so I thought I'd post something hereon my blog
-  that went into a bit more detail …
+description: >-
+  One of my more popular answers on StackOverflow concerns the issue of prediction intervals for
+  a generalized linear model (GLM). Comments, even on StackOverflow, aren't a good place for a
+  discussion so I thought I'd post something hereon my blog that went into a bit more detail as
+  to why, for some common types of GLMs, prediction intervals aren't that useful and require a
+  lot more thinking about what they mean and how they should be calculated. I've broken it into
+  two and in this, the second part, I look at Possion models.
 author: Gavin Simpson
 categories:
   - R
@@ -56,7 +59,6 @@ The second example --- purely because I happen to have it handy from teaching th
 
 
 ```r
-
 ## install.packages("blmeco") # first, if not already installed
 library("blmeco")
 data(wildflowerfields)
@@ -69,7 +71,6 @@ The example in @Korner-Nievergelt2015-tk uses a Poisson GLM with a quadratic eff
 
 
 ```r
-
 library("mgcv")
 wf <- transform(subset(wildflowerfields, year == 2007), size = size / 100)
 wf <- transform(wf, size.z = (size - mean(size)) / sd(size))
@@ -81,8 +82,6 @@ summary(mod)
 
 
 ```text
-
-
 Family: poisson 
 Link function: log 
 
@@ -111,7 +110,6 @@ The primary variable of interest shows a moderate amount of non-linearity, simil
 
 
 ```r
-
 ilink <- family(mod)$linkinv
 newd <- with(wf, expand.grid(age = seq(min(age), max(age), length = 300),
                              size = 1, size.z = 0))
@@ -145,7 +143,6 @@ To illustrate I'll work my way through some code to illustrate some ways of thin
 
 
 ```r
-
 p <- data.frame(age = c(2, 5), size = 1, size.z = 0)
 pred <- setNames(as.data.frame(predict(mod, p, se.fit = TRUE)), c("fit", "se"))
 p <- cbind(p, pred)
@@ -158,7 +155,6 @@ p
 
 
 ```text
-
   age size size.z        fit        se      lower    lambda     upper
 1   2    1      0 -1.7184424 0.5805902 0.05615594 0.1793453 0.5727752
 2   5    1      0 -0.1295676 0.3260103 0.45767855 0.8784752 1.6861589
@@ -169,7 +165,6 @@ p
 
 
 ```r
-
 qpois(c(0.025, 0.975), lambda = p[1, "lambda"])
 
 ```
@@ -177,7 +172,6 @@ qpois(c(0.025, 0.975), lambda = p[1, "lambda"])
 
 
 ```text
-
 [1] 0 1
 
 ```
@@ -186,7 +180,6 @@ Hence we might expect either 0, 1 breeding pairs. But, we haven't accounted for 
 
 
 ```r
-
 qpois(c(0.025, 0.975), lambda = p[1, "lower"])
 
 ```
@@ -194,7 +187,6 @@ qpois(c(0.025, 0.975), lambda = p[1, "lower"])
 
 
 ```text
-
 [1] 0 1
 
 ```
@@ -203,7 +195,6 @@ and
 
 
 ```r
-
 qpois(c(0.025, 0.975), lambda = p[1, "upper"])
 
 ```
@@ -211,7 +202,6 @@ qpois(c(0.025, 0.975), lambda = p[1, "upper"])
 
 
 ```text
-
 [1] 0 2
 
 ```
@@ -220,7 +210,6 @@ for the upper end, leading to a prediction interval of 0--2 breeding pairs. The 
 
 
 ```r
-
 qpois(c(0.025, 0.975), lambda = c(p[2, "lower"], p[2, "upper"]))
 
 ```
@@ -228,7 +217,6 @@ qpois(c(0.025, 0.975), lambda = c(p[2, "lower"], p[2, "upper"]))
 
 
 ```text
-
 [1] 0 5
 
 ```

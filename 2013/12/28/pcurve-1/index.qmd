@@ -8,11 +8,14 @@ tags:
   - R
   - analogue
 category: R
-description: Ordination methods that yield orthogonal axes of variation are often
-  used to summarise the multivariate data obtained from sediment cores. Usually the
-  first or, less often, the first few ordination axes are taken as directions of change
-  or the main patterns of variance in the mu…
 date: 2013-12-28 12:00:00
+description: >-
+  Ordination methods that yield orthogonal axes of variation are often used to summarise the
+  multivariate data obtained from sediment cores. Usually the first or, less often, the first few
+  ordination axes are taken as directions of change or the main patterns of variance in the
+  multivariate data. There is an oft-overlooked issue with this approach that has the potential
+  to complicate the interpretation of the extracted axes, especially where there is a single or
+  strong gradient in the data.
 author: Gavin Simpson
 categories:
   - R
@@ -47,7 +50,6 @@ Ordination methods that yield orthogonal axes of variation are often used to sum
 The *horseshoe effect* is a well known and discussed issue with principal component analysis (PCA) [e.g. @goodall_objective_1954; @noy-meir_principal_1970; @swan_examination_1970]. Similar geometric artefacts also affect correspondence analysis (CA), although the ordering of sites along axes is not inverted at the ends as they can be in PCA. The problem is particularly acute when the is a single gradient in the data. An extreme example is given in Table 9.7 of @legendre_numerical_2012 [p. 482], wherein the abundances of three species at 19 sites are stated. The data set can be created in R using
 
 ```r
-
 ll <- data.frame(Species1 = c(1,2,4,7,8,7,4,2,1,rep(0,10)),
                  Species2 = c(rep(0, 5),1,2,4,7,8,7,4,2,1, rep(0, 5)),
                  Species3 = c(rep(0, 10),1,2,4,7,8,7,4,2,1))
@@ -62,7 +64,6 @@ matplot(ll, type = "o", col = 1:3, pch = 21:23, bg = 1:3,
 Should we care to treat the ordering of sites as a time series, illustrating succession, such as we might observe in an admittedly simplified sediment core, and subject them to PCA following standard conventions, we would observe the following configuration
 
 ```r
-
 library("vegan")
 ll.pca <- rda(ll)
 ordipointlabel(ll.pca, scaling = 1, display = "sites", pch = 19)
@@ -73,7 +74,6 @@ ordipointlabel(ll.pca, scaling = 1, display = "sites", pch = 19)
 
 The degree of curvature, the horseshoe effect, is exceedingly strong in these data; the single gradient is decomposed into two axes of similar explanatory power that together explain ~90% of the variance in the data.
 ```rout
-
 > ll.pca
 Call: rda(X = ll)
 
@@ -89,7 +89,6 @@ Eigenvalues for unconstrained axes:
 ```
 Taking the first axis and plotting the sample scores as a time series we might, if we didn't know how the data were generated, invoke some cyclic process to explain the pattern of temporal variance extracted from the data
 ```r
-
 plot(scores(ll.pca, choices = 1, display = "sites")[,1] ~ 
      seq_len(NROW(ll)),
      type = "o", bg = "white", pch = 21,
@@ -101,7 +100,6 @@ plot(scores(ll.pca, choices = 1, display = "sites")[,1] ~
 
 Similarly, if we took the second PCA axis and tried to provide an interpretation, we might incorrectly assume the data suggests the impact of and response to a pulse perturbation.
 ```r
-
 plot(scores(ll.pca, choices = 2, display = "sites")[,1] ~ 
      seq_len(NROW(ll)),
      type = "o", bg = "white", pch = 21,
@@ -116,7 +114,6 @@ Neither interpretation would be correct; in this case we *know* the data show a 
 Correspondence analysis (CA) does a better job than PCA with the first axis; its gets the ordering correct and hence reconstructs the gradient of sorts. However, because CA works on relative compositional differences, the site scores for samples at the start (end) of the gradient don't vary as there is but a single species present in these samples and hence they have the same relative compositions. The second CA axis is similar to the second PCA axis, suggesting a pulse disturbance and subsequent recovery.
 
 ```r
-
 layout(matrix(1:2))
 sc <- scores(ll.ca, choices = 1:2, display = "sites")
 ylim <- range(sc)
@@ -135,7 +132,6 @@ layout(1)
 And before you accuse me of picking a weird made-up data set just to prove a point, consider the well-studied Abernethy Forest, Scotland, pollen sequence from the late glacial [@birks_studies_1978]. The PCA biplot of these data shows a strong curved structure, reminiscent of the horseshoe we observed earlier for the made-up data.
 
 ```r
-
 ## Load analogue
 library("analogue")
 ## Load the Abernethy Forest data

@@ -7,11 +7,16 @@ tags:
   - CRAN
   - releases
 category: R
-description: "While the Covid-19 pandemic and teaching a new course in the fall put
-  paid to most of my development time last year, some time off work this January allowed
-  me time to work on gratia \U0001F4E6 again. I released 0.5.0 to CRAN in part to
-  fix an issue with tests not running on the new M1 c…"
 image: /assets/img/posts/two-new-versions-of-gratia-colour-scales-1.png
+description: >-
+  While the Covid-19 pandemic and teaching a new course in the fall put paid to most of my
+  development time last year, some time off work this January allowed me time to work on gratia
+  📦 again. I released 0.5.0 to CRAN in part to fix an issue with tests not running on the new M1
+  chips from Apple because I wasn't using vdiffr 📦 conditionally. Version 0.5.1 followed shortly
+  thereafter as I'd messed up an argument name in smoothestimates(), a new function that I hope
+  will allow development to proceed more quickly and mke it easier to maintain code and extend
+  functionality to cover a greater range of model types. Read on to fin out more about
+  smoothestimates() and what else was in these two releases.
 author: Gavin Simpson
 categories:
   - R
@@ -60,7 +65,6 @@ The idea behind `evaluate_smooth()` and `smooth_estimates()` is to return a tibb
 
 
 ```r
-
 library('mgcv')
 library('gratia')
 library('dplyr')
@@ -77,7 +81,6 @@ smooth_estimates(gam_model)
 
 
 ```text
-
 # A tibble: 400 x 9
    smooth type  by       est    se       x0    x1    x2    x3
    <chr>  <chr> <chr>  <dbl> <dbl>    <dbl> <dbl> <dbl> <dbl>
@@ -101,7 +104,6 @@ I'm toying with returning the tibble in a nested fashion with `nest()`, somethin
 
 
 ```r
-
 sm <- smooth_estimates(gam_model) %>% 
   nest(values = c(est, se), data = starts_with('x'))
 sm
@@ -111,7 +113,6 @@ sm
 
 
 ```text
-
 # A tibble: 4 x 5
   smooth type     by    values             data              
   <chr>  <chr>    <chr> <list>             <list>            
@@ -126,7 +127,6 @@ which I think is much neater, but does require extra steps from the user to just
 
 
 ```r
-
 sm %>%
   unnest(cols = c(values, data)) 
 
@@ -135,7 +135,6 @@ sm %>%
 
 
 ```text
-
 # A tibble: 400 x 9
    smooth type  by       est    se       x0    x1    x2    x3
    <chr>  <chr> <chr>  <dbl> <dbl>    <dbl> <dbl> <dbl> <dbl>
@@ -167,7 +166,6 @@ Version 0.4.0 introduced the ability to add partial residuals to plots of smooth
 
 
 ```r
-
 partial_residuals(gam_model)
 
 ```
@@ -175,7 +173,6 @@ partial_residuals(gam_model)
 
 
 ```text
-
 # A tibble: 400 x 4
     `s(x0)` `s(x1)` `s(x2)` `s(x3)`
       <dbl>   <dbl>   <dbl>   <dbl>
@@ -199,7 +196,6 @@ I also added an `add_partial_residuals()`, to add the partial residuals to an ex
 
 
 ```r
-
 dat %>%
   add_partial_residuals(model = gam_model)
 
@@ -208,7 +204,6 @@ dat %>%
 
 
 ```text
-
 # A tibble: 400 x 14
        y    x0     x1    x2    x3     f    f0    f1     f2    f3  `s(x0)`
    <dbl> <dbl>  <dbl> <dbl> <dbl> <dbl> <dbl> <dbl>  <dbl> <dbl>    <dbl>
@@ -235,7 +230,6 @@ I've been adding functions to **gratia** that will be helpful when teaching GAMs
 
 
 ```r
-
 penalty(gam_model)
 
 ```
@@ -243,7 +237,6 @@ penalty(gam_model)
 
 
 ```text
-
 # A tibble: 324 x 6
    smooth type  penalty row   col   value
    <chr>  <chr> <chr>   <chr> <chr> <dbl>
@@ -265,7 +258,6 @@ There is a `draw()` method also, to plot the penalty matrix
 
 
 ```r
-
 gam_model %>% 
   penalty() %>% 
   draw()
@@ -282,7 +274,6 @@ It was pointed out that the way this is plotted is not very intuitive if you're 
 
 
 ```r
-
 dat2 <- data_sim("eg2", n = 1000, dist = "normal", scale = 1, seed = 2)
 gam_model2 <- gam(y ~ s(x, z, k = 40), data = dat2, method = "REML")
 draw(gam_model2, n_contour = 5,
@@ -299,7 +290,6 @@ draw(gam_model2, n_contour = 5,
 
 
 ```r
-
 b0 <- coef(gam_model)[1]
 draw(gam_model, constant = b0)
 

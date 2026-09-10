@@ -10,11 +10,17 @@ category: R
 alert: As of May 11, 2016, Government Canada has updated the data download URLs such
   that the URLs created by <code>genURLS()</code> are no longer valid. The <a href="https://gist.github.com/gavinsimpson/8c13e3c5f905fd67cf85">gist</a>
   contains updated functions that work with the URL and data download API.
-description: In December I found myself helping one of our graduate students with
-  a data problem; for one of their thesis chapters they needed a lot of hourly climate
-  data for a handful of stations around Saksatchewan. All of this data was and is
-  available for download from the Government of…
 date: 2015-01-14 12:00:00
+description: >-
+  In December I found myself helping one of our graduate students with a data problem; for one of
+  their thesis chapters they needed a lot of hourly climate data for a handful of stations around
+  Saksatchewan. All of this data was and is available for download from the Government of
+  Canada's website, but with one catch; you had to download the hourly data one month at a time,
+  manually! There is no interface to allow a user of the website to specify the data range they
+  want and download all the data from a single station. I figured there had to be a better way,
+  using R to automate the downloading. Thinking the solution I came up with might help other
+  researchers needing to grab data from the Government of Canada's website save some time in the
+  future, I wrote this post to document how we ended up doing it.
 author: Gavin Simpson
 categories:
   - R
@@ -99,7 +105,6 @@ station IDs and start and end years.
 
 
 ```r
-
 genURLS <- function(id, start, end) {
     years <- seq(start, end, by = 1)
     nyears <- length(years)
@@ -131,7 +136,6 @@ could generate the URLs we'd need to visit as follows
 
 
 ```r
-
 regina <- genURLS(28011, 2014, 2014)
 length(regina$urls)
 head(regina$urls)
@@ -141,7 +145,6 @@ head(regina$urls)
 
 
 ```text
-
 [1] 12
 [1] "http://climate.weather.gc.ca/climateData/bulkdata_e.html?timeframe=1&Prov=SK&StationID=28011&hlyRange=1953-01-30%7C2014-12-31&cmdB1=Go&Year=2014&Month=1&Day=27&format=csv&stationID=28011"
 [2] "http://climate.weather.gc.ca/climateData/bulkdata_e.html?timeframe=1&Prov=SK&StationID=28011&hlyRange=1953-01-30%7C2014-12-31&cmdB1=Go&Year=2014&Month=2&Day=27&format=csv&stationID=28011"
@@ -164,7 +167,6 @@ those details
 
 
 ```r
-
 getData <- function(stations, folder, verbose = TRUE, delete = TRUE) {
     ## form URLS
     urls <- lapply(seq_len(NROW(stations)),
@@ -302,7 +304,6 @@ First we create a data frame of station information
 
 
 ```r
-
 stations <- data.frame(StationID = c(51441, 2925),
                        start = rep(2014, 2),
                        end = rep(2014, 2))
@@ -314,7 +315,6 @@ cache downloaded CSVs in
 
 
 ```r
-
 met <- getData(stations, folder = "./csv", verbose = FALSE)
 
 ```
@@ -332,7 +332,6 @@ failures
 
 
 ```r
-
 any(failed <- sapply(met, is.character))
 
 ```
@@ -340,7 +339,6 @@ any(failed <- sapply(met, is.character))
 
 
 ```text
-
 [1] FALSE
 
 ```
@@ -350,7 +348,6 @@ into `met` to extract the URLs that encountered problems, e.g.
 
 
 ```r
-
 unlist(met[failed])
 
 ```
@@ -360,7 +357,6 @@ into a data frame using `rbind()`
 
 
 ```r
-
 met <- do.call("rbind", met)
 
 ```
@@ -369,7 +365,6 @@ The data now looks like this
 
 
 ```r
-
 head(met)
 
 ```
@@ -377,7 +372,6 @@ head(met)
 
 
 ```text
-
   StationID        Date.Time Year Month Day  Time Data.Quality Temp...C.
 1     51441 2014-01-01 00:00 2014     1   1 00:00           **     -23.3
 2     51441 2014-01-01 01:00 2014     1   1 01:00           **     -23.1

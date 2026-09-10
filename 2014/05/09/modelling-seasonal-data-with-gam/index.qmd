@@ -6,11 +6,13 @@ tags:
   - modelling
   - Central England Temperature
 category: R
-description: In previous posts (here and here) I have looked at how generalized additive
-  models (GAMs) can be used to model non-linear trends in time series data. At the
-  time a number of readers commented that they were interested in modelling data that
-  had more than just a trend component; …
 date: 2014-05-09 12:00:00
+description: >-
+  In previous posts (here and here) I have looked at how generalized additive models (GAMs) can
+  be used to model non-linear trends in time series data. At the time a number of readers
+  commented that they were interested in modelling data that had more than just a trend
+  component; how do you model data collected throughout the year over many years with a GAM? In
+  this post I will show one way that I have found particularly useful in my research.
 author: Gavin Simpson
 categories:
   - R
@@ -56,7 +58,6 @@ where \\(\\beta_0\\) is the intercept, \\(f_{\\mathrm{seasonal}}\\) and \\(f_{\\
 
 
 ```r
-
 > mod <- gam(y ~ s(x1) + s(x2), data = foo)
 
 ```
@@ -73,7 +74,6 @@ The CET data are available from the [UK Met Office](http://www.metoffice.gov.uk/
 
 
 ```r
-
 > CET <- url("http://www.metoffice.gov.uk/hadobs/hadcet/cetml1659on.dat")
 > writeLines(readLines(CET, n = 10))
 
@@ -82,7 +82,6 @@ The CET data are available from the [UK Met Office](http://www.metoffice.gov.uk/
 
 
 ```text
-
 MONTHLY MEAN CENTRAL ENGLAND TEMPERATURE (DEGREES C)                                     
 1659-1973 MANLEY (Q.J.R.METEOROL.SOC., 1974)                                             
 1974ON PARKER ET AL. (INT.J.CLIM., 1992)                                                 
@@ -100,7 +99,6 @@ There are 6 lines of header info and then the data are in a matrix with rows rep
 
 
 ```r
-
 > cet <- read.table(CET, sep = "", skip = 6, header = TRUE,
 +                   fill = TRUE, na.string = c(-99.99, -99.9))
 > names(cet) <- c(month.abb, "Annual")
@@ -119,7 +117,6 @@ I used `fill = TRUE` because the final row of the file contains values for the c
 
 
 ```text
-
      Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
 1659   3   4   6   7  11  13  16  16  13  10   5   2
 1660   0   4   6   9  11  14  15  16  13  10   6   5
@@ -134,7 +131,6 @@ For use in `gam()` we need the data in long format, with variables for the tempe
 
 
 ```r
-
 > ## stack the data
 > cet <- stack(cet)[,2:1]
 > names(cet) <- c("Month","Temperature")
@@ -163,7 +159,6 @@ Next I make sure the data are in the correct temporal order; this is useful for 
 
 
 ```r
-
 > head(cet)
 > str(cet)
 
@@ -172,7 +167,6 @@ Next I make sure the data are in the correct temporal order; this is useful for 
 
 
 ```text
-
      Month Temperature Year nMonth       Date   Time
 1      Jan           3 1659      1 1659-01-15 -113.6
 356    Feb           4 1659      2 1659-02-15 -113.5
@@ -186,7 +180,6 @@ Next I make sure the data are in the correct temporal order; this is useful for 
 
 
 ```text
-
 'data.frame':	4260 obs. of  6 variables:
  $ Month      : Factor w/ 12 levels "Apr","Aug","Dec",..: 5 4 8 1 9 7 6 2 12 11 ...
  $ Temperature: num  3 4 6 7 11 13 16 16 13 10 ...
@@ -201,7 +194,6 @@ and we are good to go. First though, the obligatory time series plot (of the ann
 
 
 ```r
-
 > ylab <- expression(Temperature ~ (degree*C))
 > plot(Temperature ~ Year, data = annCET, type = "l",
 +      ylab = ylab, main = "CET")
@@ -216,7 +208,6 @@ If you plot the full data, you get a mess[^1] --- try it if you want
 
 
 ```r
-
 > plot(Temperature ~ Date, data = cet, type = "l",
 +      ylab = ylab)
 
@@ -235,7 +226,6 @@ Load **mgcv** and fit the naive model
 
 
 ```r
-
 > require("mgcv")
 
 ```
@@ -243,7 +233,6 @@ Load **mgcv** and fit the naive model
 
 
 ```text
-
 Loading required package: mgcv
 Loading required package: nlme
 This is mgcv 1.7-29. For overview type 'help("mgcv-package")'.
@@ -253,7 +242,6 @@ This is mgcv 1.7-29. For overview type 'help("mgcv-package")'.
 
 
 ```r
-
 > m <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time),
 +           data = cet)
 
@@ -292,7 +280,6 @@ With that out of the way we can look at our model fit
 
 
 ```r
-
 > summary(m$gam)
 
 ```
@@ -300,8 +287,6 @@ With that out of the way we can look at our model fit
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -329,7 +314,6 @@ which looks fine but is totally spurious because we didn't account for the depen
 
 
 ```r
-
 > layout(matrix(1:2, ncol = 2))
 > plot(m$gam, scale = 0)
 > layout(1)
@@ -344,7 +328,6 @@ We should look at the residuals of this model too, here using the (partial) auto
 
 
 ```r
-
 > layout(matrix(1:2, ncol = 2))
 > acf(resid(m$lme), lag.max = 36, main = "ACF")
 > pacf(resid(m$lme), lag.max = 36, main = "pACF")
@@ -361,7 +344,6 @@ It looks like some low-order AR model is needed, so I fit three models; and AR(1
 
 
 ```r
-
 > ctrl <- list(niterEM = 0, msVerbose = TRUE, optimMethod="L-BFGS-B")
 > 
 > ## AR(1)
@@ -387,7 +369,6 @@ We should probably do a lot more model checking, but for now, I cut to the chase
 
 
 ```r
-
 > anova(m$lme, m1$lme, m2$lme, m3$lme)
 
 ```
@@ -395,7 +376,6 @@ We should probably do a lot more model checking, but for now, I cut to the chase
 
 
 ```text
-
        Model df   AIC   BIC logLik   Test L.Ratio p-value
 m$lme      1  5 14941 14973  -7466                       
 m1$lme     2  6 14657 14695  -7323 1 vs 2  286.35  <.0001
@@ -410,7 +390,6 @@ Plotting the AR(2) model terms shows how over-fitted the naive model with uncorr
 
 
 ```r
-
 > layout(matrix(1:2, ncol = 2))
 > plot(m2$gam, scale = 0)
 > layout(1)
@@ -423,7 +402,6 @@ Looking now at the normalized residuals (which take into account the covariance 
 
 
 ```r
-
 > layout(matrix(1:2, ncol = 2))
 > res <- resid(m2$lme, type = "normalized")
 > acf(res, lag.max = 36, main = "ACF - AR(2) errors")
@@ -439,7 +417,6 @@ The fitted GAM model object contains a lot of information that can be used to in
 
 
 ```r
-
 > want <- seq(1, nrow(cet), length.out = 200)
 > pdat <- with(cet,
 +              data.frame(Time = Time[want], Date = Date[want],
@@ -466,7 +443,6 @@ Now I am ready to plot the estimated trends for the four models fitted
 
 
 ```r
-
 > op <- par(mar = c(5,4,2,2) + 0.1)
 > ylim <- with(pdat, range(p, p1, p2, p3))
 > ylim[1] <- floor(ylim[1])

@@ -5,11 +5,14 @@ tags:
   - Covid-19
   - API
 category: R
-description: Last semester (Fall 2020) I taught a new course in healthcare data science
-  for the Johnson Shoyama Graduate School in Public Policy. One of the final topics
-  of the course was querying application programming interfaces (APIs) from within
-  R. The example we used was querying data …
 image: /assets/img/posts/getting-data-from-canada-covid-19-tracker-using-r-plot-cases-1.png
+description: >-
+  Last semester (Fall 2020) I taught a new course in healthcare data science for the Johnson
+  Shoyama Graduate School in Public Policy. One of the final topics of the course was querying
+  application programming interfaces (APIs) from within R. The example we used was querying data
+  on the Covid 19 pandemic from the Covid-19 Tracker Canada, which has a simple API that's easy
+  to work with. In this post I'll show how we accessed the API from within R and converted the
+  query responses into something we can work with easily.
 author: Gavin Simpson
 categories:
   - R
@@ -44,7 +47,6 @@ There are many ways of querying APIs in R via a range of packages. Here, I'm goi
 
 
 ```r
-
 pkgs <- c('httr', 'jsonlite', 'dplyr', 'ggplot2', 'purrr')
 ## install.packages(pkgs, Ncpus = 4)
 vapply(pkgs, library, logical(1), logical.return = TRUE, character.only = TRUE)
@@ -54,7 +56,6 @@ vapply(pkgs, library, logical(1), logical.return = TRUE, character.only = TRUE)
 
 
 ```text
-
     httr jsonlite    dplyr  ggplot2    purrr 
     TRUE     TRUE     TRUE     TRUE     TRUE 
 
@@ -85,7 +86,6 @@ The final part of the URI are the query parameters and they allow some fine cont
 
 
 ```r
-
 /cases?province=ON&per_page=50
 
 ```
@@ -96,7 +96,6 @@ It's usually best to build the URI up from these parts stored as separate object
 
 
 ```r
-
 base  <- "https://api.covid19tracker.ca"
 ep    <- "/reports/province/sk"
 query <- "?date=2021-01-31"
@@ -108,7 +107,6 @@ req
 
 
 ```text
-
 [1] "https://api.covid19tracker.ca/reports/province/sk?date=2021-01-31"
 
 ```
@@ -117,7 +115,6 @@ The HTTP request involves using a *verb* and the URI --- here we will use the `G
 
 
 ```r
-
 response <- GET(req)
 
 ```
@@ -133,7 +130,6 @@ When you print `response` you'll see a brief summary of the response metadata
 
 
 ```r
-
 response
 
 ```
@@ -141,7 +137,6 @@ response
 
 
 ```text
-
 Response [https://api.covid19tracker.ca/reports/province/sk?date=2021-01-31]
   Date: 2021-01-31 22:42
   Status: 200
@@ -156,7 +151,6 @@ The body of the response can be accessed as a generic R list, as the raw bytes o
 
 
 ```r
-
 jsonlite::prettify(content(response, 'text', encoding = 'UTF-8'))
 
 ```
@@ -164,7 +158,6 @@ jsonlite::prettify(content(response, 'text', encoding = 'UTF-8'))
 
 
 ```text
-
 {
     "province": "sk",
     "data": [
@@ -201,7 +194,6 @@ To actually parse the JSON into a similar R object we use `jsonlite::fromJSON()`
 
 
 ```r
-
 parsed <- fromJSON(content(response, 'text', encoding = 'UTF-8'))
 str(parsed)
 
@@ -210,7 +202,6 @@ str(parsed)
 
 
 ```text
-
 List of 2
  $ province: chr "sk"
  $ data    :'data.frame':	1 obs. of  19 variables:
@@ -244,7 +235,6 @@ Now that we've had a crash course in querying an API, let's do something substan
 
 
 ```r
-
 base <- 'https://api.covid19tracker.ca'
 ep <- '/reports/province/sk'
 req <- paste0(base, ep)
@@ -261,7 +251,6 @@ cases
 
 
 ```text
-
 # A tibble: 373 x 19
    date  change_cases change_fataliti… change_tests change_hospital…
    <chr>        <int>            <int>        <int>            <int>
@@ -289,7 +278,6 @@ At the moment the `date` variable is stored as a simple character vector. If we 
 
 
 ```r
-
 cases %>%
   mutate(date = as.Date(date)) %>%
   ggplot(aes(x = date, y = change_cases)) +
@@ -303,7 +291,6 @@ cases %>%
 
 
 ```text
-
 Warning: Removed 47 row(s) containing missing values (geom_path).
 
 ```

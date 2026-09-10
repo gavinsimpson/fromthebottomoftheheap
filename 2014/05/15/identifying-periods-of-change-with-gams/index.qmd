@@ -6,11 +6,19 @@ tags:
   - modelling
   - Central England Temperature
 category: R
-description: In previous posts (here and here) I looked at how generalized additive
-  models (GAMs) can be used to model non-linear trends in time series data. In my
-  previous post I extended the modelling approach to deal with seasonal data where
-  we model both the within year (seasonal) and be…
 date: 2014-05-15 12:00:00
+description: >-
+  In previous posts (here and here) I looked at how generalized additive models (GAMs) can be
+  used to model non-linear trends in time series data. In my previous post I extended the
+  modelling approach to deal with seasonal data where we model both the within year (seasonal)
+  and between year (trend) variation with separate smooth functions. One of the complications of
+  time series modelling with smoothers is how to summarize the fitted model; you have a
+  non-linear trend which may be statistically significant but it may not be increasing or
+  decreasing everywhere. How do we identify where in the series that the data are changing?
+  That's the topic of this post, in which I'll use the method of finite differences to estimate
+  the rate of change (slope) in the fitted smoother and, through some mgcv magic, use the
+  information recorded in the fitted model to identify periods of statistically significant
+  change in the time series.
 author: Gavin Simpson
 categories:
   - R
@@ -53,7 +61,6 @@ To bring you up to speed, I put the bits of code from the previous post that we 
 
 
 ```r
-
 ## Load the CET data and process as per other blog post
 tmpf <- tempfile()
 download.file("https://gist.github.com/gavinsimpson/b52f6d375f57d539818b/raw/2978362d97ee5cc9e7696d2f36f94762554eefdf/load-process-cet-monthly.R",
@@ -66,7 +73,6 @@ ls()
 
 
 ```text
-
 [1] "annCET" "cet"    "CET"    "rn"     "tmpf"   "Years" 
 
 ```
@@ -75,7 +81,6 @@ The gist contains code to download and process the monthly Central England Tempe
 
 
 ```r
-
 ctrl <- list(niterEM = 0, msVerbose = TRUE, optimMethod="L-BFGS-B")
 m2 <- gamm(Temperature ~ s(nMonth, bs = "cc", k = 12) + s(Time, k = 20),
            data = cet, correlation = corARMA(form = ~ 1|Year, p = 2),
@@ -122,7 +127,6 @@ To load the functions into R from Github use
 
 
 ```r
-
 ## download the derivatives gist
 tmpf <- tempfile()
 download.file("https://gist.github.com/gavinsimpson/e73f011fdaaab4bb5a30/raw/82118ee30c9ef1254795d2ec6d356a664cc138ab/Deriv.R",
@@ -135,7 +139,6 @@ ls()
 
 
 ```text
-
  [1] "annCET"        "cet"           "CET"           "confint.Deriv"
  [5] "crit.t"        "ctrl"          "Deriv"         "df.res"       
  [9] "m2"            "m2.d"          "m2.dci"        "m2.dsig"      
@@ -151,7 +154,6 @@ I don't intend to explain all the code behind those functions, but the salient p
 
 
 ```r
-
 X0 <- predict(mod, newDF, type = "lpmatrix")
 newDF <- newDF + eps
 X1 <- predict(mod, newDF, type = "lpmatrix")
@@ -165,7 +167,6 @@ The other critical bit of code is
 
 
 ```r
-
 for(i in seq_len(nt)) {
   Xi <- Xp * 0
   want <- grep(t.labs[i], colnames(X1))
@@ -198,7 +199,6 @@ With that taken care of, we can use the functions to compute derivatives, confid
 
 
 ```r
-
 > Term <- "Time"
 > m2.d <- Deriv(m2)
 > m2.dci <- confint(m2.d, term = Term)
@@ -223,7 +223,6 @@ That [post](/2013/10/23/time-series-plots-with-lattice-and-ggplot/) used the **l
 
 
 ```r
-
 > ylim <- with(pdat, range(upper, lower, p2))
 > ylab <- expression(Temperature ~ (degree*C * ":" ~ centred))
 > 
@@ -242,7 +241,6 @@ When looking at a plot like this, it is always important to have in the back of 
 
 
 ```r
-
 > plot(Temperature - mean(Temperature) ~ Date, data = cet, type = "n",
 +      ylab = ylab)
 > points(Temperature - mean(Temperature) ~ Date, data = cet,

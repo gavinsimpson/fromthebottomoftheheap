@@ -7,11 +7,13 @@ tags:
   - Splines
   - Interactions
 category: R
-description: I ended the last post with some pretty plots of air temperature change
-  within and between years in the Central England Temperature series. The elephant
-  in the room^[well, one of the elephants; I also wasn't happy with the AR(7) for
-  the residuals] at the end of that post was is t…
 date: 2015-11-23 12:00:00
+description: >-
+  I ended the last post with some pretty plots of air temperature change within and between years
+  in the Central England Temperature series. The elephant in the room^[well, one of the
+  elephants; I also wasn't happy with the AR(7) for the residuals] at the end of that post was is
+  the change in the within year (seasonal) effect over time statistically significant? This is
+  the question I'll try to answer, or at least show how to answer, now.
 author: Gavin Simpson
 categories:
   - R
@@ -57,7 +59,6 @@ The model we ended up with was the spline interaction with an AR(7) in the resid
 
 
 ```r
-
 library("mgcv")
 
 ```
@@ -65,7 +66,6 @@ library("mgcv")
 
 
 ```text
-
 Loading required package: nlme
 This is mgcv 1.8-9. For overview type 'help("mgcv-package")'.
 
@@ -74,7 +74,6 @@ This is mgcv 1.8-9. For overview type 'help("mgcv-package")'.
 
 
 ```r
-
 library("ggplot2")
 
 ```
@@ -82,7 +81,6 @@ library("ggplot2")
 
 
 ```text
-
 Loading required package: methods
 
 ```
@@ -90,7 +88,6 @@ Loading required package: methods
 
 
 ```r
-
 source(con <- url("http://bit.ly/loadCET", method = "libcurl"))
 close(con)
 cet <- loadCET()
@@ -110,7 +107,6 @@ To answer our question, we want to fit the following two pseudo-code models and 
 
 
 ```r
-
 m1 <- gam(y ~ s(x1, x2), data = foo)
 m0 <- gam(y ~ s(x1) + s(x2), data = foo)
 anova(m1, m0)
@@ -129,7 +125,6 @@ Hence we can now fit models like
 
 
 ```r
-
 y ~ s(x1) + s(x2)
 y ~ s(x1) + s(x2) + ti(x1, x2)
 
@@ -147,7 +142,6 @@ We are now ready to fit our two models to test whether the interaction smooth is
 
 
 ```r
-
 phi <- unname(intervals(m$lme, which = "var-cov")$corStruct[, 2])
 m1 <- gamm(Temperature ~ s(Year, bs = "cr", k = 10) + s(nMonth, bs = "cc", k = 12) +
                ti(Year, nMonth, bs = c("cr","cc"), k = c(10, 12)),
@@ -163,7 +157,6 @@ The `anova()` method is used to compared the fitted models
 
 
 ```r
-
 anova(m0$lme, m1$lme)
 
 ```
@@ -171,7 +164,6 @@ anova(m0$lme, m1$lme)
 
 
 ```text
-
        Model df     AIC      BIC    logLik   Test  L.Ratio p-value
 m0$lme     1  5 14750.9 14782.70 -7370.449                        
 m1$lme     2  7 14706.0 14750.52 -7346.001 1 vs 2 48.89479  <.0001
@@ -184,7 +176,6 @@ What does our model say about the change in monthly temperature over the past ce
 
 
 ```r
-
 pdat <- with(cet,
              data.frame(Year = rep(c(1914, 2014), each = 12),
                         nMonth = rep(1:12, times = 2)))
@@ -199,7 +190,6 @@ A plot of the temperature differences^[If I was being more thorough, I could use
 
 
 ```r
-
 ggplot(dif, aes(x = Difference, y = Month)) +
     geom_point() +
     labs(x = expression(Temperature ~ difference ~ degree*C),
@@ -221,7 +211,6 @@ Before I finish, it is instructive to look at what the `ti()` term in the decomp
 
 
 ```r
-
 layout(matrix(1:3, ncol = 3))
 op <- par(mar = rep(4, 4) + 0.1)
 plot(m1$gam, pers = TRUE, scale = 0)

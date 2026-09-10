@@ -7,10 +7,16 @@ tags:
   - brms
   - bayesian
 category: R
-description: Regular readers will know that I have a somewhat unhealthy relationship
-  with GAMs and the mgcv package. I use these models all the time in my research but
-  recently we've been hitting the limits of the range of models that mgcv can fit.
-  So I've been looking into alternative ways …
+description: >-
+  Regular readers will know that I have a somewhat unhealthy relationship with GAMs and the mgcv
+  package. I use these models all the time in my research but recently we've been hitting the
+  limits of the range of models that mgcv can fit. So I've been looking into alternative ways to
+  fit the GAMs I want to fit but which can handle the kinds of data or distributions that have
+  been cropping up in our work. The brms package [\@brms-2017] is an excellent resource for
+  modellers, providing a high-level R front end to a vast array of model types, all fitted using
+  Stan. brms is the perfect package to go beyond the limits of mgcv because brms even uses the
+  smooth functions provided by mgcv, making the transition easier. In this post I take a look at
+  how to fit a simple GAM in brms and compare it with the same model fitted using mgcv.
 author: Gavin Simpson
 categories:
   - R
@@ -46,7 +52,6 @@ In this post we'll use the following packages. If you don't know **schoenberg**,
 
 
 ```r
-
 ## packages
 library('mgcv')
 library('brms')
@@ -60,7 +65,6 @@ To illustrate **brms**'s GAM-fitting chops, we'll use the `mcycle` data set that
 
 
 ```r
-
 ## load the example data mcycle
 data(mcycle, package = 'MASS')
 
@@ -72,7 +76,6 @@ head(mcycle)
 
 
 ```text
-
   times accel
 1   2.4   0.0
 2   2.6  -1.3
@@ -87,7 +90,6 @@ The aim is to model the acceleration force (`accel`) as a function of time post 
 
 
 ```r
-
 ggplot(mcycle, aes(x = times, y = accel)) +
     geom_point() +
     labs(x = "Miliseconds post impact", y = "Acceleration (g)",
@@ -102,7 +104,6 @@ We'll model acceleration as a *smooth* function of time using a GAM and the defa
 
 
 ```r
-
 m1 <- gam(accel ~ s(times), data = mcycle, method = "REML")
 summary(m1)
 
@@ -111,8 +112,6 @@ summary(m1)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -142,7 +141,6 @@ To plot the fitted smooth we could use the `plot()` method provided by **mgcv**,
 
 
 ```r
-
 draw(m1)
 
 ```
@@ -164,7 +162,6 @@ The rest of the model is pretty similar to the `gam()` version we fitted earlier
 
 
 ```r
-
 m2 <- brm(bf(accel ~ s(times)),
           data = mcycle, family = gaussian(), cores = 4, seed = 17,
           iter = 4000, warmup = 1000, thin = 10, refresh = 0,
@@ -175,7 +172,6 @@ m2 <- brm(bf(accel ~ s(times)),
 
 
 ```text
-
 Compiling the C++ model
 
 ```
@@ -183,7 +179,6 @@ Compiling the C++ model
 
 
 ```text
-
 Start sampling
 
 ```
@@ -192,7 +187,6 @@ Once the model has finished compiling and sampling we can output the model summa
 
 
 ```r
-
 summary(m2)
 
 ```
@@ -200,7 +194,6 @@ summary(m2)
 
 
 ```text
-
  Family: gaussian 
   Links: mu = identity; sigma = identity 
 Formula: accel ~ s(times) 
@@ -244,7 +237,6 @@ How does this model compare with the one fitted using `gam()`? We can use the `g
 
 
 ```r
-
 gam.vcomp(m1, rescale = FALSE)
 
 ```
@@ -252,8 +244,6 @@ gam.vcomp(m1, rescale = FALSE)
 
 
 ```text
-
-
 Standard deviations and 0.95 confidence intervals:
 
            std.dev     lower      upper
@@ -272,7 +262,6 @@ The `marginal_smooths()` function is used to extract the marginal effect of the 
 
 
 ```r
-
 msms <- marginal_smooths(m2)
 
 ```
@@ -281,7 +270,6 @@ This function extracts enough information about the estimated spline to plot it 
 
 
 ```r
-
 plot(msms)
 
 ```
@@ -294,7 +282,6 @@ There's a lot that we can and should do to check the model fit. For now, we'll l
 
 
 ```r
-
 pp_check(m2)
 
 ```
@@ -302,7 +289,6 @@ pp_check(m2)
 
 
 ```text
-
 Using 10 posterior samples for ppc type 'dens_overlay' by default.
 
 ```
@@ -315,7 +301,6 @@ Another type of posterior predictive check plot is the empirical cumulative dist
 
 
 ```r
-
 pp_check(m2, type = "ecdf_overlay")
 
 ```
@@ -323,7 +308,6 @@ pp_check(m2, type = "ecdf_overlay")
 
 
 ```text
-
 Using 10 posterior samples for ppc type 'ecdf_overlay' by default.
 
 ```

@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2016-04-17">
-<meta name="description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity…">
+<meta name="description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity of variances. In improving the default plot and allowing customisation of plot features, I was reminded of how much I dislike programming plot functions that use base graphics. But don’t worry, this isn’t going to degenerate into a ggplot love-in nor a David Robinson-esque dig at Jeff Leek.">
 
 <title>A new default plot for multivariate dispersions – From the bottom of the heap</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -122,13 +122,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <meta property="og:title" content="A new default plot for multivariate dispersions – From the bottom of the heap">
-<meta property="og:description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity…">
+<meta property="og:description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity of variances. In improving the default plot and allowing customisation of plot features, I was reminded of how much I dislike programming plot functions that use base graphics. But don’t worry, this isn’t going to degenerate into a ggplot love-in nor a David Robinson-esque dig at Jeff Leek.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/new-plot-default-for-betadisper-default-plot-1.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="595">
 <meta property="og:image:width" content="595">
 <meta name="twitter:title" content="A new default plot for multivariate dispersions – From the bottom of the heap">
-<meta name="twitter:description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity…">
+<meta name="twitter:description" content="This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity of variances. In improving the default plot and allowing customisation of plot features, I was reminded of how much I dislike programming plot functions that use base graphics. But don’t worry, this isn’t going to degenerate into a ggplot love-in nor a David Robinson-esque dig at Jeff Leek.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/new-plot-default-for-betadisper-default-plot-1.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -143,11 +143,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -285,7 +280,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity…
+    This weekend, prompted by a pull request from Michael Friendly, I finally got round to improving the plot method for betadisper() in the vegan package. betadisper() is an implementation of Marti Anderson’s Permdisp method, a multivariate analogue of Levene’s test for homogeneity of variances. In improving the default plot and allowing customisation of plot features, I was reminded of how much I dislike programming plot functions that use base graphics. But don’t worry, this isn’t going to degenerate into a ggplot love-in nor a David Robinson-esque dig at Jeff Leek.
   </div>
 </div>
 
@@ -331,13 +326,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>There was nothing stopping me, however, from providing a more featureful version with full user control over the various aspects of the plot. Nothing that is except a deep reluctance to write — in the first place — and then subsequently maintain a function with a gabillion tortuously named arguments to differentiate the half dozen settings of <code>cex</code> <em>et al</em> for different features.</p>
 <p>There’s a real trade off between flexibility and complexity in <code>plot</code> methods like this. The situation is much easier to manage with lower-level functions to draw the individual features of the plot; invariably each lower-level tool requires a smaller subset of parameters, and if you code your function well, you can usually achieve all you need by passing <code>...</code> on to the low-level base graphics functions your function uses. You can’t do this with a <code>plot</code> method that combines several lower-level features into a single plot; if you want to allow the user to independently control the colour of three separate plot features you’re going to need three different variations on the argument <code>col</code>. Multiply that by all the parameters you want to allow the user to tweak, and you have the recipe for a mess. Either that, or you need to accept lists of parameters for each feature, which aren’t exactly intuitive for casual users.</p>
 <p>With the new <code>plot.betadisper()</code> method I took a compromise position, allowing some additional flexibility whilst limiting the argument bloat that is an unfortunate side effect of high-level base graphics <code>plot</code> methods.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## you'll need the development version of vegan from github for this</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="do">## devtools::install_github("vegandevs/vegan")</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"vegan"</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">args</span>(vegan<span class="sc">:::</span>plot.betadisper)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-function (x, axes = c(1, 2), cex = 0.7, pch = seq_len(ng), col = NULL, 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## you'll need the development version of vegan from github for this</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="do">## devtools::install_github("vegandevs/vegan")</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"vegan"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">args</span>(vegan<span class="sc">:::</span>plot.betadisper)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>function (x, axes = c(1, 2), cex = 0.7, pch = seq_len(ng), col = NULL, 
     lty = "solid", lwd = 1, hull = TRUE, ellipse = FALSE, ellipse.type = c("sd", 
         "se"), ellipse.conf = NULL, segments = TRUE, seg.col = "grey", 
     seg.lty = lty, seg.lwd = lwd, label = TRUE, label.cex = 1, 
@@ -346,17 +339,15 @@ NULL
 </code></pre>
 <p>Michael Friendly <a href="https://github.com/vegandevs/vegan/pull/165">supplied code</a> to allow some of the original plotting parameters to take vectors, one per group to facilitate their differentiation. I extended this to allow couple more standard parameters to be set by the user. Rather than have separate settings for convex hulls and confidence ellipses, both use the same general parameters. Only the line segments between data points and their centroid get any special treatment, in the main because they add quite of lot of components to the plot and being able to style them to sit in the background is quite useful.</p>
 <p>We’ll look at the new plot using the main example in <code>?betadisper</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(varespec)                  <span class="co"># load example data </span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>dis <span class="ot">&lt;-</span> <span class="fu">vegdist</span>(varespec)        <span class="co"># Bray-Curtis distances between samples</span></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="do">## First 16 sites grazed, remaining 8 sites ungrazed</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>groups <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>,<span class="dv">16</span>), <span class="fu">rep</span>(<span class="dv">2</span>,<span class="dv">8</span>)), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"grazed"</span>,<span class="st">"ungrazed"</span>))</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">betadisper</span>(dis, groups)  <span class="co"># Calculate multivariate dispersions</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(varespec)                  <span class="co"># load example data </span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>dis <span class="ot">&lt;-</span> <span class="fu">vegdist</span>(varespec)        <span class="co"># Bray-Curtis distances between samples</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="do">## First 16 sites grazed, remaining 8 sites ungrazed</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>groups <span class="ot">&lt;-</span> <span class="fu">factor</span>(<span class="fu">c</span>(<span class="fu">rep</span>(<span class="dv">1</span>,<span class="dv">16</span>), <span class="fu">rep</span>(<span class="dv">2</span>,<span class="dv">8</span>)), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"grazed"</span>,<span class="st">"ungrazed"</span>))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">betadisper</span>(dis, groups)  <span class="co"># Calculate multivariate dispersions</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Given <code>mod</code> the <code>plot</code> method produces a labelled plot with convex hulls and line segments</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mod)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mod)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/new-plot-default-for-betadisper-default-plot-1.png" class="img-fluid figure-img"></p>
@@ -369,8 +360,7 @@ NULL
 <li>standard error ellipses</li>
 </ul>
 <p>with the default being to draw a 1 standard deviations ellipse (<code>ellipse.conf</code> controls how many standard deviations or errors are drawn, or which 1 - α confidence ellipse is drawn.)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mod, <span class="at">hull =</span> <span class="cn">FALSE</span>, <span class="at">ellipse =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(mod, <span class="at">hull =</span> <span class="cn">FALSE</span>, <span class="at">ellipse =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/new-plot-default-for-betadisper-plot-with-confidence-intervals-1.png" class="img-fluid figure-img"></p>

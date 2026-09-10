@@ -8,10 +8,19 @@ tags:
   - R package
   - workflow
 category: R
-description: There's one thing that has bugged me for a while about developing R packages.
-  We have all these nice, modern tools we have for tracking our code, producing web
-  sites from the roxygen documentation, an so on. Yet for every code commit I make
-  to the master branch of a package repo…
+description: >-
+  There's one thing that has bugged me for a while about developing R packages. We have all these
+  nice, modern tools we have for tracking our code, producing web sites from the roxygen
+  documentation, an so on. Yet for every code commit I make to the master branch of a package
+  repo, there's often two or more additional steps I need to take to keep the package README.md
+  and pkgdown site in sync with the code. Don't get me wrong; it's amazing that we have these
+  tools available to help users get to grips with our R packages. It's just that there's a lot of
+  extra things to remember to do to keep everything up to date. The development of free-to-use
+  services such as Travis CI or Appveyor have been very useful as they can automate many of these
+  repetitive tasks. A more recent newcomer to the field is GitHub Actions. The other day I was
+  grappling with getting a GitHub Actions workflow to render a README.Rmd file to README.md on
+  GitHub, so that I didn't have to do it locally all the time. After a lot of trial and error,
+  this is how I got it working.
 author: Gavin Simpson
 categories:
   - R
@@ -52,7 +61,6 @@ Also, the **usethis** package has made it incredibly easy to get started using G
 If you don't have **usethis** installed, install it (`install.packages("usethis")`), then you can set your R package repo up to run `R CMD check` on your package on GitHub's servers by running
 
 ```r
-
 usethis::use_github_actions()
 
 ```
@@ -60,7 +68,6 @@ usethis::use_github_actions()
 in an R session in the package root folder. Running this will produce something like this
 
 ```r
-
 > usethis::use_github_actions()
 ✔ Setting active project to '/home/gavin/work/git/gratia/gratia'
 ✔ Creating '.github/'
@@ -85,7 +92,6 @@ To get set-up quickly to render `README.Rmd` to markdown, you can now use `use_g
 This is what the contents of `render-readme.yaml` look like, at the time of writing, if you used **usethis** to create it:
 
 ```yaml
-
 on:
   push:
     paths:
@@ -119,7 +125,6 @@ That didn't suit my use case however; what if I change the package code in such 
 There's probably a better way to do this --- such as setting `paths:` to a wildcard that would match *any* `.R` file in the `R` folder so the workflow would be triggered on any change to the package code --- but to just get something up and running I changed the `on:` part to read:
 
 ```yaml
-
 on:
   push:
     branches: master
@@ -137,7 +142,6 @@ The `runs-on` element indicates what system the job will be run on; here is is a
 The `steps:` section is where the stages of the job are defined.
 
 ```yaml
-
     steps:
       - uses: actions/checkout@v2
       - uses: r-lib/actions/setup-r@v1
@@ -152,7 +156,6 @@ The next two `uses:` are workflows provide by *r-lib/actions* that set up a work
 After the `uses:` declarations, the YAML file includes a series of steps that describe commands that are run on the service. This is where the real action takes place.
 
 ```yaml
-
       - name: Install rmarkdown
         run: Rscript -e 'install.packages("rmarkdown")'
       - name: Render README
@@ -179,7 +182,6 @@ Out of the box, these steps aren't going to be very useful for R package maintai
 In my case, I just needed to install the **gratia** package alongside **rmarkdown**, so I changed that `run:` element to be
 
 ```yaml
-
       - name: Install rmarkdown
         run: Rscript -e 'install.packages(c("rmarkdown", "gratia"))'
 
@@ -188,7 +190,6 @@ In my case, I just needed to install the **gratia** package alongside **rmarkdow
 I also decided to change the `rmarkdown::render()` call; by default this will generate HTML output by rendering the `.Rmd` first to `.md` and thence to `.html`. As we don't need this latter step, I changed the `output_format` argument of `render()` to be `"md_document"`, so that element now looks like this
 
 ```yaml
-
       - name: Render README
         run: Rscript -e 'rmarkdown::render("README.Rmd", output_format = "md_document")'
 
@@ -199,7 +200,6 @@ Doing this means I don't also generate a `README.html` file (which might be why 
 I also modified the *commit* step too. The default assumes you already have a `README.md` in the repo and that this is the only file you want to add to the commit. If you render any plots in the `.Rmd`, then you'll also want to add those to the commit. So, I added an explicit `git add` line prior to the commit, and also simplified the latter
 
 ```yaml
-
       - name: Commit results
         run: |
           git add README.md man/figures/README-*
@@ -211,7 +211,6 @@ I also modified the *commit* step too. The default assumes you already have a `R
 As you can see, I used a wildcard to catch any figures created by the render. In the `README.Rmd` I used a setup chunk to set the `fig.path` **knitr** option so that any plots were generated in the `man/figures` folder and had the prefix `README-` prepended to the file name:
 
 ```r
-
 knitr::opts_chunk$set(
   fig.path = "man/figures/README-"
 )
@@ -225,7 +224,6 @@ I used the prefix `README-` so that I could limit what I was adding in the `git 
 After these changes (and a few others as I was troubleshooting some issues) my workflow to render `README.Rmd` files looks like this
 
 ```yaml
-
 name: render readme
 
 # Controls when the action will run

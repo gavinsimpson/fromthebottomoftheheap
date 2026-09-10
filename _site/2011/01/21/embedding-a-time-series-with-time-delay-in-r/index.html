@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2011-01-21">
-<meta name="description" content="I’ve recently been looking at Martin Trauth's book MATLAB® Recipes for Earth Sciences to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whils…">
+<meta name="description" content="I’ve recently been looking at Martin Trauth's book MATLAB® Recipes for Earth Sciences to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whilst browsing, the recurrence plot section caught my eye as something to look into further, both for palaeo-based work but also for work on ecological thresholds and tipping points.">
 
 <title>Embedding a time series with time delay in R – From the bottom of the heap</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -122,10 +122,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <meta property="og:title" content="Embedding a time series with time delay in R – From the bottom of the heap">
-<meta property="og:description" content="I’ve recently been looking at Martin Trauth's book MATLAB® Recipes for Earth Sciences to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whils…">
+<meta property="og:description" content="I’ve recently been looking at Martin Trauth's book MATLAB® Recipes for Earth Sciences to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whilst browsing, the recurrence plot section caught my eye as something to look into further, both for palaeo-based work but also for work on ecological thresholds and tipping points.">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta name="twitter:title" content="Embedding a time series with time delay in R – From the bottom of the heap">
-<meta name="twitter:description" content="I’ve recently been looking at Martin Trauth's book MATLAB® Recipes for Earth Sciences to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whils…">
+<meta name="twitter:description" content="I’ve recently been looking at Martin Trauth's book MATLAB® Recipes for Earth Sciences to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whilst browsing, the recurrence plot section caught my eye as something to look into further, both for palaeo-based work but also for work on ecological thresholds and tipping points.">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
 <meta name="twitter:card" content="summary">
@@ -137,11 +137,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -278,7 +273,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    I’ve recently been looking at Martin Trauth's book MATLAB® Recipes for Earth Sciences to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whils…
+    I’ve recently been looking at Martin Trauth's book MATLAB® Recipes for Earth Sciences to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whilst browsing, the recurrence plot section caught my eye as something to look into further, both for palaeo-based work but also for work on ecological thresholds and tipping points.
   </div>
 </div>
 
@@ -319,18 +314,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 </div></div><p>I’ve recently been looking at [Martin Trauth](http://www.geo.uni-potsdam.de/member-details/show/108.html ‘Martin Trauth’s web page at The University of Potsdam Institute of Earth and Environmental Science’)'s book <a href="http://www.springer.com/earth+sciences+and+geography/computer+&amp;+mathematical+applications/book/978-3-642-12761-8" title="Matlab book page at Springer">MATLAB® Recipes for Earth Sciences</a> to try to understand what some of my palaeoceanography colleagues are doing with their data analyses (lots of frequency domain time series techniques and a preponderance of filters). Whilst browsing, the <a href="http://en.wikipedia.org/wiki/Recurrence_plot" title="Recurrence plots entry in Wikipedia">recurrence plot</a> section caught my eye as something to look into further, both for palaeo-based work but also for work on ecological thresholds and tipping points.</p>
 <p>In a recurrence plot, the recurrences of a phase space are plotted. As we tend not to have the phase space, just the time series of observations, we <a href="http://en.wikipedia.org/wiki/Embedding">embed</a> the observed series to produce the <em>m</em> dimensional phase space. A key feature of the recurrence plot is the <em>time delay</em> included during embedding. There is an <code>embed()</code> function in R but it does not handle the time delay aspects that one needs for the recurrence plot, so I decided to write my own. The results are shown below in my function <code>Embed()</code>. It has been written to replicate the standard R <code>embed()</code> function where <code>d = 1</code> (i.e.&nbsp;no time delay), which is a useful check that it is doing the right thing.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>Embed <span class="ot">&lt;-</span> <span class="cf">function</span>(x, m, <span class="at">d =</span> <span class="dv">1</span>, <span class="at">as.embed =</span> <span class="cn">TRUE</span>) {</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(x) <span class="sc">-</span> (m<span class="dv">-1</span>)<span class="sc">*</span>d</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(n <span class="sc">&lt;=</span> <span class="dv">0</span>)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Insufficient observations for the requested embedding"</span>)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(x[<span class="fu">seq_len</span>(n)], m), <span class="at">ncol =</span> m)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    out[,<span class="sc">-</span><span class="dv">1</span>] <span class="ot">&lt;-</span> out[,<span class="sc">-</span><span class="dv">1</span>, drop <span class="ot">=</span> <span class="cn">FALSE</span>] <span class="sc">+</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">rep</span>(<span class="fu">seq_len</span>(m <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> d, <span class="at">each =</span> <span class="fu">nrow</span>(out))</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(as.embed)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        out <span class="ot">&lt;-</span> out[, <span class="fu">rev</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(out)))]</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    out</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>Embed <span class="ot">&lt;-</span> <span class="cf">function</span>(x, m, <span class="at">d =</span> <span class="dv">1</span>, <span class="at">as.embed =</span> <span class="cn">TRUE</span>) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(x) <span class="sc">-</span> (m<span class="dv">-1</span>)<span class="sc">*</span>d</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(n <span class="sc">&lt;=</span> <span class="dv">0</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Insufficient observations for the requested embedding"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(x[<span class="fu">seq_len</span>(n)], m), <span class="at">ncol =</span> m)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    out[,<span class="sc">-</span><span class="dv">1</span>] <span class="ot">&lt;-</span> out[,<span class="sc">-</span><span class="dv">1</span>, drop <span class="ot">=</span> <span class="cn">FALSE</span>] <span class="sc">+</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        <span class="fu">rep</span>(<span class="fu">seq_len</span>(m <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> d, <span class="at">each =</span> <span class="fu">nrow</span>(out))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(as.embed)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        out <span class="ot">&lt;-</span> out[, <span class="fu">rev</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(out)))]</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    out</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The arguments are:</p>
 <ul>
 <li><code>x</code>: the time series, observed at regular intervals.</li>
@@ -339,8 +333,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><code>as.embed</code>: logical; should we return the embedded time series in the order that <code>embed()</code> would?</li>
 </ul>
 <p>On a simple time series, this is what we get using <code>embed()</code> and <code>Embed()</code>:</p>
-<pre class="rout"><code>
-&gt; embed(1:10, 4)
+<pre class="rout"><code>&gt; embed(1:10, 4)
      [,1] [,2] [,3] [,4]
 [1,]    4    3    2    1
 [2,]    5    4    3    2
@@ -360,8 +353,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 [7,]   10    9    8    7
 </code></pre>
 <p>And here we have the results of embedding the same simple time series into 4 dimensions with a time delay of 2:</p>
-<pre class="rout"><code>
-&gt; Embed(1:10, 4, 2)
+<pre class="rout"><code>&gt; Embed(1:10, 4, 2)
      [,1] [,2] [,3] [,4]
 [1,]    7    5    3    1
 [2,]    8    6    4    2

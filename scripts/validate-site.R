@@ -11,6 +11,24 @@ dated_qmd <- list.files(root, pattern = "^index\\.qmd$", recursive = TRUE, full.
 dated_qmd <- dated_qmd[grepl("/20[0-9]{2}/[0-9]{2}/[0-9]{2}/[^/]+/index\\.qmd$", dated_qmd)]
 if (length(dated_qmd) != 104L) stop("Expected exactly 104 canonical dated QMD pages")
 
+post_descriptions <- vapply(dated_qmd, function(path) {
+  lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
+  yaml_end <- which(trimws(lines[-1L]) == "---")[[1L]] + 1L
+  metadata <- yaml::yaml.load(paste(lines[2L:(yaml_end - 1L)], collapse = "\n"))
+  if (is.null(metadata$description)) "" else as.character(metadata$description)
+}, character(1L))
+if (any(!nzchar(post_descriptions))) stop("Every historical post must have a listing description")
+if (any(endsWith(post_descriptions, "…"))) stop("Historical post descriptions must not be truncated")
+
+leading_blank_fences <- dated_qmd[vapply(dated_qmd, function(path) {
+  lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
+  starts <- grep("^```[^[:space:]{]+[[:space:]]*$", lines, perl = TRUE)
+  any(starts < length(lines) & !nzchar(trimws(lines[starts + 1L])))
+}, logical(1L))]
+if (length(leading_blank_fences)) {
+  stop("Visible historical code fences start with a blank line: ", paste(leading_blank_fences, collapse = ", "))
+}
+
 hashes <- read.delim(file.path(root, "migration", "rmd-md5.tsv"), stringsAsFactors = FALSE)
 current <- tools::md5sum(file.path(root, hashes$path))
 bad <- hashes$path[unname(current) != hashes$md5]
@@ -98,9 +116,30 @@ blog <- readLines(file.path(root, "_site", "blog", "index.html"), warn = FALSE)
 if (sum(grepl('class="quarto-post ', home, fixed = TRUE)) != 10L) stop("Home page must list exactly ten posts")
 if (sum(grepl('data-index="', blog, fixed = TRUE)) != 104L) stop("Blog archive must list exactly 104 posts")
 if (any(grepl("publications/365papers", home, fixed = TRUE))) stop("Home listing contains non-post content")
+home_text <- paste(home, collapse = "\n")
+if (grepl('<a class="navbar-brand', home_text, fixed = TRUE)) stop("The redundant site title remains in the navbar")
+home_sidebar_items <- c("Social", "Blogroll", "Buy Me A Coffee", "Musings on Quantitative Palaeoecology")
+if (!all(vapply(home_sidebar_items, grepl, logical(1L), x = home_text, fixed = TRUE))) {
+  stop("The home-page Social or Blogroll sidebar is incomplete")
+}
+if (!grepl("home-posts", home_text, fixed = TRUE) || !grepl("home-sidebar", home_text, fixed = TRUE)) {
+  stop("The home-page wide listing layout is missing")
+}
+if (!grepl('class="home-posts">[[:space:][:print:]]*class="quarto-listing', home_text, perl = TRUE)) {
+  stop("The home-page listing is not inside the wide listing column")
+}
+if (!grepl("Here, I describe what I broke as well as outline some of the major new features in the package.", home_text, fixed = TRUE)) {
+  stop("The home-page listing does not contain the complete opening paragraph")
+}
 
 post_html <- file.path(root, "_site", sub("^/", "", manifest$url), "index.html")
 rendered <- unlist(lapply(post_html, function(path) readLines(path, warn = FALSE)), use.names = FALSE)
+if (any(grepl('class="description"', rendered, fixed = TRUE))) {
+  theme_text <- paste(readLines(file.path(root, "theme.scss"), warn = FALSE), collapse = "\n")
+  if (!grepl("\\.quarto-title-block[[:space:]]+\\.description[[:space:]]*\\{[^}]*display:[[:space:]]*none", theme_text, perl = TRUE)) {
+    stop("Post descriptions would be visible in the title block")
+  }
+}
 if (any(grepl("assets/css/bootstrap.css|assets/js/bootstrap.js|class=.[^\"]*span[0-9]+", rendered))) {
   stop("Obsolete Bootstrap 2 assets or grid classes remain in rendered posts")
 }

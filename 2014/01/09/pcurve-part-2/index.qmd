@@ -8,11 +8,14 @@ tags:
   - R
   - analogue
 category: R
-description: The horseshoe effect is a well known and discussed issue with principal
-  component analysis (PCA) [e.g. @goodall_objective_1954; @noy-meir_principal_1970;
-  @swan_examination_1970]. Similar geometric artefacts also affect correspondence
-  analysis (CA). In part 1 of this series I loo…
 date: 2014-01-09 12:00:00
+description: >-
+  The horseshoe effect is a well known and discussed issue with principal component analysis
+  (PCA) [e.g. \@goodallobjective1954; \@noy-meirprincipal1970; \@swanexamination1970]. Similar
+  geometric artefacts also affect correspondence analysis (CA). In part 1 of this series I looked
+  at the implications of these "artefacts" for the recovery of temporal or single dominant
+  gradients from multivariate palaeoecological data. In part 2, I introduce the topic of
+  principal curves [\@hastieprincipal1989].
 author: Gavin Simpson
 categories:
   - R
@@ -79,7 +82,6 @@ Convergence is declared when the fitted curve is sufficiently close to that of t
 To illustrate the fitting process, I turn to a synthetic data set from @podani-miklos-2002, one that is similar in spirit to the data I used from @legendre_numerical_2012 [p. 482] in the [earlier post](/2013/12/28/pcurve-1/). The data set is somewhat tedious to create hence I have written a couple of functions that can generate data sets from the paper [@podani-miklos-2002] that are available on Github. To read this code into R and recreate the data from Figure 1 [@podani-miklos-2002] run
 
 ```r
-
 ## load Podani and Miklos data-set-generating function from github
 tmp <- tempfile()
 download.file("https://github.com/gavinsimpson/random_code/raw/master/podani.R",
@@ -94,7 +96,6 @@ p1 <- podani1()
 As with the data in the [earlier post](/2013/12/28/pcurve-1/), when ordinated using PCA a very strong horseshoe is apparent in the solution. Projecting points on to the first PCA axis for example, the true ordering of samples along the gradient is lost at the ends of the axis where the horseshoe bends back on itself.
 
 ```r
-
 ## ordinate
 library("vegan")
 pca1 <- rda(p1)
@@ -112,7 +113,6 @@ layout(1)
 There are several R packages that fit PCs as described above, including **[princurve](http://cran.r-project.org/web/packages/princurve/index.html)**, which was converted from the **S** original implementation of Trevor Hastie, and **[pcurve](http://cran.r-project.org/web/packages/pcurve/index.html)**, Glenn De'ath's port of Hastie's code and given an ecological makeover as described in [@death_principal_1999] and which I now maintain. However, I will use the interface I wrote for the **[analogue](http://cran.r-project.org/web/packages/analogue/index.html)** package, which is a wrapper to the `principal.curve()` function of **princurve**, designed specifically for working with palaeo data. To fit a PC to the example data, use
 
 ```r
-
 ## Load analogue
 library("analogue")
 
@@ -127,7 +127,6 @@ Because I used `trace = TRUE`, information on the fitting process is printed to 
 Although I haven't actually checked, I suspect the reason the fitted curve moves away from the samples at the top of the figure in later iterations is that it is being bent closer to samples in other dimensions than those shown on the PCA. If you were to use the default tolerance, the algorithm converges after five iterations and is much closer to the samples at the top of the figure and has a slightly better fit than the one shown in the figure, however, it is not *self-consistent* given the tighter tolerance of `thresh = 0.0005`. A curve is said to be self-consistent if for any point on the curve, the average of the points that project there coincides with the point on the curve. @hastie_principal_1989 note that they are <q>"unable to prove... that each step guarantees a decrease in the criterion [sum of squared errors]"</q>, which fits with our observations here. `prcurve()` spat the following information to the screen during fitting
 
 ```rout
-
 R> prc1 <- prcurve(p1, trace = TRUE, plotit = TRUE, thresh = 0.0005,
 +                 maxit = 50)
 --------------------------------------------------------------------------------
@@ -174,7 +173,6 @@ PC Converged in 33 iterations.
 33 iterations were required before convergence in this instance. Printing the object returned by `prcurve()` yields further information on the fitted curve
 
 ```rout
-
 R> prc1
 
 	Principal Curve Fitting
@@ -195,7 +193,6 @@ Fitted curve uses 336.433 degrees of freedom.
 
 The curve explains 39% of the variance in the example data set and whilst there is a significant amount of unexplained variance, the PC is a significant improvement over the % fit that the PCA affords these data (the value displayed below is a proportion) although it does use a significantly higher number of degrees of freedom in doing so (~336 compared with 42 for the PCA --- the first principal component is a linear combination of 42 species scores.).
 ```rout
-
 R> varExpl(pca1)
     PC1 
 0.05963
@@ -205,7 +202,6 @@ R> varExpl(pca1)
 There's not a whole lot more to principal curves, except a bit of fiddling and plenty of details on how those smoothers are fitted. I don't want this post to turn into an even larger missive than it already is, so I'll postpone those details to another post. In the meantime, I'll show a principal curve fitted to the Abernethy Forest data I introduced at the end of the [previous post](/2013/12/28/pcurve-1/). I'll quickly run through the code without much explanation as I'll cover the details in part three of this series.
 
 ```r
-
 ## Load the Abernethy Forest data
 data(abernethy)
 
@@ -237,7 +233,6 @@ The fitted PC is shown below
 and explains 96% of the variance in the data
 
 ```r
-
 R> aber.pc
 
 	Principal Curve Fitting
@@ -258,7 +253,6 @@ Fitted curve uses 218.339 degrees of freedom.
 and we'd need 4 or 5 PCA axes to do as well as this, and even then we'd be in the unenviable position of having to visualize that 5d space. 
 
 ```r
-
 R> varExpl(rda(abernethy2), axes = 1:5, cumulative = TRUE)
    PC1    PC2    PC3    PC4    PC5 
 0.4650 0.8022 0.9059 0.9439 0.9703

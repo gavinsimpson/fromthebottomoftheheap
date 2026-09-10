@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2016-05-24">
-<meta name="description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had ch…">
+<meta name="description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had changed URL and some of the GET parameters had also changed. In fixing those functions I also noted that the original code only downloaded hourly data and not all useful weather variables are recorded hourly; precipitation for example is only in the daily and monthly data formats. This post updates the earlier one, explaining what changed and how the code has been updated. As an added benefit, the functions can now handle downloading daily and monthly data files as well as the hourly files that the original could handle.">
 
 <title>Harvesting more Canadian climate data – From the bottom of the heap</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -122,11 +122,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <meta property="og:title" content="Harvesting more Canadian climate data – From the bottom of the heap">
-<meta property="og:description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had ch…">
+<meta property="og:description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had changed URL and some of the GET parameters had also changed. In fixing those functions I also noted that the original code only downloaded hourly data and not all useful weather variables are recorded hourly; precipitation for example is only in the daily and monthly data formats. This post updates the earlier one, explaining what changed and how the code has been updated. As an added benefit, the functions can now handle downloading daily and monthly data files as well as the hourly files that the original could handle.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/screenshot-gc-climate-website.jpeg">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta name="twitter:title" content="Harvesting more Canadian climate data – From the bottom of the heap">
-<meta name="twitter:description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had ch…">
+<meta name="twitter:description" content="A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had changed URL and some of the GET parameters had also changed. In fixing those functions I also noted that the original code only downloaded hourly data and not all useful weather variables are recorded hourly; precipitation for example is only in the daily and monthly data formats. This post updates the earlier one, explaining what changed and how the code has been updated. As an added benefit, the functions can now handle downloading daily and monthly data files as well as the hourly files that the original could handle.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/screenshot-gc-climate-website.jpeg">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -139,11 +139,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -280,7 +275,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had ch…
+    A while back I wrote some code to download climate data from Government of Canada’s historical climate/weather data website for one of our students. In May this year (2016) the Government of Canada changed their website a little and the API code that responded to requests had changed URL and some of the GET parameters had also changed. In fixing those functions I also noted that the original code only downloaded hourly data and not all useful weather variables are recorded hourly; precipitation for example is only in the daily and monthly data formats. This post updates the earlier one, explaining what changed and how the code has been updated. As an added benefit, the functions can now handle downloading daily and monthly data files as well as the hourly files that the original could handle.
   </div>
 </div>
 
@@ -327,41 +322,38 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </figure>
 </div>
 <p>The <code>genURLS()</code> function now has an extra argument <code>timeframe</code> which allows you to select which type of data to download, defaulting to hourly data:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>genURLS <span class="ot">&lt;-</span> <span class="cf">function</span>(id, start, end, <span class="at">timeframe =</span> <span class="fu">c</span>(<span class="st">"hourly"</span>, <span class="st">"daily"</span>, <span class="st">"monthly"</span>)) {</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    years <span class="ot">&lt;-</span> <span class="fu">seq</span>(start, end, <span class="at">by =</span> <span class="dv">1</span>)</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    nyears <span class="ot">&lt;-</span> <span class="fu">length</span>(years)</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    timeframe <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(timeframe)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(timeframe, <span class="st">"hourly"</span>))) {</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        years <span class="ot">&lt;-</span>  <span class="fu">rep</span>(years, <span class="at">each =</span> <span class="dv">12</span>)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        months <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, <span class="at">times =</span> nyears)</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        ids <span class="ot">&lt;-</span> <span class="fu">rep</span>(id, nyears <span class="sc">*</span> <span class="dv">12</span>)</span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(timeframe, <span class="st">"daily"</span>))) {</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        months <span class="ot">&lt;-</span> <span class="dv">1</span>                      <span class="co"># this is essentially arbitrary &amp; ignored if daily</span></span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>        ids <span class="ot">&lt;-</span> <span class="fu">rep</span>(id, nyears)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        years <span class="ot">&lt;-</span> start                   <span class="co"># again arbitrary, for monthly it just gives you all data</span></span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        months <span class="ot">&lt;-</span> <span class="dv">1</span>                      <span class="co"># and this is also ignored</span></span>
-<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        ids <span class="ot">&lt;-</span> id</span>
-<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    timeframe <span class="ot">&lt;-</span> <span class="fu">match</span>(timeframe, <span class="fu">c</span>(<span class="st">"hourly"</span>, <span class="st">"daily"</span>, <span class="st">"monthly"</span>))</span>
-<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    URLS <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID="</span>, id,</span>
-<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;Year="</span>, years,</span>
-<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;Month="</span>, months,</span>
-<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;Day=14"</span>,</span>
-<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;format=csv"</span>,</span>
-<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;timeframe="</span>, timeframe,</span>
-<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;submit=%20Download+Data"</span><span class="do">## need this stoopid thing as of 11-May-2016</span></span>
-<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>                   )</span>
-<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">urls =</span> URLS, <span class="at">ids =</span> ids, <span class="at">years =</span> years, <span class="at">months =</span> <span class="fu">rep</span>(months, <span class="at">length.out =</span> <span class="fu">length</span>(URLS)))</span>
-<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>genURLS <span class="ot">&lt;-</span> <span class="cf">function</span>(id, start, end, <span class="at">timeframe =</span> <span class="fu">c</span>(<span class="st">"hourly"</span>, <span class="st">"daily"</span>, <span class="st">"monthly"</span>)) {</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    years <span class="ot">&lt;-</span> <span class="fu">seq</span>(start, end, <span class="at">by =</span> <span class="dv">1</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    nyears <span class="ot">&lt;-</span> <span class="fu">length</span>(years)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    timeframe <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(timeframe)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(timeframe, <span class="st">"hourly"</span>))) {</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        years <span class="ot">&lt;-</span>  <span class="fu">rep</span>(years, <span class="at">each =</span> <span class="dv">12</span>)</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        months <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, <span class="at">times =</span> nyears)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        ids <span class="ot">&lt;-</span> <span class="fu">rep</span>(id, nyears <span class="sc">*</span> <span class="dv">12</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> <span class="cf">if</span> (<span class="fu">isTRUE</span>(<span class="fu">all.equal</span>(timeframe, <span class="st">"daily"</span>))) {</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        months <span class="ot">&lt;-</span> <span class="dv">1</span>                      <span class="co"># this is essentially arbitrary &amp; ignored if daily</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>        ids <span class="ot">&lt;-</span> <span class="fu">rep</span>(id, nyears)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        years <span class="ot">&lt;-</span> start                   <span class="co"># again arbitrary, for monthly it just gives you all data</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        months <span class="ot">&lt;-</span> <span class="dv">1</span>                      <span class="co"># and this is also ignored</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        ids <span class="ot">&lt;-</span> id</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    timeframe <span class="ot">&lt;-</span> <span class="fu">match</span>(timeframe, <span class="fu">c</span>(<span class="st">"hourly"</span>, <span class="st">"daily"</span>, <span class="st">"monthly"</span>))</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    URLS <span class="ot">&lt;-</span> <span class="fu">paste0</span>(<span class="st">"http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID="</span>, id,</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;Year="</span>, years,</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;Month="</span>, months,</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;Day=14"</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;format=csv"</span>,</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;timeframe="</span>, timeframe,</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>                   <span class="st">"&amp;submit=%20Download+Data"</span><span class="do">## need this stoopid thing as of 11-May-2016</span></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>                   )</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    <span class="fu">list</span>(<span class="at">urls =</span> URLS, <span class="at">ids =</span> ids, <span class="at">years =</span> years, <span class="at">months =</span> <span class="fu">rep</span>(months, <span class="at">length.out =</span> <span class="fu">length</span>(URLS)))</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>If we wanted all the data for 2014 for the Regina RCS station then we could generate the URLs we’d need to visit as follows</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>regina <span class="ot">&lt;-</span> <span class="fu">genURLS</span>(<span class="dv">28011</span>, <span class="dv">2014</span>, <span class="dv">2014</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(regina<span class="sc">$</span>urls)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(regina<span class="sc">$</span>urls)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 12
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>regina <span class="ot">&lt;-</span> <span class="fu">genURLS</span>(<span class="dv">28011</span>, <span class="dv">2014</span>, <span class="dv">2014</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(regina<span class="sc">$</span>urls)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(regina<span class="sc">$</span>urls)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 12
 [1] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=1&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
 [2] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=2&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
 [3] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=3&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
@@ -370,130 +362,129 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 [6] "http://climate.weather.gc.ca/climate_data/bulk_data_e.html?stationID=28011&amp;Year=2014&amp;Month=6&amp;Day=14&amp;format=csv&amp;timeframe=1&amp;submit=%20Download+Data"
 </code></pre>
 <p>The function that downloads and reads in the data was <code>getData()</code>.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>getData <span class="ot">&lt;-</span> <span class="cf">function</span>(stations, folder, <span class="at">timeframe =</span> <span class="fu">c</span>(<span class="st">"hourly"</span>, <span class="st">"daily"</span>, <span class="st">"monthly"</span>), <span class="at">verbose =</span> <span class="cn">TRUE</span>, <span class="at">delete =</span> <span class="cn">TRUE</span>) {</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    timeframe <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(timeframe)</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="do">## form URLS</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    urls <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">seq_len</span>(<span class="fu">NROW</span>(stations)),</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                   <span class="cf">function</span>(i, stations, timeframe) {</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">genURLS</span>(stations<span class="sc">$</span>StationID[i],</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                               stations<span class="sc">$</span>start[i],</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                               stations<span class="sc">$</span>end[i], <span class="at">timeframe =</span> timeframe)</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>                   }, <span class="at">stations =</span> stations, <span class="at">timeframe =</span> timeframe)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="do">## check the folder exists and try to create it if not</span></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(folder)) {</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="fu">paste</span>(<span class="st">"Directory:"</span>, folder,</span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"doesn't exist. Will create it"</span>))</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        fc <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">dir.create</span>(folder))</span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">inherits</span>(fc, <span class="st">"try-error"</span>)) {</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Failed to create directory '"</span>, folder,</span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"'. Check path and permissions."</span>, <span class="at">sep =</span> <span class="st">""</span>)</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    <span class="do">## Extract the data from the URLs generation</span></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    URLS <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(urls, <span class="st">'[['</span>, <span class="st">"urls"</span>))</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    sites <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(urls, <span class="st">'[['</span>, <span class="st">"ids"</span>))</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    years <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(urls, <span class="st">'[['</span>, <span class="st">"years"</span>))</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a>    months <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(urls, <span class="st">'[['</span>, <span class="st">"months"</span>))</span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    <span class="do">## filenames to use to save the data</span></span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    fnames <span class="ot">&lt;-</span> <span class="fu">paste</span>(sites, years, months, <span class="st">"data.csv"</span>, <span class="at">sep =</span> <span class="st">"-"</span>)</span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a>    fnames <span class="ot">&lt;-</span> <span class="fu">file.path</span>(folder, fnames)</span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a>    nfiles <span class="ot">&lt;-</span> <span class="fu">length</span>(fnames)</span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    <span class="do">## set up a progress bar if being verbose</span></span>
-<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">isTRUE</span>(verbose)) {</span>
-<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>        pb <span class="ot">&lt;-</span> <span class="fu">txtProgressBar</span>(<span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> nfiles, <span class="at">style =</span> <span class="dv">3</span>)</span>
-<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>        <span class="fu">on.exit</span>(<span class="fu">close</span>(pb))</span>
-<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="at">mode =</span> <span class="st">"list"</span>, <span class="at">length =</span> nfiles)</span>
-<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>    hourlyNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Date/Time"</span>, <span class="st">"Year"</span>, <span class="st">"Month"</span>,<span class="st">"Day"</span>, <span class="st">"Time"</span>, <span class="st">"Data Quality"</span>,</span>
-<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Temp (degC)"</span>, <span class="st">"Temp Flag"</span>, <span class="st">"Dew Point Temp (degC)"</span>,</span>
-<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Dew Point Temp Flag"</span>, <span class="st">"Rel Hum (%)"</span>, <span class="st">"Rel Hum Flag"</span>,</span>
-<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Wind Dir (10s deg)"</span>, <span class="st">"Wind Dir Flag"</span>, <span class="st">"Wind Spd (km/h)"</span>,</span>
-<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Wind Spd Flag"</span>, <span class="st">"Visibility (km)"</span>, <span class="st">"Visibility Flag"</span>,</span>
-<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Stn Press (kPa)"</span>, <span class="st">"Stn Press Flag"</span>, <span class="st">"Hmdx"</span>, <span class="st">"Hmdx Flag"</span>,</span>
-<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Wind Chill"</span>, <span class="st">"Wind Chill Flag"</span>, <span class="st">"Weather"</span>)</span>
-<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>    dailyNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Date/Time"</span>, <span class="st">"Year"</span>, <span class="st">"Month"</span>, <span class="st">"Day"</span>, <span class="st">"Data Quality"</span>, <span class="st">"Max Temp (degC)"</span>, <span class="st">"Max Temp Flag"</span>,</span>
-<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Min Temp (degC)"</span>, <span class="st">"Min Temp Flag"</span>, <span class="st">"Mean Temp (degC)"</span>, <span class="st">"Mean Temp Flag"</span>,</span>
-<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Heat Deg Days (degC)"</span>, <span class="st">"Heat Deg Days Flag"</span>, <span class="st">"Cool Deg Days (degC)"</span>, <span class="st">"Cool Deg Days Flag"</span>,</span>
-<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Total Rain (mm)"</span>, <span class="st">"Total Rain Flag"</span>, <span class="st">"Total Snow (cm)"</span>, <span class="st">"Total Snow Flag"</span>,</span>
-<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Total Precip (mm)"</span>, <span class="st">"Total Precip Flag"</span>, <span class="st">"Snow on Grnd (cm)"</span>, <span class="st">"Snow on Grnd Flag"</span>,</span>
-<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Dir of Max Gust (10s deg)"</span>, <span class="st">"Dir of Max Gust Flag"</span>, <span class="st">"Spd of Max Gust (10s deg)"</span>, <span class="st">"Spd of Max Gust Flag"</span>)</span>
-<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>    monthlyNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Date/Time"</span>, <span class="st">"Year"</span>, <span class="st">"Month"</span>,</span>
-<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Mean Max Temp (degC)"</span>, <span class="st">"Mean Max Temp Flag"</span>,</span>
-<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Mean Min Temp (degC)"</span>, <span class="st">"Mean Min Temp Flag"</span>,</span>
-<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Mean Temp (degC)"</span>, <span class="st">"Mean Temp Flag"</span>,</span>
-<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Extr Max Temp (degC)"</span>, <span class="st">"Extr Max Temp Flag"</span>,</span>
-<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Extr Min Temp (degC)"</span>, <span class="st">"Extr Min Temp Flag"</span>,</span>
-<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Total Rain (mm)"</span>, <span class="st">"Total Rain Flag"</span>,</span>
-<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Total Snow (cm)"</span>, <span class="st">"Total Snow Flag"</span>,</span>
-<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Total Precip (mm)"</span>, <span class="st">"Total Precip Flag"</span>,</span>
-<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Snow Grnd Last Day (cm)"</span>, <span class="st">"Snow Grnd Last Day Flag"</span>,</span>
-<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Dir of Max Gust (10s deg)"</span>, <span class="st">"Dir of Max Gust Flag"</span>,</span>
-<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Spd of Max Gust (10s deg)"</span>, <span class="st">"Spd of Max Gust Flag"</span>)</span>
-<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a>    cnames <span class="ot">&lt;-</span> <span class="cf">switch</span>(timeframe, <span class="at">hourly =</span> hourlyNames, <span class="at">daily =</span> dailyNames, <span class="at">monthly =</span> monthlyNames)</span>
-<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a>    TIMEFRAME <span class="ot">&lt;-</span> <span class="fu">match</span>(timeframe, <span class="fu">c</span>(<span class="st">"hourly"</span>, <span class="st">"daily"</span>, <span class="st">"monthly"</span>))</span>
-<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a>    SKIP <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">16</span>, <span class="dv">25</span>, <span class="dv">18</span>)[TIMEFRAME]</span>
-<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(nfiles)) {</span>
-<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a>        curfile <span class="ot">&lt;-</span> fnames[i]</span>
-<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>        <span class="do">## Have we downloaded the file before?</span></span>
-<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(curfile)) {    <span class="co"># No: download it</span></span>
-<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a>            dload <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">download.file</span>(URLS[i], <span class="at">destfile =</span> curfile, <span class="at">quiet =</span> <span class="cn">TRUE</span>))</span>
-<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (<span class="fu">inherits</span>(dload, <span class="st">"try-error"</span>)) { <span class="co"># If problem, store failed URL...</span></span>
-<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a>                out[[i]] <span class="ot">&lt;-</span> URLS[i]</span>
-<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> (<span class="fu">isTRUE</span>(verbose)) {</span>
-<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">setTxtProgressBar</span>(pb, <span class="at">value =</span> i) <span class="co"># update progress bar...</span></span>
-<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a>                }</span>
-<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a>        <span class="cf">next</span>                             <span class="co"># bail out of current iteration</span></span>
-<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a>            }</span>
-<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>        <span class="do">## Must have downloaded, try to read file</span></span>
-<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>        <span class="do">## skip first SKIP rows of header stuff</span></span>
-<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>        <span class="do">## encoding must be latin1 or will fail - may still be problems with character set</span></span>
-<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a>        cdata <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">read.csv</span>(curfile, <span class="at">skip =</span> SKIP, <span class="at">encoding =</span> <span class="st">"latin1"</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>), <span class="at">silent =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>        <span class="do">## Did we have a problem reading the data?</span></span>
-<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">inherits</span>(cdata, <span class="st">"try-error"</span>)) { <span class="co"># yes handle read problem</span></span>
-<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a>            <span class="do">## try to fix the problem with dodgy characters</span></span>
-<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a>            cdata <span class="ot">&lt;-</span> <span class="fu">readLines</span>(curfile) <span class="co"># read all lines in file</span></span>
-<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a>            cdata <span class="ot">&lt;-</span> <span class="fu">iconv</span>(cdata, <span class="at">from =</span> <span class="st">"latin1"</span>, <span class="at">to =</span> <span class="st">"UTF-8"</span>)</span>
-<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a>            <span class="fu">writeLines</span>(cdata, curfile)          <span class="co"># write the data back to the file</span></span>
-<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a>            <span class="do">## try to read the file again, if still an error, bail out</span></span>
-<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a>            cdata <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">read.csv</span>(curfile, <span class="at">skip =</span> SKIP, <span class="at">encoding =</span> <span class="st">"UTF-8"</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>), <span class="at">silent =</span> <span class="cn">TRUE</span>)</span>
-<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (<span class="fu">inherits</span>(cdata, <span class="st">"try-error"</span>)) { <span class="co"># yes, still!, handle read problem</span></span>
-<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> (delete) {</span>
-<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">file.remove</span>(curfile) <span class="co"># remove file if a problem &amp; deleting</span></span>
-<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a>                }</span>
-<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a>                out[[i]] <span class="ot">&lt;-</span> URLS[i]    <span class="co"># record failed URL...</span></span>
-<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> (<span class="fu">isTRUE</span>(verbose)) {</span>
-<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">setTxtProgressBar</span>(pb, <span class="at">value =</span> i) <span class="co"># update progress bar...</span></span>
-<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a>                }</span>
-<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a>                <span class="cf">next</span>                  <span class="co"># bail out of current iteration</span></span>
-<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a>            }</span>
-<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a>        <span class="do">## Must have (eventually) read file OK, add station data</span></span>
-<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a>        cdata <span class="ot">&lt;-</span> <span class="fu">cbind.data.frame</span>(<span class="at">StationID =</span> <span class="fu">rep</span>(sites[i], <span class="fu">NROW</span>(cdata)),</span>
-<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a>                                  cdata)</span>
-<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a>        <span class="fu">names</span>(cdata)[<span class="sc">-</span><span class="dv">1</span>] <span class="ot">&lt;-</span> cnames</span>
-<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a>        out[[i]] <span class="ot">&lt;-</span> cdata</span>
-<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">isTRUE</span>(verbose)) { <span class="co"># Update the progress bar</span></span>
-<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a>            <span class="fu">setTxtProgressBar</span>(pb, <span class="at">value =</span> i)</span>
-<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a>    out                                 <span class="co"># return</span></span>
-<span id="cb4-124"><a href="#cb4-124" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>getData <span class="ot">&lt;-</span> <span class="cf">function</span>(stations, folder, <span class="at">timeframe =</span> <span class="fu">c</span>(<span class="st">"hourly"</span>, <span class="st">"daily"</span>, <span class="st">"monthly"</span>), <span class="at">verbose =</span> <span class="cn">TRUE</span>, <span class="at">delete =</span> <span class="cn">TRUE</span>) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    timeframe <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(timeframe)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="do">## form URLS</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    urls <span class="ot">&lt;-</span> <span class="fu">lapply</span>(<span class="fu">seq_len</span>(<span class="fu">NROW</span>(stations)),</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>                   <span class="cf">function</span>(i, stations, timeframe) {</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                       <span class="fu">genURLS</span>(stations<span class="sc">$</span>StationID[i],</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                               stations<span class="sc">$</span>start[i],</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>                               stations<span class="sc">$</span>end[i], <span class="at">timeframe =</span> timeframe)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>                   }, <span class="at">stations =</span> stations, <span class="at">timeframe =</span> timeframe)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="do">## check the folder exists and try to create it if not</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(folder)) {</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">warning</span>(<span class="fu">paste</span>(<span class="st">"Directory:"</span>, folder,</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"doesn't exist. Will create it"</span>))</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        fc <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">dir.create</span>(folder))</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">inherits</span>(fc, <span class="st">"try-error"</span>)) {</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>            <span class="fu">stop</span>(<span class="st">"Failed to create directory '"</span>, folder,</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a>                 <span class="st">"'. Check path and permissions."</span>, <span class="at">sep =</span> <span class="st">""</span>)</span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    <span class="do">## Extract the data from the URLs generation</span></span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a>    URLS <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(urls, <span class="st">'[['</span>, <span class="st">"urls"</span>))</span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a>    sites <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(urls, <span class="st">'[['</span>, <span class="st">"ids"</span>))</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a>    years <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(urls, <span class="st">'[['</span>, <span class="st">"years"</span>))</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a>    months <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(urls, <span class="st">'[['</span>, <span class="st">"months"</span>))</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a>    <span class="do">## filenames to use to save the data</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a>    fnames <span class="ot">&lt;-</span> <span class="fu">paste</span>(sites, years, months, <span class="st">"data.csv"</span>, <span class="at">sep =</span> <span class="st">"-"</span>)</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a>    fnames <span class="ot">&lt;-</span> <span class="fu">file.path</span>(folder, fnames)</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a>    nfiles <span class="ot">&lt;-</span> <span class="fu">length</span>(fnames)</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>    <span class="do">## set up a progress bar if being verbose</span></span>
+<span id="cb4-35"><a href="#cb4-35" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="fu">isTRUE</span>(verbose)) {</span>
+<span id="cb4-36"><a href="#cb4-36" aria-hidden="true" tabindex="-1"></a>        pb <span class="ot">&lt;-</span> <span class="fu">txtProgressBar</span>(<span class="at">min =</span> <span class="dv">0</span>, <span class="at">max =</span> nfiles, <span class="at">style =</span> <span class="dv">3</span>)</span>
+<span id="cb4-37"><a href="#cb4-37" aria-hidden="true" tabindex="-1"></a>        <span class="fu">on.exit</span>(<span class="fu">close</span>(pb))</span>
+<span id="cb4-38"><a href="#cb4-38" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-39"><a href="#cb4-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-40"><a href="#cb4-40" aria-hidden="true" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="at">mode =</span> <span class="st">"list"</span>, <span class="at">length =</span> nfiles)</span>
+<span id="cb4-41"><a href="#cb4-41" aria-hidden="true" tabindex="-1"></a>    hourlyNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Date/Time"</span>, <span class="st">"Year"</span>, <span class="st">"Month"</span>,<span class="st">"Day"</span>, <span class="st">"Time"</span>, <span class="st">"Data Quality"</span>,</span>
+<span id="cb4-42"><a href="#cb4-42" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Temp (degC)"</span>, <span class="st">"Temp Flag"</span>, <span class="st">"Dew Point Temp (degC)"</span>,</span>
+<span id="cb4-43"><a href="#cb4-43" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Dew Point Temp Flag"</span>, <span class="st">"Rel Hum (%)"</span>, <span class="st">"Rel Hum Flag"</span>,</span>
+<span id="cb4-44"><a href="#cb4-44" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Wind Dir (10s deg)"</span>, <span class="st">"Wind Dir Flag"</span>, <span class="st">"Wind Spd (km/h)"</span>,</span>
+<span id="cb4-45"><a href="#cb4-45" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Wind Spd Flag"</span>, <span class="st">"Visibility (km)"</span>, <span class="st">"Visibility Flag"</span>,</span>
+<span id="cb4-46"><a href="#cb4-46" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Stn Press (kPa)"</span>, <span class="st">"Stn Press Flag"</span>, <span class="st">"Hmdx"</span>, <span class="st">"Hmdx Flag"</span>,</span>
+<span id="cb4-47"><a href="#cb4-47" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"Wind Chill"</span>, <span class="st">"Wind Chill Flag"</span>, <span class="st">"Weather"</span>)</span>
+<span id="cb4-48"><a href="#cb4-48" aria-hidden="true" tabindex="-1"></a>    dailyNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Date/Time"</span>, <span class="st">"Year"</span>, <span class="st">"Month"</span>, <span class="st">"Day"</span>, <span class="st">"Data Quality"</span>, <span class="st">"Max Temp (degC)"</span>, <span class="st">"Max Temp Flag"</span>,</span>
+<span id="cb4-49"><a href="#cb4-49" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Min Temp (degC)"</span>, <span class="st">"Min Temp Flag"</span>, <span class="st">"Mean Temp (degC)"</span>, <span class="st">"Mean Temp Flag"</span>,</span>
+<span id="cb4-50"><a href="#cb4-50" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Heat Deg Days (degC)"</span>, <span class="st">"Heat Deg Days Flag"</span>, <span class="st">"Cool Deg Days (degC)"</span>, <span class="st">"Cool Deg Days Flag"</span>,</span>
+<span id="cb4-51"><a href="#cb4-51" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Total Rain (mm)"</span>, <span class="st">"Total Rain Flag"</span>, <span class="st">"Total Snow (cm)"</span>, <span class="st">"Total Snow Flag"</span>,</span>
+<span id="cb4-52"><a href="#cb4-52" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Total Precip (mm)"</span>, <span class="st">"Total Precip Flag"</span>, <span class="st">"Snow on Grnd (cm)"</span>, <span class="st">"Snow on Grnd Flag"</span>,</span>
+<span id="cb4-53"><a href="#cb4-53" aria-hidden="true" tabindex="-1"></a>                    <span class="st">"Dir of Max Gust (10s deg)"</span>, <span class="st">"Dir of Max Gust Flag"</span>, <span class="st">"Spd of Max Gust (10s deg)"</span>, <span class="st">"Spd of Max Gust Flag"</span>)</span>
+<span id="cb4-54"><a href="#cb4-54" aria-hidden="true" tabindex="-1"></a>    monthlyNames <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Date/Time"</span>, <span class="st">"Year"</span>, <span class="st">"Month"</span>,</span>
+<span id="cb4-55"><a href="#cb4-55" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Mean Max Temp (degC)"</span>, <span class="st">"Mean Max Temp Flag"</span>,</span>
+<span id="cb4-56"><a href="#cb4-56" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Mean Min Temp (degC)"</span>, <span class="st">"Mean Min Temp Flag"</span>,</span>
+<span id="cb4-57"><a href="#cb4-57" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Mean Temp (degC)"</span>, <span class="st">"Mean Temp Flag"</span>,</span>
+<span id="cb4-58"><a href="#cb4-58" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Extr Max Temp (degC)"</span>, <span class="st">"Extr Max Temp Flag"</span>,</span>
+<span id="cb4-59"><a href="#cb4-59" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Extr Min Temp (degC)"</span>, <span class="st">"Extr Min Temp Flag"</span>,</span>
+<span id="cb4-60"><a href="#cb4-60" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Total Rain (mm)"</span>, <span class="st">"Total Rain Flag"</span>,</span>
+<span id="cb4-61"><a href="#cb4-61" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Total Snow (cm)"</span>, <span class="st">"Total Snow Flag"</span>,</span>
+<span id="cb4-62"><a href="#cb4-62" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Total Precip (mm)"</span>, <span class="st">"Total Precip Flag"</span>,</span>
+<span id="cb4-63"><a href="#cb4-63" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Snow Grnd Last Day (cm)"</span>, <span class="st">"Snow Grnd Last Day Flag"</span>,</span>
+<span id="cb4-64"><a href="#cb4-64" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Dir of Max Gust (10s deg)"</span>, <span class="st">"Dir of Max Gust Flag"</span>,</span>
+<span id="cb4-65"><a href="#cb4-65" aria-hidden="true" tabindex="-1"></a>                      <span class="st">"Spd of Max Gust (10s deg)"</span>, <span class="st">"Spd of Max Gust Flag"</span>)</span>
+<span id="cb4-66"><a href="#cb4-66" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-67"><a href="#cb4-67" aria-hidden="true" tabindex="-1"></a>    cnames <span class="ot">&lt;-</span> <span class="cf">switch</span>(timeframe, <span class="at">hourly =</span> hourlyNames, <span class="at">daily =</span> dailyNames, <span class="at">monthly =</span> monthlyNames)</span>
+<span id="cb4-68"><a href="#cb4-68" aria-hidden="true" tabindex="-1"></a>    TIMEFRAME <span class="ot">&lt;-</span> <span class="fu">match</span>(timeframe, <span class="fu">c</span>(<span class="st">"hourly"</span>, <span class="st">"daily"</span>, <span class="st">"monthly"</span>))</span>
+<span id="cb4-69"><a href="#cb4-69" aria-hidden="true" tabindex="-1"></a>    SKIP <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">16</span>, <span class="dv">25</span>, <span class="dv">18</span>)[TIMEFRAME]</span>
+<span id="cb4-70"><a href="#cb4-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-71"><a href="#cb4-71" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_len</span>(nfiles)) {</span>
+<span id="cb4-72"><a href="#cb4-72" aria-hidden="true" tabindex="-1"></a>        curfile <span class="ot">&lt;-</span> fnames[i]</span>
+<span id="cb4-73"><a href="#cb4-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-74"><a href="#cb4-74" aria-hidden="true" tabindex="-1"></a>        <span class="do">## Have we downloaded the file before?</span></span>
+<span id="cb4-75"><a href="#cb4-75" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="sc">!</span><span class="fu">file.exists</span>(curfile)) {    <span class="co"># No: download it</span></span>
+<span id="cb4-76"><a href="#cb4-76" aria-hidden="true" tabindex="-1"></a>            dload <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">download.file</span>(URLS[i], <span class="at">destfile =</span> curfile, <span class="at">quiet =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb4-77"><a href="#cb4-77" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (<span class="fu">inherits</span>(dload, <span class="st">"try-error"</span>)) { <span class="co"># If problem, store failed URL...</span></span>
+<span id="cb4-78"><a href="#cb4-78" aria-hidden="true" tabindex="-1"></a>                out[[i]] <span class="ot">&lt;-</span> URLS[i]</span>
+<span id="cb4-79"><a href="#cb4-79" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> (<span class="fu">isTRUE</span>(verbose)) {</span>
+<span id="cb4-80"><a href="#cb4-80" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">setTxtProgressBar</span>(pb, <span class="at">value =</span> i) <span class="co"># update progress bar...</span></span>
+<span id="cb4-81"><a href="#cb4-81" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="cb4-82"><a href="#cb4-82" aria-hidden="true" tabindex="-1"></a>        <span class="cf">next</span>                             <span class="co"># bail out of current iteration</span></span>
+<span id="cb4-83"><a href="#cb4-83" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb4-84"><a href="#cb4-84" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb4-85"><a href="#cb4-85" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-86"><a href="#cb4-86" aria-hidden="true" tabindex="-1"></a>        <span class="do">## Must have downloaded, try to read file</span></span>
+<span id="cb4-87"><a href="#cb4-87" aria-hidden="true" tabindex="-1"></a>        <span class="do">## skip first SKIP rows of header stuff</span></span>
+<span id="cb4-88"><a href="#cb4-88" aria-hidden="true" tabindex="-1"></a>        <span class="do">## encoding must be latin1 or will fail - may still be problems with character set</span></span>
+<span id="cb4-89"><a href="#cb4-89" aria-hidden="true" tabindex="-1"></a>        cdata <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">read.csv</span>(curfile, <span class="at">skip =</span> SKIP, <span class="at">encoding =</span> <span class="st">"latin1"</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>), <span class="at">silent =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-90"><a href="#cb4-90" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-91"><a href="#cb4-91" aria-hidden="true" tabindex="-1"></a>        <span class="do">## Did we have a problem reading the data?</span></span>
+<span id="cb4-92"><a href="#cb4-92" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">inherits</span>(cdata, <span class="st">"try-error"</span>)) { <span class="co"># yes handle read problem</span></span>
+<span id="cb4-93"><a href="#cb4-93" aria-hidden="true" tabindex="-1"></a>            <span class="do">## try to fix the problem with dodgy characters</span></span>
+<span id="cb4-94"><a href="#cb4-94" aria-hidden="true" tabindex="-1"></a>            cdata <span class="ot">&lt;-</span> <span class="fu">readLines</span>(curfile) <span class="co"># read all lines in file</span></span>
+<span id="cb4-95"><a href="#cb4-95" aria-hidden="true" tabindex="-1"></a>            cdata <span class="ot">&lt;-</span> <span class="fu">iconv</span>(cdata, <span class="at">from =</span> <span class="st">"latin1"</span>, <span class="at">to =</span> <span class="st">"UTF-8"</span>)</span>
+<span id="cb4-96"><a href="#cb4-96" aria-hidden="true" tabindex="-1"></a>            <span class="fu">writeLines</span>(cdata, curfile)          <span class="co"># write the data back to the file</span></span>
+<span id="cb4-97"><a href="#cb4-97" aria-hidden="true" tabindex="-1"></a>            <span class="do">## try to read the file again, if still an error, bail out</span></span>
+<span id="cb4-98"><a href="#cb4-98" aria-hidden="true" tabindex="-1"></a>            cdata <span class="ot">&lt;-</span> <span class="fu">try</span>(<span class="fu">read.csv</span>(curfile, <span class="at">skip =</span> SKIP, <span class="at">encoding =</span> <span class="st">"UTF-8"</span>, <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span>), <span class="at">silent =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-99"><a href="#cb4-99" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> (<span class="fu">inherits</span>(cdata, <span class="st">"try-error"</span>)) { <span class="co"># yes, still!, handle read problem</span></span>
+<span id="cb4-100"><a href="#cb4-100" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> (delete) {</span>
+<span id="cb4-101"><a href="#cb4-101" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">file.remove</span>(curfile) <span class="co"># remove file if a problem &amp; deleting</span></span>
+<span id="cb4-102"><a href="#cb4-102" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="cb4-103"><a href="#cb4-103" aria-hidden="true" tabindex="-1"></a>                out[[i]] <span class="ot">&lt;-</span> URLS[i]    <span class="co"># record failed URL...</span></span>
+<span id="cb4-104"><a href="#cb4-104" aria-hidden="true" tabindex="-1"></a>                <span class="cf">if</span> (<span class="fu">isTRUE</span>(verbose)) {</span>
+<span id="cb4-105"><a href="#cb4-105" aria-hidden="true" tabindex="-1"></a>                    <span class="fu">setTxtProgressBar</span>(pb, <span class="at">value =</span> i) <span class="co"># update progress bar...</span></span>
+<span id="cb4-106"><a href="#cb4-106" aria-hidden="true" tabindex="-1"></a>                }</span>
+<span id="cb4-107"><a href="#cb4-107" aria-hidden="true" tabindex="-1"></a>                <span class="cf">next</span>                  <span class="co"># bail out of current iteration</span></span>
+<span id="cb4-108"><a href="#cb4-108" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb4-109"><a href="#cb4-109" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb4-110"><a href="#cb4-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-111"><a href="#cb4-111" aria-hidden="true" tabindex="-1"></a>        <span class="do">## Must have (eventually) read file OK, add station data</span></span>
+<span id="cb4-112"><a href="#cb4-112" aria-hidden="true" tabindex="-1"></a>        cdata <span class="ot">&lt;-</span> <span class="fu">cbind.data.frame</span>(<span class="at">StationID =</span> <span class="fu">rep</span>(sites[i], <span class="fu">NROW</span>(cdata)),</span>
+<span id="cb4-113"><a href="#cb4-113" aria-hidden="true" tabindex="-1"></a>                                  cdata)</span>
+<span id="cb4-114"><a href="#cb4-114" aria-hidden="true" tabindex="-1"></a>        <span class="fu">names</span>(cdata)[<span class="sc">-</span><span class="dv">1</span>] <span class="ot">&lt;-</span> cnames</span>
+<span id="cb4-115"><a href="#cb4-115" aria-hidden="true" tabindex="-1"></a>        out[[i]] <span class="ot">&lt;-</span> cdata</span>
+<span id="cb4-116"><a href="#cb4-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-117"><a href="#cb4-117" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> (<span class="fu">isTRUE</span>(verbose)) { <span class="co"># Update the progress bar</span></span>
+<span id="cb4-118"><a href="#cb4-118" aria-hidden="true" tabindex="-1"></a>            <span class="fu">setTxtProgressBar</span>(pb, <span class="at">value =</span> i)</span>
+<span id="cb4-119"><a href="#cb4-119" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb4-120"><a href="#cb4-120" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb4-121"><a href="#cb4-121" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-122"><a href="#cb4-122" aria-hidden="true" tabindex="-1"></a>    out                                 <span class="co"># return</span></span>
+<span id="cb4-123"><a href="#cb4-123" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The main infelicity is that you have to supply the <code>getData()</code> with a data frame containing the station IDs and start and end years respectively for the data you want to collect. This suited my needs as we wanted to grab data from 10 stations with different start and end years as required to track station movements. It’s not as convenient if you only want to grab the data for a single station, however.</p>
 <p><code>getData()</code> gains the same <code>timeframe</code> argument as <code>genURLS()</code>. In addition, to handle the, quite frankly odd!, choice of characters used in the various flag columns, I now do conversion of the file encoding from <code>latin1</code> to <code>UTF-8</code> using the <code>iconv()</code> function. Whether this works portably or not remains to be seen — I’m not that familiar with file encodings. If it doesn’t work, an option would be to determine what the user’s locale is and from that change the encoding to the native encoding.</p>
 <p>One thing you’ll note quickly if you start downloading data using this function is that the web script the Government of Canada is using on their climate website will quite happily generate a fully-formed file containing no actual data (but with all the headers, hourly time stamps, etc) if you ask it for data outside the window of observations for a given station. There are no errors, just lots of mostly empty files, bar the header and labels.</p>
@@ -506,35 +497,26 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>Indian Head CDA (2925)</li>
 </ul>
 <p>First we create a data frame of station information</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>stations <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">StationID =</span> <span class="fu">c</span>(<span class="dv">51441</span>, <span class="dv">2925</span>),</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">start =</span> <span class="fu">rep</span>(<span class="dv">2014</span>, <span class="dv">2</span>),</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                       <span class="at">end =</span> <span class="fu">rep</span>(<span class="dv">2014</span>, <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>stations <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">StationID =</span> <span class="fu">c</span>(<span class="dv">51441</span>, <span class="dv">2925</span>),</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>                       <span class="at">start =</span> <span class="fu">rep</span>(<span class="dv">2014</span>, <span class="dv">2</span>),</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                       <span class="at">end =</span> <span class="fu">rep</span>(<span class="dv">2014</span>, <span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Then we pass this to <code>getData()</code> with the path to the folder we wish to cache downloaded CSVs in</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>met <span class="ot">&lt;-</span> <span class="fu">getData</span>(stations, <span class="at">folder =</span> <span class="st">"./csv"</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-Warning in getData(stations, folder = "./csv", verbose = FALSE):
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>met <span class="ot">&lt;-</span> <span class="fu">getData</span>(stations, <span class="at">folder =</span> <span class="st">"./csv"</span>, <span class="at">verbose =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Warning in getData(stations, folder = "./csv", verbose = FALSE):
 Directory: ./csv doesn't exist. Will create it
 </code></pre>
 <p>This will take a few minutes to run, even for just 24 files, as the site is not the quickest to respond to requests (or perhaps they are now throttling my workstation’s IP?). Note I turned off the printing of the progress bar here, only because this doesn’t play nicely with <strong>knitr</strong>’s capturing of the output. In real use, you’ll want to leave the progress bar on (which it is by default) so you see how long you have to wait till the job is done.</p>
 <p>Once this has finished, we can quickly determine if there were any failures</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">any</span>(failed <span class="ot">&lt;-</span> <span class="fu">sapply</span>(met, is.character))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] FALSE
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">any</span>(failed <span class="ot">&lt;-</span> <span class="fu">sapply</span>(met, is.character))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] FALSE
 </code></pre>
 <p>If any had failed, the <code>failed</code> logical vector could be used to index into <code>met</code> to extract the URLs that encountered problems, e.g.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">unlist</span>(met[failed])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unlist</span>(met[failed])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>If there were no problems, then the components of <code>met</code> can be bound into a data frame using <code>rbind()</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>met <span class="ot">&lt;-</span> <span class="fu">do.call</span>(<span class="st">"rbind"</span>, met)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>met <span class="ot">&lt;-</span> <span class="fu">do.call</span>(<span class="st">"rbind"</span>, met)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The data now looks like this</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(met)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-  StationID        Date/Time Year Month Day  Time Data Quality Temp (degC)
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(met)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>  StationID        Date/Time Year Month Day  Time Data Quality Temp (degC)
 1     51441 2014-01-01 00:00 2014     1   1 00:00       \u0087       -23.3
 2     51441 2014-01-01 01:00 2014     1   1 01:00       \u0087       -23.1
 3     51441 2014-01-01 02:00 2014     1   1 02:00       \u0087       -22.8

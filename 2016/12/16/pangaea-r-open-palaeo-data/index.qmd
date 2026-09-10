@@ -12,11 +12,17 @@ tags:
   - open data
   - palaeo
 category: R
-description: For a while now, I've been wanting to experiment with rOpenSci's pangaear
-  package [@pangaear-024], which allows you to search, and download data from, the
-  Pangaea, a major data repository for the earth and environmental sciences. Earlier
-  in the year, as a member of the editorial…
 date: 2016-12-16 12:00:00
+description: >-
+  For a while now, I've been wanting to experiment with rOpenSci's pangaear package
+  [\@pangaear-024], which allows you to search, and download data from, the Pangaea, a major data
+  repository for the earth and environmental sciences. Earlier in the year, as a member of the
+  editorial board of Scientific Data, Springer Nature's open data journal I was handling a data
+  descriptor submission that described a new 2,200-year foraminiferal &delta;^^18^^O record from
+  the Gulf of Taranto in the Ionian Sea [\@Taricco2016-pv]. The data descriptor was recently
+  published and as part of the submission Carla Taricco deposited the data set in Pangaea. So,
+  what better opportunity to test out pangaear? (Oh and to fit a GAM to the data while I'm at
+  it!)
 author: Gavin Simpson
 categories:
   - R
@@ -58,7 +64,6 @@ The post makes use of the following packages: **pangaear** (obviously), **mgcv**
 
 
 ```r
-
 library("pangaear")
 library("tibble")
 library("ggplot2")
@@ -71,7 +76,6 @@ To download a data set from Pangaea you need to know the DOI of the deposit. If 
 
 
 ```r
-
 recs <- pg_search(query = "citation:Taricco")
 recs$citation
 
@@ -80,7 +84,6 @@ recs$citation
 
 
 ```text
-
 [1] "Versteegh, GJM; de Leeuw, JW; Taricco, C et al. (2007): Alkenone-derived UK'37 data and sea surface temperatures (SST) of sediment cores from the Gulf of Taranto (Italy)"
 [2] "Taricco, C; Alessio, S; Rubinetti, S et al. (2016): A foraminiferal d18O record of sediment core GT90-3 covering the last 2,200 years"                                    
 [3] "Versteegh, GJM; de Leeuw, JW; Taricco, C et al. (2007): Alkenone-derived UK'37 data and sea surface temperatures (SST) of sediment core GT89-3"                           
@@ -96,7 +99,6 @@ To download the data object(s) associated with a record in Pangaea, we use the `
 
 
 ```r
-
 res <- pg_data(doi = recs$doi[2])       # doi = "10.1594/PANGAEA.857573"
 
 ```
@@ -104,7 +106,6 @@ res <- pg_data(doi = recs$doi[2])       # doi = "10.1594/PANGAEA.857573"
 
 
 ```text
-
 Downloading 1 datasets from 10.1594/PANGAEA.857573
 
 ```
@@ -112,7 +113,6 @@ Downloading 1 datasets from 10.1594/PANGAEA.857573
 
 
 ```text
-
 Processing 1 files
 
 ```
@@ -120,7 +120,6 @@ Processing 1 files
 
 
 ```r
-
 res
 str(res[[1]], max = 1)
 
@@ -129,7 +128,6 @@ str(res[[1]], max = 1)
 
 
 ```text
-
 [[1]]
 <Pangaea data> 10.1594/PANGAEA.857573
 # A tibble: 560 × 4
@@ -164,7 +162,6 @@ Rather than work with the `pangaea` object directly, for modelling or plotting i
 
 
 ```r
-
 foram <- res[[1]]$data
 names(foram) <- c("Depth", "Age_AD", "Age_kaBP", "d18O")
 foram
@@ -174,7 +171,6 @@ foram
 
 
 ```text
-
 # A tibble: 560 × 4
     Depth  Age_AD Age_kaBP  d18O
     <dbl>   <dbl>    <dbl> <dbl>
@@ -196,7 +192,6 @@ Now that's done, we can take a look at the data set
 
 
 ```r
-
 ylabel <- expression(delta^{18} * O ~ "[‰ VPDB]")
 xlabel <- "Age [ka BP]"
 
@@ -218,7 +213,6 @@ To model the data in the same time ordered way using the year BP variable we nee
 
 
 ```r
-
 foram <- with(foram, add_column(foram, Age = - Age_kaBP))
 
 ```
@@ -229,7 +223,6 @@ Now we can fit a GAM to the &delta;^^18^^O record
 
 
 ```r
-
 m <- gam(d18O ~ s(Age, k = 100, bs = "ad"), data = foram, method = "REML", select = TRUE)
 
 ```
@@ -242,7 +235,6 @@ The model diagnostics look OK for this model and the check of sufficient dimensi
 
 
 ```r
-
 gam.check(m)
 ## RStudio users might need
 ## layout(matrix(1:4, ncol = 2, byrow = TRUE))
@@ -255,8 +247,6 @@ gam.check(m)
 
 
 ```text
-
-
 Method: REML   Optimizer: outer newton
 full convergence after 26 iterations.
 Gradient range [-0.0003244869,0.000148452]
@@ -278,7 +268,6 @@ and the fitted trend is *inconsistent* with a null-model of no trend
 
 
 ```r
-
 summary(m)
 
 ```
@@ -286,8 +275,6 @@ summary(m)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -317,7 +304,6 @@ While we could use the provided `plot()` method for `"gam"` objects to draw the 
 
 
 ```r
-
 pred <- with(foram, data.frame(Age = -seq(min(Age_kaBP), max(Age_kaBP), length = 200)))
 pred <- cbind(pred, as.data.frame(predict(m, pred, se.fit = TRUE, unconditional = TRUE)))
 pred <- transform(pred,
@@ -332,7 +318,6 @@ The code above uses these standard errors to create an approximate 95% point-wis
 
 
 ```r
-
 ggplot(foram, aes(y = d18O, x = Age_kaBP)) +
     geom_point() +
     geom_ribbon(data = pred, mapping = aes(x = Age_kaBP, ymin = Lower, ymax = Upper),

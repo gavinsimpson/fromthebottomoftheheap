@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2019-01-22">
-<meta name="description" content="Recently I’ve been preparing my gratia package for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the tibble package, the way tibbl…">
+<meta name="description" content="Recently I’ve been preparing my gratia package for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the tibble package, the way tibbles are printed has changed subtly and in a way that leads to cross-platform differences. As I write this, tibbles with more than a set number of rows are printed in a truncated form, showing only the first 10 rows of data. In such cases, a final line is printed with an ellipsis and a note as to how many more rows are in the tibble. It was this ellipsis that was causing the cross-platform issue where differences between the output generated on windows and the reference output were being identified during R CMD check on Windows. If this is causing you an issue, here’s one way to solve the problem.">
 
 <title>Tibbles, checking examples, &amp; character encodings – From the bottom of the heap</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -122,10 +122,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <meta property="og:title" content="Tibbles, checking examples, &amp; character encodings – From the bottom of the heap">
-<meta property="og:description" content="Recently I’ve been preparing my gratia package for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the tibble package, the way tibbl…">
+<meta property="og:description" content="Recently I’ve been preparing my gratia package for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the tibble package, the way tibbles are printed has changed subtly and in a way that leads to cross-platform differences. As I write this, tibbles with more than a set number of rows are printed in a truncated form, showing only the first 10 rows of data. In such cases, a final line is printed with an ellipsis and a note as to how many more rows are in the tibble. It was this ellipsis that was causing the cross-platform issue where differences between the output generated on windows and the reference output were being identified during R CMD check on Windows. If this is causing you an issue, here’s one way to solve the problem.">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta name="twitter:title" content="Tibbles, checking examples, &amp; character encodings – From the bottom of the heap">
-<meta name="twitter:description" content="Recently I’ve been preparing my gratia package for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the tibble package, the way tibbl…">
+<meta name="twitter:description" content="Recently I’ve been preparing my gratia package for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the tibble package, the way tibbles are printed has changed subtly and in a way that leads to cross-platform differences. As I write this, tibbles with more than a set number of rows are printed in a truncated form, showing only the first 10 rows of data. In such cases, a final line is printed with an ellipsis and a note as to how many more rows are in the tibble. It was this ellipsis that was causing the cross-platform issue where differences between the output generated on windows and the reference output were being identified during R CMD check on Windows. If this is causing you an issue, here’s one way to solve the problem.">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
 <meta name="twitter:card" content="summary">
@@ -137,11 +137,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -278,7 +273,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    Recently I’ve been preparing my gratia package for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the tibble package, the way tibbl…
+    Recently I’ve been preparing my gratia package for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the tibble package, the way tibbles are printed has changed subtly and in a way that leads to cross-platform differences. As I write this, tibbles with more than a set number of rows are printed in a truncated form, showing only the first 10 rows of data. In such cases, a final line is printed with an ellipsis and a note as to how many more rows are in the tibble. It was this ellipsis that was causing the cross-platform issue where differences between the output generated on windows and the reference output were being identified during R CMD check on Windows. If this is causing you an issue, here’s one way to solve the problem.
   </div>
 </div>
 
@@ -319,11 +314,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 </div></div><p>Recently I’ve been preparing my <a href="https://gavinsimpson.github.io/gratia/"><strong>gratia</strong> package</a> for submission to CRAN. During my pre-flight testing I noticed an issue under Windows checking the examples in the package against the reference output I generated on linux. In the latest release of the <a href="https://tibble.tidyverse.org/"><strong>tibble</strong> package</a>, the way tibbles are printed has changed subtly and in a way that leads to cross-platform differences. As I write this, tibbles with more than a set number of rows are printed in a truncated form, showing only the first 10 rows of data. In such cases, a final line is printed with an ellipsis and a note as to how many more rows are in the tibble. It was this ellipsis that was causing the cross-platform issue where differences between the output generated on windows and the reference output were being identified during <code>R CMD check</code> on Windows. If this is causing you an issue, here’s one way to solve the problem.</p>
 <p>The problem is this:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'tibble'</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">as_tibble</span>(iris)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 150 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'tibble'</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">as_tibble</span>(iris)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 150 x 5
    Sepal.Length Sepal.Width Petal.Length Petal.Width Species
           &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt; &lt;fct&gt;  
  1          5.1         3.5          1.4         0.2 setosa 
@@ -340,10 +333,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </code></pre>
 <p>Note that little ellipsis on the last line. Yes, those three little dots — that … was what was causing all the trouble. Don’t get me wrong, I’m all on board when it comes to proper typography, but for something so small, that one … caused a good deal of hair-pulling as I prepared my package for a clean submission to CRAN!</p>
 <p>On Windows you won’t see that cute little …; instead you’ll see this</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">as_tibble</span>(iris)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 150 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_tibble</span>(iris)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 150 x 5
    Sepal.Length Sepal.Width Petal.Length Petal.Width Species
           &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt; &lt;fct&gt;  
  1          5.1         3.5          1.4         0.2 setosa 
@@ -362,13 +353,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>I have to thank Brodie Gaslam <a href="https://twitter.com/BrodieGaslam">(@BrodieGaslam)</a> on Twitter) for identifying the source of the difference between output on Linux and Windows and for suggesting the solution I show below. What Brodie identified was that the <a href="https://github.com/r-lib/cli"><strong>cli</strong></a> package, which <strong>tibble</strong> uses to show this ellipsis, contains code to determine what system it is running on and to adjust it’s output accordingly. So, on Linux you see <code>…</code> and on Windows you see <code>...</code>, <em>because</em> (I assume many) Windows systems aren’t set up to understand what <code>…</code> is. What I see on Linux is thanks to Unicode (specifically I have UTF-8 encoding in my Linux sessions) but this doesn’t work (or, as easily) on Windows, which defaults to a different character set or encoding, and which has no idea what <code>…</code> is.</p>
 <p>As it turns out, there doesn’t appear to be a simple way to make Windows, certainly not the CRAN Windows build system. But what we can do, which is what Brodie mentioned to me on Twitter, is to set a global option that the <strong>cli</strong> package looks for to control its behaviour on <strong>Linux</strong>. That’s right, we’re going to reduce output generated under <code>R CMD check</code> to the lowest common denominator; the user will still get the benefit of the fancy typography that <strong>cli</strong> affords their R sessions, but we don’t need that fanciness for checking the examples.</p>
 <p>The option you need is <code>cli.unicode</code> and it needs to be set to <code>FALSE</code>. Here it is in action</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">as_tibble</span>(iris)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">options</span>(<span class="at">cli.unicode =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">as_tibble</span>(iris)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(op)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 150 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">as_tibble</span>(iris)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">options</span>(<span class="at">cli.unicode =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">as_tibble</span>(iris)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(op)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 150 x 5
    Sepal.Length Sepal.Width Petal.Length Petal.Width Species
           &lt;dbl&gt;       &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt; &lt;fct&gt;  
  1          5.1         3.5          1.4         0.2 setosa 
@@ -399,14 +388,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </code></pre>
 <p>To make this work in an example, you will want to include it in a <code>\dontshow</code> block, which will not show up in the help for the function, nor will it be executed if a user runs the example via <code>example()</code>. Setting the option this way will only happen during testing via <code>R CMD check</code>.</p>
 <p>In the <a href="https://github.com/klutometis/roxygen"><strong>roxygen2</strong></a> sources for <a href="https://github.com/gavinsimpson/gratia/blob/master/R/derivatives.R#L57-L69">my example</a> I now have</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>\<span class="sc">@</span>examples</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>\dontshow{</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">options</span>(<span class="at">cli.unicode =</span> <span class="cn">FALSE</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="co"># do something here</span></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>\dontshow{<span class="fu">options</span>(op)}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>\<span class="sc">@</span>examples</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>\dontshow{</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>op <span class="ot">&lt;-</span> <span class="fu">options</span>(<span class="at">cli.unicode =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a><span class="co"># do something here</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>\dontshow{<span class="fu">options</span>(op)}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This idiom is required to handle more issues than just this character encoding problem. Most of my examples use simulated data, so I need a <code>set.seed()</code> call inside <code>\dontshow{}</code>. If you are showing the results of any statistical model, you’ll already be reducing the number of digits shown in the output via <code>options(digits = 5)</code> as CRAN gets annoyed if you are checking results to silly levels of precision. The user doesn’t need to see any of this.</p>
 <p>I should note that I’m not using this checking of example output as true unit test (there’s loads of those in the <code>/tests</code> folder of the package thank you very much), but I do still think that checking the output of examples against reference output is useful. At the very least it doesn’t (usually) hurt to check the output when it’s being generated as part of the checks anyway. I also want useful examples so I tend to show snippets of outputs as part of the example. Having the comparison between expected and actual output is a handy check of what I’m presenting to the user.</p>
 <p>Hopefully this is useful to people coming across the same or similar issues with their packages. And thanks again to Brodie for explaining what the problem was.</p>

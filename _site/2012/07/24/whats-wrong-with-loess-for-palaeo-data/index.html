@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2012-07-24">
-<meta name="description" content="Locally weighted scatterplot smoothing (LOWESS) or local regression (LOESS) is widely used to highlight “signal” in variables from stratigraphic sequences. It is a user-friendly way of fitting a local model that derives its form from the data themselves rather than having to be …">
+<meta name="description" content="What can I have possibly against this? What is wrong with using LOESS for palaeo data?">
 
 <title>What’s wrong with LOESS for palaeo data? – From the bottom of the heap</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -122,13 +122,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <meta property="og:title" content="What’s wrong with LOESS for palaeo data? – From the bottom of the heap">
-<meta property="og:description" content="Locally weighted scatterplot smoothing (LOWESS) or local regression (LOESS) is widely used to highlight “signal” in variables from stratigraphic sequences. It is a user-friendly way of fitting a local model that derives its form from the data themselves rather than having to be …">
+<meta property="og:description" content="What can I have possibly against this? What is wrong with using LOESS for palaeo data?">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/loess_span_examples.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="600">
 <meta property="og:image:width" content="600">
 <meta name="twitter:title" content="What’s wrong with LOESS for palaeo data? – From the bottom of the heap">
-<meta name="twitter:description" content="Locally weighted scatterplot smoothing (LOWESS) or local regression (LOESS) is widely used to highlight “signal” in variables from stratigraphic sequences. It is a user-friendly way of fitting a local model that derives its form from the data themselves rather than having to be …">
+<meta name="twitter:description" content="What can I have possibly against this? What is wrong with using LOESS for palaeo data?">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/loess_span_examples.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -143,11 +143,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -284,7 +279,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    Locally weighted scatterplot smoothing (LOWESS) or local regression (LOESS) is widely used to highlight “signal” in variables from stratigraphic sequences. It is a user-friendly way of fitting a local model that derives its form from the data themselves rather than having to be …
+    What can I have possibly against this? What is wrong with using LOESS for palaeo data?
   </div>
 </div>
 
@@ -330,19 +325,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>CV or GCV should help avoid overfitting the data but importantly can only do this for <em>independent</em> observations in their normal incarnations. Palaeo data are far from independent observations. I’ve blogged <a href="../../../../2011/07/21/smoothing-temporally-correlated-data/" title="Smoothing temporally correlated data">before</a> about the problems of smoothing temporally correlated data. Those problems apply just as well to LOESS though they are harder to solve.</p>
 <p>Why is this an issue? Well, the reason for fitting LOESS (or any smoother/model) to the stratigraphic data is to show any pattern or trend. With LOESS, what pattern or trend you get is determined by the data <em>and crucially</em> by the parameters chosen for the fit. Once you have the LOESS fit you <em>are</em> going to look at it, ponder what it means, interpret it in light of some other factors, posit a plausible mechanism for its generation. But what if the pattern or trend you’ve lovingly produced isn’t real? What if the features being pondered are statistically indistinguishable from no trend or pattern? LOESS makes it really easy to extract a pattern or trend and because it is a proper stats method it is often taken for granted that the pattern so derived is meaningful.</p>
 <p>Consider the example data from the <a href="../../../../2011/07/21/smoothing-temporally-correlated-data/" title="Smoothing temporally correlated data">earlier blog post</a>&nbsp;from Kohn et al (2000), where the aim is to uncover the known model from observations drawn from this model with moderate AR(1) noise. The data sample is generated using the following code:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">321</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>n</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>xt <span class="ot">&lt;-</span> time<span class="sc">/</span>n</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> (<span class="dv">1280</span> <span class="sc">*</span> xt<span class="sc">^</span><span class="dv">4</span>) <span class="sc">*</span> (<span class="dv">1</span><span class="sc">-</span> xt)<span class="sc">^</span><span class="dv">4</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(Y <span class="sc">+</span> <span class="fu">arima.sim</span>(<span class="fu">list</span>(<span class="at">ar =</span> <span class="fl">0.3713</span>), <span class="at">n =</span> n))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">321</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>n</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>xt <span class="ot">&lt;-</span> time<span class="sc">/</span>n</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> (<span class="dv">1280</span> <span class="sc">*</span> xt<span class="sc">^</span><span class="dv">4</span>) <span class="sc">*</span> (<span class="dv">1</span><span class="sc">-</span> xt)<span class="sc">^</span><span class="dv">4</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(Y <span class="sc">+</span> <span class="fu">arima.sim</span>(<span class="fu">list</span>(<span class="at">ar =</span> <span class="fl">0.3713</span>), <span class="at">n =</span> n))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Several R functions can fit LOESS-like models (e.g.&nbsp;<code>lowess()</code> and <code>loess()</code>in base R but note these two are not the same type of LOESS model). The code chunk and figure below show three fits using different values for the span parameter.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="do">## fit LOESS models</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>lo1 <span class="ot">&lt;-</span> <span class="fu">loess</span>(y <span class="sc">~</span> xt) <span class="do">## span = 0.75</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>lo2 <span class="ot">&lt;-</span> <span class="fu">update</span>(lo1, <span class="at">span =</span> <span class="fl">0.25</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>lo3 <span class="ot">&lt;-</span> <span class="fu">update</span>(lo1, <span class="at">span =</span> <span class="fl">0.5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="do">## fit LOESS models</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>lo1 <span class="ot">&lt;-</span> <span class="fu">loess</span>(y <span class="sc">~</span> xt) <span class="do">## span = 0.75</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>lo2 <span class="ot">&lt;-</span> <span class="fu">update</span>(lo1, <span class="at">span =</span> <span class="fl">0.25</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>lo3 <span class="ot">&lt;-</span> <span class="fu">update</span>(lo1, <span class="at">span =</span> <span class="fl">0.5</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/loess_span_examples.png" class="img-fluid figure-img"></p>
@@ -350,50 +343,46 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </figure>
 </div>
 <p>The plot was produced using</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>COL <span class="ot">&lt;-</span> <span class="st">"darkorange1"</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">layout</span>(<span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="at">nrow =</span> <span class="dv">2</span>))</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(y <span class="sc">~</span> xt, <span class="at">xlab =</span> <span class="fu">expression</span>(x[t]), <span class="at">ylab =</span> <span class="fu">expression</span>(y[t]),</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="fu">expression</span>(lambda <span class="sc">==</span> <span class="fl">0.75</span>))</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(Y <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"dashed"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(lo1) <span class="sc">~</span> xt, <span class="at">col =</span> COL, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(y <span class="sc">~</span> xt, <span class="at">xlab =</span> <span class="fu">expression</span>(x[t]), <span class="at">ylab =</span> <span class="fu">expression</span>(y[t]),</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="fu">expression</span>(lambda <span class="sc">==</span> <span class="fl">0.25</span>))</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(Y <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"dashed"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(lo2) <span class="sc">~</span> xt, <span class="at">col =</span> COL, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(y <span class="sc">~</span> xt, <span class="at">xlab =</span> <span class="fu">expression</span>(x[t]), <span class="at">ylab =</span> <span class="fu">expression</span>(y[t]),</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="fu">expression</span>(lambda <span class="sc">==</span> <span class="fl">0.5</span>))</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(Y <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"dashed"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(lo3) <span class="sc">~</span> xt, <span class="at">col =</span> COL, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="fu">layout</span>(<span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>COL <span class="ot">&lt;-</span> <span class="st">"darkorange1"</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">layout</span>(<span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">4</span>, <span class="at">nrow =</span> <span class="dv">2</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(y <span class="sc">~</span> xt, <span class="at">xlab =</span> <span class="fu">expression</span>(x[t]), <span class="at">ylab =</span> <span class="fu">expression</span>(y[t]),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="fu">expression</span>(lambda <span class="sc">==</span> <span class="fl">0.75</span>))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(Y <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"dashed"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(lo1) <span class="sc">~</span> xt, <span class="at">col =</span> COL, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(y <span class="sc">~</span> xt, <span class="at">xlab =</span> <span class="fu">expression</span>(x[t]), <span class="at">ylab =</span> <span class="fu">expression</span>(y[t]),</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="fu">expression</span>(lambda <span class="sc">==</span> <span class="fl">0.25</span>))</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(Y <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"dashed"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(lo2) <span class="sc">~</span> xt, <span class="at">col =</span> COL, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(y <span class="sc">~</span> xt, <span class="at">xlab =</span> <span class="fu">expression</span>(x[t]), <span class="at">ylab =</span> <span class="fu">expression</span>(y[t]),</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="fu">expression</span>(lambda <span class="sc">==</span> <span class="fl">0.5</span>))</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(Y <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"dashed"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(lo3) <span class="sc">~</span> xt, <span class="at">col =</span> COL, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="fu">layout</span>(<span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>There is little to choose between \( \lambda \) = 0.75 and \( \lambda \) = 0.5 if we are comparing them with the known model (the dashed line), but suppose we don’t know the true model? The optimal \( \lambda \) according to GCV can be determined using a function modified from a posting to R-Help by Michael Friendly (the original function did more than compute GCV)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>loessGCV <span class="ot">&lt;-</span> <span class="cf">function</span> (x) {</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="do">## Modified from code by Michael Friendly</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="do">## http://tolstoy.newcastle.edu.au/R/help/05/11/15899.html</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span>(<span class="fu">inherits</span>(x,<span class="st">"loess"</span>))) <span class="fu">stop</span>(<span class="st">"Error: argument must be a loess object"</span>)</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="do">## extract values from loess object</span></span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    span <span class="ot">&lt;-</span> x<span class="sc">$</span>pars<span class="sc">$</span>span</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> x<span class="sc">$</span>n</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    traceL <span class="ot">&lt;-</span> x<span class="sc">$</span>trace.hat</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    sigma2 <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">resid</span>(x)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> (n<span class="dv">-1</span>)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    gcv  <span class="ot">&lt;-</span> n<span class="sc">*</span>sigma2 <span class="sc">/</span> (n<span class="sc">-</span>traceL)<span class="sc">^</span><span class="dv">2</span></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">span=</span>span, <span class="at">gcv=</span>gcv)</span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>    result</span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>loessGCV <span class="ot">&lt;-</span> <span class="cf">function</span> (x) {</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="do">## Modified from code by Michael Friendly</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="do">## http://tolstoy.newcastle.edu.au/R/help/05/11/15899.html</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span>(<span class="fu">inherits</span>(x,<span class="st">"loess"</span>))) <span class="fu">stop</span>(<span class="st">"Error: argument must be a loess object"</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="do">## extract values from loess object</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    span <span class="ot">&lt;-</span> x<span class="sc">$</span>pars<span class="sc">$</span>span</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> x<span class="sc">$</span>n</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    traceL <span class="ot">&lt;-</span> x<span class="sc">$</span>trace.hat</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    sigma2 <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">resid</span>(x)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> (n<span class="dv">-1</span>)</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    gcv  <span class="ot">&lt;-</span> n<span class="sc">*</span>sigma2 <span class="sc">/</span> (n<span class="sc">-</span>traceL)<span class="sc">^</span><span class="dv">2</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">span=</span>span, <span class="at">gcv=</span>gcv)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>    result</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The <code>optimize()</code> function can be used to find the value of \( \lambda \) that achieves minimal GCV. A small wrapper function is required to link <code>optimize()</code> with <code>loessGCV()</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>bestLoess <span class="ot">&lt;-</span> <span class="cf">function</span>(model, <span class="at">spans =</span> <span class="fu">c</span>(.<span class="dv">05</span>, .<span class="dv">95</span>)) {</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    f <span class="ot">&lt;-</span> <span class="cf">function</span>(span) {</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        mod <span class="ot">&lt;-</span> <span class="fu">update</span>(model, <span class="at">span =</span> span)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">loessGCV</span>(mod)[[<span class="st">"gcv"</span>]]</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">&lt;-</span> <span class="fu">optimize</span>(f, spans)</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    result</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>bestLoess <span class="ot">&lt;-</span> <span class="cf">function</span>(model, <span class="at">spans =</span> <span class="fu">c</span>(.<span class="dv">05</span>, .<span class="dv">95</span>)) {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    f <span class="ot">&lt;-</span> <span class="cf">function</span>(span) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        mod <span class="ot">&lt;-</span> <span class="fu">update</span>(model, <span class="at">span =</span> span)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="fu">loessGCV</span>(mod)[[<span class="st">"gcv"</span>]]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    result <span class="ot">&lt;-</span> <span class="fu">optimize</span>(f, spans)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    result</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The optimal \( \lambda \) is chosen using <code>bestLoess()</code>. The optimal \( \lambda \) is about 0.18 with a GCV of around 0.009</p>
-<pre class="rout"><code>
-&gt; best
+<pre class="rout"><code>&gt; best
 $minimum
 [1] 0.1813552
 
@@ -401,8 +390,7 @@ $objective
 [1] 0.009433405
 </code></pre>
 <p>Our original LOESS model can be updated to use this \( \lambda \)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>lo.gcv <span class="ot">&lt;-</span> <span class="fu">update</span>(lo1, <span class="at">span =</span> best<span class="sc">$</span>minimum)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>lo.gcv <span class="ot">&lt;-</span> <span class="fu">update</span>(lo1, <span class="at">span =</span> best<span class="sc">$</span>minimum)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The fit this gives is shown in the figure below</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">

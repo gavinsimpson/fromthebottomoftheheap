@@ -17,11 +17,16 @@ excerpt: 'I''m writing this post for two reasons: i) someone searched on Google 
   paper in the scientific literature explaining the method. Whilst a solution to that
   part of the problem will have to wait until Jari, Dave Roberts and I get our acts
   together and write one, this post might be useful in the interim.'
-description: 'I''m writing this post for two reasons: i) someone searched on Google
-  for the term ''what is ordisurf doing'' and ended up on my blog, and ii) because
-  I have been on the receiving end of reviewers comments on a paper I co-authored
-  where they didn''t know what ordisurf() was doing ei…'
 date: 2011-06-10 12:00:00
+description: >-
+  I'm writing this post for two reasons: i) someone searched on Google for the term 'what is
+  ordisurf doing' and ended up on my blog, and ii) because I have been on the receiving end of
+  reviewers comments on a paper I co-authored where they didn't know what ordisurf() was doing
+  either! It is hardly surprising that people who don't know R or haven't studied the code or the
+  examples in the vegan documentation do not realise what ordisurf() is trying to do as there
+  isn't a paper in the scientific literature explaining the method. Whilst a solution to that
+  part of the problem will have to wait until Jari, Dave Roberts and I get our acts together and
+  write one, this post might be useful in the interim.
 author: Gavin Simpson
 categories:
   - R
@@ -56,7 +61,6 @@ Before direct gradient analysis or canonical ordination was invented/used in eco
 So we have something tangible to work with in the ensuing discussion, lets fit a simple PCA to the classic Dutch Dune Meadows data set, available in **vegan**, and display the resulting biplot
 
 ```r
-
 require(vegan)
 data(dune)
 data(dune.env)
@@ -71,7 +75,6 @@ biplot(dune.pca, scaling = 3)
 For these data the main continuous, quantitative variable is `A1`, the thickness of the soil A1 horizon. The `envfit()` can be used to project a biplot arrow for this variable into the ordination
 
 ```r
-
 set.seed(17)
 dune.ev <- envfit(dune.pca ~ A1, data = dune.env)
 plot(dune.ev)
@@ -81,7 +84,6 @@ plot(dune.ev)
 The result of the vector fitting is shown below, indicating borderline significance for the A1 horizon
 
 ```rout
-
 R> dune.ev
 
 ***VECTORS
@@ -97,7 +99,6 @@ P values based on 999 permutations.
 As this is an unconstrained ordination, there is no reason at all to assume that the values of the A1 horizon vary in a linear fashion across the biplot. Instead, it might be better to fit a smooth response surface of A1 values over the limits of the biplot. For that we use `ordisurf()`.
 
 ```r
-
 dune.sf <- ordisurf(dune.pca ~ A1, data = dune.env, plot = FALSE, scaling = 3)
 biplot(dune.pca, scaling = 3)
 plot(dune.ev)
@@ -112,7 +113,6 @@ Combining all the various plotting elements thus far we get this figure
 The fitted surface is far from linear! The object returned by `ordisurf()` is an augments object of class `"gam"` from the **mgcv** package, so we can use methods from that package to interrogate the result
 
 ```rout
-
 R> summary(dune.sf)
 
 Family: gaussian
@@ -140,7 +140,6 @@ GCV score = 4.4577  Scale est. = 2.5448    n = 20
 Here we also see that there is little evidence to reject the null hypothesis. So what is `ordisurf()` actually doing? It is doing nothing more than fitting the following model using the `gam()` function
 
 ```r
-
 require(mgcv)
 scrs <- data.frame(scores(dune.pca, display = "sites", scaling = 3))
 dat <- with(dune.env, cbind(scrs, A1))
@@ -162,7 +161,6 @@ functionality provided by [Simon Wood's](http://www.maths.bath.ac.uk/~sw283/ "Si
 As a final illustration, we compare the response surface fitted earlier with one fitted using ML smoothness selection and the extra penalty term
 
 ```r
-
 dune.sf2 <- ordisurf(dune.pca ~ A1, data = dune.env, plot = FALSE, scaling = 3,
                      method = "ML", select = TRUE)
 biplot(dune.pca, scaling = 3)
@@ -178,7 +176,6 @@ We get a similar pattern to before
 but the surface is a lot less complex using approximately 4.5 degrees of freedom compared with approximately 8.7 in `dune.sf`. This doesn't alter our interpretation of the significance of the relationship between the plant composition and A1 horizon thickness, however.
 
 ```rout
-
 R> summary(dune.sf2)
 
 Family: gaussian

@@ -9,11 +9,19 @@ tags:
   - extrapolation
   - penalty
 category: R
-description: An issue that often crops up when modelling with generlaized additive
-  models (GAMs), especially with time series or spatial data, is how to extrapolate
-  beyond the range of the data used to train the model? The issue arises because GAMs
-  use splines to learn from the data using ba…
 image: /assets/img/posts/extrapolating-with-b-splines-and-gams-plot-b-spline-with-mixed-penalties-1.png
+description: >-
+  An issue that often crops up when modelling with generlaized additive models (GAMs), especially
+  with time series or spatial data, is how to extrapolate beyond the range of the data used to
+  train the model? The issue arises because GAMs use splines to learn from the data using basis
+  functions. The splines themselves are built from basis functions that are typically setup in
+  terms of the data used to fit the model. If there are no basis functions beyond the range of
+  the input data, what exactly is being used if we want to extrapolate? A related issue is that
+  of the wiggliness penalty; depending on the type of basis used, the penalty could extend over
+  the entire real line (-&#8734;&ndash;&#8734;), or only over the range of the input data. In
+  this post I want to take a practical look the extrapolation behaviour of splines in GAMs fitted
+  with the mgcv package for R. In particular I want to illustrate how flexible the B spline basis
+  is.
 author: Gavin Simpson
 categories:
   - R
@@ -56,7 +64,6 @@ If you want to recreate elements of the rest of the post, you'll need the follow
 
 
 ```r
-
 ## Packages
 library('ggplot2')
 library('tibble')
@@ -79,7 +86,6 @@ The example data set used in the comparsion had been posted to the preprint's Gi
 
 
 ```r
-
 load(url("https://bit.ly/gprocdata"))
 ls()
 
@@ -88,7 +94,6 @@ ls()
 
 
 ```text
-
 [1] "f_true"
 
 ```
@@ -97,7 +102,6 @@ where the Bitly short link just links to the `.Rdata` file stored on GitHub. Thi
 
 
 ```r
-
 seed <- 1234
 set.seed(seed)
 gp_data <- tibble(truth = unname(f_true), x = seq(-1, 1, by = 0.002)) %>%
@@ -107,7 +111,6 @@ gp_data <- tibble(truth = unname(f_true), x = seq(-1, 1, by = 0.002)) %>%
 From that noisy set, we sample 250 observations at random, and indicate some of the observations as being in a test set that we won't use when fitting GAMs
 
 ```r
-
 set.seed(seed)
 r_samp <- sample_n(gp_data, size = 250) %>%
     arrange(x) %>%
@@ -124,7 +127,6 @@ Finally we visualize the true function and the noisy observations we sampled fro
 
 
 ```r
-
 ggplot(r_samp, aes(x = x, y = y, colour = data_set)) +
     geom_line(aes(y = truth, colour = NULL), show.legend = FALSE, alpha = 0.5) +
     geom_point() +
@@ -142,7 +144,6 @@ Firstly, we'll look at how the thin plate splines behave under extrapolation, re
 
 
 ```r
-
 m_tprs2 <- gam(y ~ s(x, k = 50, bs = "tp", m = 2),
                data = filter(r_samp, data_set == "train"), method = "REML")
 ## first order penalty
@@ -157,7 +158,6 @@ Next I define some new observations to predict at from the two models
 
 
 ```r
-
 new_data <- tibble(x = seq(-1.5, 1.5, by = 0.002))
 
 ```
@@ -166,7 +166,6 @@ Remember the training data covered the interval -0.8&ndash;0.8, so we're extrapo
 
 
 ```r
-
 p_tprs2 <- as_tibble(predict(m_tprs2, new_data, se.fit = TRUE)) %>%
     rename(fit_tprs_2 = fit, se_tprs_2 = se.fit)
 p_tprs1 <- as_tibble(predict(m_tprs1, new_data, se.fit = TRUE)) %>%
@@ -180,7 +179,6 @@ Next we do some data wrangling to get the predictions into a tidy format suitabl
 
 
 ```r
-
 crit <- qnorm((1 - 0.89) / 2, lower.tail = FALSE)
 new_data_tprs <- bind_cols(new_data, p_tprs2, p_tprs1) %>%
     pivot_longer(fit_tprs_2:se_tprs_1, names_sep = '_',
@@ -196,7 +194,6 @@ Now we can plot the data plus the predicted values
 
 
 ```r
-
 ggplot(mapping = aes(x = x, y = y)) +
     geom_ribbon(data = new_data_tprs,
                 mapping = aes(ymin = lwr_ci, ymax = upr_ci, x = x,
@@ -225,7 +222,6 @@ OK. What about B splines? With the B spline constructor in **mgcv** we have a lo
 
 
 ```r
-
 m_bs_default <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2)),
                     data = filter(r_samp, data_set == "train"), method = "REML")
 
@@ -234,7 +230,6 @@ m_bs_default <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2)),
 
 
 ```text
-
 Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
 *no* information about some basis coefficients
 
@@ -245,7 +240,6 @@ If we want to have the penalty extend some way beyond the range of *x*, we need 
 
 
 ```r
-
 knots <- list(x = c(-2, -0.9, 0.9, 2))
 
 ```
@@ -253,7 +247,6 @@ and then pass `knots` to the `knots` argument when fitting the model
 
 
 ```r
-
 m_bs_extrap <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2)), method = "REML",
                    data = filter(r_samp, data_set == "train"), knots = knots)
 
@@ -262,7 +255,6 @@ m_bs_extrap <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2)), method = "REML",
 
 
 ```text
-
 Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
 *no* information about some basis coefficients
 
@@ -273,7 +265,6 @@ We can visualize the differences in the bases using `basis()` from the **gratia*
 
 
 ```r
-
 bs_default <- basis(s(x, k = 50, bs = "bs", m = c(3, 2)), knots = knots,
                     data = filter(new_data, x >= -0.8 & x <= 0.8))
 bs_extrap <- basis(s(x, k = 50, bs = "bs", m = c(3, 2)), knots = knots,
@@ -294,7 +285,6 @@ Now we predict from both the models as before and repeat the data wrangling
 
 
 ```r
-
 p_bs_default <- as_tibble(predict(m_bs_default, new_data, se.fit = TRUE)) %>%
     rename(fit_bs_default = fit, se_bs_default = se.fit)
 p_bs_extrap <- as_tibble(predict(m_bs_extrap, new_data, se.fit = TRUE)) %>%
@@ -312,7 +302,6 @@ The only difference here is that I encoded in the variable names whether we used
 
 
 ```r
-
 ggplot(mapping = aes(x = x, y = y)) +
     geom_ribbon(data = new_data_bs_eg,
                 mapping = aes(ymin = lwr_ci, ymax = upr_ci, x = x, fill = penalty),
@@ -341,7 +330,6 @@ In **mgcv** a GP can be fit using `bs = "gp"`. When we do this, the meaning of t
 
 
 ```r
-
 m_gp <- gam(y ~ s(x, k = 50, bs = "gp", m = c(3, 0.15)),
             data = filter(r_samp, data_set == "train"), method = "REML")
 
@@ -351,7 +339,6 @@ Again we have some wrangling to do to pull all these together into an object we 
 
 
 ```r
-
 p_bs <- as_tibble(predict(m_bs_extrap, new_data, se.fit = TRUE)) %>%
     rename(fit_bs = fit, se_bs = se.fit)
 p_tprs <- as_tibble(predict(m_tprs2, new_data, se.fit = TRUE)) %>%
@@ -371,7 +358,6 @@ And finally we plot using
 
 
 ```r
-
 ggplot(mapping = aes(x = x, y = y)) +
     geom_ribbon(data = new_data_bases,
                 mapping = aes(ymin = lwr_ci, ymax = upr_ci, x = x, fill = spline),
@@ -391,7 +377,6 @@ ggplot(mapping = aes(x = x, y = y)) +
 
 
 ```text
-
 Warning: Ignoring unknown aesthetics: colour2
 
 ```
@@ -407,7 +392,6 @@ For convenience I'll just fit all three models with a common format, even though
 
 
 ```r
-
 m_bs_2 <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2)), method = "REML",
               data = filter(r_samp, data_set == "train"), knots = knots)
 m_bs_1 <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 1)), method = "REML",
@@ -421,7 +405,6 @@ Again we repeat the data wrangling need to get something we can plot
 
 
 ```r
-
 p_bs_2 <- as_tibble(predict(m_bs_2, new_data, se.fit = TRUE)) %>%
     rename(fit_bs_2 = fit, se_bs_2 = se.fit)
 p_bs_1 <- as_tibble(predict(m_bs_1, new_data, se.fit = TRUE)) %>%
@@ -443,7 +426,6 @@ We plot the predicted values with
 
 
 ```r
-
 ggplot(mapping = aes(x = x, y = y)) +
     geom_ribbon(data = new_data_order,
                 mapping = aes(ymin = lwr_ci, ymax = upr_ci, x = x, fill = order),
@@ -477,7 +459,6 @@ In the code below I fit two additional models with mixtures of penalties, and th
 
 
 ```r
-
 m_bs_21 <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2, 1)), method = "REML",
                 data = filter(r_samp, data_set == "train"), knots = knots)
 
@@ -486,7 +467,6 @@ m_bs_21 <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2, 1)), method = "REML",
 
 
 ```text
-
 Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
 *no* information about some basis coefficients
 
@@ -495,7 +475,6 @@ Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
 
 
 ```r
-
 m_bs_210 <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2, 1, 0)), method = "REML",
                 data = filter(r_samp, data_set == "train"), knots = knots)
 
@@ -504,7 +483,6 @@ m_bs_210 <- gam(y ~ s(x, k = 50, bs = "bs", m = c(3, 2, 1, 0)), method = "REML",
 
 
 ```text
-
 Warning in smooth.construct.bs.smooth.spec(object, dk$data, dk$knots): there is
 *no* information about some basis coefficients
 
@@ -514,7 +492,6 @@ Again, we do the same wrangling, this time encoding the mixtures of orders in th
 
 
 ```r
-
 p_bs_21 <- as_tibble(predict(m_bs_21, new_data, se.fit = TRUE)) %>%
     rename(fit_bs_21 = fit, se_bs_21 = se.fit)
 p_bs_210 <- as_tibble(predict(m_bs_210, new_data, se.fit = TRUE)) %>%
@@ -535,7 +512,6 @@ The last step here uses `case_when()` to write out nicer formatting for the pena
 
 
 ```r
-
 ggplot(mapping = aes(x = x, y = y)) +
     geom_ribbon(data = new_data_multi,
                 mapping = aes(ymin = lwr_ci, ymax = upr_ci, x = x, fill = penalty),

@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2017-05-01">
-<meta name="description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by…">
+<meta name="description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by the OP in their question. Lately there’s been a bit of back and forth between Jarrett Byrnes and myself about what a prediction “interval” for a GLM might mean. Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something here that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. For illustration, I thought I’d use some small teaching example data sets, but whilst writing the post it started to get a little on the long side. So, I’ve broken it into two and in this part I look at logistic regression.">
 
 <title>Prediction intervals for GLMs part I – From the bottom of the heap</title>
 <style>
@@ -101,7 +101,7 @@ div.csl-indent {
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -170,13 +170,13 @@ window.Quarto = {
 </script>
 
 <meta property="og:title" content="Prediction intervals for GLMs part I – From the bottom of the heap">
-<meta property="og:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by…">
+<meta property="og:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by the OP in their question. Lately there’s been a bit of back and forth between Jarrett Byrnes and myself about what a prediction “interval” for a GLM might mean. Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something here that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. For illustration, I thought I’d use some small teaching example data sets, but whilst writing the post it started to get a little on the long side. So, I’ve broken it into two and in this part I look at logistic regression.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/glm-prediction-intervals-i-load-packages-plot-darlingtonia-1.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="340">
 <meta property="og:image:width" content="680">
 <meta name="twitter:title" content="Prediction intervals for GLMs part I – From the bottom of the heap">
-<meta name="twitter:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by…">
+<meta name="twitter:description" content="One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by the OP in their question. Lately there’s been a bit of back and forth between Jarrett Byrnes and myself about what a prediction “interval” for a GLM might mean. Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something here that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. For illustration, I thought I’d use some small teaching example data sets, but whilst writing the post it started to get a little on the long side. So, I’ve broken it into two and in this part I look at logistic regression.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/glm-prediction-intervals-i-load-packages-plot-darlingtonia-1.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -191,11 +191,6 @@ window.Quarto = {
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -333,7 +328,7 @@ window.Quarto = {
 
 <div>
   <div class="description">
-    One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by…
+    One of my more popular answers on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by the OP in their question. Lately there’s been a bit of back and forth between Jarrett Byrnes and myself about what a prediction “interval” for a GLM might mean. Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something here that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. For illustration, I thought I’d use some small teaching example data sets, but whilst writing the post it started to get a little on the long side. So, I’ve broken it into two and in this part I look at logistic regression.
   </div>
 </div>
 
@@ -374,19 +369,17 @@ window.Quarto = {
 </section>
 </div></div><p>One of my more popular <a href="http://stackoverflow.com/a/14424417/429846">answers</a> on StackOverflow concerns the issue of prediction intervals for a generalized linear model (GLM). My answer really only addresses how to compute confidence intervals for parameters but in the comments I discuss the more substantive points raised by the OP in their question. Lately there’s been a bit of back and forth between Jarrett Byrnes and myself about what a prediction “interval” for a GLM might mean. Comments, even on StackOverflow, aren’t a good place for a discussion so I thought I’d post something here that went into a bit more detail as to why, for some common types of GLMs, prediction intervals aren’t that useful and require a lot more thinking about what they mean and how they should be calculated. For illustration, I thought I’d use some small teaching example data sets, but whilst writing the post it started to get a little on the long side. So, I’ve broken it into two and in this part I look at logistic regression.</p>
 <p>The first example concerns a small experiment on the rare insectivorous pitcher plant <em>Darlingtonia californica</em> (the cobra lily) used as an example in <span class="citation" data-cites="Gotelli2013-wm">Gotelli and Ellison (<a href="#ref-Gotelli2013-wm" role="doc-biblioref">2013</a>)</span> and originally reported in <span class="citation" data-cites="Dixon2005-bb">Dixon et al. (<a href="#ref-Dixon2005-bb" role="doc-biblioref">2005</a>)</span>. <em>Darlingtonia</em> grows leaves that are modified to form a pitcher trap, which is filled with nectar that attracts insects, in particular vespulid wasps (<em>Vespula atropilosa</em>). The observations in the data set are on the height of pitcher traps (<code>leafHeight</code>) and whether or not the leaf was visited by a wasp (<code>visited</code>). The code chunk below downloads the data from the book’s website and loads it into R ready for use.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>darlurl <span class="ot">&lt;-</span> <span class="st">"http://harvardforest.fas.harvard.edu/sites/harvardforest.fas.harvard.edu/files/ellison-pubs/2004/DarlingtoniaData3.txt"</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>darl <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">read.fwf</span>(darlurl, <span class="at">widths =</span> <span class="fu">c</span>(<span class="dv">8</span>,<span class="dv">9</span>), <span class="at">header =</span> <span class="cn">FALSE</span>, <span class="at">skip =</span> <span class="dv">1</span>L),</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">c</span>(<span class="st">"leafHeight"</span>, <span class="st">"visited"</span>))</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>darl <span class="ot">&lt;-</span> <span class="fu">transform</span>(darl, <span class="at">visited =</span> <span class="fu">as.logical</span>(visited))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>darlurl <span class="ot">&lt;-</span> <span class="st">"http://harvardforest.fas.harvard.edu/sites/harvardforest.fas.harvard.edu/files/ellison-pubs/2004/DarlingtoniaData3.txt"</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>darl <span class="ot">&lt;-</span> <span class="fu">setNames</span>(<span class="fu">read.fwf</span>(darlurl, <span class="at">widths =</span> <span class="fu">c</span>(<span class="dv">8</span>,<span class="dv">9</span>), <span class="at">header =</span> <span class="cn">FALSE</span>, <span class="at">skip =</span> <span class="dv">1</span>L),</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                 <span class="fu">c</span>(<span class="st">"leafHeight"</span>, <span class="st">"visited"</span>))</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>darl <span class="ot">&lt;-</span> <span class="fu">transform</span>(darl, <span class="at">visited =</span> <span class="fu">as.logical</span>(visited))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Kernel density estimates of the distributions of the leaf heights for visited and unvisited leaves is one way to visualise these data. Here we use <strong>ggplot2</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>xlab <span class="ot">&lt;-</span> <span class="st">"Leaf height [cm]"</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(darl, <span class="fu">aes</span>(<span class="at">x =</span> leafHeight, <span class="at">colour =</span> visited)) <span class="sc">+</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="at">stat =</span> <span class="st">"density"</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> xlab, <span class="at">y =</span> <span class="st">"Density"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>xlab <span class="ot">&lt;-</span> <span class="st">"Leaf height [cm]"</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(darl, <span class="fu">aes</span>(<span class="at">x =</span> leafHeight, <span class="at">colour =</span> visited)) <span class="sc">+</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="at">stat =</span> <span class="st">"density"</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">x =</span> xlab, <span class="at">y =</span> <span class="st">"Density"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/glm-prediction-intervals-i-load-packages-plot-darlingtonia-1.png" class="img-fluid figure-img"></p>
@@ -394,12 +387,9 @@ window.Quarto = {
 </figure>
 </div>
 <p>We’re interested in modelling the probability of leaf visitation as a function of leaf height. For this a binomial GLM is a logical choice, with the canonical link function, the logit or logistic function. Such a model is fitted using <code>glm()</code> as follows</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">glm</span>(visited <span class="sc">~</span> leafHeight, <span class="at">data =</span> darl, <span class="at">family =</span> binomial)</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-
-Call:
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">glm</span>(visited <span class="sc">~</span> leafHeight, <span class="at">data =</span> darl, <span class="at">family =</span> binomial)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Call:
 glm(formula = visited ~ leafHeight, family = binomial, data = darl)
 
 Deviance Residuals: 
@@ -423,21 +413,20 @@ Number of Fisher Scoring iterations: 6
 </code></pre>
 <p>The model summary suggests an effect of leaf height that is unlikely to be observed if there were no effect. For a unit increase in leaf height, the odds of visitation increase by 1.12 times (given by <code>exp(coef(m)[2])</code>).</p>
 <p>How the probability of visitation varies as a function of leaf height, as estimated by the binomial GLM, can be visualised by predicting for a grid of values over the observed range of leaf heights. An approximate 95% point-wise confidence interval can also be created for the fitted function. In this case, we should create the confidence interval on the scale of the linear predictor where we assume things behave in a more Gaussian-like manner, and then backtransform the calculated interval on to the probability scale using the invers of the link function. The code below shows a general solution for this, where the inverse link function is obtained from the <code>family()</code> object contained within the fitted GLM object</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ilink <span class="ot">&lt;-</span> <span class="fu">family</span>(m)<span class="sc">$</span>linkinv</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>pd <span class="ot">&lt;-</span> <span class="fu">with</span>(darl,</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>           <span class="fu">data.frame</span>(<span class="at">leafHeight =</span> <span class="fu">seq</span>(<span class="fu">min</span>(leafHeight), <span class="fu">max</span>(leafHeight),</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">length =</span> <span class="dv">100</span>)))</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>pd <span class="ot">&lt;-</span> <span class="fu">cbind</span>(pd, <span class="fu">predict</span>(m, pd, <span class="at">type =</span> <span class="st">"link"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>])</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>pd <span class="ot">&lt;-</span> <span class="fu">transform</span>(pd, <span class="at">Fitted =</span> <span class="fu">ilink</span>(fit), <span class="at">Upper =</span> <span class="fu">ilink</span>(fit <span class="sc">+</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit)),</span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>                <span class="at">Lower =</span> <span class="fu">ilink</span>(fit <span class="sc">-</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit)))</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(darl, <span class="fu">aes</span>(<span class="at">x =</span> leafHeight, <span class="at">y =</span> <span class="fu">as.numeric</span>(visited))) <span class="sc">+</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="at">data =</span> pd, <span class="fu">aes</span>(<span class="at">ymin =</span> Lower, <span class="at">ymax =</span> Upper, <span class="at">x =</span> leafHeight),</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                <span class="at">fill =</span> <span class="st">"steelblue2"</span>, <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="at">data =</span> pd, <span class="fu">aes</span>(<span class="at">y =</span> Fitted, <span class="at">x =</span> leafHeight)) <span class="sc">+</span></span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Probability of visitation"</span>, <span class="at">x =</span> xlab)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ilink <span class="ot">&lt;-</span> <span class="fu">family</span>(m)<span class="sc">$</span>linkinv</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>pd <span class="ot">&lt;-</span> <span class="fu">with</span>(darl,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>           <span class="fu">data.frame</span>(<span class="at">leafHeight =</span> <span class="fu">seq</span>(<span class="fu">min</span>(leafHeight), <span class="fu">max</span>(leafHeight),</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>                                       <span class="at">length =</span> <span class="dv">100</span>)))</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>pd <span class="ot">&lt;-</span> <span class="fu">cbind</span>(pd, <span class="fu">predict</span>(m, pd, <span class="at">type =</span> <span class="st">"link"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)[<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>])</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>pd <span class="ot">&lt;-</span> <span class="fu">transform</span>(pd, <span class="at">Fitted =</span> <span class="fu">ilink</span>(fit), <span class="at">Upper =</span> <span class="fu">ilink</span>(fit <span class="sc">+</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit)),</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                <span class="at">Lower =</span> <span class="fu">ilink</span>(fit <span class="sc">-</span> (<span class="dv">2</span> <span class="sc">*</span> se.fit)))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(darl, <span class="fu">aes</span>(<span class="at">x =</span> leafHeight, <span class="at">y =</span> <span class="fu">as.numeric</span>(visited))) <span class="sc">+</span></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_ribbon</span>(<span class="at">data =</span> pd, <span class="fu">aes</span>(<span class="at">ymin =</span> Lower, <span class="at">ymax =</span> Upper, <span class="at">x =</span> leafHeight),</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                <span class="at">fill =</span> <span class="st">"steelblue2"</span>, <span class="at">alpha =</span> <span class="fl">0.2</span>, <span class="at">inherit.aes =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>(<span class="at">data =</span> pd, <span class="fu">aes</span>(<span class="at">y =</span> Fitted, <span class="at">x =</span> leafHeight)) <span class="sc">+</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">"Probability of visitation"</span>, <span class="at">x =</span> xlab)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/glm-prediction-intervals-i-fitted-function-and-ci-1.png" class="img-fluid figure-img"></p>
@@ -447,48 +436,38 @@ Number of Fisher Scoring iterations: 6
 <p>So far, so standard; the confidence interval is just that, a Wald confidence interval on the fitted function based on the standard errors of the estimates of the model coefficients. It is not a prediction interval, however.</p>
 <p>The fitted model can be interpreted as describing the binomial distribution for any given value of <code>leafHeight</code>. The binomial distribution is specified by two parameters; <em>n</em> the number of trials (specified via argument <code>size</code> in R’s <code>dbinom()</code> and related functions), and <em>p</em> the probability of success. In the <em>Darlingtonia</em> example, <em>n</em> is 1 because each leaf was the result of 1 trial; was the leaf visited or not during the experiment? <em>p</em> is given by <span class="math inline">\(g(\eta)^{-1} = g(\beta_0 + \beta_1 \text{leaf height})^{-1}\)</span>, where <span class="math inline">\(g\)</span> is the logit link function and <span class="math inline">\(g^{-1}\)</span> is its inverse. In other words, the probability parameter of the binomial distribution is a function of <code>leafHeight</code>.</p>
 <p>To create a prediction interval for a value of <code>leafHeight</code>, we could look at the probability quantiles of the binomial distribution with <code>size = 1</code> and <code>prob = Fitted[leafHeight]</code>. For example, for the minimum and maximum observed leaf heights the extreme 2.5% and 97.5% probability quantiles are</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="fu">qbinom</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">head</span>(Fitted, <span class="dv">1</span>L)))</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="fu">qbinom</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">tail</span>(Fitted, <span class="dv">1</span>L)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 0 0
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="fu">qbinom</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">head</span>(Fitted, <span class="dv">1</span>L)))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="fu">qbinom</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">tail</span>(Fitted, <span class="dv">1</span>L)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0 0
 [1] 0 1
 </code></pre>
 <p>In the first instance, for the minimum observed leaf height, the prediction interval is 0. Yes, just 0. For the maximum observed leaf height the 95% prediction interval is 0–1. Neither of these is very useful; one isn’t even an interval in the usual sense of the word, and the other is so wide as to encompass both 0 and 1, which is no more information than we had before we started the whole exercise — a leaf can only be visited or not.</p>
 <p>But this isn’t quite what we want; we’ve only explore the quantiles of the distributions conditional upon the estimated probability. A real prediction interval would account for the uncertainty in this estimate. For that, we need the upper and lower confidence limits for the estimated probability.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="fu">qbinom</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fu">head</span>(Lower, <span class="dv">1</span>L), <span class="fu">head</span>(Upper, <span class="dv">1</span>L))))</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="fu">qbinom</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fu">tail</span>(Lower, <span class="dv">1</span>L), <span class="fu">tail</span>(Upper, <span class="dv">1</span>L))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 0 1
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="fu">qbinom</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fu">head</span>(Lower, <span class="dv">1</span>L), <span class="fu">head</span>(Upper, <span class="dv">1</span>L))))</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="fu">qbinom</span>(<span class="fu">c</span>(<span class="fl">0.025</span>, <span class="fl">0.975</span>), <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">c</span>(<span class="fu">tail</span>(Lower, <span class="dv">1</span>L), <span class="fu">tail</span>(Upper, <span class="dv">1</span>L))))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0 1
 [1] 0 1
 </code></pre>
 <p>I think we can all agree that these intervals aren’t really that useful…</p>
 <p>Another way to use the fitted model is via what it says about the posterior density of the two possible predicted values, visited or unvisited. This can be computed using <code>dbinom()</code> using the code below, again for the minimum and maximum observed leaf heights</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>db <span class="ot">&lt;-</span> <span class="fu">with</span>(pd, <span class="fu">matrix</span>(<span class="fu">dbinom</span>(<span class="at">x =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">each =</span> <span class="dv">2</span>), <span class="at">size =</span> <span class="dv">1</span>,</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                             <span class="at">prob =</span> Fitted[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">100</span>)]),</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                      <span class="at">ncol =</span> <span class="dv">2</span>))</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(db) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"NotVisited"</span>, <span class="st">"Visited"</span>)</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(db) <span class="ot">&lt;-</span> <span class="fu">with</span>(pd, <span class="fu">paste</span>(<span class="st">"leafHeight ="</span>, <span class="fu">range</span>(leafHeight)))</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(db, <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-                NotVisited Visited
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>db <span class="ot">&lt;-</span> <span class="fu">with</span>(pd, <span class="fu">matrix</span>(<span class="fu">dbinom</span>(<span class="at">x =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="at">each =</span> <span class="dv">2</span>), <span class="at">size =</span> <span class="dv">1</span>,</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                             <span class="at">prob =</span> Fitted[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">100</span>)]),</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                      <span class="at">ncol =</span> <span class="dv">2</span>))</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(db) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"NotVisited"</span>, <span class="st">"Visited"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(db) <span class="ot">&lt;-</span> <span class="fu">with</span>(pd, <span class="fu">paste</span>(<span class="st">"leafHeight ="</span>, <span class="fu">range</span>(leafHeight)))</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(db, <span class="dv">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>                NotVisited Visited
 leafHeight = 14     0.9966  0.0034
 leafHeight = 84     0.0831  0.9169
 </code></pre>
 <p>We see almost all the probability density on the unvisited option for leaves 14cm in height (which is also why the 95% interval we calculated earlier was all on unvisted (0), we’d need to go beyond a 99.7% interval to get the visited alernative (1) included in the interval). For leaves of 84cm, most of the density is on the visited outcome, but with approximately 8% on the unvisited outcome.</p>
 <p>However, these values are exactly what we get if we just take the fitted probabilities for these leaf heights, which are given by the solid line in the plot we made earlier</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, Fitted[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">100</span>)])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 0.003410958 0.916879065
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, Fitted[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">100</span>)])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0.003410958 0.916879065
 </code></pre>
 <p>These values are for the visited outcome, but subtract them from 1 and you have the values for the unvisited outcome</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="dv">1</span> <span class="sc">-</span> Fitted[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">100</span>)])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-[1] 0.99658904 0.08312093
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">with</span>(pd, <span class="dv">1</span> <span class="sc">-</span> Fitted[<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">100</span>)])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0.99658904 0.08312093
 </code></pre>
 <p>As before, this ignores the uncertainty in the estimated probability of visitation. The densities incorporating this uncertainty are shown in the table below</p>
 <table class="caption-top table">
@@ -527,22 +506,16 @@ leafHeight = 84     0.0831  0.9169
 </tbody>
 </table>
 <p>One more thing we can do with the fitted model is simulate random outcomes from it. Again we do this for the minimum and maximum observed leaf heights, first for the lowest leaf height</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>nrand <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">rbinom</span>(nrand, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">with</span>(pd, Fitted[<span class="dv">1</span>]))) <span class="sc">/</span> nrand</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-
-     0      1 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>nrand <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">rbinom</span>(nrand, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">with</span>(pd, Fitted[<span class="dv">1</span>]))) <span class="sc">/</span> nrand</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>     0      1 
 0.9977 0.0023 
 </code></pre>
 <p>and then for the largest observed leaf height</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">rbinom</span>(nrand, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">with</span>(pd, Fitted[<span class="dv">100</span>]))) <span class="sc">/</span> nrand</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-
-     0      1 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(<span class="fu">rbinom</span>(nrand, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">prob =</span> <span class="fu">with</span>(pd, Fitted[<span class="dv">100</span>]))) <span class="sc">/</span> nrand</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>     0      1 
 0.0867 0.9133 
 </code></pre>
 <p>The numbers should look pretty familiar — they are very close to both the posterior densities returned using <code>dbinom()</code> and the the fitted probabilities we just looked at. In fact, as <code>nrand</code> tends to infinity, the proportions of the two outcomes will also approach those given by <code>dbinom()</code>. As before, though I won’t show it, a complete interval would also include the uncertainty in the estimated probability.</p>

@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2011-07-23">
-<meta name="description" content="Argument passing via … is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. … is used extensively in S3 methods and in passing graphical parameters on to graphical f…">
+<meta name="description" content="Argument passing via … is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. … is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When writing you own plot methods, using … allows the user of your function to pass arguments like cex, col, lty, etc. on to the plotting function inside your method. You do, however, need to be careful in where you use … and which functions you pass … on to.">
 
 <title>Passing non-graphical parameters to graphical functions using … – From the bottom of the heap</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -122,10 +122,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <meta property="og:title" content="Passing non-graphical parameters to graphical functions using … – From the bottom of the heap">
-<meta property="og:description" content="Argument passing via … is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. … is used extensively in S3 methods and in passing graphical parameters on to graphical f…">
+<meta property="og:description" content="Argument passing via … is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. … is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When writing you own plot methods, using … allows the user of your function to pass arguments like cex, col, lty, etc. on to the plotting function inside your method. You do, however, need to be careful in where you use … and which functions you pass … on to.">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta name="twitter:title" content="Passing non-graphical parameters to graphical functions using … – From the bottom of the heap">
-<meta name="twitter:description" content="Argument passing via … is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. … is used extensively in S3 methods and in passing graphical parameters on to graphical f…">
+<meta name="twitter:description" content="Argument passing via … is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. … is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When writing you own plot methods, using … allows the user of your function to pass arguments like cex, col, lty, etc. on to the plotting function inside your method. You do, however, need to be careful in where you use … and which functions you pass … on to.">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
 <meta name="twitter:card" content="summary">
@@ -137,11 +137,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -278,7 +273,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    Argument passing via … is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. … is used extensively in S3 methods and in passing graphical parameters on to graphical f…
+    Argument passing via … is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. … is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When writing you own plot methods, using … allows the user of your function to pass arguments like cex, col, lty, etc. on to the plotting function inside your method. You do, however, need to be careful in where you use … and which functions you pass … on to.
   </div>
 </div>
 
@@ -319,34 +314,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 </div></div><p>Argument passing via <code>...</code> is a great feature of the R language, allowing you to write wrappers around existing functions that do not need to list all the arguments of the wrapped function. <code>...</code> is used extensively in S3 methods and in passing graphical parameters on to graphical functions. When writing you own plot methods, using <code>...</code> allows the user of your function to pass arguments like <code>cex</code>, <code>col</code>, <code>lty</code>, etc. on to the plotting function inside your method. You do, however, need to be careful in where you use <code>...</code> and which functions you pass <code>...</code> on to.</p>
 <p>Consider the following object <code>FOO</code> that is a data frame with our own class <code>"foo"</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>FOO <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">y =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(FOO) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(FOO) <span class="ot">&lt;-</span> <span class="st">"foo"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>FOO <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">x =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>, <span class="at">y =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rownames</span>(FOO) <span class="ot">&lt;-</span> LETTERS[<span class="dv">1</span><span class="sc">:</span><span class="dv">10</span>]</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">class</span>(FOO) <span class="ot">&lt;-</span> <span class="st">"foo"</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>A simplified <code>plot()</code> method to plot the <code>x</code> and <code>y</code> components of our object, displaying the data as points or text labels might be</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>plot.foo <span class="ot">&lt;-</span> <span class="cf">function</span>(X, <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"points"</span>,<span class="st">"text"</span>), ...) {</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> X<span class="sc">$</span>x</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> X<span class="sc">$</span>y</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(x, <span class="at">type =</span> <span class="st">"n"</span>, ...)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"points"</span>) {</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">points</span>(x, y, ...)</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        <span class="fu">text</span>(x, y, <span class="at">labels =</span> <span class="fu">rownames</span>(x), ...)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plot.foo <span class="ot">&lt;-</span> <span class="cf">function</span>(X, <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"points"</span>,<span class="st">"text"</span>), ...) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> X<span class="sc">$</span>x</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> X<span class="sc">$</span>y</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(x, <span class="at">type =</span> <span class="st">"n"</span>, ...)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"points"</span>) {</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>        <span class="fu">points</span>(x, y, ...)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">text</span>(x, y, <span class="at">labels =</span> <span class="fu">rownames</span>(x), ...)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Note that we are passing <code>...</code> on to each of <code>plot()</code>, <code>points()</code>, and <code>text()</code> so our method is very simple. However, if we try to suppress the drawing of axes using the <code>axes</code> argument of <code>plot.default()</code>, our method will generate errors</p>
-<pre class="rout"><code>
-&gt; plot(FOO, axes = FALSE)
+<pre class="rout"><code>&gt; plot(FOO, axes = FALSE)
 Warning message:
 In plot.xy(xy.coords(x, y), type = type, ...) :
   "axes" is not a graphical parameter
 </code></pre>
 <p>Turning warnings into errors, we see that the call to <code>points()</code> is where the warning originates (actually in <code>plot.xy()</code>, frame 5, but <code>points()</code> is the offending code in our method)</p>
-<pre class="rout"><code>
-&gt; options(warn = 2) ## turn warnings to errors
+<pre class="rout"><code>&gt; options(warn = 2) ## turn warnings to errors
 &gt; 
 &gt; plot(FOO, axes = FALSE)
 Error in plot.xy(xy.coords(x, y), type = type, ...) : 
@@ -369,36 +360,32 @@ Error in plot.xy(xy.coords(x, y), type = type, ...) :
 1: plot(FOO, axes = FALSE)
 </code></pre>
 <p>The warning results from our function passing <code>axes = FALSE</code> on to the lower-level plotting functions. An obvious solution is to process <code>...</code> and strip out any offending non-graphical parameters and then arrange for the calls to use the stripped out <code>...</code>. Doing this is possible, but is very complicated. There is an alternative, simpler solution that is used in several base R functions and suggested to me by Brian Ripley (when I asked about doing this on R-Help for a function in the vegan package). The trick is to have a local, in-line wrapper around <code>points()</code> of the following form:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>lPoints <span class="ot">&lt;-</span> <span class="cf">function</span>(..., log, axes, frame.plot, panel.first, panel.last) { </span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">points</span>(...)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>lPoints <span class="ot">&lt;-</span> <span class="cf">function</span>(..., log, axes, frame.plot, panel.first, panel.last) { </span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">points</span>(...)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Here we list all the arguments of <code>plot.default()</code> we <em>don’t</em> want passed on to the low-level plotting calls, but importantly, they are listed <em>after</em> <code>...</code>. The only code in the body of the local function is a call to the low-level graphics function we want to use. Importantly, of the arguments taken by <code>lPoints()</code> only <code>...</code> is passed on to the graphics function it wraps. Because the arguments from <code>plot.default()</code> are named and come after <code>...</code> in the definition of <code>lPoints()</code>, any arguments passed to <code>lPoints()</code> that fully match the named arguments are automatically stripped from the <code>...</code> that is passed on to the wrapped function. Using this trick, we can now write our <code>plot.foo()</code> method like this:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>plot.foo <span class="ot">&lt;-</span> <span class="cf">function</span>(X, <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"points"</span>,<span class="st">"text"</span>), ...) {</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    lPoints <span class="ot">&lt;-</span> <span class="cf">function</span>(..., log, axes, frame.plot,</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                        panel.first, panel.last) <span class="fu">points</span>(...)</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    lText <span class="ot">&lt;-</span> <span class="cf">function</span>(..., log, axes, frame.plot,</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                      panel.first, panel.last) <span class="fu">text</span>(...)</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> X<span class="sc">$</span>x</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> X<span class="sc">$</span>y</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(x, <span class="at">type =</span> <span class="st">"n"</span>, ...)</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"points"</span>) {</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="fu">lPoints</span>(x, y, ...)</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        <span class="fu">lText</span>(x, y, <span class="at">labels =</span> <span class="fu">rownames</span>(x), ...)</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    }</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>plot.foo <span class="ot">&lt;-</span> <span class="cf">function</span>(X, <span class="at">type =</span> <span class="fu">c</span>(<span class="st">"points"</span>,<span class="st">"text"</span>), ...) {</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    lPoints <span class="ot">&lt;-</span> <span class="cf">function</span>(..., log, axes, frame.plot,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                        panel.first, panel.last) <span class="fu">points</span>(...)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    lText <span class="ot">&lt;-</span> <span class="cf">function</span>(..., log, axes, frame.plot,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                      panel.first, panel.last) <span class="fu">text</span>(...)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    x <span class="ot">&lt;-</span> X<span class="sc">$</span>x</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    y <span class="ot">&lt;-</span> X<span class="sc">$</span>y</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    type <span class="ot">&lt;-</span> <span class="fu">match.arg</span>(type)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">plot</span>(x, <span class="at">type =</span> <span class="st">"n"</span>, ...)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(type <span class="sc">==</span> <span class="st">"points"</span>) {</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">lPoints</span>(x, y, ...)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    } <span class="cf">else</span> {</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="fu">lText</span>(x, y, <span class="at">labels =</span> <span class="fu">rownames</span>(x), ...)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">invisible</span>(x)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Now we can pass arguments to both <code>plot.default()</code> and <code>points()</code> and <code>text()</code>, and the call that raised the warning earlier, now works without complaint:</p>
-<pre class="rout"><code>
-&gt; plot(FOO, axes = FALSE)
+<pre class="rout"><code>&gt; plot(FOO, axes = FALSE)
 &gt;
 </code></pre>
 <p>Remember to reset the warning level if you followed the code above</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">warn =</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">options</span>(<span class="at">warn =</span> <span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2011/07/21/smoothing-temporally-correlated-data/">← Older: Smoothing temporally correlated data</a></span> <span class="text-end"><a href="../../../../2011/10/04/permute-a-package-for-generating-restricted-permutations/">Newer: permute: a package for generating restricted permutations →</a></span></p>
 </div>

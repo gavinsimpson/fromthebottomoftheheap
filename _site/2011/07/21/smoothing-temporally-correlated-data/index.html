@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2011-07-21">
-<meta name="description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the la…">
+<meta name="description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit.">
 
 <title>Smoothing temporally correlated data – From the bottom of the heap</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -122,13 +122,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <meta property="og:title" content="Smoothing temporally correlated data – From the bottom of the heap">
-<meta property="og:description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the la…">
+<meta property="og:description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/schimek_example_1.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="600">
 <meta property="og:image:width" content="600">
 <meta name="twitter:title" content="Smoothing temporally correlated data – From the bottom of the heap">
-<meta name="twitter:description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the la…">
+<meta name="twitter:description" content="Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/schimek_example_1.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -143,11 +143,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -284,7 +279,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the la…
+    Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit.
   </div>
 </div>
 
@@ -326,13 +321,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div></div><p>Something I have been doing a lot of work with recently are time series data, to which I have been fitting additive models to describe trends and other features of the data. When modelling temporally dependent data, we often need to adjust our fitted models to account for the lack of independence in the model residuals. When smoothing such data, however, there is an additional problem that needs to be addressed when we are determining the complexity of the fitted smooths as part of the model fit.</p>
 <p>Unless we specifically tell the software that the data aren’t independent it will perform smoothness selection assuming that we have \( n \) independent observations. The risk then is that too-complex a smooth term is fitted to the data — it is no-longer a case of updating the fitted model, the model itself will be over-fitted. In this post I want to illustrate the problem of smoothing correlated data with an example from a chapter in a text book that a reviewer alerted to me to some time back.</p>
 <p>The example comes from Kohn, Schimek and Smith (2000) that I have cooked up using R. Kohn et al consider the model \( f(x_{t}) = 1280 x_{t}^4 (1 - x_{t})^4 \), where \( t = 1, 2, \ldots, 100 \), and \( x_{t} = t/100 \). To this, errors \( e_{t} \) are generated from a first-order auto-regressive (AR(1)) process with \( \phi_{1} = 0.3713\) to produce a random sample from the model such that \( y_{t} = f(x_{t}) + e_{t}\). We can generate a sample of data from this model with the following R code</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">321</span>)</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">100</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>n</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>xt <span class="ot">&lt;-</span> time<span class="sc">/</span>n</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> (<span class="dv">1280</span> <span class="sc">*</span> xt<span class="sc">^</span><span class="dv">4</span>) <span class="sc">*</span> (<span class="dv">1</span><span class="sc">-</span> xt)<span class="sc">^</span><span class="dv">4</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(Y <span class="sc">+</span> <span class="fu">arima.sim</span>(<span class="fu">list</span>(<span class="at">ar =</span> <span class="fl">0.3713</span>), <span class="at">n =</span> n))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">321</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>n <span class="ot">&lt;-</span> <span class="dv">100</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>time <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span>n</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>xt <span class="ot">&lt;-</span> time<span class="sc">/</span>n</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>Y <span class="ot">&lt;-</span> (<span class="dv">1280</span> <span class="sc">*</span> xt<span class="sc">^</span><span class="dv">4</span>) <span class="sc">*</span> (<span class="dv">1</span><span class="sc">-</span> xt)<span class="sc">^</span><span class="dv">4</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(Y <span class="sc">+</span> <span class="fu">arima.sim</span>(<span class="fu">list</span>(<span class="at">ar =</span> <span class="fl">0.3713</span>), <span class="at">n =</span> n))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The <code>arima.sim()</code> function is used to generate the appropriate AR(1) errors. A plot of this sample of data and the true function are shown below</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -341,10 +335,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </figure>
 </div>
 <p>To these data, I will fit a cubic smoothing spline via <code>smooth.spline()</code> and an additive model via <code>gam()</code> in package <strong>mgcv</strong>. In addition, let us assume that we don’t know the exact nature of the dependence in the data but we know that they are temporally correlated so that we can fit a model that includes a plausible correlation structure. For that, I will use an additive model with an AR(1) correlation structure, fitted using a linear mixed effects representation of the additive model via the <code>gamm()</code> function, also from the <strong>mgcv</strong> package. <code>gamm()</code> uses the <code>lme()</code> function from the <strong>nlme</strong> package. I will arrange for the value of \( \phi_{1}\) be estimated as one of the model parameters, whilst the degree of smoothness is being estimated during fitting. The three models are fitted with the following three lines of R code:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">smooth.spline</span>(xt, y)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(y <span class="sc">~</span> <span class="fu">s</span>(xt, <span class="at">k =</span> <span class="dv">20</span>))</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">gamm</span>(y <span class="sc">~</span> <span class="fu">s</span>(xt, <span class="at">k =</span> <span class="dv">20</span>), <span class="at">correlation =</span> <span class="fu">corAR1</span>(<span class="at">form =</span> <span class="sc">~</span> time))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">smooth.spline</span>(xt, y)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(y <span class="sc">~</span> <span class="fu">s</span>(xt, <span class="at">k =</span> <span class="dv">20</span>))</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">gamm</span>(y <span class="sc">~</span> <span class="fu">s</span>(xt, <span class="at">k =</span> <span class="dv">20</span>), <span class="at">correlation =</span> <span class="fu">corAR1</span>(<span class="at">form =</span> <span class="sc">~</span> time))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The three model fits are shown in the figure below</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
@@ -353,27 +346,25 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </figure>
 </div>
 <p>Both the cubic smoothing spline and the additive model over fit the data, resulting in very complex smooth functions using 34.25 and 16.82 degrees of freedom respectively. The additive model with AR(1) errors does a very good job of retrieving the true function from which the data were generated, only really deviating from this function at low values of \( x_{t}\) where there are few data to constrain the fit. The code used to produce the figure is shown below</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>edf2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(m2)<span class="sc">$</span>edf</span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>edf3 <span class="ot">&lt;-</span> <span class="fu">summary</span>(m3<span class="sc">$</span>gam)<span class="sc">$</span>edf</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(y <span class="sc">~</span> xt, <span class="at">xlab =</span> <span class="fu">expression</span>(x[t]), <span class="at">ylab =</span> <span class="fu">expression</span>(y[t]))</span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(Y <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"dashed"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(m1) <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"solid"</span>, <span class="at">col =</span> <span class="st">"darkolivegreen"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(m2) <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"solid"</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(m3<span class="sc">$</span>lme) <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"solid"</span>, <span class="at">col =</span> <span class="st">"midnightblue"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topleft"</span>,</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"Truth"</span>,</span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>       <span class="fu">paste</span>(<span class="st">"Cubic spline (edf = "</span>, <span class="fu">round</span>(m1<span class="sc">$</span>df, <span class="dv">2</span>), <span class="st">")"</span>, <span class="at">sep =</span> <span class="st">""</span>),</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>       <span class="fu">paste</span>(<span class="st">"AM (edf = "</span>, <span class="fu">round</span>(edf2, <span class="dv">2</span>), <span class="st">")"</span>, <span class="at">sep =</span> <span class="st">""</span>),</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>       <span class="fu">paste</span>(<span class="st">"AM + AR(1) (edf = "</span>, <span class="fu">round</span>(edf3, <span class="dv">2</span>), <span class="st">")"</span>, <span class="at">sep =</span> <span class="st">""</span>)),</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"darkgreen"</span>, <span class="st">"red"</span>, <span class="st">"midnightblue"</span>),</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>       <span class="at">lty =</span> <span class="fu">c</span>(<span class="st">"dashed"</span>, <span class="fu">rep</span>(<span class="st">"solid"</span>, <span class="dv">3</span>)),</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">lwd =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">3</span>)),</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>       <span class="at">bty =</span> <span class="st">"n"</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>edf2 <span class="ot">&lt;-</span> <span class="fu">summary</span>(m2)<span class="sc">$</span>edf</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>edf3 <span class="ot">&lt;-</span> <span class="fu">summary</span>(m3<span class="sc">$</span>gam)<span class="sc">$</span>edf</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(y <span class="sc">~</span> xt, <span class="at">xlab =</span> <span class="fu">expression</span>(x[t]), <span class="at">ylab =</span> <span class="fu">expression</span>(y[t]))</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(Y <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"dashed"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(m1) <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"solid"</span>, <span class="at">col =</span> <span class="st">"darkolivegreen"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(m2) <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"solid"</span>, <span class="at">col =</span> <span class="st">"red"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">lines</span>(<span class="fu">fitted</span>(m3<span class="sc">$</span>lme) <span class="sc">~</span> xt, <span class="at">lty =</span> <span class="st">"solid"</span>, <span class="at">col =</span> <span class="st">"midnightblue"</span>, <span class="at">lwd =</span> <span class="dv">2</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="fu">legend</span>(<span class="st">"topleft"</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>       <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"Truth"</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>       <span class="fu">paste</span>(<span class="st">"Cubic spline (edf = "</span>, <span class="fu">round</span>(m1<span class="sc">$</span>df, <span class="dv">2</span>), <span class="st">")"</span>, <span class="at">sep =</span> <span class="st">""</span>),</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>       <span class="fu">paste</span>(<span class="st">"AM (edf = "</span>, <span class="fu">round</span>(edf2, <span class="dv">2</span>), <span class="st">")"</span>, <span class="at">sep =</span> <span class="st">""</span>),</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>       <span class="fu">paste</span>(<span class="st">"AM + AR(1) (edf = "</span>, <span class="fu">round</span>(edf3, <span class="dv">2</span>), <span class="st">")"</span>, <span class="at">sep =</span> <span class="st">""</span>)),</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>       <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>, <span class="st">"darkgreen"</span>, <span class="st">"red"</span>, <span class="st">"midnightblue"</span>),</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>       <span class="at">lty =</span> <span class="fu">c</span>(<span class="st">"dashed"</span>, <span class="fu">rep</span>(<span class="st">"solid"</span>, <span class="dv">3</span>)),</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>       <span class="at">lwd =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fu">rep</span>(<span class="dv">2</span>, <span class="dv">3</span>)),</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>       <span class="at">bty =</span> <span class="st">"n"</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The <code>intervals()</code> function can be used to extract the estimate for \( \phi_{1} \) and a 95% confidence interval on the estimate:</p>
-<pre class="rout"><code>
-&gt; intervals(m3$lme, which = "var-cov") ## edited for brevity
+<pre class="rout"><code>&gt; intervals(m3$lme, which = "var-cov") ## edited for brevity
 ....
  Correlation structure:
         lower      est.     upper

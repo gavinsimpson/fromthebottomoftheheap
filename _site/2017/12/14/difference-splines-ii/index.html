@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2017-12-14">
-<meta name="description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by …">
+<meta name="description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by factor. Using the Xp matrix approach, we previously saw that we can post-process the model to generate estimates for pairwise differences of smooths. However, the by variable approach of estimating a separate smooth for each level of the factor my be quite inefficient in terms of degrees of freedom used by the model. This is especially so in situations where the estimated curves are quite similar but wiggly; why estimate many separate wiggly smooths when one, plus some simple difference smooths, will do the job just as well? In this post I look at an alternative to estimating separate smooths using an ordered factor for the by variable.">
 
 <title>Comparing smooths in factor-smooth interactions II – From the bottom of the heap</title>
 <style>
@@ -101,7 +101,7 @@ div.csl-indent {
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -170,13 +170,13 @@ window.Quarto = {
 </script>
 
 <meta property="og:title" content="Comparing smooths in factor-smooth interactions II – From the bottom of the heap">
-<meta property="og:description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by …">
+<meta property="og:description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by factor. Using the \(Xp\) matrix approach, we previously saw that we can post-process the model to generate estimates for pairwise differences of smooths. However, the by variable approach of estimating a separate smooth for each level of the factor my be quite inefficient in terms of degrees of freedom used by the model. This is especially so in situations where the estimated curves are quite similar but wiggly; why estimate many separate wiggly smooths when one, plus some simple difference smooths, will do the job just as well? In this post I look at an alternative to estimating separate smooths using an ordered factor for the by variable.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/difference-smooths-ii-plot-smooths-1.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="510">
 <meta property="og:image:width" content="680">
 <meta name="twitter:title" content="Comparing smooths in factor-smooth interactions II – From the bottom of the heap">
-<meta name="twitter:description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by …">
+<meta name="twitter:description" content="In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by factor. Using the \(Xp\) matrix approach, we previously saw that we can post-process the model to generate estimates for pairwise differences of smooths. However, the by variable approach of estimating a separate smooth for each level of the factor my be quite inefficient in terms of degrees of freedom used by the model. This is especially so in situations where the estimated curves are quite similar but wiggly; why estimate many separate wiggly smooths when one, plus some simple difference smooths, will do the job just as well? In this post I look at an alternative to estimating separate smooths using an ordered factor for the by variable.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/difference-smooths-ii-plot-smooths-1.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -191,11 +191,6 @@ window.Quarto = {
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -333,7 +328,7 @@ window.Quarto = {
 
 <div>
   <div class="description">
-    In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by …
+    In a previous post I looked at an approach for computing the differences between smooths estimated as part of a factor-smooth interaction using s()’s by argument. When a common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each level of the by factor. Using the <span class="math inline">\(Xp\)</span> matrix approach, we previously saw that we can post-process the model to generate estimates for pairwise differences of smooths. However, the by variable approach of estimating a separate smooth for each level of the factor my be quite inefficient in terms of degrees of freedom used by the model. This is especially so in situations where the estimated curves are quite similar but wiggly; why estimate many separate wiggly smooths when one, plus some simple difference smooths, will do the job just as well? In this post I look at an alternative to estimating separate smooths using an ordered factor for the by variable.
   </div>
 </div>
 
@@ -389,22 +384,18 @@ window.Quarto = {
 <li><strong>mgcv</strong></li>
 </ul>
 <p>You’ll more than likely have these installed, but if you get errors about missing packages when you run the code chunk below, install any missing packages and run the chunk again</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'readr'</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'dplyr'</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'ggplot2'</span>)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'mgcv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'readr'</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'dplyr'</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'ggplot2'</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'mgcv'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Next, load the data set and convert the <code>SiteCode</code> variable to a factor</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>uri <span class="ot">&lt;-</span> <span class="st">'https://gist.githubusercontent.com/gavinsimpson/eb4ff24fa9924a588e6ee60dfae8746f/raw/geochimica-metals.csv'</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>metals <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(uri, <span class="at">skip =</span> <span class="dv">1</span>, <span class="at">col_types =</span> <span class="fu">c</span>(<span class="st">'ciccd'</span>))</span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>metals <span class="ot">&lt;-</span> <span class="fu">mutate</span>(metals, <span class="at">SiteCode =</span> <span class="fu">factor</span>(SiteCode))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>uri <span class="ot">&lt;-</span> <span class="st">'https://gist.githubusercontent.com/gavinsimpson/eb4ff24fa9924a588e6ee60dfae8746f/raw/geochimica-metals.csv'</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>metals <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(uri, <span class="at">skip =</span> <span class="dv">1</span>, <span class="at">col_types =</span> <span class="fu">c</span>(<span class="st">'ciccd'</span>))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>metals <span class="ot">&lt;-</span> <span class="fu">mutate</span>(metals, <span class="at">SiteCode =</span> <span class="fu">factor</span>(SiteCode))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>This is a subset of the data used in <span class="citation" data-cites="Rose2012-pl">Rose et al. (<a href="#ref-Rose2012-pl" role="doc-biblioref">2012</a>)</span> — the Hg concentrations in the sediments for just three of the lochs are included here in the interests of simplicity. The data set contains 5 variables</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>metals</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 44 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>metals</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 44 x 5
    SiteCode  Date SoilType Region        Hg
      &lt;fctr&gt; &lt;int&gt;    &lt;chr&gt;  &lt;chr&gt;     &lt;dbl&gt;
  1     CHNA  2000     thin     NW  3.843399
@@ -427,16 +418,13 @@ window.Quarto = {
 </ul>
 <p>Neil gave me permission to make these data available openly should you want to try this approach out for yourself. If you make use of the data for other purposes, please cite the source publication <span class="citation" data-cites="Rose2012-pl">(<a href="#ref-Rose2012-pl" role="doc-biblioref">Rose et al., 2012</a>)</span> and recognize the contribution of the data creators; Handong Yang, Simon Turner, and Neil Rose.</p>
 <p>To proceed, we need to create an ordered factor. Here I’m going to use the <code>SoilType</code> variable as that is easier to relate to conditions of the soil (rather than the Site Code I used in the previous post). I set the <code>non-eroded</code> level to be the reference and as such the GAM will estimate a full smooth for that level and then smooth differences between the <code>non-eroded</code>, and each of the <code>eroded</code> and <code>thin</code> lakes.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>metals <span class="ot">&lt;-</span> <span class="fu">mutate</span>(metals,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">oSoilType =</span> <span class="fu">ordered</span>(SoilType, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">'non-eroded'</span>,<span class="st">'eroded'</span>,<span class="st">'thin'</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>metals <span class="ot">&lt;-</span> <span class="fu">mutate</span>(metals,</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">oSoilType =</span> <span class="fu">ordered</span>(SoilType, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">'non-eroded'</span>,<span class="st">'eroded'</span>,<span class="st">'thin'</span>)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The ordered-factor GAM is fitted to the three lochs using the following</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">gam</span>(Hg <span class="sc">~</span> oSoilType <span class="sc">+</span> <span class="fu">s</span>(Date) <span class="sc">+</span> <span class="fu">s</span>(Date, <span class="at">by =</span> oSoilType), <span class="at">data =</span> metals,</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">method =</span> <span class="st">'REML'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">gam</span>(Hg <span class="sc">~</span> oSoilType <span class="sc">+</span> <span class="fu">s</span>(Date) <span class="sc">+</span> <span class="fu">s</span>(Date, <span class="at">by =</span> oSoilType), <span class="at">data =</span> metals,</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">method =</span> <span class="st">'REML'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>and the resulting smooths can be drawn using the <code>plot()</code> method</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m, <span class="at">shade =</span> <span class="cn">TRUE</span>, <span class="at">pages =</span> <span class="dv">1</span>, <span class="at">scale =</span> <span class="dv">0</span>, <span class="at">seWithMean =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m, <span class="at">shade =</span> <span class="cn">TRUE</span>, <span class="at">pages =</span> <span class="dv">1</span>, <span class="at">scale =</span> <span class="dv">0</span>, <span class="at">seWithMean =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/difference-smooths-ii-plot-smooths-1.png" class="img-fluid figure-img"></p>
@@ -447,11 +435,8 @@ window.Quarto = {
 <p>It is immediately clear that the difference between the non-eroded and eroded sites is not significant under this model. The estimated difference is linear, which suggests the trend in the eroded site is stronger than the one estimated for the non-eroded site. However, this difference is not so large as to be an identifiably different trend.</p>
 <p>The difference smooth for the thin soil site is considerably different to that estimated for the non-eroded site; the principal difference being the much reduced trend in the thin soil site, as indicated by the difference smooth acting in opposition to the estimated trend for the non-eroded site.</p>
 <p>A nice feature of the ordered factor approach is that inference on these difference can be performed formally and directly using the <code>summary()</code> output of the estimated GAM</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-
-Family: gaussian 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Family: gaussian 
 Link function: identity 
 
 Formula:
@@ -478,13 +463,10 @@ R-sq.(adj) =   0.76   Deviance explained = 82.1%
 </code></pre>
 <p>The impression we formed about the differences in trends are reinforced with actual test statistics; this is a clear advantage of the ordered-factor approach <em>if</em> your problem suits this <em>different from reference</em> situation.</p>
 <p>One feature to note, because we used an ordered factor, the parametric term for <code>oSoilType</code> uses polynomial contrasts: the <code>.L</code> and <code>.Q</code> refer to the linear and quadratic terms used to represent the factor. This is not as easy to identify differences in mean Hg concentration. If you want to retain that readily interpreted parameterisation, use the <code>SoilType</code> factor for the parametric part:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">gam</span>(Hg <span class="sc">~</span> SoilType <span class="sc">+</span> <span class="fu">s</span>(Date) <span class="sc">+</span> <span class="fu">s</span>(Date, <span class="at">by =</span> oSoilType), <span class="at">data =</span> metals,</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>         <span class="at">method =</span> <span class="st">'REML'</span>)</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-
-Family: gaussian 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">gam</span>(Hg <span class="sc">~</span> SoilType <span class="sc">+</span> <span class="fu">s</span>(Date) <span class="sc">+</span> <span class="fu">s</span>(Date, <span class="at">by =</span> oSoilType), <span class="at">data =</span> metals,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>         <span class="at">method =</span> <span class="st">'REML'</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Family: gaussian 
 Link function: identity 
 
 Formula:

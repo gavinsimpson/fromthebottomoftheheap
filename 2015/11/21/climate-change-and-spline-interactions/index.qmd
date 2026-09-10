@@ -7,11 +7,18 @@ tags:
   - Splines
   - Interactions
 category: R
-description: In a series of irregular posts[^3] I've looked at how additive models
-  can be used to fit non-linear models to time series. Up to now I've looked at models
-  that included a single non-linear trend, as well as a model that included a within-year
-  (or seasonal) part and a trend part.…
 date: 2015-11-21 12:00:00
+description: >-
+  In a series of irregular posts[^3] I've looked at how additive models can be used to fit
+  non-linear models to time series. Up to now I've looked at models that included a single
+  non-linear trend, as well as a model that included a within-year (or seasonal) part and a trend
+  part. In this trend plus season model it is important to note that the two terms are purely
+  additive; no matter which January you are predicting for in a long timeseries, the seasonal
+  effect for that month will always be the same. The trend part might shift this seasonal
+  contribution up or down a bit, but all January's are the same. In this post I want to introduce
+  a different type of spline interaction model that will allow us to relax this additivity
+  assumption and fit a model that allows the seasonal part of the model to change in time along
+  with the trend.
 author: Gavin Simpson
 categories:
   - R
@@ -51,7 +58,6 @@ As with previous posts, I'll be using the Central England Temperature time serie
 
 
 ```r
-
 source(con <- url("http://bit.ly/loadCET", method = "libcurl"))
 close(con)
 cet <- loadCET()
@@ -62,7 +68,6 @@ We also need a couple of packages for model fitting and plotting
 
 
 ```r
-
 library("mgcv")
 
 ```
@@ -70,7 +75,6 @@ library("mgcv")
 
 
 ```text
-
 Loading required package: nlme
 This is mgcv 1.8-9. For overview type 'help("mgcv-package")'.
 
@@ -79,7 +83,6 @@ This is mgcv 1.8-9. For overview type 'help("mgcv-package")'.
 
 
 ```r
-
 library("ggplot2")
 
 ```
@@ -87,7 +90,6 @@ library("ggplot2")
 
 
 ```text
-
 Loading required package: methods
 
 ```
@@ -116,7 +118,6 @@ In pseudo **mgcv** code we are going to fit the following model
 
 
 ```r
-
 mod <- gam(y = te(x1, x2), data = foo)
 
 ```
@@ -129,7 +130,6 @@ What we need to do is place boundary knots just beyond the data, such that the d
 
 
 ```r
-
 knots <- list(nMonth = c(0.5, seq(1, 12, length = 10), 12.5))
 
 ```
@@ -140,7 +140,6 @@ To assist our selection of the stochastic model in the residuals, we fit a naive
 
 
 ```r
-
 m0 <- gamm(Temperature ~ te(Year, nMonth, bs = c("cr","cc"), k = c(10,12)),
            data = cet, method = "REML", knots = knots)
 
@@ -150,7 +149,6 @@ Plotting the autocorrelation function (ACF) of the normalized residuals from the
 
 
 ```r
-
 plot(acf(resid(m0$lme, type = "normalized")))
 
 ```
@@ -167,7 +165,6 @@ If you want to fit all the models great, I'll get to you in a moment --- just do
 
 
 ```r
-
 ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
 m <- gamm(Temperature ~ te(Year, nMonth, bs = c("cr","cc"), k = c(10,12)),
           data = cet, method = "REML", control = ctrl, knots = knots,
@@ -181,7 +178,6 @@ For those of you in for the long haul, here's a loop[^4] that will fit the model
 
 
 ```r
-
 ctrl <- list(niterEM = 0, optimMethod="L-BFGS-B", maxIter = 100, msMaxIter = 100)
 for (i in 1:8) {
     m <- gamm(Temperature ~ te(Year, nMonth, bs = c("cr","cc"), k = c(10,12)),
@@ -196,7 +192,6 @@ A generalised likelihood ratio test can be used to test for which correlation st
 
 
 ```r
-
 anova(m1$lme, m2$lme, m3$lme, m4$lme, m5$lme, m6$lme, m7$lme, m8$lme)
 
 ```
@@ -204,7 +199,6 @@ anova(m1$lme, m2$lme, m3$lme, m4$lme, m5$lme, m6$lme, m7$lme, m8$lme)
 
 
 ```text
-
        Model df      AIC      BIC    logLik   Test   L.Ratio p-value
 m1$lme     1  6 14849.98 14888.13 -7418.988                         
 m2$lme     2  7 14836.78 14881.29 -7411.389 1 vs 2 15.197206  0.0001
@@ -221,7 +215,6 @@ Lo and behold, the AR(7) turns out to have the best fit as assessed by a range o
 
 
 ```r
-
 plot(acf(resid(m7$lme, type = "normalized")))
 
 ```
@@ -234,7 +227,6 @@ Before we move on, to bring us up to speed with the people that jumped ahead, co
 
 
 ```r
-
 m <- m7
 
 ```
@@ -247,7 +239,6 @@ First, let's visualise the fitted spline; this requires a 3D plot so it gets som
 
 
 ```r
-
 plot(m$gam, pers = TRUE)
 
 ```
@@ -264,7 +255,6 @@ In the first illustrative use of the fitted model, I'll predict within-year temp
 
 
 ```r
-
 pdat <- with(cet,
              data.frame(Year = rep(c(1914, 2014), each = 100),
                         nMonth = rep(seq(1, 12, length = 100), times = 2)))
@@ -275,7 +265,6 @@ Next, the `predict()` method generates predicted values for the new data pairs, 
 
 
 ```r
-
 pred <- predict(m$gam, newdata = pdat, se.fit = TRUE)
 crit <- qt(0.975, df = df.residual(m$gam)) # ~95% interval critical t
 pdat <- transform(pdat, fitted = pred$fit, se = pred$se.fit, fYear = as.factor(Year))
@@ -291,7 +280,6 @@ A plot, using the **ggplot2** package, of the predicted monthly temperatures for
 
 
 ```r
-
 p1 <- ggplot(pdat, aes(x = nMonth, y = fitted, group = fYear)) +
     geom_ribbon(mapping = aes(ymin = lower, ymax = upper,
                               fill = fYear), alpha = 0.2) + # confidence band
@@ -318,7 +306,6 @@ The second use of the fitted model will be to predict trends in temperature for 
 
 
 ```r
-
 pdat2 <- with(cet,
               data.frame(Year = rep(1914:2014, each = 12),
                          nMonth = rep(1:12, times = 101)))
@@ -329,7 +316,6 @@ Next we repeat the earlier steps to predict from the model and set up an object 
 
 
 ```r
-
 pred2 <- predict(m$gam, newdata = pdat2, se.fit = TRUE)
 ## add predictions & SEs to the new data ready for plotting
 pdat2 <- transform(pdat2,
@@ -347,7 +333,6 @@ The first plot we'll produce using these data is a plot of the trends faceted by
 
 
 ```r
-
 p2 <- ggplot(pdat2, aes(x = Year, y = fitted, group = fMonth)) +
     geom_line(aes(colour = fMonth)) +   # draw trend lines
     theme_bw() +                        # minimal theme
@@ -370,7 +355,6 @@ Another visualisation of the same predictions is to group the data by quarter/se
 
 
 ```r
-
 pdat2$Quarter <- NA
 pdat2$Quarter[pdat2$nMonth %in% c(12,1,2)] <- "Winter"
 pdat2$Quarter[pdat2$nMonth %in% 3:5] <- "Spring"
@@ -386,7 +370,6 @@ Then we facet on `Quarter`, and we need a legend to help identify the months, we
 
 
 ```r
-
 p3 <- ggplot(pdat2, aes(x = Year, y = fitted, group = fMonth)) +
     geom_line(aes(colour = fMonth)) +   # draw trend lines
     theme_bw() +                        # minimal theme

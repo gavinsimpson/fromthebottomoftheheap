@@ -9,10 +9,14 @@ tags:
   - mgcv
   - difference smooths
 category: R
-description: One of the really appealing features of the mgcv package for fitting
-  GAMs is the functionality it exposes for fitting quite complex models, models that
-  lie well beyond what many of us may have learned about what GAMs can do. One of
-  those features that I use a lot is the ability …
+description: >-
+  One of the really appealing features of the mgcv package for fitting GAMs is the functionality
+  it exposes for fitting quite complex models, models that lie well beyond what many of us may
+  have learned about what GAMs can do. One of those features that I use a lot is the ability to
+  model the smooth effects of some covariate $x$ in the different levels of a factor. Having
+  estimated a separate smoother for each level of the factor, the obvious question is, which
+  smooths are different? In this post I'll take a look at one way to do this using by-variable
+  smooths.
 author: Gavin Simpson
 categories:
   - R
@@ -67,7 +71,6 @@ You'll more than likely have these installed, but if you get errors about missin
 
 
 ```r
-
 library('readr')
 library('dplyr')
 library('ggplot2')
@@ -80,7 +83,6 @@ Next, load the data set and convert the `SiteCode` variable to a factor for use 
 
 
 ```r
-
 uri <- 'https://gist.githubusercontent.com/gavinsimpson/eb4ff24fa9924a588e6ee60dfae8746f/raw/geochimica-metals.csv'
 metals <- read_csv(uri, skip = 1, col_types = c('ciccd'))
 metals <- mutate(metals, SiteCode = factor(SiteCode))
@@ -91,7 +93,6 @@ This is a subset of the data used in @Rose2012-pl --- the Hg concentrations in t
 
 
 ```r
-
 metals
 
 ```
@@ -99,7 +100,6 @@ metals
 
 
 ```text
-
 # A tibble: 44 x 5
    SiteCode  Date SoilType Region        Hg
      <fctr> <int>    <chr>  <chr>     <dbl>
@@ -128,7 +128,6 @@ The data, with LOESS smoothers superimposed, are shown below
 
 
 ```r
-
 ggplot(metals, aes(x = Date, y = Hg, colour = SiteCode)) +
     geom_point() +
     geom_smooth(method = 'loess', se = FALSE) +
@@ -145,7 +144,6 @@ The GAM is fitted to the three sites, and the fit summarized, using the followin
 
 
 ```r
-
 m <- gam(Hg ~ SiteCode + s(Date, by = SiteCode), data = metals)
 summary(m)
 
@@ -154,8 +152,6 @@ summary(m)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -187,7 +183,6 @@ and the resulting smooths can be drawn using the `plot()` method
 
 
 ```r
-
 plot(m, shade = TRUE, pages = 1, scale = 0)
 
 ```
@@ -200,7 +195,6 @@ To calculate the differences between pairs of the three smooths estimated in the
 
 
 ```r
-
 pdat <- expand.grid(Date = seq(1860, 2000, length = 400),
                     SiteCode = c('FION', 'CHNA', 'NODH'))
 xp <- predict(m, newdata = pdat, type = 'lpmatrix')
@@ -215,7 +209,6 @@ The first step is to identify which columns of $Xp$ relate to the smooths for th
 
 
 ```r
-
 ## which cols of xp relate to splines of interest?
 c1 <- grepl('CHNA', colnames(xp))
 c2 <- grepl('FION', colnames(xp))
@@ -229,7 +222,6 @@ Next, we subtract the elements of $Xp$ for the first loch from the elements of $
 
 
 ```r
-
 ## difference rows of xp for data from comparison
 X <- xp[r1, ] - xp[r2, ]
 ## zero out cols of X related to splines for other lochs
@@ -245,7 +237,6 @@ Having obtained a suitably modified $Xp$ matrix, predicted values using it can b
 
 
 ```r
-
 dif <- X %*% coef(m)
 
 ```
@@ -256,7 +247,6 @@ Having computed the difference, we want to know how uncertain the estimated diff
 
 
 ```r
-
 se <- sqrt(rowSums((X %*% vcov(m)) * X))
 
 ```
@@ -267,7 +257,6 @@ Now that we have standard errors, a point-wise 1 - $\alpha$ confidence interval 
 
 
 ```r
-
 crit <- qt(.975, df.residual(m))
 upr <- dif + (crit * se)
 lwr <- dif - (crit * se)
@@ -278,7 +267,6 @@ To allow for these steps to be repeated for all pairwise combinations, the proce
 
 
 ```r
-
 smooth_diff <- function(model, newdata, f1, f2, var, alpha = 0.05,
                         unconditional = FALSE) {
     xp <- predict(model, newdata = newdata, type = 'lpmatrix')
@@ -310,7 +298,6 @@ To complete the pairwise comparison of the estimated smooths, we use the functio
 
 
 ```r
-
 comp1 <- smooth_diff(m, pdat, 'FION', 'CHNA', 'SiteCode')
 comp2 <- smooth_diff(m, pdat, 'FION', 'NODH', 'SiteCode')
 comp3 <- smooth_diff(m, pdat, 'CHNA', 'NODH', 'SiteCode')
@@ -323,7 +310,6 @@ The pairwise differences of smooths and associated confidence intervals can be p
 
 
 ```r
-
 ggplot(comp, aes(x = date, y = diff, group = pair)) +
     geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.2) +
     geom_line() +

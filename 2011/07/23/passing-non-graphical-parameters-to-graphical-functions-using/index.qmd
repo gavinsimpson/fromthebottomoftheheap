@@ -13,11 +13,14 @@ excerpt: Argument passing via `...` is a great feature of the R language, allowi
   `col`, `lty`, etc. on to the plotting function inside your method. You do, however,
   need to be careful in where you use `...` and which functions you pass `...` on
   to.
-description: Argument passing via ... is a great feature of the R language, allowing
-  you to write wrappers around existing functions that do not need to list all the
-  arguments of the wrapped function. ... is used extensively in S3 methods and in
-  passing graphical parameters on to graphical f…
 date: 2011-07-23 12:00:00
+description: >-
+  Argument passing via ... is a great feature of the R language, allowing you to write wrappers
+  around existing functions that do not need to list all the arguments of the wrapped function.
+  ... is used extensively in S3 methods and in passing graphical parameters on to graphical
+  functions. When writing you own plot methods, using ... allows the user of your function to
+  pass arguments like cex, col, lty, etc. on to the plotting function inside your method. You do,
+  however, need to be careful in where you use ... and which functions you pass ... on to.
 author: Gavin Simpson
 categories:
   - R
@@ -50,7 +53,6 @@ Argument passing via `...` is a great feature of the R language, allowing you to
 Consider the following object `FOO` that is a data frame with our own class `"foo"`
 
 ```r
-
 FOO <- data.frame(x = 1:10, y = 1:10)
 rownames(FOO) <- LETTERS[1:10]
 class(FOO) <- "foo"
@@ -61,7 +63,6 @@ A simplified `plot()` method to plot the `x` and `y` components of our object, d
 
 
 ```r
-
 plot.foo <- function(X, type = c("points","text"), ...) {
     x <- X$x
     y <- X$y
@@ -80,7 +81,6 @@ plot.foo <- function(X, type = c("points","text"), ...) {
 Note that we are passing `...` on to each of `plot()`, `points()`, and `text()` so our method is very simple. However, if we try to suppress the drawing of axes using the `axes` argument of `plot.default()`, our method will generate errors
 
 ```rout
-
 > plot(FOO, axes = FALSE)
 Warning message:
 In plot.xy(xy.coords(x, y), type = type, ...) :
@@ -91,7 +91,6 @@ In plot.xy(xy.coords(x, y), type = type, ...) :
 Turning warnings into errors, we see that the call to `points()` is where the warning originates (actually in `plot.xy()`, frame 5, but `points()` is the offending code in our method)
 
 ```rout
-
 > options(warn = 2) ## turn warnings to errors
 > 
 > plot(FOO, axes = FALSE)
@@ -120,7 +119,6 @@ The warning results from our function passing `axes = FALSE` on to the lower-lev
 alternative, simpler solution that is used in several base R functions and suggested to me by Brian Ripley (when I asked about doing this on R-Help for a function in the vegan package). The trick is to have a local, in-line wrapper around `points()` of the following form:
 
 ```r
-
 lPoints <- function(..., log, axes, frame.plot, panel.first, panel.last) { 
     points(...)
 }
@@ -130,7 +128,6 @@ lPoints <- function(..., log, axes, frame.plot, panel.first, panel.last) {
 Here we list all the arguments of `plot.default()` we *don't* want passed on to the low-level plotting calls, but importantly, they are listed *after* `...`. The only code in the body of the local function is a call to the low-level graphics function we want to use. Importantly, of the arguments taken by `lPoints()` only `...` is passed on to the graphics function it wraps. Because the arguments from `plot.default()` are named and come after `...` in the definition of `lPoints()`, any arguments passed to `lPoints()` that fully match the named arguments are automatically stripped from the `...` that is passed on to the wrapped function. Using this trick, we can now write our `plot.foo()` method like this:
 
 ```r
-
 plot.foo <- function(X, type = c("points","text"), ...) {
     lPoints <- function(..., log, axes, frame.plot,
                         panel.first, panel.last) points(...)
@@ -153,7 +150,6 @@ plot.foo <- function(X, type = c("points","text"), ...) {
 Now we can pass arguments to both `plot.default()` and `points()` and `text()`, and the call that raised the warning earlier, now works without complaint:
 
 ```rout
-
 > plot(FOO, axes = FALSE)
 >
 
@@ -162,7 +158,6 @@ Now we can pass arguments to both `plot.default()` and `points()` and `text()`, 
 Remember to reset the warning level if you followed the code above
 
 ```r
-
 options(warn = 0)
 
 ```

@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -137,11 +137,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -319,8 +314,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 </div></div><p>Some months ago, I <a href="http://www.fromthebottomoftheheap.net/2011/01/21/embedding-a-time-series-with-time-delay-in-r/">posted</a> a function that extended the base <a href="http://www.r-project.org" title="R Website">R</a> function <code>embed()</code> to allow for time delay embedding. Today, David Gonzales <a href="http://www.fromthebottomoftheheap.net/2011/01/21/embedding-a-time-series-with-time-delay-in-r/#comment-870452698">alerted</a> me to an inconsistency between <code>embed()</code> and <code>Embed()</code>.</p>
 <p>The example David used was</p>
-<pre class="rout"><code>
-R&gt; (x &lt;- seq(1,20,3))
+<pre class="rout"><code>R&gt; (x &lt;- seq(1,20,3))
 [1]  1  4  7 10 13 16 19
 R&gt; embed(x, 4)
      [,1] [,2] [,3] [,4]
@@ -340,25 +334,23 @@ R&gt; Embed(x, 4)
 <p>The reason the original version of <code>Embed()</code> doesn’t work with David’s example is that when I wrote it, I had in mind that it would work on the <em>indices</em> of the time series, not the values of the time series. I had overlooked that <code>embed()</code> returned the embedded time series, not the indices — the problem of testing with vectors like <code>1:10</code>!</p>
 <p>Updating <code>Embed()</code> to output the same result as <code>embed()</code> is a trivial matter; we just get the function to work with <code>seq_along(x)</code> and not <code>x</code> itself and then use the old <code>Embed()</code> behaviour to index <code>x</code> to return the embedded time series. As an added extra, as we are generating the indices anyway, we can optionally have the function return those instead of the embedded series.</p>
 <p>Here is the updated version of <code>Embed()</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>Embed <span class="ot">&lt;-</span> <span class="cf">function</span>(x, m, <span class="at">d =</span> <span class="dv">1</span>, <span class="at">indices =</span> <span class="cn">FALSE</span>, <span class="at">as.embed =</span> <span class="cn">TRUE</span>) {</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(x) <span class="sc">-</span> (m<span class="dv">-1</span>)<span class="sc">*</span>d</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <span class="fu">seq_along</span>(x)</span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(n <span class="sc">&lt;=</span> <span class="dv">0</span>)</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Insufficient observations for the requested embedding"</span>)</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(X[<span class="fu">seq_len</span>(n)], m), <span class="at">ncol =</span> m)</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    out[,<span class="sc">-</span><span class="dv">1</span>] <span class="ot">&lt;-</span> out[,<span class="sc">-</span><span class="dv">1</span>, drop <span class="ot">=</span> <span class="cn">FALSE</span>] <span class="sc">+</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>        <span class="fu">rep</span>(<span class="fu">seq_len</span>(m <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> d, <span class="at">each =</span> <span class="fu">nrow</span>(out))</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(as.embed)</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        out <span class="ot">&lt;-</span> out[, <span class="fu">rev</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(out)))]</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span>indices)</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        out <span class="ot">&lt;-</span> <span class="fu">matrix</span>(x[out], <span class="at">ncol =</span> m)</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    out</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>Embed <span class="ot">&lt;-</span> <span class="cf">function</span>(x, m, <span class="at">d =</span> <span class="dv">1</span>, <span class="at">indices =</span> <span class="cn">FALSE</span>, <span class="at">as.embed =</span> <span class="cn">TRUE</span>) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    n <span class="ot">&lt;-</span> <span class="fu">length</span>(x) <span class="sc">-</span> (m<span class="dv">-1</span>)<span class="sc">*</span>d</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    X <span class="ot">&lt;-</span> <span class="fu">seq_along</span>(x)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(n <span class="sc">&lt;=</span> <span class="dv">0</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>        <span class="fu">stop</span>(<span class="st">"Insufficient observations for the requested embedding"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    out <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">rep</span>(X[<span class="fu">seq_len</span>(n)], m), <span class="at">ncol =</span> m)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    out[,<span class="sc">-</span><span class="dv">1</span>] <span class="ot">&lt;-</span> out[,<span class="sc">-</span><span class="dv">1</span>, drop <span class="ot">=</span> <span class="cn">FALSE</span>] <span class="sc">+</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        <span class="fu">rep</span>(<span class="fu">seq_len</span>(m <span class="sc">-</span> <span class="dv">1</span>) <span class="sc">*</span> d, <span class="at">each =</span> <span class="fu">nrow</span>(out))</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(as.embed)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>        out <span class="ot">&lt;-</span> out[, <span class="fu">rev</span>(<span class="fu">seq_len</span>(<span class="fu">ncol</span>(out)))]</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span>(<span class="sc">!</span>indices)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>        out <span class="ot">&lt;-</span> <span class="fu">matrix</span>(x[out], <span class="at">ncol =</span> m)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    out</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The main difference is that we create <code>X &lt;- seq_along(x)</code> and create <code>out</code> using that rather than the time series (<code>x</code>). I’ve also added a new argument, <code>indices</code>, that defaults to <code>FALSE</code>. If we want <code>Embed()</code> to return the indices of the embedded time series, call the function with <code>indices = FALSE</code>.</p>
 <p>The new version of <code>Embed()</code> gives the same results as before and is consistent with <code>embed()</code> when we pass it a time series that is identical to its indices</p>
-<pre class="rout"><code>
-R&gt; embed(1:5, 2)
+<pre class="rout"><code>R&gt; embed(1:5, 2)
      [,1] [,2]
 [1,]    2    1
 [2,]    3    2
@@ -372,8 +364,7 @@ R&gt; Embed(1:5, 2)
 [4,]    5    4
 </code></pre>
 <p>but it also works for time series like those in David’s example:</p>
-<pre class="rout"><code>
-R&gt; (x &lt;- seq(1,20,3))
+<pre class="rout"><code>R&gt; (x &lt;- seq(1,20,3))
 [1]  1  4  7 10 13 16 19
 R&gt; embed(x, 4)
      [,1] [,2] [,3] [,4]
@@ -389,8 +380,7 @@ R&gt; Embed(x, 4)
 [4,]   19   16   13   10
 </code></pre>
 <p>and we have the added benefit of being able to return the indices of the embedded time series</p>
-<pre class="rout"><code>
-R&gt; Embed(x, 4, indices = TRUE)
+<pre class="rout"><code>R&gt; Embed(x, 4, indices = TRUE)
      [,1] [,2] [,3] [,4]
 [1,]    4    3    2    1
 [2,]    5    4    3    2

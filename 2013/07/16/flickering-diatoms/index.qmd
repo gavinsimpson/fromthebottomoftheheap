@@ -6,11 +6,14 @@ tags:
   - Time series
   - R
 category: science
-description: Last year, Rong Wang and colleagues [@wang_flickering_2012] published
-  a very nice paper in Nature, which claimed to have observed flickering, an early
-  warning indicator of an approaching critical transition, in a diatom sediment sequence
-  from Erhai Lake, Yunnan, China. What was …
 date: 2013-07-16 12:00:00
+description: >-
+  Last year, Rong Wang and colleagues [\@wangflickering2012] published a very nice paper in
+  Nature, which claimed to have observed flickering, an early warning indicator of an approaching
+  critical transition, in a diatom sediment sequence from Erhai Lake, Yunnan, China. What was
+  particularly pleasing about this paper was that the authors had tried to use the sediment
+  record to investigate whether we see signs of early warning indicators prior to a transition
+  between stable states. It was refreshing to not see a transfer function!
 author: Gavin Simpson
 categories:
   - science
@@ -58,7 +61,6 @@ This isn't, by any means, the sum of the evidence @wang_flickering_2012 report, 
 Here I want to illustrate using R what @carstensen_diatom_2013 show. To do so, we'll start with a slightly autocorrelated sequence of observations that will play the role of the DCA residuals analysed by @wang_flickering_2012 and @carstensen_diatom_2013.
 
 ```r
-
 require("zoo")      ## for rolling window
 require("moments")  ## for skewness
 require("ggplot2")  ## for plotting
@@ -85,7 +87,6 @@ p1
 The data in the uppermost panel of Figure 1 is a realisation of what we might have observed at an annual time step if we could resolve this from the sediments annually. Now, naively presume that the way we sample such a series is just to see some of these observations at random, say 200 of them. This can be simulated in R via
 
 ```r
-
 set.seed(32)
 N <- 200
 obs <- dat[sort(c(1, sample(2:499, N-2), 500)), ]
@@ -104,7 +105,6 @@ p2
 which is the series in black shown in the middle panel of Figure 1. Note that to simplify matters I keep the first and the last observation and sample 198 of the remaining 498 observations. This series is unevenly sampled in time so we can do as @wang_flickering_2012 did and apply a linear interpolation. In R this is most easily done with functions `approx()` or, more usefully, `approxfun()`. The latter returns a function that for given `xt` return the interpolated `yt`. In the code below I first create the interpolation function by supplying `approxfun()` with the 200 randomly selected time points in `obs`. Then I use this function to give interpolated values at each time point of the true data (`1:500`)
 
 ```r
-
 fun <- with(obs, approxfun(xt, yt))
 dat2 <- with(obs, data.frame(yt = fun(seq_len(500)),
                              xt = seq_len(500)))
@@ -126,7 +126,6 @@ The interpolated series is shown in the lowermost panel of Figure 1 in red, the 
 It is well known [for example @schulz_spectrum_1997] that interpolation alters the spectral properties of a time series; the interpolated series exhibits a higher degree of autocorrelation - its spectral density is shifted to the red (low frequency) end of the spectrum. For the example data set, the code below compares the spectra for the original and the interpolated series
 
 ```r
-
 ## compute the spectra for each series
 s1 <- with(obs, spectrum(yt, method = "pgram", plot = FALSE))
 s2 <- with(dat2, spectrum(yt, method = "pgram", plot = FALSE))
@@ -153,7 +152,6 @@ The resulting figure is shown below
 Note how the original series has similar contributions across the frequency range, which is indicative of how these data were generated, whilst the interpolated series is strongly shifted to the red end of the spectrum. More formally, we can fit AR(1) models to both series and look at the estimate of the AR coefficient
 
 ```rout
-
 > (m1 <- with(dat, ar(yt, order.max = 1)))
 
 Call:
@@ -182,7 +180,6 @@ Again we note that interpolation has induced a significant degree of auto-correl
 The same pattern is observed if we simulate observing the series every three samples and then interpolate it back to annual resolution.
 
 ```r
-
 ## Observing every third sample - but include first and last observation
 ## so data covers range of observed
 obs2 <- dat[c(seq(1, 500, by = 3), 500), ]
@@ -234,7 +231,6 @@ and spectra for the observed and interpolated series based on every three sample
 This time, even greater autocorrelation has been induced --- note the AR(1) coefficient in the output below
 
 ```rout
-
 > m3
 
 Call:
@@ -251,7 +247,6 @@ Order selected 1  sigma^2 estimated as  0.218
 Such has the spectrum been altered, the best fitting AR(*p*) model is an AR(17) for this interpolated series compared with an AR(1) for the original series
 
 ```rout
-
 > with(dat3, ar(yt))
 
 Call:
@@ -281,7 +276,6 @@ As I said, the simulations above were simplistic. Now I will do a more complex s
 I begin by simulating the true series for this example, 200 observations from an AR(1) with \\( \\rho \\) = 0.4 and plot the series. The upper panel in Figure 5 shows the true series.
 
 ```r
-
 N <- 200
 xt <- seq_len(N)
 set.seed(2)
@@ -300,7 +294,6 @@ eg
 Next we need to simulate the aggregating process of lake sediments. For this I split the data into roughly equal chunks of approximately 50 samples each (note these are not exactly 50 samples to make the aggregating step easier).
 
 ```r
-
 spl <- split(data.frame(cbind(yt, xt)[-1, ]),
              rep(1:4, times = c(50,48,51,50)))
 
@@ -309,7 +302,6 @@ spl <- split(data.frame(cbind(yt, xt)[-1, ]),
 `spl` now contains the chunks of the time series. To each chunk we need a function that will average the samples in each chunk over the correct sample window. The function below implements this, with `aggregate()` doing the hard work and the preceding lines simply creating the correct windows to aggregate over. Recall the window `width`s will be 5, 4, 3, and 2 respectively for the four chunks of the time series.
 
 ```r
-
 aggFun <- function(i, dfs, width) {
     dat <- dfs[[i]]
     wd <- width[[i]]
@@ -324,7 +316,6 @@ aggFun <- function(i, dfs, width) {
 `lapply()` on the indices of `spl` (ie 1, 2, 3, 4 from `seq_along(spl)`) is used to apply `aggFun` to each chunk in turn. `do.call()` is used to combine, *row-wise*, the resulting aggregated sections into a new series `core`
 
 ```r
-
 core <-  do.call(rbind, lapply(seq_along(spl), aggFun, spl, 5:2))
 
 ```
@@ -332,7 +323,6 @@ core <-  do.call(rbind, lapply(seq_along(spl), aggFun, spl, 5:2))
 It is worth pointing out that the time point associated with each aggregated sample is also a mean of the time points that went into computing the average over the window width. In other words, each simulated sediment slice takes the average age `xt` of the ages of the true time series samples aggregated in each slice. A plot of the resulting time series is shown in the middle panel of Figure 5 and was created via
 
 ```r
-
 eg2 <- eg +
     geom_line(data = core) +
     geom_point(data = core, size = 2)
@@ -343,7 +333,6 @@ eg2
 Now we are ready to do the real work; follow @wang_flickering_2012 and interpolate the aggregated series
 
 ```r
-
 ## interpolate
 intFun <- with(core, approxfun(xt, yt))
 corei <- data.frame(xt = 4:199, yt = intFun(4:199))
@@ -353,7 +342,6 @@ corei <- data.frame(xt = 4:199, yt = intFun(4:199))
 `corei` now contains a new series interpolated to an annual time step based on the aggregated data from `core`. The interpolated series is shown in the lowermost panel of Figure 5, which was produced using
 
 ```r
-
 eg3 <- eg2 +
     geom_line(data = corei, colour = "red") +
     geom_point(data = corei, colour = "red", size = 1.5)
@@ -364,7 +352,6 @@ eg3
 I skip the spectral analysis and jump straight to fitting an AR(1) to the true series and the aggregated and interpolated series
 
 ```rout
-
 > (spec0 <- ar(yt, order.max = 1))
 
 Call:
@@ -407,7 +394,6 @@ Table: Table 1. Selected early-warning measures for the original (Raw), aggregat
 Note that aggregation alone causes some changes in the SD and skew of the series. The AR(1) can't be estimated given the uneven sampling interval although we could estimate something similar via a continuous-time AR(1), but we'll leave that for another day. Interpolating the series changes the properties of the series again. The values in the table can be computed using the code below.
 
 ```r
-
 tab <- rbind(SD = c(sd(yt), with(core, sd(yt)), with(corei, sd(yt))),
              AR1 = c(spec0$ar, NA, spec1$ar))
 colnames(tab) <- c("Raw", "Agg.", "Interpl.")
@@ -418,7 +404,6 @@ print(tab, digits = 2)
 One of the techniques commonly used in the analysis of early warning indicators is a rolling window approach to apply the summary statistics above to rolling windows of a series. Often the window size is chosen to be approximately half the length of the time series, with the window right-aligned such that we have to observe half the series before a statistic can be computed. The **zoo** package contains convenient functions for doing this analysis. First we need a simple wrapper function  `ar1Fun()` to compute the AR(1) coefficient
 
 ```r
-
 ar1Fun <- function(yt) {
     ar(yt, order.max = 1)$ar
 }
@@ -428,7 +413,6 @@ ar1Fun <- function(yt) {
 and the interpolated series needs to be converted to a `zoo` series
 
 ```r
-
 zcorei <- with(corei, zoo(yt, order.by = xt))
 
 ```
@@ -436,7 +420,6 @@ zcorei <- with(corei, zoo(yt, order.by = xt))
 Below the `rollapply()` function is used to apply `ar1Fun()`, `sd()` and `skewness()` to rolling windows with window `width` the largest integer that is less than half the series in length (note the aggregation steps above lead to only 196 samples remaining in the series).
 
 ```r
-
 ar1i <- rollapply(zcorei, width = floor(nrow(corei)/2), align = "right",
                   fill = NA, FUN = ar1Fun)
 
@@ -451,7 +434,6 @@ skewi <- rollapply(zcorei, width = floor(nrow(corei)/2), align = "right",
 The resulting early warning indicators are best viewed as time series, which can be achieved by the following code that binds column-wise the three indicators and `melt()`s the resulting data frame into a format suitable for plotting with **ggplot**
 
 ```r
-
 ewind <- melt(data.frame(cbind(AR1 = as.numeric(ar1i),
                                SD = as.numeric(sdi),
                                Skewness = as.numeric(skewi))))
@@ -473,7 +455,6 @@ The resulting plot is shown below in Figure 6
 @carstensen_diatom_2013 reanalysed the DCA data of @wang_flickering_2012 by standardising the residuals from their detrending step using the square root of the aggregation interval. **Note: actually, @carstensen_diatom_2013 didn't quite do this; see the [comment](/2013/07/16/flickering-diatoms/#comment-966242078) by Richard Telford**. As the series here were generated without a trend, detrending was not required, but we can still apply the standardisation used by @carstensen_diatom_2013 via a simple modification of the aggregating function and re-running some code
 
 ```r
-
 aggFun2 <- function(i, dfs, width, std = FALSE) {
     dat <- dfs[[i]]
     wd <- width[[i]]

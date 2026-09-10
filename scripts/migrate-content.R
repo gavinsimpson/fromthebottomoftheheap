@@ -81,35 +81,30 @@ escape_social_handles <- function(text) {
   text
 }
 
-listing_description <- function(body, excerpt = NULL, limit = 280L) {
-  text <- if (!is.null(excerpt) && length(excerpt) && nzchar(trimws(as.character(excerpt[[1L]])))) {
-    paste(as.character(excerpt), collapse = " ")
-  } else {
-    lines <- body
-    in_fence <- FALSE
-    keep <- logical(length(lines))
-    for (i in seq_along(lines)) {
-      if (grepl("^`{3,}", lines[[i]])) {
-        in_fence <- !in_fence
-      } else if (!in_fence) {
-        keep[[i]] <- TRUE
-      }
+listing_description <- function(body) {
+  lines <- body
+  in_fence <- FALSE
+  keep <- logical(length(lines))
+  for (i in seq_along(lines)) {
+    if (grepl("^`{3,}", lines[[i]])) {
+      in_fence <- !in_fence
+    } else if (!in_fence) {
+      keep[[i]] <- TRUE
     }
-    lines <- lines[keep]
-    blocks <- strsplit(paste(lines, collapse = "\n"), "\n[[:space:]]*\n", perl = TRUE)[[1L]]
-    blocks <- trimws(blocks)
-    blocks <- blocks[
-      nzchar(blocks) &
-        !grepl("^(#{1,6}[[:space:]]|<|!\\[|\\||:::|\\{%|\\{\\{)", blocks, perl = TRUE)
-    ]
-    if (length(blocks)) blocks[[1L]] else ""
   }
+  lines <- lines[keep]
+  blocks <- strsplit(paste(lines, collapse = "\n"), "\n[[:space:]]*\n", perl = TRUE)[[1L]]
+  blocks <- trimws(blocks)
+  blocks <- blocks[
+    nzchar(blocks) &
+      !grepl("^(#{1,6}[[:space:]]|<|!?\\[?!?\\[|[*_]?[Ii]mage(?:[[:space:]]|[*_:])|\\||:::|\\{%|\\{\\{)", blocks, perl = TRUE)
+  ]
+  text <- if (length(blocks)) blocks[[1L]] else ""
   text <- gsub("!\\[([^]]*)\\]\\([^)]*\\)", "", text, perl = TRUE)
   text <- gsub("\\[([^]]+)\\]\\([^)]*\\)", "\\1", text, perl = TRUE)
   text <- gsub("<[^>]+>", " ", text, perl = TRUE)
-  text <- gsub("[`*]", "", text)
-  text <- gsub("[[:space:]]+", " ", trimws(text))
-  if (nchar(text) > limit) paste0(substr(text, 1L, limit - 1L), "…") else text
+  text <- gsub("[`*_]", "", text)
+  gsub("[[:space:]]+", " ", trimws(text))
 }
 
 post_margin <- function(category, tags) {
@@ -136,8 +131,8 @@ replace_liquid <- function(body, excerpt = NULL) {
   if (!is.null(excerpt) && length(excerpt) == 1L) {
     text <- gsub("\\{\\{\\s*page\\.excerpt\\s*\\|\\s*m?a?r?k?downify\\s*\\}\\}", excerpt, text, perl = TRUE)
   }
-  text <- gsub("\\{%\\s*highlight\\s+([^ %}]+)(?:\\s+linenos)?\\s*%\\}", "```\\1\n", text, perl = TRUE)
-  text <- gsub("\\{%\\s*endhighlight\\s*%\\}", "\n```", text, perl = TRUE)
+  text <- gsub("\\{%\\s*highlight\\s+([^ %}]+)(?:\\s+linenos)?\\s*%\\}", "```\\1", text, perl = TRUE)
+  text <- gsub("\\{%\\s*endhighlight\\s*%\\}", "```", text, perl = TRUE)
   text <- gsub('class="thumbnails pull-left ftboth-img-right"', 'class="list-unstyled float-start me-3 ftboth-img-right"', text, fixed = TRUE)
   text <- gsub('class="span([0-9]+)"', 'class="col-md-\\1"', text, perl = TRUE)
   text <- gsub('class="thumbnail"', 'class="border rounded p-1"', text, fixed = TRUE)
@@ -227,7 +222,7 @@ for (i in seq_along(md_files)) {
   if (!is.null(meta$subtitle) && identical(meta$subtitle, FALSE)) meta$subtitle <- NULL
   if (!is.null(meta$subtitle)) meta$subtitle <- as.character(meta$subtitle)
   if (!is.null(meta$excerpt)) meta$excerpt <- escape_social_handles(as.character(meta$excerpt))
-  meta$description <- escape_social_handles(listing_description(parsed$body, original_meta$excerpt))
+  meta$description <- escape_social_handles(listing_description(parsed$body))
   if (!is.null(meta$category)) meta$category <- as.character(meta$category)
   if (is.null(meta$image) && !is.null(meta$twitterimg) && nzchar(as.character(meta$twitterimg))) {
     meta$image <- paste0("/assets/img/posts/", as.character(meta$twitterimg))

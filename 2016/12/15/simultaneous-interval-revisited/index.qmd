@@ -10,11 +10,13 @@ tags:
   - Bayesian
   - confidence intervals
 category: R
-description: Eighteen months ago I wrote a post in which I described the use of simulation
-  from the posterior distribution of a fitted GAM to derive simultaneous confidence
-  intervals for the derivatives of a penalised spline. It was a nice post that attracted
-  some interest. It was also wrong…
 date: 2016-12-15 12:00:00
+description: >-
+  Eighteen months ago I wrote a post in which I described the use of simulation from the
+  posterior distribution of a fitted GAM to derive simultaneous confidence intervals for the
+  derivatives of a penalised spline. It was a nice post that attracted some interest. It was also
+  wrong. I have no idea what I was thinking when I thought the intervals described in that post
+  were simultaneous. Here I hope to rectify that past mistake.
 author: Gavin Simpson
 categories:
   - R
@@ -54,7 +56,6 @@ I'll tackle the issue of simultaneous intervals for the derivatives of penalised
 
 
 ```r
-
 library("mgcv")
 library("ggplot2")
 theme_set(theme_bw())
@@ -66,7 +67,6 @@ The `fossil` data set includes two variables and is a time series of strontium i
 
 
 ```r
-
 ggplot(fossil, aes(x = age, y = strontium.ratio)) +
     geom_point()
 
@@ -78,7 +78,6 @@ The aim of the analysis of these data is to model how the measured strontium iso
 
 
 ```r
-
 m <- gam(strontium.ratio ~ s(age, k = 20), data = fossil, method = "REML")
 
 ```
@@ -89,7 +88,6 @@ The fitted model uses ~12 effective degrees of freedom (which wouldn't have been
 
 
 ```r
-
 summary(m)
 
 ```
@@ -97,8 +95,6 @@ summary(m)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -126,7 +122,6 @@ The fitted spline captures the main variation in strontium isotope ratio values;
 
 
 ```r
-
 plot(m, shade = TRUE, seWithMean = TRUE, residuals = TRUE, pch = 16, cex = 0.8)
 
 ```
@@ -206,7 +201,6 @@ OK, that's enough of words and crazy equations. Implementing this in R is going 
 
 
 ```r
-
 rmvn <- function(n, mu, sig) { ## MVN random deviates
     L <- mroot(sig)
     m <- ncol(L)
@@ -219,7 +213,6 @@ Next we extract a few things that we need from the fitted GAM
 
 
 ```r
-
 Vb <- vcov(m)
 newd <- with(fossil, data.frame(age = seq(min(age), max(age), length = 200)))
 pred <- predict(m, newd, se.fit = TRUE)
@@ -233,7 +226,6 @@ Now we are ready to generate simulations of the maximum absolute standardized de
 
 
 ```r
-
 set.seed(42)
 N <- 10000
 
@@ -246,7 +238,6 @@ Next, we want `N` draws from $\begin{bmatrix}
 
 
 ```r
-
 BUdiff <- rmvn(N, mu = rep(0, nrow(Vb)), sig = Vb)
 
 ```
@@ -258,7 +249,6 @@ Now we calculate $\hat{f}(x) - f(x)$, which is given by $\mathbf{C_g} \begin{bma
 
 
 ```r
-
 Cg <- predict(m, newd, type = "lpmatrix")
 simDev <- Cg %*% t(BUdiff)
 
@@ -268,7 +258,6 @@ The first line evaluates the basis function at $\mathbf{g}$ and the second line 
 
 
 ```r
-
 absDev <- abs(sweep(simDev, 1, se.fit, FUN = "/"))
 
 ```
@@ -277,7 +266,6 @@ The maximum of the absolute standardized deviations at the grid of $x$ values fo
 
 
 ```r
-
 masd <- apply(absDev, 2L, max)
 
 ```
@@ -286,7 +274,6 @@ The last step is to find the critical value used to scale the standard errors to
 
 
 ```r
-
 crit <- quantile(masd, prob = 0.95, type = 8)
 
 ```
@@ -297,7 +284,6 @@ Now that we have the critical value, we can calculate the simultaneous confidenc
 
 
 ```r
-
 pred <- transform(cbind(data.frame(pred), newd),
                   uprP = fit + (2 * se.fit),
                   lwrP = fit - (2 * se.fit),
@@ -319,7 +305,6 @@ Start by drawing a large sample from the posterior distribution of the fitted mo
 
 
 ```r
-
 sims <- rmvn(N, mu = coef(m), sig = Vb)
 fits <- Cg %*% t(sims)
 
@@ -329,7 +314,6 @@ fits <- Cg %*% t(sims)
 
 
 ```r
-
 nrnd <- 30
 rnd <- sample(N, nrnd)
 stackFits <- stack(as.data.frame(fits[, rnd]))
@@ -341,7 +325,6 @@ What we've done in this post can be summarized in the figure below
 
 
 ```r
-
 ggplot(pred, aes(x = age, y = fit)) +
     geom_ribbon(aes(ymin = lwrS, ymax = uprS), alpha = 0.2, fill = "red") +
     geom_ribbon(aes(ymin = lwrP, ymax = uprP), alpha = 0.2, fill = "red") +
@@ -363,7 +346,6 @@ As a final check we'll look at the proportion of all the posterior simulations t
 
 
 ```r
-
 inCI <- function(x, upr, lwr) {
     all(x >= lwr & x <= upr)
 }
@@ -379,7 +361,6 @@ sum(fitsInSCI) / length(fitsInSCI)      # Simultaneous
 
 
 ```text
-
 [1] 0.3028
 [1] 0.9526
 
@@ -391,7 +372,6 @@ So how bad are the intervals I created in the old post? They should as bad as th
 
 
 ```r
-
 oldCI <- apply(fits, 1L, quantile, probs = c(0.025, 0.975))
 pred <- transform(pred, lwrOld = oldCI[1, ], uprOld = oldCI[2, ])
 fitsInOldCI <- apply(fits, 2L, inCI, upr = pred$uprOld, lwr = pred$lwrOld)
@@ -402,7 +382,6 @@ sum(fitsInOldCI) / length(fitsInOldCI)
 
 
 ```text
-
 [1] 0.2655
 
 ```

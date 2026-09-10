@@ -9,10 +9,18 @@ tags:
   - mgcv
   - difference smooths
 category: R
-description: In a previous post I looked at an approach for computing the differences
-  between smooths estimated as part of a factor-smooth interaction using s()'s by
-  argument. When a common-or-garden factor variable is passed to by, gam() estimates
-  a separate smooth for each level of the by …
+description: >-
+  In a previous post I looked at an approach for computing the differences between smooths
+  estimated as part of a factor-smooth interaction using s()'s by argument. When a
+  common-or-garden factor variable is passed to by, gam() estimates a separate smooth for each
+  level of the by factor. Using the $Xp$ matrix approach, we previously saw that we can
+  post-process the model to generate estimates for pairwise differences of smooths. However, the
+  by variable approach of estimating a separate smooth for each level of the factor my be quite
+  inefficient in terms of degrees of freedom used by the model. This is especially so in
+  situations where the estimated curves are quite similar but wiggly; why estimate many separate
+  wiggly smooths when one, plus some simple difference smooths, will do the job just as well? In
+  this post I look at an alternative to estimating separate smooths using an ordered factor for
+  the by variable.
 author: Gavin Simpson
 categories:
   - R
@@ -77,7 +85,6 @@ You'll more than likely have these installed, but if you get errors about missin
 
 
 ```r
-
 library('readr')
 library('dplyr')
 library('ggplot2')
@@ -90,7 +97,6 @@ Next, load the data set and convert the `SiteCode` variable to a factor
 
 
 ```r
-
 uri <- 'https://gist.githubusercontent.com/gavinsimpson/eb4ff24fa9924a588e6ee60dfae8746f/raw/geochimica-metals.csv'
 metals <- read_csv(uri, skip = 1, col_types = c('ciccd'))
 metals <- mutate(metals, SiteCode = factor(SiteCode))
@@ -101,7 +107,6 @@ This is a subset of the data used in @Rose2012-pl --- the Hg concentrations in t
 
 
 ```r
-
 metals
 
 ```
@@ -109,7 +114,6 @@ metals
 
 
 ```text
-
 # A tibble: 44 x 5
    SiteCode  Date SoilType Region        Hg
      <fctr> <int>    <chr>  <chr>     <dbl>
@@ -138,7 +142,6 @@ To proceed, we need to create an ordered factor. Here I'm going to use the `Soil
 
 
 ```r
-
 metals <- mutate(metals,
                  oSoilType = ordered(SoilType, levels = c('non-eroded','eroded','thin')))
 
@@ -148,7 +151,6 @@ The ordered-factor GAM is fitted to the three lochs using the following
 
 
 ```r
-
 m <- gam(Hg ~ oSoilType + s(Date) + s(Date, by = oSoilType), data = metals,
          method = 'REML')
 
@@ -158,7 +160,6 @@ and the resulting smooths can be drawn using the `plot()` method
 
 
 ```r
-
 plot(m, shade = TRUE, pages = 1, scale = 0, seWithMean = TRUE)
 
 ```
@@ -175,7 +176,6 @@ A nice feature of the ordered factor approach is that inference on these differe
 
 
 ```r
-
 summary(m)
 
 ```
@@ -183,8 +183,6 @@ summary(m)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -218,7 +216,6 @@ One feature to note, because we used an ordered factor, the parametric term for 
 
 
 ```r
-
 m <- gam(Hg ~ SoilType + s(Date) + s(Date, by = oSoilType), data = metals,
          method = 'REML')
 summary(m)
@@ -228,8 +225,6 @@ summary(m)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 

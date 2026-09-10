@@ -14,8 +14,17 @@ tags:
 category: R
 excerpt_separator: <!--more-->
 excerpt: <!--more-->
-description: ''
 image: /assets/img/posts/introducing-gratia-appraise-mod-1.png
+description: >-
+  I use generalized additive models (GAMs) in my research work. I use them a lot! Simon Wood's
+  mgcv package is an excellent set of software for specifying, fitting, and visualizing GAMs for
+  very large data sets. Despite recently dabbling with brms, mgcv is still my go-to GAM package.
+  The only down-side to mgcv is that it is not very tidy-aware and the ggplot-verse may as well
+  not exist as far as it is concerned. This in itself is no bad thing, though as someone who uses
+  mgcv a lot but also prefers to do my plotting with ggplot2, this lack of awareness was starting
+  to hurt. So, I started working on something to help bridge the gap between these two separate
+  worlds that I inhabit. The fruit of that labour is gratia, and development has progressed to
+  the stage where I am ready to talk a bit more about it.
 author: Gavin Simpson
 categories:
   - R
@@ -61,7 +70,6 @@ In this post I wanted to give a flavour of what is currently possible with **gra
 
 
 ```r
-
 devtools::install_github('gavinsimpson/gratia')
 
 ```
@@ -70,7 +78,6 @@ To do anything useful with **gratia** we need a GAM and for that we need **mgcv*
 
 
 ```r
-
 library('mgcv')
 library('gratia')
 
@@ -78,7 +85,6 @@ library('gratia')
 and an old favourite example data set
 
 ```r
-
 set.seed(20)
 dat <- gamSim(1, n = 400, dist = "normal", scale = 2, verbose = FALSE)
 
@@ -88,7 +94,6 @@ The simulated data in `dat` are well-studied in GAM-related research and contain
 
 
 ```r
-
 mod <- gam(y ~ s(x0) + s(x1) + s(x2) + s(x3), data = dat, method = "REML")
 
 ```
@@ -97,7 +102,6 @@ mod <- gam(y ~ s(x0) + s(x1) + s(x2) + s(x3), data = dat, method = "REML")
 
 
 ```r
-
 summary(mod)
 
 ```
@@ -105,8 +109,6 @@ summary(mod)
 
 
 ```text
-
-
 Family: gaussian 
 Link function: identity 
 
@@ -141,7 +143,6 @@ To visualize estimated GAMs, **mgcv** provides the `plot.gam()` method and the `
 
 
 ```r
-
 draw(mod)
 
 ```
@@ -154,7 +155,6 @@ There's not an awful lot more you can do with this now, but the at least the plo
 
 
 ```r
-
 evaluate_smooth(mod, "x1")
 
 ```
@@ -162,7 +162,6 @@ evaluate_smooth(mod, "x1")
 
 
 ```text
-
 # A tibble: 100 x 5
    smooth fs_variable       x1   est    se
    <chr>  <fct>          <dbl> <dbl> <dbl>
@@ -186,7 +185,6 @@ The diagnostic plots currently produced by `gam.check()` can also be produced us
 
 
 ```r
-
 appraise(mod)
 
 ```
@@ -197,7 +195,6 @@ Each of the four plots is produced via user-accessible function that implements 
 
 
 ```r
-
 qq_plot(mod, method = 'simulate')
 
 ```
@@ -208,7 +205,6 @@ qq_plot(mod, method = 'simulate')
 
 
 ```r
-
 set.seed(1)
 dat <- gamSim(2, n = 4000, dist = "normal", scale = 1, verbose = FALSE)
 mod <- gam(y ~ s(x, z, k = 30), data = dat$data, method = "REML")
@@ -222,7 +218,6 @@ and factor-smooth-interaction terms, which are the equivalent of random slopes a
 
 
 ```r
-
 ## simulate example... from ?mgcv::factor.smooth.interaction
 set.seed(0)
 ## simulate data...

@@ -8,10 +8,17 @@ tags:
   - package
   - developer
 category: R
-description: Recently I've been preparing my gratia package for submission to CRAN.
-  During my pre-flight testing I noticed an issue under Windows checking the examples
-  in the package against the reference output I generated on linux. In the latest
-  release of the tibble package, the way tibbl…
+description: >-
+  Recently I've been preparing my gratia package for submission to CRAN. During my pre-flight
+  testing I noticed an issue under Windows checking the examples in the package against the
+  reference output I generated on linux. In the latest release of the tibble package, the way
+  tibbles are printed has changed subtly and in a way that leads to cross-platform differences.
+  As I write this, tibbles with more than a set number of rows are printed in a truncated form,
+  showing only the first 10 rows of data. In such cases, a final line is printed with an ellipsis
+  and a note as to how many more rows are in the tibble. It was this ellipsis that was causing
+  the cross-platform issue where differences between the output generated on windows and the
+  reference output were being identified during R CMD check on Windows. If this is causing you an
+  issue, here's one way to solve the problem.
 author: Gavin Simpson
 categories:
   - R
@@ -48,7 +55,6 @@ Recently I've been preparing my [**gratia** package](https://gavinsimpson.github
 The problem is this:
 
 ```r
-
 library('tibble')
 as_tibble(iris)
 
@@ -57,7 +63,6 @@ as_tibble(iris)
 
 
 ```text
-
 # A tibble: 150 x 5
    Sepal.Length Sepal.Width Petal.Length Petal.Width Species
           <dbl>       <dbl>        <dbl>       <dbl> <fct>  
@@ -81,7 +86,6 @@ On Windows you won't see that cute little &hellip;; instead you'll see this
 
 
 ```r
-
 as_tibble(iris)
 
 ```
@@ -89,7 +93,6 @@ as_tibble(iris)
 
 
 ```text
-
 # A tibble: 150 x 5
    Sepal.Length Sepal.Width Petal.Length Petal.Width Species
           <dbl>       <dbl>        <dbl>       <dbl> <fct>  
@@ -117,7 +120,6 @@ The option you need is `cli.unicode` and it needs to be set to `FALSE`. Here it 
 
 
 ```r
-
 as_tibble(iris)
 op <- options(cli.unicode = FALSE)
 as_tibble(iris)
@@ -128,7 +130,6 @@ options(op)
 
 
 ```text
-
 # A tibble: 150 x 5
    Sepal.Length Sepal.Width Petal.Length Petal.Width Species
           <dbl>       <dbl>        <dbl>       <dbl> <fct>  
@@ -166,7 +167,6 @@ In the [**roxygen2**](https://github.com/klutometis/roxygen) sources for [my exa
 
 
 ```r
-
 \@examples
 
 \dontshow{

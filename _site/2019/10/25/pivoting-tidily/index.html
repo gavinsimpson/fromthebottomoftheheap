@@ -8,7 +8,7 @@
 
 <meta name="author" content="Gavin Simpson">
 <meta name="dcterms.date" content="2019-10-25">
-<meta name="description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was w…">
+<meta name="description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was writing some R code to import the raw data for the lab from an Excel sheet, it occurred to me that this would be a good excuse to look at the new pivotlonger() and pivotwider() functions from the tidyr package. In this post I show how these new functions facilitate common data processing steps; I was personally surprised how little data wrangling was actually needed in the end to read in the data from the lab.">
 
 <title>Pivoting tidily – From the bottom of the heap</title>
 <style>
@@ -82,7 +82,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-c4e1171eb4281116019c604a711c5128.css" rel="stylesheet" id="quarto-text-highlighting-styles">
 <script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="../../../../site_libs/bootstrap/bootstrap-12d8745d2269ec4cf758d8ac86ae5c45.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/bootstrap/bootstrap-cdffb9db2c4979f63b6ec1d093af6520.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -122,13 +122,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 
 <meta property="og:title" content="Pivoting tidily – From the bottom of the heap">
-<meta property="og:description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was w…">
+<meta property="og:description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was writing some R code to import the raw data for the lab from an Excel sheet, it occurred to me that this would be a good excuse to look at the new pivotlonger() and pivotwider() functions from the tidyr package. In this post I show how these new functions facilitate common data processing steps; I was personally surprised how little data wrangling was actually needed in the end to read in the data from the lab.">
 <meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/pivoting-tidily-plot-1.png">
 <meta property="og:site_name" content="From the bottom of the heap">
 <meta property="og:image:height" content="510">
 <meta property="og:image:width" content="680">
 <meta name="twitter:title" content="Pivoting tidily – From the bottom of the heap">
-<meta name="twitter:description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was w…">
+<meta name="twitter:description" content="One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was writing some R code to import the raw data for the lab from an Excel sheet, it occurred to me that this would be a good excuse to look at the new pivotlonger() and pivotwider() functions from the tidyr package. In this post I show how these new functions facilitate common data processing steps; I was personally surprised how little data wrangling was actually needed in the end to read in the data from the lab.">
 <meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/pivoting-tidily-plot-1.png">
 <meta name="twitter:creator" content="@ucfagls">
 <meta name="twitter:site" content="@ucfagls">
@@ -143,11 +143,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <header id="quarto-header" class="headroom fixed-top">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="../../../../index.html">
-    <span class="navbar-title">From the bottom of the heap</span>
-    </a>
-  </div>
             <div id="quarto-search" class="" title="Search"></div>
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
   <span class="navbar-toggler-icon"></span>
@@ -284,7 +279,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <div>
   <div class="description">
-    One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was w…
+    One of the fun bits of my job is that I have actual time dedicated to helping colleagues and grad students with statistical or computational problems. Recently I’ve been helping one of our Lab Instructors with some data that from their Plant Physiology Lab course. Whilst I was writing some R code to import the raw data for the lab from an Excel sheet, it occurred to me that this would be a good excuse to look at the new pivotlonger() and pivotwider() functions from the tidyr package. In this post I show how these new functions facilitate common data processing steps; I was personally surprised how little data wrangling was actually needed in the end to read in the data from the lab.
   </div>
 </div>
 
@@ -359,25 +354,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 <p>With the lab data I showed earlier, we’re going to need to pivot from the original wide format into a longer format — just as the animation above shows. As we want to output an object that is <em>longer</em> than the input we will use the <code>pivot_longer()</code> function.</p>
 <p>To start we will need to import the data from the <code>.xls</code> sheet, which I’ll do using the <em>readxl</em> package</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'curl'</span>)    <span class="co"># download files</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'readxl'</span>)  <span class="co"># read from Excel sheets</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'tidyr'</span>)   <span class="co"># data processing</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'dplyr'</span>)   <span class="co"># mo data processing</span></span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'forcats'</span>) <span class="co"># mo mo data processing</span></span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'ggplot2'</span>) <span class="co"># plotting</span></span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="do">## Load Data</span></span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">curl_download</span>(<span class="st">"https://github.com/gavinsimpson/plant-phys/raw/master/f18ph.xls"</span>, tmp)</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(tmp, <span class="at">sheet =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'curl'</span>)    <span class="co"># download files</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'readxl'</span>)  <span class="co"># read from Excel sheets</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'tidyr'</span>)   <span class="co"># data processing</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'dplyr'</span>)   <span class="co"># mo data processing</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'forcats'</span>) <span class="co"># mo mo data processing</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">'ggplot2'</span>) <span class="co"># plotting</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="do">## Load Data</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>tmp <span class="ot">&lt;-</span> <span class="fu">tempfile</span>()</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">curl_download</span>(<span class="st">"https://github.com/gavinsimpson/plant-phys/raw/master/f18ph.xls"</span>, tmp)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(tmp, <span class="at">sheet =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>We have to download the data first — which I do using <code>curl_download()</code> from the <em>curl</em> package — because <code>read_excel()</code> doesn’t currently know how to read from URLs at the moment.</p>
 <p>Now we have our plant data within R, stored in a data frame</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>plant</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 24 x 12
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plant</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 24 x 12
    treatment cultivar plantid `height:0` `internodes:0` `height:7`
    &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt;      &lt;dbl&gt;          &lt;dbl&gt;      &lt;dbl&gt;
  1 control   wt             1        235              4        525
@@ -402,10 +394,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>optionally, the name of the new column that will contain the data values. The default is to name this column <code>value</code> so you don’t need to change this if you’re happy with that.</li>
 </ul>
 <p>So, to get our wide plant data into a longer format we would do this</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pivot_longer</span>(plant, <span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>), <span class="at">names_to =</span> <span class="st">"variable"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 216 x 5
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pivot_longer</span>(plant, <span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>), <span class="at">names_to =</span> <span class="st">"variable"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 216 x 5
    treatment cultivar plantid variable       value
    &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;          &lt;dbl&gt;
  1 control   wt             1 height:0       235  
@@ -423,10 +413,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The <code>-(1:3)</code> is short-hand for excluding the first three columns of <code>plant</code> from the pivot. Here, we’re creating a new variable called (imaginatively!) <code>variable</code>. As you can see we now have our data in a much longer representation, with a single column containing all of the observations that this group of students made.</p>
 <p>However, we have a bit of a problem: we have the added complication that some of the column names contain actual data that we want to use. While we have a column containing this information — it is not lost — the observation day or variable name information is not directly accessible in this format. What we could do is split the strings in this new <code>variable</code> column on <code>":"</code> and form two new columns from there.</p>
 <p>Thankfully, this is such a common operation that <code>pivot_longer()</code> (and it’s predecessor, <code>gather()</code>) can do this for you — all you have to do is tell <code>pivot_longer()</code> what character to split on, and what names you want for the columns that result from splitting the strings up.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">pivot_longer</span>(plant, <span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>), <span class="at">names_sep =</span> <span class="st">":"</span>, <span class="at">names_to =</span> <span class="fu">c</span>(<span class="st">"variable"</span>,<span class="st">"day"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 216 x 6
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">pivot_longer</span>(plant, <span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>), <span class="at">names_sep =</span> <span class="st">":"</span>, <span class="at">names_to =</span> <span class="fu">c</span>(<span class="st">"variable"</span>,<span class="st">"day"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 216 x 6
    treatment cultivar plantid variable   day    value
    &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;      &lt;chr&gt;  &lt;dbl&gt;
  1 control   wt             1 height     0      235  
@@ -443,12 +431,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </code></pre>
 <p>The changes we made above were to specify <code>names_sep</code> with the correct separator, and we pass a vector of new column names to <code>names_to</code> rather than the single name we provided previously.</p>
 <p>Those of you with good eyes may have noticed another problem that we will encounter if we stopped here. The <code>day</code> variable that was just created is stored as a character vector. It is likely that we’ll want this information stored as a number if we’re going to analyze the data. We can do the required conversion within <code>pivot_longer()</code> call by specifying what the developers have started calling a <em>prototype</em> across many of the <em>tidyverse</em> packages. A prototype is an object that has the same properties that you want objects built from that prototype to take. Here we want the <code>day</code> variable as a column of integer numbers, so we set the prototype for this vector to <code>integer()</code> using the <code>names_ptypes</code> argument</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">pivot_longer</span>(plant, <span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>), <span class="at">names_sep =</span> <span class="st">":"</span>, <span class="at">names_to =</span> <span class="fu">c</span>(<span class="st">"variable"</span>,<span class="st">"day"</span>),</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>                      <span class="at">names_ptypes =</span> <span class="fu">list</span>(<span class="at">day =</span> <span class="fu">integer</span>()))</span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>plant</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 216 x 6
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">pivot_longer</span>(plant, <span class="sc">-</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>), <span class="at">names_sep =</span> <span class="st">":"</span>, <span class="at">names_to =</span> <span class="fu">c</span>(<span class="st">"variable"</span>,<span class="st">"day"</span>),</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>                      <span class="at">names_ptypes =</span> <span class="fu">list</span>(<span class="at">day =</span> <span class="fu">integer</span>()))</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>plant</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 216 x 6
    treatment cultivar plantid variable     day  value
    &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;chr&gt;      &lt;int&gt;  &lt;dbl&gt;
  1 control   wt             1 height         0  235  
@@ -470,11 +456,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>where to take the <em>names</em> of the new variables that are going to be created <strong>from</strong> — here that’s the <code>variable</code> column, and</li>
 <li>where to take the <em>data</em> values <strong>from</strong> that are going to be put into these new columns — here, that’s the <code>value</code> column</li>
 </ul>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">pivot_wider</span>(plant, <span class="at">names_from =</span> variable, <span class="at">values_from =</span> value)</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>plant</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 96 x 7
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">pivot_wider</span>(plant, <span class="at">names_from =</span> variable, <span class="at">values_from =</span> value)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>plant</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 96 x 7
    treatment cultivar plantid   day height internodes freshwt
    &lt;chr&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt;
  1 control   wt             1     0    235          4    NA  
@@ -496,13 +480,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li>it would also be good practice to convert <code>treatment</code> into a factor, and to set the control treatment as the reference level against which the other treatment levels will be compared — if we didn’t do that, the <code>b9</code> level (daminozide treatment) would be the reference level</li>
 </ol>
 <p>We can do those data processing steps quite easily now we have the data imported and arranged nicely the way we want them</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">mutate</span>(plant,</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">id =</span> <span class="fu">paste0</span>(cultivar, <span class="st">"_"</span>, treatment, <span class="st">"_"</span>, plantid),</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>                <span class="at">treatment =</span> <span class="fu">fct_relevel</span>(treatment, <span class="st">'control'</span>))</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>plant</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<pre class="text"><code>
-# A tibble: 96 x 8
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">mutate</span>(plant,</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>                <span class="at">id =</span> <span class="fu">paste0</span>(cultivar, <span class="st">"_"</span>, treatment, <span class="st">"_"</span>, plantid),</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>                <span class="at">treatment =</span> <span class="fu">fct_relevel</span>(treatment, <span class="st">'control'</span>))</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>plant</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code># A tibble: 96 x 8
    treatment cultivar plantid   day height internodes freshwt id          
    &lt;fct&gt;     &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;  &lt;dbl&gt;      &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;       
  1 control   wt             1     0    235          4    NA   wt_control_1
@@ -520,11 +502,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Here I just pasted together the <code>cultivar</code>, <code>treatment</code> and <code>plantid</code> information into a unique id for each individual plant. This won’t be used directly by the students in any analysis they do as this is a second year course and they don’t know about mixed models (yet), but it is handy to have this <code>id</code> available for plotting. The <code>treatment</code> variable is converted to a factor and the reference level set to be <code>"control"</code> using the <code>fct_relevel()</code> function from the <em>forcats</em> package.</p>
 <p>The students will do one other step before proceeding to look at the data — each sheet in the <code>.xls</code> file contains observations from a single group and hence a single cultivar, and we want the students to compare cultivars. So they will repeat the steps above to import a second sheet of data containing data from the cultivar they didn’t work with, and then stick the two data sets together. But I’ll spare you having to repeat that.</p>
 <p>If you’re interested, this is what the data look like, for a single cultivar and single group</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plant, <span class="fu">aes</span>(<span class="at">x =</span> day, <span class="at">y =</span> height, <span class="at">group =</span> id, <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">'Height (mm)'</span>, <span class="at">x =</span> <span class="st">'Day'</span>, <span class="at">colour =</span> <span class="st">'Treatment'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plant, <span class="fu">aes</span>(<span class="at">x =</span> day, <span class="at">y =</span> height, <span class="at">group =</span> id, <span class="at">colour =</span> treatment)) <span class="sc">+</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">labs</span>(<span class="at">y =</span> <span class="st">'Height (mm)'</span>, <span class="at">x =</span> <span class="st">'Day'</span>, <span class="at">colour =</span> <span class="st">'Treatment'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="../../../../assets/img/posts/pivoting-tidily-plot-1.png" class="img-fluid figure-img"></p>
