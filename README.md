@@ -22,12 +22,13 @@ safeguards. Run it twice before committing a release; the second run must not
 create unexplained tracked changes.
 
 Source and `_site/` are committed. Netlify runs no build command and publishes
-the committed `_site` directory. `netlify.toml` also canonicalizes only the
-`www` hostname to the apex domain.
+the committed `_site` directory. `netlify.toml` canonicalizes the `www`
+hostname to the apex domain and redirects the recovered post's legacy `/228/`
+path to its descriptive canonical URL.
 
 ## Historical and new posts
 
-The 103 migrated posts are historical archives. Their QMD pages were produced
+The 104 migrated posts are historical archives. Their QMD pages were produced
 from the already-rendered Markdown, so existing prose, visible code/output,
 figures, and dates remain authoritative. The 37 original Rmd sources live in
 `archive/rmd/` and the generated Markdown snapshots live in
