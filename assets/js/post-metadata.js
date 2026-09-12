@@ -11,6 +11,6 @@
 
   if (taxonomy && support) {
     support.classList.add("post-support");
-    taxonomy.append(support);
+    taxonomy.prepend(support);
   }
 })();

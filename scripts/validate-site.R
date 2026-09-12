@@ -277,8 +277,13 @@ if (!grepl("taxonomy.prepend(metadata)", metadata_script, fixed = TRUE)) {
   stop("Post author and date must move into the taxonomy block")
 }
 if (!grepl('.querySelector(".post-links .buy-me-coffee")', metadata_script, fixed = TRUE) ||
-    !grepl("taxonomy.append(support)", metadata_script, fixed = TRUE)) {
+    !grepl("taxonomy.prepend(support)", metadata_script, fixed = TRUE)) {
   stop("The post Buy Me a Coffee button must move from Social into the taxonomy block")
+}
+if (!grepl("grid-template-columns: minmax(0, 1fr) 150px", theme_text, fixed = TRUE) ||
+    !grepl("grid-column: 2", theme_text, fixed = TRUE) ||
+    !grepl("grid-row: 1", theme_text, fixed = TRUE)) {
+  stop("Narrow post metadata must place the support button to the right of author and date")
 }
 if (!grepl("#quarto-document-content[[:space:]]+\\.post-links[[:space:]]*\\{[^}]*order:[[:space:]]*1", theme_text, perl = TRUE)) {
   stop("Post sidebar must follow the article content on narrow screens")
