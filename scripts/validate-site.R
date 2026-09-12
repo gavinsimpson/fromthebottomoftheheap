@@ -247,6 +247,7 @@ style_parity_rules <- c(
   "blockquote[[:space:]]*\\{[^}]*border-right:[[:space:]]*5px[[:space:]]+solid[[:space:]]+#f43d00",
   "table,[[:space:]]*table\\.table[[:space:]]*\\{[^}]*margin-block:[[:space:]]*3em",
   "#blogroll[[:space:]]+\\.sidebar-links[[:space:]]*\\{[^}]*font-size:[[:space:]]*10px",
+  "\\.buy-me-coffee[[:space:]]*\\{[^}]*height:[[:space:]]*45px[^}]*width:[[:space:]]*150px",
   "\\.nav-footer[[:space:]]*\\{[^}]*min-height:[[:space:]]*150px"
 )
 if (!all(vapply(style_parity_rules, function(pattern) grepl(pattern, theme_text, perl = TRUE), logical(1L)))) {
@@ -274,6 +275,10 @@ if (!grepl("body:has\\(\\.post-taxonomy\\)[[:space:]]+#quarto-document-content[[
 metadata_script <- paste(readLines(file.path(root, "assets", "js", "post-metadata.js"), warn = FALSE), collapse = "\n")
 if (!grepl("taxonomy.prepend(metadata)", metadata_script, fixed = TRUE)) {
   stop("Post author and date must move into the taxonomy block")
+}
+if (!grepl('.querySelector(".post-links .buy-me-coffee")', metadata_script, fixed = TRUE) ||
+    !grepl("taxonomy.append(support)", metadata_script, fixed = TRUE)) {
+  stop("The post Buy Me a Coffee button must move from Social into the taxonomy block")
 }
 if (!grepl("#quarto-document-content[[:space:]]+\\.post-links[[:space:]]*\\{[^}]*order:[[:space:]]*1", theme_text, perl = TRUE)) {
   stop("Post sidebar must follow the article content on narrow screens")
