@@ -277,6 +277,12 @@ article_alignment_rules <- c(
 if (!all(vapply(article_alignment_rules, function(pattern) grepl(pattern, theme_text, perl = TRUE), logical(1L)))) {
   stop("Desktop article content must align with the home-page listing edge")
 }
+navbar_alignment_rules <- c(
+  "\\.navbar[[:space:]]*>[[:space:]]*\\.navbar-container[[:space:]]*\\{[^}]*width:[[:space:]]*calc\\(100% - 1em\\)[^}]*max-width:[[:space:]]*1135px[^}]*padding-inline:[[:space:]]*0[^}]*margin-inline:[[:space:]]*auto"
+)
+if (!all(vapply(navbar_alignment_rules, function(pattern) grepl(pattern, theme_text, perl = TRUE), logical(1L)))) {
+  stop("Desktop navbar items must align with the shared page-content edge")
+}
 metadata_script <- paste(readLines(file.path(root, "assets", "js", "post-metadata.js"), warn = FALSE), collapse = "\n")
 if (!grepl("taxonomy.prepend(metadata)", metadata_script, fixed = TRUE)) {
   stop("Post author and date must move into the taxonomy block")
