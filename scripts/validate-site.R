@@ -268,6 +268,9 @@ if (!grepl("\\.post-taxonomy[[:space:]]*>[[:space:]]*section[[:space:]]*\\{[^}]*
 if (!grepl("\\.post-taxonomy[[:space:]]*\\{[^}]*border-left:[[:space:]]*4px[[:space:]]+solid[[:space:]]+#f43d00", theme_text, perl = TRUE)) {
   stop("Consolidated post metadata must retain the orange left border")
 }
+if (!grepl("body:has\\(\\.post-taxonomy\\)[[:space:]]+#quarto-document-content[[:space:]]*>[[:space:]]*:not\\(\\.column-margin\\)[[:space:]]*\\{[^}]*grid-column:[[:space:]]*page-start[[:space:]]*/[[:space:]]*body-content-end", theme_text, perl = TRUE)) {
+  stop("Desktop post content must align with the home-page listing edge")
+}
 metadata_script <- paste(readLines(file.path(root, "assets", "js", "post-metadata.js"), warn = FALSE), collapse = "\n")
 if (!grepl("taxonomy.prepend(metadata)", metadata_script, fixed = TRUE)) {
   stop("Post author and date must move into the taxonomy block")

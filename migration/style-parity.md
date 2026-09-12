@@ -30,6 +30,7 @@ definition list) were treated as structural rather than visual differences.
 | Keyboard keys | 11px inset key-cap treatment | Ported `kbd` rule |
 | Slide labels | Legacy warning, success, info, and inverse label colours and dimensions | Bootstrap-5-compatible `.label` rules |
 | Social/blogroll | 12px social links, 10px blogroll, 17.5px headings | Shared sidebar rules |
+| Desktop post alignment | Main column begins at the same left edge as home-page post excerpts | Post-only grid override; right sidebar remains in Quarto's margin column |
 | Footer | 150px minimum height, 40px top margin, 20px padding, white text on `#272822` | Quarto footer rules |
 
 Bootstrap 2 layout selectors, Glyphicons, and obsolete JavaScript behaviours
