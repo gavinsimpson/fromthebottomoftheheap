@@ -218,6 +218,17 @@ if (any(grepl("^code:not\\(\\.sourceCode\\)", theme_lines))) {
   stop("Inline-code styling must not apply to code inside preformatted blocks")
 }
 theme_text <- paste(theme_lines, collapse = "\n")
+heading_theme_rules <- c(
+  '\\$headings-font-family:[[:space:]]*"Open Sans Condensed"',
+  "\\$headings-font-weight:[[:space:]]*300",
+  "\\$headings-color:[[:space:]]*\\$primary"
+)
+if (!all(vapply(heading_theme_rules, function(pattern) grepl(pattern, theme_text), logical(1L)))) {
+  stop("Heading typography must retain the legacy orange Open Sans Condensed treatment")
+}
+if (grepl("h1,[[:space:]]*h2,[[:space:]]*h3[[:space:]]*\\{[^}]*color:[[:space:]]*#222", theme_text, perl = TRUE)) {
+  stop("A dark heading rule overrides the legacy orange heading colour")
+}
 if (!grepl("pre:not\\(\\.sourceCode\\)[[:space:]]*\\{[^}]*padding:[[:space:]]*0?\\.4em", theme_text, perl = TRUE)) {
   stop("Plain output blocks must match source-code block padding")
 }
