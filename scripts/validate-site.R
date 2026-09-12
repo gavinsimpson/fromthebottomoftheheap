@@ -293,6 +293,27 @@ if (!grepl("#quarto-document-content[[:space:]]+\\.post-links[[:space:]]*\\{[^}]
 for (feed in c("feed.xml", "feed-R.xml")) {
   if (!file.exists(file.path(root, "_site", feed))) stop("Missing compatibility feed: ", feed)
 }
+
+robots_source <- readLines(file.path(root, "robots.txt"), warn = FALSE)
+robots_rendered <- readLines(file.path(root, "_site", "robots.txt"), warn = FALSE)
+if (!identical(robots_source, robots_rendered)) {
+  stop("Rendered robots.txt differs from the source policy")
+}
+blocked_ai_agents <- c(
+  "GPTBot", "ClaudeBot", "Google-Extended", "Applebot-Extended", "CCBot",
+  "Bytespider", "Amazonbot", "FacebookBot", "meta-externalagent", "cohere-ai",
+  "AI2Bot", "Ai2Bot-Dolma", "OAI-SearchBot", "ChatGPT-User",
+  "Claude-SearchBot", "Claude-User", "PerplexityBot", "Perplexity-User", "YouBot"
+)
+missing_ai_agents <- blocked_ai_agents[!paste0("User-agent: ", blocked_ai_agents) %in% robots_source]
+if (length(missing_ai_agents)) {
+  stop("robots.txt is missing blocked AI agents: ", paste(missing_ai_agents, collapse = ", "))
+}
+if (!"User-agent: *" %in% robots_source || !"Allow: /" %in% robots_source ||
+    !"Sitemap: https://fromthebottomoftheheap.net/sitemap.xml" %in% robots_source) {
+  stop("robots.txt must keep conventional search crawling enabled and advertise the sitemap")
+}
+
 for (feed in c("index.xml", "feed.xml", "feed-R/index.xml", "feed-R.xml")) {
   feed_text <- paste(readLines(file.path(root, "_site", feed), warn = FALSE), collapse = "\n")
   if (grepl('class="post-links"', feed_text, fixed = TRUE) ||
