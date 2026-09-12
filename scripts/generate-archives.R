@@ -8,19 +8,20 @@ posts <- read.csv(manifest_path, stringsAsFactors = FALSE, check.names = FALSE)
 
 write_post_listing <- function(path, prefix, home = FALSE) {
   contents <- paste0("    - ", prefix, posts$qmd)
+  include_path <- paste0(prefix, "includes/social-blogroll.qmd")
   lines <- c(
     "---",
     if (home) "title: From the bottom of the heap" else "title: Blog posts",
     if (home) "subtitle: the musings of a geographer" else NULL,
     "listing:",
-    if (home) "  id: posts" else NULL,
+    "  id: posts",
     "  contents:",
     contents,
     "  sort: date desc",
-    paste0("  type: ", if (home) "default" else "table"),
+    "  type: default",
     if (home) "  max-items: 10" else NULL,
-    if (!home) "  fields: [date, title, subtitle, category]" else NULL,
-    paste0("  categories: ", if (home) "false" else "true"),
+    if (!home) "  page-size: 10" else NULL,
+    "  categories: false",
     if (home) c(
       "  feed:",
       "    type: full",
@@ -29,25 +30,27 @@ write_post_listing <- function(path, prefix, home = FALSE) {
     ) else NULL,
     "comments: false",
     "page-layout: full",
-    if (home) "body-classes: home-page" else NULL,
+    paste0("body-classes: ", if (home) "home-page" else "blog-page"),
     "---",
-    if (home) c(
+    c(
       "",
       "::: {.home-layout}",
       "::: {.home-posts}",
       "::: {#posts}",
       ":::",
-      "",
-      "::: {.more-posts}",
-      "[More posts →](/blog/)",
-      ":::",
+      if (home) c(
+        "",
+        "::: {.more-posts}",
+        "[More posts →](/blog/)",
+        ":::"
+      ) else NULL,
       ":::",
       "",
       "::: {.home-sidebar}",
-      "{{< include includes/social-blogroll.qmd >}}",
+      paste0("{{< include ", include_path, " >}}"),
       ":::",
       ":::"
-    ) else NULL
+    )
   )
   writeLines(lines, file.path(root, path), useBytes = TRUE)
 }

@@ -125,9 +125,10 @@ if (length(missing_baseline)) stop("Missing baseline routes: ", paste(missing_ba
 home <- readLines(file.path(root, "_site", "index.html"), warn = FALSE)
 blog <- readLines(file.path(root, "_site", "blog", "index.html"), warn = FALSE)
 if (sum(grepl('class="quarto-post ', home, fixed = TRUE)) != 10L) stop("Home page must list exactly ten posts")
-if (sum(grepl('data-index="', blog, fixed = TRUE)) != 104L) stop("Blog archive must list exactly 104 posts")
+if (sum(grepl('class="quarto-post ', blog, fixed = TRUE)) != 104L) stop("Blog archive must list exactly 104 post excerpts")
 if (any(grepl("publications/365papers", home, fixed = TRUE))) stop("Home listing contains non-post content")
 home_text <- paste(home, collapse = "\n")
+blog_text <- paste(blog, collapse = "\n")
 if (grepl('<a class="navbar-brand', home_text, fixed = TRUE)) stop("The redundant site title remains in the navbar")
 home_sidebar_items <- c("Social", "Blogroll", "Buy Me A Coffee", "Musings on Quantitative Palaeoecology")
 if (!all(vapply(home_sidebar_items, grepl, logical(1L), x = home_text, fixed = TRUE))) {
@@ -141,6 +142,18 @@ if (!grepl('class="home-posts">[[:space:][:print:]]*class="quarto-listing', home
 }
 if (!grepl("Here, I describe what I broke as well as outline some of the major new features in the package.", home_text, fixed = TRUE)) {
   stop("The home-page listing does not contain the complete opening paragraph")
+}
+if (!grepl("home-posts", blog_text, fixed = TRUE) || !grepl("home-sidebar", blog_text, fixed = TRUE)) {
+  stop("The blog archive does not reuse the home-page post-list layout")
+}
+if (grepl("quarto-listing-container-table", blog_text, fixed = TRUE) ||
+    !grepl("quarto-listing-container-default", blog_text, fixed = TRUE) ||
+    !grepl('class="listing-pagination"', blog_text, fixed = TRUE) ||
+    !grepl("page: 10", blog_text, fixed = TRUE)) {
+  stop("The blog archive must use a ten-post paginated excerpt listing")
+}
+if (!grepl("Here, I describe what I broke as well as outline some of the major new features in the package.", blog_text, fixed = TRUE)) {
+  stop("The blog archive listing does not contain complete opening-paragraph excerpts")
 }
 
 post_html <- file.path(root, "_site", sub("^/", "", manifest$url), "index.html")
