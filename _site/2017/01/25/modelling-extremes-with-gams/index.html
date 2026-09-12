@@ -1,265 +1,459 @@
-  <!DOCTYPE html>
-<html lang="en">
-  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gavin Simpson">
+<meta name="dcterms.date" content="2017-01-25">
+<meta name="description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his mgcv package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with mgcv to get a feel for the gevlss() family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the VGAM package of Thomas Yee.">
+
+<title>Modelling extremes using generalized additive models – From the bottom of the heap</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../">
+<link href="../../../../assets/ico/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-6ea8f93d97803b1108a08de96725c809.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../site_libs/bootstrap/bootstrap-17807cddf6675c08221858cabd98a7b2.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-6FQL01W176');
 </script>
+<script data-ad-client="ca-pub-2908943772231164" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script defer="" src="../../../../assets/js/post-metadata.js?v=20260912"></script>
 
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
 
-    <meta charset="utf-8">
-    <title>Modelling extremes using generalized additive models</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Gavin Simpson">
-    
-    
-<!-- HTML5 metadata -->
-
-<meta name="keywords" content="mgcv, GAM, models, splines, smoothers, extremes, GEV, extreme values, statistical modelling" />
-
-
-<meta name="description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his mgcv package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with mgcv to get a feel for the gevlss() family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the VGAM package of Thomas Yee.
-" />
-
-<!-- RDFa Metadata (in DublinCore) -->
-<meta property="dc:title" content="Modelling extremes using generalized additive models" />
-<meta property="dc:creator" content="Gavin Simpson" />
-
-<meta property="dc:date" content="2017-01-25T00:00:00+01:00" />
-
-<meta property="dc:type" content="" /> <!-- article? entry?-->
-<meta property="dc:format" content="text/html" />
-<meta property="dc:language" content="en" />
-<meta property="dc:source" content="From the Bottom of the Heap" />
-<!-- RDFa Metadata (in OpenGraph) -->
-<meta property="og:title" content="Modelling extremes using generalized additive models" />
-<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
-<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
-<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
-
-<meta property="http://ogp.me/ns/article#published_time" content="2017-01-25T00:00:00+01:00" />
-
-<meta property="og:site_name" content="From the Bottom of the Heap" />
-<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2017/01/25/modelling-extremes-with-gams/" />
-<meta property="og:type" content="article" />
-
-<meta name="og:description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my..." />
-
-<!-- Twitter Card Meta data -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site.id" content="@ucfagls" />
-<meta name="twitter:creator:id" content="@ucfagls" />
-<meta name="twitter:title" content="Modelling extremes using generalized additive models" />
-
-
-<meta name="twitter:description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the an..." />
-
-<!-- Google Scholar Metadata -->
-<meta name="resource_type" content="From the Bottom of the Heap"/>
-<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
-
-<meta name="citation_publication_date" content="25 Jan 2017"/>
-<meta name="citation_date" content="25 Jan 2017"/>
-
-<meta name="citation_author" content="Gavin Simpson"/>
-<meta name="citation_title" content="Modelling extremes using generalized additive models"/>
-
-    
-    <!-- Link to the Atom feeds -->
-    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
-    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
-    
-    <!-- Le styles -->
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
       }
-      .sidebar-nav {
-        padding: 9px 0;
-      }
-    </style>
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
-    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+<meta property="og:title" content="Modelling extremes using generalized additive models – From the bottom of the heap">
+<meta property="og:description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his mgcv package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with mgcv to get a feel for the gevlss() family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the VGAM package of Thomas Yee.">
+<meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-packages-and-plot-1.png">
+<meta property="og:site_name" content="From the bottom of the heap">
+<meta property="og:image:height" content="680">
+<meta property="og:image:width" content="680">
+<meta name="twitter:title" content="Modelling extremes using generalized additive models – From the bottom of the heap">
+<meta name="twitter:description" content="Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his mgcv package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with mgcv to get a feel for the gevlss() family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the VGAM package of Thomas Yee.">
+<meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-packages-and-plot-1.png">
+<meta name="twitter:creator" content="@ucfagls">
+<meta name="twitter:site" content="@ucfagls">
+<meta name="twitter:image-height" content="680">
+<meta name="twitter:image-width" content="680">
+<meta name="twitter:card" content="summary_large_image">
+</head>
 
-    <!-- Le fav and touch icons -->
-    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
-    
-    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  </head>
+<body class="nav-fixed quarto-light">
 
-  <body>
-
-      <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
-              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> Resources <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/teaching/">Teaching</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/workshops/">Workshops</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/slides/">Slides</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../index.html"> <i class="bi bi-house-door" role="img">
+</i> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../about/index.html"> <i class="bi bi-info-circle" role="img">
+</i> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../blog/index.html"> <i class="bi bi-chat-left-text" role="img">
+</i> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../publications/index.html"> <i class="bi bi-file-earmark-text" role="img">
+</i> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../research/index.html"> <i class="bi bi-tools" role="img">
+</i> 
+<span class="menu-text">Research</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-the-lab" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-funnel" role="img">
+</i> 
+ <span class="menu-text">The Lab</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-the-lab">    
+        <li>
+    <a class="dropdown-item" href="../../../../lab/index.html">
+ <span class="dropdown-text">About</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/research/index.html">
+ <span class="dropdown-text">Research</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/members/index.html">
+ <span class="dropdown-text">Members</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/publications/index.html">
+ <span class="dropdown-text">Publications</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/join/index.html">
+ <span class="dropdown-text">Join the lab</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection" role="img">
+</i> 
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="../../../../teaching/index.html">
+ <span class="dropdown-text">Teaching</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../workshops/index.html">
+ <span class="dropdown-text">Workshops</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../slides/index.html">
+ <span class="dropdown-text">Slides</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-code" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-code-slash" role="img">
+</i> 
+ <span class="menu-text">Code</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-code">    
+        <li>
+    <a class="dropdown-item" href="../../../../code/dper-scripts/index.html">
+ <span class="dropdown-text">DPER Scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../code/r-packages/index.html">
+ <span class="dropdown-text">R Packages</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../../feed.xml"> <i class="bi bi-rss" role="img" aria-label="RSS feed">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Modelling extremes using generalized additive models</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">R</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    Quite some years ago, whilst working on the EU Sixth Framework project Euro-limpacs, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his mgcv package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with mgcv to get a feel for the gevlss() family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the VGAM package of Thomas Yee.
+  </div>
+</div>
 
 
-    <div class="container">
-          
+<div class="quarto-title-meta">
 
-      <article>
-      <div class="row">
-        <!-- <div class="span8 offset2"> -->
-        <div class="span10">
-          <div class="clearfix">
-            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/">Simultaneous intervals for derivatives of smooths revisited</a></span>
-            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2016/12/16/pangaea-r-open-palaeo-data/">Pangaea and R and open palaeo data</a> <i class="icon-arrow-right"></i></span>
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gavin Simpson </p>
           </div>
-          <div class="page-header">
-            <header>
-              <h1>Modelling extremes using generalized additive models <small></small></h1>
-            </header>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="span12">
-          <div class="row">
-            <div class="span10">
-              
-            <p>Quite some years ago, whilst working on the EU Sixth Framework project <em>Euro-limpacs</em>, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his <strong>mgcv</strong> package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with <strong>mgcv</strong> to get a feel for the <code>gevlss()</code> family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the <strong>VGAM</strong> package of Thomas Yee.</p>
-<p>The analysis I wanted to recreate was reported in a 2007 paper by Thomas Yee and Alec Stephenson <span class="citation" data-cites="Yee2007-rz">(Yee and Stephenson, 2007)</span> and concerned a time series of annual maximum sea-level at Fremantle, Western Australia. This example is also used extensively in Stuart Coles excellent book on statistical modeling of extremes <span class="citation" data-cites="Coles2001-zz">(Coles, 2001)</span>. The data are available from the <strong>ismev</strong> support package for Coles’ book in the data set <code>fremantle</code></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="c1">## install.packages("ismev")               # if not installed!</span><span class="w">
-</span><span class="n">data</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">package</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ismev"</span><span class="p">)</span><span class="w">
-</span><span class="n">head</span><span class="p">(</span><span class="n">fremantle</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">  Year SeaLevel   SOI
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">January 25, 2017</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+
+<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
+<section id="posted-in" class="level4">
+<h4 data-anchor-id="posted-in">Posted in</h4>
+<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
+</section>
+<section id="tagged" class="level4">
+<h4 data-anchor-id="tagged">Tagged</h4>
+<p><a href="../../../../tag/mgcv/" class="badge text-bg-dark">mgcv</a> <a href="../../../../tag/gam/" class="badge text-bg-dark">GAM</a> <a href="../../../../tag/models/" class="badge text-bg-dark">models</a> <a href="../../../../tag/splines/" class="badge text-bg-dark">splines</a> <a href="../../../../tag/smoothers/" class="badge text-bg-dark">smoothers</a> <a href="../../../../tag/extremes/" class="badge text-bg-dark">extremes</a> <a href="../../../../tag/gev/" class="badge text-bg-dark">GEV</a> <a href="../../../../tag/extreme-values/" class="badge text-bg-dark">extreme values</a> <a href="../../../../tag/statistical-modelling/" class="badge text-bg-dark">statistical modelling</a></p>
+</section>
+</div><div class="post-links">
+<section id="social" class="level4 side-snippet">
+<h4 data-anchor-id="social">Social</h4>
+<p>
+<a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank" rel="noopener"><img class="buy-me-coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee"></a>
+</p>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a>
+</li>
+<li>
+<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">@ucfagls</a>
+</li>
+<li>
+<i class="bi bi-github" aria-hidden="true"></i><a href="https://github.com/gavinsimpson">gavinsimpson</a>
+</li>
+<li>
+<i class="bi bi-person-badge" aria-hidden="true"></i><a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a>
+</li>
+<li>
+<i class="bi bi-rss" aria-hidden="true"></i><a href="../../../../feed.xml" type="application/atom+xml">Subscribe</a>
+</li>
+</ul>
+</section>
+<section id="blogroll" class="level4 side-snippet">
+<h4 data-anchor-id="blogroll">Blogroll</h4>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://downwithtime.wordpress.com/">Down With time</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://recology.info/">Recology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://rweekly.org/">R Weekly</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://www.r-bloggers.com/">R Bloggers</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a>
+</li>
+</ul>
+</section>
+</div></div>
+<p>Quite some years ago, whilst working on the EU Sixth Framework project <em>Euro-limpacs</em>, I organized a workshop on statistical methods for analyzing time series data. One of the sessions was on the analysis of extremes, ably given by Paul Northrop (UCL Department of Statistical Science). That intro certainly whet my appetite but I never quite found the time to dig into the arcane world of extreme value theory. Two recent events rekindled my interest in extremes; Simon Wood quietly introduced into his <strong>mgcv</strong> package a family function for the generalized extreme value distribution (GEV), and I was asked to review a paper on extremes in time series. Since then I’ve been investigating options for fitting models for extremes to environmental time series, especially those that allow for time-varying effects of covariates on the parameters of the GEV. One of the first things I did was sit down with <strong>mgcv</strong> to get a feel for the <code>gevlss()</code> family function that Simon had added to the package by repeating an analysis of a classic example data set that had been performed using the <strong>VGAM</strong> package of Thomas Yee.</p>
+<p>The analysis I wanted to recreate was reported in a 2007 paper by Thomas Yee and Alec Stephenson <span class="citation" data-cites="Yee2007-rz">(<a href="#ref-Yee2007-rz" role="doc-biblioref">Yee and Stephenson, 2007</a>)</span> and concerned a time series of annual maximum sea-level at Fremantle, Western Australia. This example is also used extensively in Stuart Coles excellent book on statistical modeling of extremes <span class="citation" data-cites="Coles2001-zz">(<a href="#ref-Coles2001-zz" role="doc-biblioref">Coles, 2001</a>)</span>. The data are available from the <strong>ismev</strong> support package for Coles’ book in the data set <code>fremantle</code></p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="do">## install.packages("ismev")               # if not installed!</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(fremantle, <span class="at">package =</span> <span class="st">"ismev"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(fremantle)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>  Year SeaLevel   SOI
 1 1897     1.58 -0.67
 2 1898     1.71  0.57
 3 1899     1.40  0.16
 4 1900     1.34 -0.65
 5 1901     1.43  0.06
-7 1903     1.19  0.47</code></pre>
-</figure>
+7 1903     1.19  0.47
+</code></pre>
 <p>The data contain 86 observations of the annual maximum sea level (in meters) over the period 1897–1989. The aim of the analysis is to account for any change in the distribution of annual maxima over time and to investigate any relationship with the Southern Oscillation Index, a measure of meteorological phenomena which reflects the development and intensity of El Niño events, and those of its counterpart La Niña, in the south Pacific. The data are shown below using <strong>ggplot</strong></p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">library</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span><span class="w">
-</span><span class="n">library</span><span class="p">(</span><span class="s2">"ggplot2"</span><span class="p">)</span><span class="w">
-</span><span class="n">library</span><span class="p">(</span><span class="s2">"cowplot"</span><span class="p">)</span><span class="w">                      </span><span class="c1"># install.packages("cowplot") If not installed !</span><span class="w">
-</span><span class="n">theme_set</span><span class="p">(</span><span class="n">theme_bw</span><span class="p">())</span><span class="w">
-
-</span><span class="n">p1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ggplot</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SeaLevel</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_line</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">geom_smooth</span><span class="p">(</span><span class="n">se</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w">
-</span><span class="n">p2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">ggplot</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">aes</span><span class="p">(</span><span class="n">x</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">SeaLevel</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w">
-    </span><span class="n">geom_point</span><span class="p">()</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">geom_smooth</span><span class="p">(</span><span class="n">se</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span><span class="w">
-</span><span class="n">plot_grid</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">p2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"mgcv"</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"cowplot"</span>)                      <span class="co"># install.packages("cowplot") If not installed !</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_bw</span>())</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(fremantle, <span class="fu">aes</span>(<span class="at">x =</span> Year, <span class="at">y =</span> SeaLevel)) <span class="sc">+</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_line</span>() <span class="sc">+</span> <span class="fu">geom_smooth</span>(<span class="at">se =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(fremantle, <span class="fu">aes</span>(<span class="at">x =</span> SOI, <span class="at">y =</span> SeaLevel)) <span class="sc">+</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="fu">geom_point</span>() <span class="sc">+</span> <span class="fu">geom_smooth</span>(<span class="at">se =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="fu">plot_grid</span>(p1, p2, <span class="at">ncol =</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-extremes-with-gams-post-1-packages-and-plot-1.png" class="img-fluid figure-img"></p>
+<figcaption>Time series of annual sea-level maxima at Fremantle, Western Australia (top) and the relationship between annual sea-level maxima and the Southern Oscillation Index</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-packages-and-plot-1.png" alt="Time series of annual sea-level maxima at Fremantle, Western Australia (top) and the relationship between annual sea-level maxima and the Southern Oscillation Index" /><figcaption>Time series of annual sea-level maxima at Fremantle, Western Australia (top) and the relationship between annual sea-level maxima and the Southern Oscillation Index</figcaption>
-</figure>
+</div>
 <p>In extreme value analysis, one of the key components is to assess the behaviour of the very large, or small, events/observations, and often the focus is on those that are much more extreme than those in the observational record. This requires a considerably different approach to the usual statistical methods that focus on the mean of a distribution. Whilst we could approach the analysis of data like that in <code>fremantle</code> from the view point of traditional methods employing the Gaussian distribution, the events of interest, the extreme high sea-level events, are way off in the tails of a distribution fitted by considering (usually) just its mean (and variance). Even small uncertainties in estimation of the distribution can be amplified when we get out into the extreme tails of the Gaussian, complicating inference about extremes and inflating uncertainties.</p>
 <p>Extreme value theory has developed separate models and limiting distributions that replace central role that the Gaussian distribution plays in other areas of statistical modeling and inference. Consider again the sea-level data; the sea level would have been measured daily (or roughly daily) at Fremantle in order to produce the annual maximum series we wish to analyze. For a single year, we might denote these daily observations by <span class="math inline">\(Z_1, \ldots, Z_m\)</span> and we’ll assume that these are a random sample of sea-level values. The annual maximum is given by</p>
 <p><span class="math display">\[
@@ -280,11 +474,11 @@ G(y) = \exp \left \{ - \left [ 1 + \xi \left ( \frac{y - \mu}{\sigma} \right ) \
 </ul>
 <p>Traditionally, researchers had to decide which type of tail behaviour they expected prior to fitting one of the three extreme value distributions. The clear advantage of the GEV is that the choice of distribution is now a parameter that can be included in the model fitting process leading to fewer <em>a priori</em> decisions needing to be made ahead of the analysis.</p>
 <p>As I mentioned above, the <code>gevlss()</code> family allows for separate linear predictors <span class="math inline">\(\eta\)</span> for each of the parameters <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, and <span class="math inline">\(\xi\)</span>, to depend on one or more covariates. When setting up this model, therefore, we need to specify not one formula, but three. These are supplied in a list, with only the first having a left hand side term for the response.</p>
-<p>The first model considered by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> allowed for a smooth trend in <code>Year</code> and a smooth effect of <code>SOI</code> in the linear predictors for <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> whilst <span class="math inline">\(\xi\)</span> was modeled as an intercept only linear predictor. The reason for the simple linear predictor for <span class="math inline">\(\xi\)</span> is that this parameter is exceedingly difficult to estimate from data; in a relatively small data set like the <code>fremantle</code> one there is very little information with which to inform <span class="math inline">\(\xi\)</span>.</p>
+<p>The first model considered by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span> allowed for a smooth trend in <code>Year</code> and a smooth effect of <code>SOI</code> in the linear predictors for <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> whilst <span class="math inline">\(\xi\)</span> was modeled as an intercept only linear predictor. The reason for the simple linear predictor for <span class="math inline">\(\xi\)</span> is that this parameter is exceedingly difficult to estimate from data; in a relatively small data set like the <code>fremantle</code> one there is very little information with which to inform <span class="math inline">\(\xi\)</span>.</p>
 <p>To specify this model in <code>gam()</code> we need to create a list of three formula objects as follows:</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><a class="sourceLine" id="cb1-1" title="1"><span class="kw">list</span>(SeaLevel <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(cYear) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(SOI),</a>
-<a class="sourceLine" id="cb1-2" title="2">     <span class="op">~</span><span class="st"> </span><span class="kw">s</span>(cYear) <span class="op">+</span><span class="st"> </span><span class="kw">s</span>(SOI),</a>
-<a class="sourceLine" id="cb1-3" title="3">     <span class="op">~</span><span class="st"> </span><span class="dv">1</span>)</a></code></pre></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">list</span>(SeaLevel <span class="sc">~</span> <span class="fu">s</span>(cYear) <span class="sc">+</span> <span class="fu">s</span>(SOI),</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>     <span class="sc">~</span> <span class="fu">s</span>(cYear) <span class="sc">+</span> <span class="fu">s</span>(SOI),</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>     <span class="sc">~</span> <span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Key points to note here are</p>
 <ul>
 <li>The ordering of the formula components is <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, and <span class="math inline">\(\xi\)</span>,</li>
@@ -292,24 +486,19 @@ G(y) = \exp \left \{ - \left [ 1 + \xi \left ( \frac{y - \mu}{\sigma} \right ) \
 <li>the second and third formulas are right-hand sided only and start with a <code>~</code>,</li>
 <li>intercept-only linear predictors are indicated by the formula <code>~ 1</code></li>
 </ul>
-<p>This model can be thought of as an extended GLM and as such, each linear predictor is associated with a link function. The default links for <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, and <span class="math inline">\(\xi\)</span> in the <code>gevlss()</code> family are <code>"identity"</code>, <code>"identity"</code> and <code>"logit"</code> respectively, although technically the linear predictor for <span class="math inline">\(\sigma\)</span>, <span class="math inline">\(\eta_{\sigma}\)</span>, is for the <em>log scale parameter</em> and hence the default identity link implies a fixed log link for <span class="math inline">\(\sigma\)</span>. Additionally, the <code>"logit"</code> link for <span class="math inline">\(\xi\)</span> is modified to restrict the range to -1 – 0.5. To match the model fitted by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span>, the identity link is used for all three parameters.</p>
+<p>This model can be thought of as an extended GLM and as such, each linear predictor is associated with a link function. The default links for <span class="math inline">\(\mu\)</span>, <span class="math inline">\(\sigma\)</span>, and <span class="math inline">\(\xi\)</span> in the <code>gevlss()</code> family are <code>"identity"</code>, <code>"identity"</code> and <code>"logit"</code> respectively, although technically the linear predictor for <span class="math inline">\(\sigma\)</span>, <span class="math inline">\(\eta_{\sigma}\)</span>, is for the <em>log scale parameter</em> and hence the default identity link implies a fixed log link for <span class="math inline">\(\sigma\)</span>. Additionally, the <code>"logit"</code> link for <span class="math inline">\(\xi\)</span> is modified to restrict the range to -1 – 0.5. To match the model fitted by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span>, the identity link is used for all three parameters.</p>
 <p>Finally, note that the <strong>VGAM</strong> package requires the user to specify the degrees of freedom for each smooth term and the software searches for a smoothing parameter that achieves the required degrees of freedom. <strong>mgcv</strong> takes a different tack; the user specifies the dimension of the basis (the number of basis functions) to use for each smooth term and then <em>it</em> chooses smoothness parameters via penalized likelihood to maximize a log-marginal or log-restricted marginal likelihood. Assuming that the dimension of the basis is sufficiently rich to include the true but unknown smooth function, the <strong>mgcv</strong> approach avoids the user having to state <em>a priori</em> how wiggly each smooth term should be.</p>
-<p><span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> used three degrees of freedom splines for each smooth term. Here I leave the basis dimension at the (essentially arbitrary) default value of 10. It will be instructive to see what smoothness parameters are selected as optimal, how <strong>mgcv</strong> copes with estimating smoothness in a relatively complex setting, and how the estimated smooths compare with those assumed by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span>.</p>
+<p><span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span> used three degrees of freedom splines for each smooth term. Here I leave the basis dimension at the (essentially arbitrary) default value of 10. It will be instructive to see what smoothness parameters are selected as optimal, how <strong>mgcv</strong> copes with estimating smoothness in a relatively complex setting, and how the estimated smooths compare with those assumed by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span>.</p>
 <p>One final tweak is required; the estimates of the intercept terms for <span class="math inline">\(\mu\)</span> and <span class="math inline">\(\sigma\)</span> would imply extrapolation backwards in time 2,000 years. It can help numerical stability when fitting if we centre <code>Year</code> about say the middle of the time series, which we do now before proceeding</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">fremantle</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">cYear</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Year</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">median</span><span class="p">(</span><span class="n">Year</span><span class="p">))</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>fremantle <span class="ot">&lt;-</span> <span class="fu">transform</span>(fremantle, <span class="at">cYear =</span> Year <span class="sc">-</span> <span class="fu">median</span>(Year))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>With that out of the way, the model is fitted with relative ease as follows</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">m1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">SeaLevel</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">cYear</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">SOI</span><span class="p">),</span><span class="w">
-               </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">cYear</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">SOI</span><span class="p">),</span><span class="w">
-               </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
-          </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
-          </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gevlss</span><span class="p">(</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">)))</span><span class="w">
-</span><span class="n">summary</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Family: gevlss 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>m1 <span class="ot">&lt;-</span> <span class="fu">gam</span>(<span class="fu">list</span>(SeaLevel <span class="sc">~</span> <span class="fu">s</span>(cYear) <span class="sc">+</span> <span class="fu">s</span>(SOI),</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>               <span class="sc">~</span> <span class="fu">s</span>(cYear) <span class="sc">+</span> <span class="fu">s</span>(SOI),</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>               <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> fremantle, <span class="at">method =</span> <span class="st">"REML"</span>,</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">family =</span> <span class="fu">gevlss</span>(<span class="at">link =</span> <span class="fu">list</span>(<span class="st">"identity"</span>, <span class="st">"identity"</span>, <span class="st">"identity"</span>)))</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Family: gevlss 
 Link function: identity identity identity 
 
 Formula:
@@ -335,36 +524,32 @@ s.1(SOI)   1.000  1.000  6.461 0.011026 *
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Deviance explained =   NA%
--REML = -41.116  Scale est. = 1         n = 86</code></pre>
-</figure>
+-REML = -41.116  Scale est. = 1         n = 86
+</code></pre>
 <p>The <code>summary()</code> output is similar to that of standard GAMs, except the convention is to append <code>.N</code>, where <code>N</code> is a positive integer, to terms for (confusingly) the second and third linear predictors respectively. The parametric terms are listed first.</p>
-<p>Of interest here for this model is the estimate of <span class="math inline">\(\xi\)</span>, which is negative, -0.25 (with standard error 0.09 yielding approximate 95% confidence interval -0.43 – -0.08), indicating a Weibull-type distribution for the annual sea-level maxima. The values reported by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> are <span class="math inline">\(\hat{\xi}\)</span> = -0.27, with standard error 0.06.</p>
+<p>Of interest here for this model is the estimate of <span class="math inline">\(\xi\)</span>, which is negative, -0.25 (with standard error 0.09 yielding approximate 95% confidence interval -0.43 – -0.08), indicating a Weibull-type distribution for the annual sea-level maxima. The values reported by <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span> are <span class="math inline">\(\hat{\xi}\)</span> = -0.27, with standard error 0.06.</p>
 <p>The smooth terms are listed next, and with the exception of the smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span>, all the estimated smooths have been penalized to (effectively) linear functions. The partial effect of each smooth can be plotted using the <code>plot()</code> method for <code>gam</code> models</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m1</span><span class="p">,</span><span class="w"> </span><span class="n">pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">seWithMean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m1, <span class="at">pages =</span> <span class="dv">1</span>, <span class="at">scheme =</span> <span class="dv">1</span>, <span class="at">scale =</span> <span class="dv">0</span>, <span class="at">seWithMean =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-extremes-with-gams-post-1-plot-m1-smooths-1.png" class="img-fluid figure-img"></p>
+<figcaption>Fitted smooths for model <code>m1</code> which uses penalized splines for the smooths of <code>Year</code> and <code>SOI</code> in the linear predictors for the location and scale parameters of the GEV distribution</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-plot-m1-smooths-1.png" alt="Fitted smooths for model m1 which uses penalized splines for the smooths of Year and SOI in the linear predictors for the location and scale parameters of the GEV distribution" /><figcaption>Fitted smooths for model <code>m1</code> which uses penalized splines for the smooths of <code>Year</code> and <code>SOI</code> in the linear predictors for the location and scale parameters of the GEV distribution</figcaption>
-</figure>
-<p>As reported in <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span>, the fitted smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span> (lower left panel) is somewhat non-linear, with partial effect of decreasing variance in sea-levels through c. 1945 and increasing variance thereafter. <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> suggest that this smooth may be replaced by a piece-wise linear function with a knot round 1945. The authors also simplified the model by replacing the smooths for all the other variables with linear parametric terms. We will investigate this model next.</p>
+</div>
+<p>As reported in <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span>, the fitted smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span> (lower left panel) is somewhat non-linear, with partial effect of decreasing variance in sea-levels through c.&nbsp;1945 and increasing variance thereafter. <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span> suggest that this smooth may be replaced by a piece-wise linear function with a knot round 1945. The authors also simplified the model by replacing the smooths for all the other variables with linear parametric terms. We will investigate this model next.</p>
 <p>I haven’t quite worked out how to get <code>gam()</code> to fit a piece-wise linear function yet, but the approach below is pretty close. The following model uses the new b-spline basis in <strong>mgcv</strong>, which allows a lot of control over how the basis is set up. In basic R, a piece-wise linear basis with interior knot at 1945 would be created using <code>splines::bs(Year, degree = 1, knots = 1945)</code>, but then as far as <code>gam()</code> is concerned, the resulting basis functions are simply two continuous covariates that are treated a linear parametric terms.</p>
 <p>We can use the new b-spline basis to achieve something similar to (the same as ?) <code>splines::bs</code> if we set the knot locations explicitly and use <code>m = 1</code> (for linear splines) and basis dimension <code>k = 3</code>. If you are setting the knots manually, then for the b-spline basis in <strong>mgcv</strong> you need to specify <code>k + m + 1</code> (5) knots and the middle <code>k - m + 1</code> (3) knots should include all the covariate values. I’m not sure what determines where the two exterior knots should be located; in the code below I just locate the at +/- 10 years from the extremes of the data. The knot locations then are specified as a list with component <code>cYear</code> (to match the covariate name), and as we’re modeling with the centred <code>Year</code>, I centre the knot locations using the middle year as before.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">knots</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">cYear</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="nf">min</span><span class="p">(</span><span class="n">Year</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">10</span><span class="p">,</span><span class="w"> </span><span class="m">0</span><span class="p">),</span><span class="w"> </span><span class="m">1945</span><span class="p">,</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="n">Year</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="m">10</span><span class="p">))</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">median</span><span class="p">(</span><span class="n">Year</span><span class="p">)))</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>knots <span class="ot">&lt;-</span> <span class="fu">with</span>(fremantle, <span class="fu">list</span>(<span class="at">cYear =</span> <span class="fu">c</span>(<span class="fu">min</span>(Year) <span class="sc">-</span> <span class="fu">c</span>(<span class="dv">10</span>, <span class="dv">0</span>), <span class="dv">1945</span>, <span class="fu">max</span>(Year) <span class="sc">+</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">10</span>)) <span class="sc">-</span> <span class="fu">median</span>(Year)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The GAM can then be specified as before with three formulas. The type of smooth for <code>cYear</code> in <span class="math inline">\(\eta_{\sigma}\)</span> is specified via <code>bs = "bs"</code> and the remaining parameters of the basis are as described above. The list of knots we just created is passed to the <code>knots</code> argument.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">SeaLevel</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">cYear</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w">
-               </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">cYear</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"bs"</span><span class="p">,</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w">
-               </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
-          </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
-          </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gevlss</span><span class="p">(</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">)),</span><span class="w">
-          </span><span class="n">knots</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">knots</span><span class="p">)</span><span class="w">
-
-</span><span class="n">summary</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Family: gevlss 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>m2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(<span class="fu">list</span>(SeaLevel <span class="sc">~</span> cYear <span class="sc">+</span> SOI,</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>               <span class="sc">~</span> <span class="fu">s</span>(cYear, <span class="at">bs =</span> <span class="st">"bs"</span>, <span class="at">m =</span> <span class="dv">1</span>, <span class="at">k =</span> <span class="dv">3</span>) <span class="sc">+</span> SOI,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>               <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> fremantle, <span class="at">method =</span> <span class="st">"REML"</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">family =</span> <span class="fu">gevlss</span>(<span class="at">link =</span> <span class="fu">list</span>(<span class="st">"identity"</span>, <span class="st">"identity"</span>, <span class="st">"identity"</span>)),</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">knots =</span> knots)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Family: gevlss 
 Link function: identity identity identity 
 
 Formula:
@@ -390,40 +575,35 @@ s.1(cYear) 1.465      2  4.875   0.036 *
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Deviance explained =   NA%
--REML = -39.611  Scale est. = 1         n = 86</code></pre>
-</figure>
-<p>The summary output indicates significant linear parametric effects of <code>cYear</code> and <code>SOI</code> in <span class="math inline">\(\eta_{\mu}\)</span>, and <code>SOI</code> in <span class="math inline">\(\eta_{\sigma}\)</span>. There is now some evidence of an effect of <code>SOI</code> on the variance of the block maxima, although we would be right to treat this result with caution as the piece-wise linear structure was only guessed at after fitting the more general smooth term, which was not statistically significant. <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> performed an informal deviance test between the two models, which we repeat here</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">lldif</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">unclass</span><span class="p">(</span><span class="n">logLik</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">logLik</span><span class="p">(</span><span class="n">m2</span><span class="p">))</span><span class="w">
-</span><span class="n">dfdif</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">df.residual</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">df.residual</span><span class="p">(</span><span class="n">m1</span><span class="p">)</span><span class="w">
-</span><span class="n">pchisq</span><span class="p">(</span><span class="m">2</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">lldif</span><span class="p">,</span><span class="w"> </span><span class="n">df</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">dfdif</span><span class="p">,</span><span class="w"> </span><span class="n">lower.tail</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">[1] 0.3693541
+-REML = -39.611  Scale est. = 1         n = 86
+</code></pre>
+<p>The summary output indicates significant linear parametric effects of <code>cYear</code> and <code>SOI</code> in <span class="math inline">\(\eta_{\mu}\)</span>, and <code>SOI</code> in <span class="math inline">\(\eta_{\sigma}\)</span>. There is now some evidence of an effect of <code>SOI</code> on the variance of the block maxima, although we would be right to treat this result with caution as the piece-wise linear structure was only guessed at after fitting the more general smooth term, which was not statistically significant. <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span> performed an informal deviance test between the two models, which we repeat here</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>lldif <span class="ot">&lt;-</span> <span class="fu">unclass</span>(<span class="fu">logLik</span>(m1) <span class="sc">-</span> <span class="fu">logLik</span>(m2))</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>dfdif <span class="ot">&lt;-</span> <span class="fu">df.residual</span>(m2) <span class="sc">-</span> <span class="fu">df.residual</span>(m1)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">pchisq</span>(<span class="dv">2</span> <span class="sc">*</span> lldif, <span class="at">df =</span> dfdif, <span class="at">lower.tail =</span> <span class="cn">FALSE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>[1] 0.3693541
 attr(,"df")
-[1] 9.1958</code></pre>
-</figure>
+[1] 9.1958
+</code></pre>
 <p>the results of which match those published and suggest that the simpler model with the piece-wise linear smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span> is sufficient to describe the effect on the variance of the sea-level maxima.</p>
 <p>The fitted piece-wise linear smooth can be plotted using the <code>plot()</code> method as before. To get the linear terms plotted we need to use to <code>all.terms = TRUE</code> option</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m2</span><span class="p">,</span><span class="w"> </span><span class="n">pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">seWithMean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">all.terms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m2, <span class="at">pages =</span> <span class="dv">1</span>, <span class="at">scheme =</span> <span class="dv">1</span>, <span class="at">seWithMean =</span> <span class="cn">FALSE</span>, <span class="at">all.terms =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-extremes-with-gams-post-1-plot-m2-smooths-1.png" class="img-fluid figure-img"></p>
+<figcaption>Fitted smooths and parametric terms for model <code>m2</code> which uses a piece-wise linear spline for the effect of <code>Year</code> on the scale parameter</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-plot-m2-smooths-1.png" alt="Fitted smooths and parametric terms for model m2 which uses a piece-wise linear spline for the effect of Year on the scale parameter" /><figcaption>Fitted smooths and parametric terms for model <code>m2</code> which uses a piece-wise linear spline for the effect of <code>Year</code> on the scale parameter</figcaption>
-</figure>
+</div>
 <p>This plot is a little more clunky than the previous one as the linear terms are plotted via calls to <code>termplot()</code> and the way this is achieved in <code>plot.gam()</code> doesn’t allow for separate y-axis limits for the linear terms (<code>scale = 0</code>) and the <code>scheme</code> argument does not affect these plots either.</p>
 <p>If we wanted an entirely data-driven approach to fitting the smooth of <code>Year</code> in <span class="math inline">\(\eta_{\sigma}\)</span>, and wanted to crack that particular nut with an industrial-sized wrecking ball, we could use the adaptive spline basis by changing the basis type for the smooth to <code>bs = "ad"</code> as follows (note this takes a while to fit)</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">m3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="nf">list</span><span class="p">(</span><span class="n">SeaLevel</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">cYear</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w">
-               </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">cYear</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ad"</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">SOI</span><span class="p">,</span><span class="w">
-               </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
-          </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fremantle</span><span class="p">,</span><span class="w"> </span><span class="n">method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"REML"</span><span class="p">,</span><span class="w">
-          </span><span class="n">family</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gevlss</span><span class="p">(</span><span class="n">link</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">,</span><span class="w"> </span><span class="s2">"identity"</span><span class="p">)))</span><span class="w">
-
-</span><span class="n">summary</span><span class="p">(</span><span class="n">m3</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Family: gevlss 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>m3 <span class="ot">&lt;-</span> <span class="fu">gam</span>(<span class="fu">list</span>(SeaLevel <span class="sc">~</span> cYear <span class="sc">+</span> SOI,</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>               <span class="sc">~</span> <span class="fu">s</span>(cYear, <span class="at">bs =</span> <span class="st">"ad"</span>) <span class="sc">+</span> SOI,</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>               <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">data =</span> fremantle, <span class="at">method =</span> <span class="st">"REML"</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">family =</span> <span class="fu">gevlss</span>(<span class="at">link =</span> <span class="fu">list</span>(<span class="st">"identity"</span>, <span class="st">"identity"</span>, <span class="st">"identity"</span>)))</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Family: gevlss 
 Link function: identity identity identity 
 
 Formula:
@@ -449,186 +629,497 @@ s.1(cYear) 1.816  2.046   5.86  0.0563 .
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 Deviance explained =   NA%
--REML = -40.975  Scale est. = 1         n = 86</code></pre>
-</figure>
+-REML = -40.975  Scale est. = 1         n = 86
+</code></pre>
 <p>Again, there is some evidence of a trend in the variance of the sea-level maxima; the higher <em>p</em>-value here likely reflects the additional uncertainty arising from having to deduce the shape and varying wiggliness of the spline from the data directly. The resulting smooth is largely indistinguishable from the piece-wise linear one in <code>m2</code>, except for the smooth transition around 1945.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="n">plot</span><span class="p">(</span><span class="n">m3</span><span class="p">,</span><span class="w"> </span><span class="n">pages</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">scheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">seWithMean</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">FALSE</span><span class="p">,</span><span class="w"> </span><span class="n">all.terms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m3, <span class="at">pages =</span> <span class="dv">1</span>, <span class="at">scheme =</span> <span class="dv">1</span>, <span class="at">seWithMean =</span> <span class="cn">FALSE</span>, <span class="at">all.terms =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-extremes-with-gams-post-1-plot-m3-smooths-1.png" class="img-fluid figure-img"></p>
+<figcaption>Fitted smooths and parametric terms for model <code>m3</code> which uses an adaptive spline for the effect of <code>Year</code> on the scale parameter</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-extremes-with-gams-post-1-plot-m3-smooths-1.png" alt="Fitted smooths and parametric terms for model m3 which uses an adaptive spline for the effect of Year on the scale parameter" /><figcaption>Fitted smooths and parametric terms for model <code>m3</code> which uses an adaptive spline for the effect of <code>Year</code> on the scale parameter</figcaption>
-</figure>
-<p>My attempt to replicate the analysis of <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (2007)</span> was largely devoid of any troubles despite the <code>gevlss()</code> family being both new and described by Simon as “somewhat experimental”. The main difficulty was in trying to get a piece-wise linear spline within the <strong>mgcv</strong> framework, largely because doing it via <code>splines::bs()</code> makes it much more difficult to plot the partial effect of the overall function with the easily accessible tools that <strong>mgcv</strong> provides.</p>
+</div>
+<p>My attempt to replicate the analysis of <span class="citation" data-cites="Yee2007-rz">Yee and Stephenson (<a href="#ref-Yee2007-rz" role="doc-biblioref">2007</a>)</span> was largely devoid of any troubles despite the <code>gevlss()</code> family being both new and described by Simon as “somewhat experimental”. The main difficulty was in trying to get a piece-wise linear spline within the <strong>mgcv</strong> framework, largely because doing it via <code>splines::bs()</code> makes it much more difficult to plot the partial effect of the overall function with the easily accessible tools that <strong>mgcv</strong> provides.</p>
 <p>One area where <strong>mgcv</strong> is lacking in relation to <strong>VGAM</strong> for fitting GEV models is in the array of support functions that go with the fitted models — <strong>VGAM</strong> has lots of plot types specific to extreme value models that help with interpreting and checking the fitted model. In a future post I may try to tackle some of this using <strong>mgcv</strong>, if I find the time.</p>
 <p>This is hopefully the first of several posts on modeling block maxima using <strong>mgcv</strong> and GAMs, so if you have any comments, suggests, corrections, let me know in the comments below.</p>
-<h3 id="references" class="unnumbered">References</h3>
-<div id="refs" class="references">
-<div id="ref-Coles2001-zz">
-<p>Coles, S. (2001). <em>An introduction to statistical modeling of extreme values:</em> Springer London doi:<a href="https://doi.org/10.1007/978-1-4471-3675-0">10.1007/978-1-4471-3675-0</a>.</p>
+<section id="references" class="level3">
+<h3 data-anchor-id="references">References</h3>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2016/12/16/pangaea-r-open-palaeo-data/">← Older: Pangaea and R and open palaeo data</a></span> <span class="text-end"><a href="../../../../2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/">Newer: Simultaneous intervals for derivatives of smooths revisited →</a></span></p>
 </div>
-<div id="ref-Yee2007-rz">
-<p>Yee, T. W., and Stephenson, A. G. (2007). Vector generalized linear and additive extreme value models. <em>Extremes</em> 10, 1–19. doi:<a href="https://doi.org/10.1007/s10687-007-0032-4">10.1007/s10687-007-0032-4</a>.</p>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
+
+</section>
+
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-Coles2001-zz" class="csl-entry" role="listitem">
+Coles, S. (2001). <em>An introduction to statistical modeling of extreme values:</em> Springer London doi:<a href="https://doi.org/10.1007/978-1-4471-3675-0">10.1007/978-1-4471-3675-0</a>.
 </div>
+<div id="ref-Yee2007-rz" class="csl-entry" role="listitem">
+Yee, T. W., and Stephenson, A. G. (2007). Vector generalized linear and additive extreme value models. <em>Extremes</em> 10, 1–19. doi:<a href="https://doi.org/10.1007/s10687-007-0032-4">10.1007/s10687-007-0032-4</a>.
 </div>
-
-            <hr />
-            <h3>Comments</h3>
-            <div id="disqus_thread"></div>
-<script type="text/javascript">
-  var disqus_shortname = "fromthebottomoftheheap";
-  var disqus_url = "https://www.fromthebottomoftheheap.net/2017/01/25/modelling-extremes-with-gams/";
-  var disqus_title = "Modelling extremes using generalized additive models";
-  //var disqus_identifier = "/2017/01/25/modelling-extremes-with-gams";
-
-  (function() {
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-
-
-            </div>
-            <div class="span2">
-                            <div class="side-snippet">
-                <h4>By Gavin Simpson</h4>
-              
-                <h4>25 January 2017</h4>
-              
-              </div>
-
-                            <div class="side-snippet">
-                <h4>Posted in</h4>
-                
-                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
-                
-              </div>
-       
-
-                            <div class="side-snippet">
-                <h4>Tagged</h4>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/mgcv/"><span class="label label-inverse">mgcv</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/models/"><span class="label label-inverse">models</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/splines/"><span class="label label-inverse">splines</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/smoothers/"><span class="label label-inverse">smoothers</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/extremes/"><span class="label label-inverse">extremes</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/gev/"><span class="label label-inverse">GEV</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/extreme-values/"><span class="label label-inverse">extreme values</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/statistical-modelling/"><span class="label label-inverse">statistical modelling</span></a><br>
-                
-              </div>
-
-                          <div class="side-snippet">
-              <h4>Social</h4>
-              <p><a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 150px !important;" ></a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
-            </div>
-
-
-                          <div class="side-snippet">
-              <h4>Blogroll</h4>
-              <ul class="unstyled">
-                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://rweekly.org/">R Weekly</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
-              </ul>
-            </div>
-
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      </article>
-
-        
-
-    </div><!--/.fixed-container-->
-    
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="span2">
-            <h4>Menu</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
-            </ul>
-          </div>
-          <div class="span2">
-            <h4>R packages</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
-            </ul>        
-          </div>
-          <div class="span6">
-            <h4>Fineprint</h4>
-            <p><small>Copyright &copy; 2010&ndash;2024 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
-            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
-        <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script>
-        jQuery(function ($) {
-            $(".addToolTip").tooltip()
+</div></section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/fromthebottomoftheheap\.net");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
         });
-        // Fix suggested by Dependabot as I don't think i can upgrade to jq >=3.5.0 with this version of bootstrap
-        jQuery.htmlPrefilter = function( html ) {
-	return html;
-	};
-    </script>
-    
-    
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="preferred_color_scheme">
+<input type="hidden" id="giscus-alt-theme" value="preferred_color_scheme">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "gavinsimpson/fromthebottomoftheheap-comments";
+    script.dataset.repoId = "R_kgDOUUVJuA";
+    script.dataset.category = "Blog comments";
+    script.dataset.categoryId = "DIC_kwDOUUVJuM4DFRne";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright © 2010–2026 Gavin Simpson</p>
+</div>   
+    <div class="nav-footer-center">
+<p>Content available under a <a href="../../../../permissions/">Creative Commons Attribution 4.0 licence</a>.</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:ucfagls@gmail.com">
+      <i class="bi bi-envelope" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://orcid.org/0000-0002-9084-8413">
+<p>ORCID</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
 
 
-  </body>
-</html>
 
 
+</body></html>

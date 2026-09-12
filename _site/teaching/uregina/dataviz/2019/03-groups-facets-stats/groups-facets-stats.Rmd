@@ -1,0 +1,417 @@
+---
+title: "Groups, facets, and stats"
+subtitle: "Data Visualisation mini-course"
+author: "Gavin L. Simpson"
+institute: "Institute of Environmental Change and Society"
+date: "22/04/2019"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: '../macros.js'
+      ratio: '16:9'
+    css: [default, 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css', '../my.css']
+---
+
+```{r setup, include=FALSE, cache = FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(cache = TRUE)
+library('ggplot2')
+library('dplyr')
+library('tidyr')
+library('colorspace')
+library('cowplot')
+library('gapminder')
+theme_set(theme_grey())
+```
+
+class: inverse
+background-image: url('./resources/chris-knight-458508-unsplash.jpg')
+background-size: cover
+
+# Start
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@chrisknight?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Chris Knight"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Chris Knight</span></a>
+]
+
+---
+
+# Catch-up
+
+```{r catch-up-code}
+library('gapminder')
+library('ggplot2')
+
+## load some new data
+load(url('http://bit.ly/gss_data'))
+ls()
+
+p <- ggplot(gapminder, aes(x = year, y = gdpPercap))
+```
+
+---
+
+background-image: url('./resources/helena-lopes-459331-unsplash.jpg')
+background-size: cover
+
+# Grouping
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@wildlittlethingsphoto?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Helena Lopes"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Helena Lopes</span></a>
+]
+
+---
+
+# What went wrong?
+
+```{r wrong-1, fig.width = 8, fig.height = 4, dpi = 200}
+ggplot(gapminder, aes(x = year, y = gdpPercap)) + geom_line()
+```
+
+---
+
+# Tell `ggplot` about structure in the data
+
+```{r right-1, fig.width = 8, fig.height = 4, dpi = 200}
+ggplot(gapminder, aes(x = year, y = gdpPercap)) + geom_line(aes(group = country))
+```
+
+---
+
+# The `group` aesthetic
+
+Use the `group` aesthetic when structure in the data isn't already mapped to an aesthetic
+
+---
+
+class: inverse
+background-image: url('./resources/joshua-coleman-655076-unsplash.jpg')
+background-size: cover
+
+# Facets — small multiples
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@joshstyle?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from JOSHUA COLEMAN"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">JOSHUA COLEMAN</span></a>
+]
+
+---
+
+# Small multiples
+
+A *small multiple* is a series of similar plots using the same scale and axes
+
+Multiple plots show different partitions of the data
+
+In *ggplot*, small multiple plots are created by *facetting*
+
+* `facet_wrap()`
+
+    One or more categorical variables used to partition the data
+
+    Individual plots are arrange in sequence over a number of rows and columns
+
+* `facet_grid()`
+
+    Data are partitioned by two sets of varables & arranged into a grid
+
+    One set of variables forms partitions for the rows
+
+    Second set of variables forms partitions for the columns
+
+---
+
+# Small multiples — `facet_wrap()`
+
+The partition is specified using a formula: `~ f1 + f2`
+
+Use the `nrow` and `ncol` arguments to set the required dimensions
+
+```{r facet-wrap, fig.width = 11, fig.height = 2.5, dpi = 200}
+p +
+  geom_line(aes(group = country)) +
+  facet_wrap(~ continent, nrow = 1)
+```
+
+Most commonly used with a single partitioning variable
+
+---
+
+# Small multiples — `facet_wrap()`
+
+```{r facet-wrap-complete, fig.width = 11, fig.height = 2.5, dpi = 200}
+p +
+  geom_line(colour = 'grey70', aes(group = country)) + #<<
+  geom_smooth(size = 1.1, method = 'loess', se = FALSE) +
+  scale_y_log10(labels = scales::dollar) +
+  facet_wrap(~ continent, nrow = 1) +
+  labs(x = 'Year', y = 'GDP per capita')
+```
+
+---
+
+# Small multiples — `facet_grid()`
+
+Partition is specified using a formula: `f1 ~ f2`
+
+```{r facet-grid, fig.width = 10, fig.height = 3.5, dpi = 200, warning = FALSE}
+ggplot(gss_sm, aes(x = age, y = childs)) + geom_point(alpha = 0.2) +
+  geom_smooth(method = 'gam', formula = y ~ s(x), 
+              method.args = list(family = poisson)) +
+  facet_grid(sex ~ race) #<<
+```
+
+---
+
+# Small multiples — `scales`
+
+`scales` can be any of `"free_x"`, `"free_y"`, or `"free"`
+
+```{r facet-wrap-scale-free, fig.width = 11, fig.height = 2.5, dpi = 200}
+p +
+  geom_line(colour = 'grey70', aes(group = country)) +
+  geom_smooth(size = 1.1, method = 'loess', se = FALSE) +
+  scale_y_log10(labels = scales::dollar) +
+  facet_wrap(~ continent, nrow = 1, scales = 'free_y') + #<<
+  labs(x = 'Year', y = 'GDP per capita')
+```
+
+---
+
+# Faceting time series
+
+```{r facet-time, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(subset(gapminder, subset = country %in% c('United States','Canada')),
+       aes(x = year, y = lifeExp)) + geom_line() + labs(x = NULL) +
+  facet_grid(country ~ .) #<<
+```
+
+---
+
+class: inverse
+background-image: url('./resources/ashraf-ali-1222985-unsplash.jpg')
+background-size: cover
+
+# Stats
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@ashrafali_786?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Ashraf Ali"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Ashraf Ali</span></a>
+]
+
+---
+
+# Stats
+
+Some geoms plot the data directly, other geoms manipulate the data before plotting
+
+The manipulation is done by a `stat_xxx()` function, or *stat*
+
+* Each *geom* has a default *stat*
+
+* Each *stat* has a default *geom*
+
+---
+
+# General Social Survey 2016
+
+The GSS is a long-running survey of American adults
+
+`gss_sm` is a small subset of the full GSS for 2016
+
+.smaller[
+```{r show-gss-data, echo = FALSE}
+head(as_tibble(gss_sm))
+```
+]
+
+Also try `glimpse(gss_sm)`
+
+---
+
+# Stats — what happened here?
+
+```{r stat-bar, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gss_sm, aes(x = bigregion)) + geom_bar()
+```
+
+---
+
+# `stat_count()`
+
+The default stat for `geom_bar()` is `stat_count()`
+
+It counts the number of observations in each group
+
+Stats create temporary variables that we can use — this is where `count` came from
+
+Temporary variables are named `..name..`
+
+`stat_count()` creates:
+
+* `..count..`
+
+* `..prop..`
+
+---
+
+# Stats — what happened here?
+
+```{r stat-bar-prop, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gss_sm, aes(x = bigregion)) + geom_bar(mapping = aes(y = ..prop..))
+```
+
+---
+
+# Stats — grouping
+
+```{r stat-bar-prop-2, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gss_sm, aes(x = bigregion)) + 
+  geom_bar(mapping = aes(y = ..prop.., group = 1))
+```
+
+---
+
+class: inverse
+background-image: url('./resources/isaac-smith-1182056-unsplash.jpg')
+background-size: cover
+
+# Histograms & density plots
+
+.footnote[
+
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@isaacmsmith?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Isaac Smith"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Isaac Smith</span></a>
+]
+
+---
+
+# `midwest`
+
+Demographic data on midwest counties of the USA
+
+.smaller[
+```{r show-midwest-data, echo = FALSE}
+midwest
+```
+]
+
+Also try `glimpse(midwest)`
+
+---
+
+# Histograms
+
+.row[
+
+.col-6[
+
+Histograms chop the data into segments known as *bins*
+
+Observations within each bin are counted and possibly converted to a *density*
+
+A histogram is a series of bars showing the count or density in each bin
+
+`geom_histogram()`
+
+]
+
+.col-6[
+
+```{r hist-1, fig.width = 6, fig.height = 3, dpi = 200, message = FALSE}
+ggplot(midwest, aes(x = area)) +
+  geom_histogram()
+```
+
+]
+
+]
+
+---
+
+# Histograms
+
+```{r hist-2, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(midwest, aes(x = area)) + geom_histogram()
+```
+
+---
+
+# Histograms
+
+```{r hist-3, fig.width = 7, fig.height = 3, dpi = 200}
+nbin <- with(midwest, nclass.Sturges(area)) ## 10
+ggplot(midwest, aes(x = area)) + geom_histogram(bins = nbin)
+```
+
+---
+
+# Histograms
+
+```{r hist-4, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(subset(midwest, subset = state %in% c('OH','WI')),
+       aes(x = percollege, fill = state)) +
+  geom_histogram(bins = 20, alpha = 0.4)
+```
+
+---
+
+# Density plots
+
+.row[
+
+.col-6[
+
+Density plots are a smooth form of histogram
+
+Density is estimated via a *kernel density estimator*
+
+`geom_density()`
+
+Default base geom is `geom_area()`
+
+`fill` and `colour` aesthetics
+
+]
+
+.col-6[
+
+```{r dens-1, fig.width = 6, fig.height = 3, dpi = 200, message = FALSE}
+ggplot(midwest, aes(x = area)) +
+  geom_density()
+```
+
+]
+
+]
+
+---
+
+# Density plots
+
+```{r dens-2, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(midwest, aes(x = area, fill = state)) +
+  geom_density(alpha = 0.4)
+```
+
+---
+
+# Density plots — alternative
+
+```{r dens-3, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(midwest, aes(x = area)) +
+  geom_line(stat = 'density')
+```
+
+<!-- ---
+
+class: inverse
+background-image: url('./resources/martin-adams-551630-unsplash.jpg')
+background-size: cover
+
+# Position
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@martinadams?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Martin Adams"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Martin Adams</span></a>
+] -->

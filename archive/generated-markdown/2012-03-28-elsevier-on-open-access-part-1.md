@@ -1,0 +1,64 @@
+--- 
+title: Elsevier on Open Access part 1
+status: publish
+layout: post
+published: true
+type: post
+tags: 
+- Budapest Open Access Initiative
+- CC BY
+- Copyright
+- Creative Commons licenses
+- Elsevier
+- Open Access
+- Open access journal
+- Publishing
+- Science
+active: blog
+category: Science
+excerpt: "In the past few days I've come across two advertorials (articles or editorials if I'm being generous) from Elsevier in the context of newsletters sent to editors and authors. Here I consider the [one sent to editors](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/) that Ross Mounce ([@rossmounce](https://twitter.com/#!/rmounce)) tweeted about earlier today."
+---
+
+{{ page.excerpt | markdownify  }}
+
+The opening paragraph sets the scene and paints Elsevier and similar publishers in a good light as the Guardians of copyright. Ironically, by requesting copyright transfer from authors to Elsevier, they aren't really protecting the copyright of the author any longer (just their [moral rights](http://en.wikipedia.org/wiki/Moral_rights_%28copyright_law%29 "Moral rights (copyright law)")); the author has signed away their copyright so Elsevier is protecting its own interests and those of its shareholders. The next paragraph really annoys me! I quote
+
+> To all intents and purposes, the fact that journal articles are being
+> made available to all through open access, or to subscribers under the
+> subscription model, should not really affect things.  Issues can
+> arise, however, as there is a common misperception that open access
+> means anyone can do anything with an article  – in fact, the rights in
+> the content must still be understood and upheld. ([Tempest,
+> 2011](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/))
+
+Firstly respecting copyright applies just as equally to Open Access articles as it does to those behind publishers' paywalls. Second, we have a very clear description of Open Access in the form of the [Budapest Open Access Initiative](http://www.soros.org/openaccess) definition of [Open Access](http://www.earlham.edu/~peters/fos/boaifaq.htm#openaccess). Some publishers (like [Springer](http://www.springer.com/open+access/open+choice?SGWID=0-40359-0-0-0)) get this and their Open Access offerings are under a [Creative Commons](http://creativecommons.org/) [CC-BY](http://creativecommons.org/licenses/by/3.0/) licence which as long as the original work is attributed you can do what you want with the content. Yet Elsevier have a sorry excuse for an ["open access" licence](http://www.elsevier.com/wps/find/authors.authors/sponsoredarticles_user) which is somewhat like CC-NC-SA but with extra restrictions; its not "open" if what you can and can't do with it is controlled to such a degree. Issues can certainly arise if you muddy the waters and don't follow an accepted standard!
+
+> In addition, from an editorial perspective, copyright helps to prevent
+> elements such as plagiarism, multiple submission and fraud in journal
+> articles, and whilst is does not actually detect these elements, it
+> acts as a protective measure to uphold the quality of
+> journals ([Tempest,
+> 2011](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/))
+
+I'm not sure what this has to do with "open access"? I can't imagine Elsevier pays a legion of minions to scour the web and print literature looking for copyright infringement. If they are alerted to any infringement they can bring their lawyers to bare, but an author could do the same (perhaps without the same depth of pocket) or alert journal editors to the plagiarism or fraud.
+
+Elsevier then suggests that
+
+> If copyright is retained, then this process [upholding of author
+> rights] remains with the author and, if it is shared, there is a
+> greater risk that fraudulent use may occur, which is why we continue
+> to advocate the transfer of copyright for our journals.([Tempest,
+> 2011](http://editorsupdate.elsevier.com/2012/03/copyright-in-an-open-access-world/))
+
+It really is unclear what they mean by "sharing" copyright but regardless, why should the risk of fraud be greater because the author not Elsevier is the copyright holder?
+
+Tempest claims that Open Access journals, in allowing extra usage rights, introduce confusion over copyright. How exactly is it more confusing if this is an Open Access journal? The only way confusion is increased is if the rights of the user are not clearly indicated at the point of access. Most journals that allow Open Access articles are quite clear about rights granted to the user and use a clear, well-recognised licence like CC-BY. The one publisher I know that [obfuscates user rights](http://svpow.com/2012/03/19/understand-elseviers-open-access-licence-part-4-who-owns-copyright/) for "open access" articles, one that spreads confusion not reduces it, is Elsevier.
+
+The advertorial closes with a general comment that the main issues with copyright are a general lack of understanding as to what it is and apathy about it importance. Again, Tempest, I ask you what does this have to do with Open Access? 
+
+It is clear that this propaganda piece is designed to play on the poor level of understanding of and apathy towards copyright issues in its pool of journal editors. None of the concerns raised applies solely to Open Access journals or articles; unless you give away your copyright by placing works in the public domain (and even then it may not be possible in some jurisdictions to give up all your rights) copyright applies whether it is the author or Elsevier that holds the copyright^1^. By linking Open Access with a murky world of potential or perceived threats arising from the chaos of authors' retaining their copyrights Elsevier are travelling a well worn path when it comes to vested interests reacting to a threat to their business model; we've seen similar strategies in open access software
+and climate change to name but two.
+
+If Elsevier are as committed to improving access to articles and working for the benefit of authors as they claim they are, they should stop spreading this [FUD](http://en.wikipedia.org/wiki/Fear,_uncertainty_and_doubt) that can only lead to confusion and uncertainty in the very people they claim to want to help. Ultimately Elsevier will be judged by their actions; to date they have hardly ingratiated themselves with academics. I do wonder when they will realise that in the long run their actions will only harm their business?
+
+^1^ In the US unless you register you copyright on a work (for a fee) then potential damages for copyright infringement are reduced. Publishers will register your works on your behalf (well theirs!). But given that the key reason of choosing Open Access is to remove restrictions on use other than attribution, I'm not sure how huge damages/fees apply.
