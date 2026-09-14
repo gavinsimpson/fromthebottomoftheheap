@@ -3,6 +3,62 @@
 `publications.yml` is the authoritative list. The generated page must not be
 edited by hand.
 
+## Choose the command for the task
+
+Updating publication data and rendering the website are separate operations.
+You do **not** need to render the site just to update the DOI cache.
+
+### Prepare routine publication changes without rendering the site
+
+After editing `publications.yml`, run:
+
+```sh
+Rscript scripts/prepare-publications.R
+```
+
+This validates the registry, fetches metadata only for a new or changed DOI,
+updates `doi-cache.json` when necessary, and regenerates the ignored
+`_generated-publications.md` intermediate. It does not invoke Quarto or change
+anything in `_site/`. For a status-only change to an already-cached DOI, it
+normally makes no cache change but still regenerates the intermediate.
+
+### Force-refresh all DOI metadata without rendering the site
+
+Run:
+
+```sh
+Rscript scripts/refresh-publications.R
+```
+
+This contacts the DOI services for every DOI, refreshes `doi-cache.json`, and
+updates `doi-suggestions.yml`. It also regenerates the ignored intermediate,
+but it does not render the website. This is primarily a maintenance command;
+the scheduled weekly workflow already runs it automatically.
+
+### Render only the publications page
+
+To see prepared changes in the committed website output without rebuilding
+every page, run:
+
+```sh
+Rscript scripts/prepare-publications.R
+quarto render publications/index.qmd
+Rscript tests/test-publications.R
+```
+
+Review `_site/publications/index.html` and the files reported by `git status`.
+This targeted workflow is normally sufficient while editing and reviewing
+publication changes.
+
+### Run the full release verification
+
+Run `Rscript scripts/render-site.R` only when you want the complete release
+build and validation suite. It deliberately regenerates and checks the entire
+site. Following the repository release policy, run it twice before committing
+a deployable release; the second run should produce no unexplained changes.
+This full render is a release check, not a prerequisite for updating the
+publications cache.
+
 ## Add a publication with a DOI
 
 Add an entry anywhere under `entries`:
@@ -12,9 +68,9 @@ Add an entry anywhere under `entries`:
   doi: 10.xxxx/example
 ```
 
-The `id` is permanent and must be unique. The supported site build fetches
-metadata only when that ID and DOI are absent from `doi-cache.json`; later
-renders are fully local. Commit both the registry and updated cache.
+The `id` is permanent and must be unique. The preparation command fetches
+metadata when the ID is new or its DOI differs from the cached DOI; later
+preparations are fully local. Commit both the registry and updated cache.
 
 Site-specific links and licence information stay in the registry:
 
@@ -118,17 +174,16 @@ and licence links. For example, the preprint above becomes:
     label: Download accepted manuscript PDF
 ```
 
-Then run:
+Prepare the changed record without rendering the site:
 
 ```sh
-Rscript scripts/render-site.R
-Rscript scripts/render-site.R
+Rscript scripts/prepare-publications.R
 ```
 
-The first run fetches and caches metadata for a new or changed DOI, rebuilds
-the publications page and site, and runs all validation. The second run checks
-that the committed result is stable. Review the citation in
-`_site/publications/index.html`, then commit `publications/publications.yml`,
-`publications/doi-cache.json`, `_site/`, any changed generated site sources,
-and the manuscript PDF if it is hosted locally. Do not commit
-`publications/_generated-publications.md`; it is an ignored build intermediate.
+This fetches and caches metadata for a new or changed DOI. Render the targeted
+publications page when you want to review the website output, and use the full
+release command only when preparing to deploy, as described above. Commit
+`publications/publications.yml`, `publications/doi-cache.json`, the rendered
+`_site/` changes when publishing them, and the manuscript PDF if it is hosted
+locally. Do not commit `publications/_generated-publications.md`; it is an
+ignored build intermediate.
