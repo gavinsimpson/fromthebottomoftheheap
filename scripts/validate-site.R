@@ -145,7 +145,10 @@ if (any(grepl("publications/365papers", home, fixed = TRUE))) stop("Home listing
 home_text <- paste(home, collapse = "\n")
 blog_text <- paste(blog, collapse = "\n")
 if (grepl('<a class="navbar-brand', home_text, fixed = TRUE)) stop("The redundant site title remains in the navbar")
-home_sidebar_items <- c("Social", "Blogroll", "Buy Me A Coffee", "Musings on Quantitative Palaeoecology")
+home_sidebar_items <- c(
+  "Social", "Blogroll", "Buy Me A Coffee", "Musings on Quantitative Palaeoecology",
+  "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social"
+)
 if (!all(vapply(home_sidebar_items, grepl, logical(1L), x = home_text, fixed = TRUE))) {
   stop("The home-page Social or Blogroll sidebar is incomplete")
 }
@@ -256,11 +259,20 @@ if (!all(vapply(post_html, function(path) any(grepl("giscus.app/client.js", read
 }
 if (!all(vapply(post_html, function(path) {
   lines <- readLines(path, warn = FALSE)
-  all(vapply(c("buymeacoffee.com/gavinsimpson", ">Social</h4>", ">Blogroll</h4>"), function(value) {
+  all(vapply(c(
+    "buymeacoffee.com/gavinsimpson", ">Social</h4>", ">Blogroll</h4>",
+    "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social", "bi-bluesky"
+  ), function(value) {
     any(grepl(value, lines, fixed = TRUE))
   }, logical(1L)))
 }, logical(1L)))) {
-  stop("The rendered Social, Buy Me a Coffee, or Blogroll sidebar is missing from a historical post")
+  stop("The rendered Social, Bluesky, Buy Me a Coffee, or Blogroll sidebar is missing from a historical post")
+}
+retired_twitter_sidebar <- paste0(
+  '<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">'
+)
+if (any(grepl(retired_twitter_sidebar, rendered, fixed = TRUE))) {
+  stop("The retired Twitter profile remains in a rendered Social sidebar")
 }
 giscus_ids <- c(
   'script.dataset.repoId = "R_kgDOUUVJuA";',
