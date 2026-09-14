@@ -152,6 +152,17 @@ if (grepl("quarto-listing-container-table", blog_text, fixed = TRUE) ||
     !grepl("page: 10", blog_text, fixed = TRUE)) {
   stop("The blog archive must use a ten-post paginated excerpt listing")
 }
+blog_pagination_markers <- c(
+  'aria-label", "Blog post pages',
+  'classList.add("justify-content-end")',
+  'setAttribute("aria-current", "page")',
+  'setAttribute("aria-disabled", "true")',
+  'pageControl("Previous", "\\u00ab"',
+  'pageControl("Next", "\\u00bb"'
+)
+if (!all(vapply(blog_pagination_markers, grepl, logical(1L), x = blog_text, fixed = TRUE))) {
+  stop("The blog archive is missing its accessible Bootstrap pagination controls")
+}
 if (!grepl("Here, I describe what I broke as well as outline some of the major new features in the package.", blog_text, fixed = TRUE)) {
   stop("The blog archive listing does not contain complete opening-paragraph excerpts")
 }

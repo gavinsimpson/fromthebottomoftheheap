@@ -1,0 +1,73 @@
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const listingId = "listing-posts";
+  const listing = window["quarto-listings"]?.[listingId];
+  const nav = document.getElementById("posts-pagination");
+
+  if (!listing || !nav) {
+    return;
+  }
+
+  nav.setAttribute("aria-label", "Blog post pages");
+
+  const pageControl = (label, symbol, targetPage, disabled) => {
+    const item = document.createElement("li");
+    item.className = `page-item${disabled ? " disabled" : ""}`;
+    item.dataset.blogPaginationControl = label.toLowerCase();
+
+    const control = document.createElement(disabled ? "span" : "a");
+    control.className = "page-link";
+    control.setAttribute("aria-label", label);
+
+    const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = symbol;
+    control.append(icon);
+
+    if (disabled) {
+      item.setAttribute("aria-disabled", "true");
+    } else {
+      control.href = `#posts-page=${targetPage}`;
+      control.addEventListener("click", (event) => {
+        event.preventDefault();
+        setPageHash(listingId, targetPage);
+        showPage(listingId, targetPage);
+      });
+    }
+
+    item.append(control);
+    return item;
+  };
+
+  const enhancePagination = () => {
+    const pagination = nav.querySelector("ul.pagination");
+    if (!pagination) {
+      return;
+    }
+
+    pagination
+      .querySelectorAll("[data-blog-pagination-control]")
+      .forEach((control) => control.remove());
+    pagination.classList.add("justify-content-end");
+
+    const pageCount = Math.ceil(listing.matchingItems.length / listing.page);
+    const currentPage = Math.ceil(listing.i / listing.page);
+
+    pagination.querySelectorAll(".page-item.active").forEach((item) => {
+      item.querySelector(".page-link")?.setAttribute("aria-current", "page");
+    });
+
+    pagination.prepend(
+      pageControl("Previous", "\u00ab", currentPage - 1, currentPage <= 1)
+    );
+    pagination.append(
+      pageControl("Next", "\u00bb", currentPage + 1, currentPage >= pageCount)
+    );
+  };
+
+  // Quarto's pagination plug-in rebuilds the list after the List.js update
+  // event. Wait until that work has finished before enhancing the new markup.
+  listing.on("updated", () => window.requestAnimationFrame(enhancePagination));
+  enhancePagination();
+});
+</script>
