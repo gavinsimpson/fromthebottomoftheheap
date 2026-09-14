@@ -23,7 +23,28 @@ if (file.exists(file.path(site, "index.xml"))) {
   file.copy(file.path(site, "index.xml"), file.path(site, "feed.xml"), overwrite = TRUE)
 }
 if (file.exists(file.path(site, "feed-R", "index.xml"))) {
-  file.copy(file.path(site, "feed-R", "index.xml"), file.path(site, "feed-R.xml"), overwrite = TRUE)
+  r_feed <- file.path(site, "feed-R.xml")
+  file.copy(file.path(site, "feed-R", "index.xml"), r_feed, overwrite = TRUE)
+  lines <- readLines(r_feed, warn = FALSE, encoding = "UTF-8")
+  lines <- sub(
+    "https://fromthebottomoftheheap.net/feed-R/index.xml",
+    "https://fromthebottomoftheheap.net/feed-R.xml",
+    lines,
+    fixed = TRUE
+  )
+  lines <- gsub(
+    'href="(\\.\\./)+',
+    'href="https://fromthebottomoftheheap.net/',
+    lines,
+    perl = TRUE
+  )
+  lines <- gsub(
+    'src="(\\.\\./)+',
+    'src="https://fromthebottomoftheheap.net/',
+    lines,
+    perl = TRUE
+  )
+  writeLines(lines, r_feed, useBytes = TRUE)
 }
 
 # Quarto derives sitemap last-modified values from filesystem mtimes, which

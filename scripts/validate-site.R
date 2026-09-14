@@ -150,7 +150,7 @@ if (!grepl('class="bi bi-flask"', home_text, fixed = TRUE)) {
 }
 home_sidebar_items <- c(
   "Social", "Blogroll", "Buy Me A Coffee", "Musings on Quantitative Palaeoecology",
-  "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social"
+  "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social", "r-bloggers.com"
 )
 if (!all(vapply(home_sidebar_items, grepl, logical(1L), x = home_text, fixed = TRUE))) {
   stop("The home-page Social or Blogroll sidebar is incomplete")
@@ -441,11 +441,53 @@ for (feed in c("index.xml", "feed.xml", "feed-R/index.xml", "feed-R.xml")) {
     stop("Post sidebar content leaked into feed: ", feed)
   }
 }
-r_routes <- manifest$url[tolower(manifest$category) == "r"]
+r_taxonomy <- lapply(dated_qmd, function(path) {
+  lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
+  yaml_end <- which(trimws(lines[-1L]) == "---")[[1L]] + 1L
+  metadata <- yaml::yaml.load(paste(lines[2L:(yaml_end - 1L)], collapse = "\n"))
+  c(
+    as.character(unlist(metadata$category, use.names = FALSE)),
+    as.character(unlist(metadata$categories, use.names = FALSE))
+  )
+})
+r_qmd <- dated_qmd[vapply(r_taxonomy, function(values) {
+  any(tolower(trimws(values)) == "r")
+}, logical(1L))]
+r_routes <- paste0(
+  "/",
+  sub("index\\.qmd$", "", sub(paste0("^", root, "/"), "", r_qmd))
+)
 r_feed <- paste(readLines(file.path(root, "_site", "feed-R.xml"), warn = FALSE), collapse = "\n")
-dated_links <- unique(regmatches(r_feed, gregexpr("https://fromthebottomoftheheap\\.net/[0-9]{4}/[0-9]{2}/[0-9]{2}/[^<\"]+/", r_feed, perl = TRUE))[[1L]])
-dated_paths <- sub("^https://fromthebottomoftheheap\\.net", "", dated_links)
+item_links <- unique(regmatches(
+  r_feed,
+  gregexpr("<link>https://fromthebottomoftheheap\\.net/[0-9]{4}/[0-9]{2}/[0-9]{2}/[^<]+/</link>", r_feed, perl = TRUE)
+)[[1L]])
+dated_paths <- sub(
+  "</link>$",
+  "",
+  sub("^<link>https://fromthebottomoftheheap\\.net", "", item_links)
+)
 if (length(setdiff(dated_paths, r_routes))) stop("The R compatibility feed contains a non-R post")
+if (!grepl('<atom:link href="https://fromthebottomoftheheap.net/feed-R.xml" rel="self"', r_feed, fixed = TRUE)) {
+  stop("The R compatibility feed has the wrong self URL")
+}
+item_count <- lengths(regmatches(r_feed, gregexpr("<item>", r_feed, fixed = TRUE)))
+full_description_count <- lengths(regmatches(
+  r_feed,
+  gregexpr("<description><!\\[CDATA\\[", r_feed, perl = TRUE)
+))
+if (item_count < 2L || full_description_count != item_count) {
+  stop("The R feed must contain at least two full-content item descriptions")
+}
+if (grepl("data:image/[^;]+;base64,", r_feed, ignore.case = TRUE, perl = TRUE)) {
+  stop("The R feed contains a base64-encoded image")
+}
+if (grepl("http-equiv=[\"']refresh|window\\.location|location\\.href", r_feed, ignore.case = TRUE, perl = TRUE)) {
+  stop("The R feed contains automatic redirect code")
+}
+if (grepl('(href|src)="(\\.\\./)+', r_feed, perl = TRUE)) {
+  stop("The R feed contains a relative link that may fail in an external aggregator")
+}
 
 link_status <- system2("python3", c("scripts/check-links.py", "_site"))
 if (!identical(link_status, 0L)) stop("Rendered internal-link validation failed")

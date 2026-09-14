@@ -192,8 +192,23 @@ if (!is.null(tag_rows)) {
   }
 }
 
-r_posts <- posts[tolower(posts$category) == "r", , drop = FALSE]
-r_contents <- paste0("    - ../", r_posts$qmd)
+is_r_post <- function(path) {
+  lines <- readLines(file.path(root, path), warn = FALSE, encoding = "UTF-8")
+  yaml_end <- which(trimws(lines[-1L]) == "---")[[1L]] + 1L
+  metadata <- yaml::yaml.load(paste(lines[2L:(yaml_end - 1L)], collapse = "\n"))
+  categories <- c(
+    as.character(unlist(metadata$category, use.names = FALSE)),
+    as.character(unlist(metadata$categories, use.names = FALSE))
+  )
+  any(tolower(trimws(categories)) == "r")
+}
+
+dated_qmd <- list.files(root, pattern = "^index\\.qmd$", recursive = TRUE, full.names = FALSE)
+dated_qmd <- dated_qmd[grepl("^20[0-9]{2}/[0-9]{2}/[0-9]{2}/[^/]+/index\\.qmd$", dated_qmd)]
+r_qmd <- dated_qmd[vapply(dated_qmd, is_r_post, logical(1L))]
+if (!length(r_qmd)) stop("No posts have R in their category or categories metadata")
+
+r_contents <- paste0("    - ../", r_qmd)
 writeLines(c(
   "---",
   "title: R posts",
@@ -214,5 +229,6 @@ writeLines(c(
 message(
   "Generated ", length(unique(category_slugs)), " category archives and ",
   if (is.null(tag_rows)) 0L else length(unique(tag_slugs)), " tag archives, and ",
-  length(years), " year archives."
+  length(years), " year archives; the full-content R feed contains ",
+  length(r_qmd), " eligible posts."
 )
