@@ -237,11 +237,14 @@ if (!grepl("#social", theme_text, fixed = TRUE) ||
     !grepl("#social[[:space:]]*\\{[^}]*border-left:[[:space:]]*4px[[:space:]]+solid[[:space:]]+#f43d00[^}]*padding-left:[[:space:]]*0\\.8rem", theme_text, perl = TRUE)) {
   stop("The Social block must match the post taxonomy border and padding")
 }
-if (!grepl(".side-snippet .sidebar-links .bi-bluesky", theme_text, fixed = TRUE) ||
+if (!grepl("#social .sidebar-links .bi,[[:space:]]*#social .sidebar-links .fa-brands[[:space:]]*\\{[^}]*color:[[:space:]]*rgb\\(51,[[:space:]]*51,[[:space:]]*51\\)", theme_text, perl = TRUE)) {
+  stop("The non-brand Social icons are not pinned to rgb(51, 51, 51)")
+}
+if (!grepl("#social .sidebar-links .bi-bluesky", theme_text, fixed = TRUE) ||
     !grepl("color: #0560ff", theme_text, fixed = TRUE)) {
   stop("The Bluesky butterfly is not using the official Blue500 colour")
 }
-if (!grepl(".side-snippet .sidebar-links .fa-orcid", theme_text, fixed = TRUE) ||
+if (!grepl("#social .sidebar-links .fa-orcid", theme_text, fixed = TRUE) ||
     !grepl("color: #a6ce39", theme_text, fixed = TRUE)) {
   stop("The ORCID icon is not using the ORCID brand green")
 }
