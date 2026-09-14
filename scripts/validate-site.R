@@ -157,6 +157,7 @@ blog_pagination_markers <- c(
   'classList.add("justify-content-end")',
   'setAttribute("aria-current", "page")',
   'setAttribute("aria-disabled", "true")',
+  'window.scrollTo({ top: 0, left: 0, behavior: "auto" })',
   'pageControl("Previous", "\\u00ab"',
   'pageControl("Next", "\\u00bb"'
 )

@@ -3362,9 +3362,24 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   };
 
+  let displayedPage = Math.ceil(listing.i / listing.page);
+
+  const updatePagination = () => {
+    const currentPage = Math.ceil(listing.i / listing.page);
+    const pageChanged = currentPage !== displayedPage;
+    displayedPage = currentPage;
+
+    window.requestAnimationFrame(() => {
+      enhancePagination();
+      if (pageChanged) {
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      }
+    });
+  };
+
   // Quarto's pagination plug-in rebuilds the list after the List.js update
   // event. Wait until that work has finished before enhancing the new markup.
-  listing.on("updated", () => window.requestAnimationFrame(enhancePagination));
+  listing.on("updated", updatePagination);
   enhancePagination();
 });
 </script>
