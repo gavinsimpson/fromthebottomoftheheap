@@ -13,6 +13,7 @@ if (!identical(quarto_version[[1L]], "1.10.18")) {
 
 commands <- list(
   c("Rscript", "scripts/generate-archives.R"),
+  c("Rscript", "scripts/prepare-publications.R"),
   c("quarto", "render"),
   c("Rscript", "scripts/compatibility-files.R"),
   c("Rscript", "scripts/validate-site.R"),
