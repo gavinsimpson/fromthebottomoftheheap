@@ -1,0 +1,281 @@
+---
+title: "Scales, guides, and themes"
+subtitle: "Data Visualisation mini-course"
+author: "Gavin L. Simpson"
+institute: "Institute of Environmental Change and Society"
+date: "29/04/2019"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      beforeInit: '../macros.js'
+      ratio: '16:9'
+    css: [default, 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css', '../my.css']
+---
+
+```{r setup, include=FALSE, cache = FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(cache = TRUE)
+library('ggplot2')
+library('dplyr')
+library('tidyr')
+library('colorspace')
+library('cowplot')
+library('gapminder')
+theme_set(theme_grey())
+```
+
+class: inverse
+background-image: url('./resources/chris-knight-458508-unsplash.jpg')
+background-size: cover
+
+# Start
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@chrisknight?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Chris Knight"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Chris Knight</span></a>
+]
+
+---
+
+# Catch-up
+
+```{r catch-up-code}
+library('gapminder')
+library('ggplot2')
+
+## load some new data
+load(url('http://bit.ly/gss_data'))
+ls()
+
+p <- ggplot(gapminder, aes(x = year, y = gdpPercap))
+```
+
+---
+
+## Scales, guides, and themes
+
+* **Scale**
+
+    Every aesthetic has a scale — if you want to adjust the scale use a `scale_` function
+
+* **Guide**
+
+    Many scales are linked with a legend or a *guide* — if you want to adjust these use the `guides()` function
+
+* **Theme**
+
+    Plots comprise a number of features that are not directly related to the data
+    * grid lines
+    * background
+    * legend placement
+    * typeface
+    
+    To adjust these features use the `theme()` function or a pre-set theme e.g. `theme_bw()`
+
+---
+background-image: url('./resources/helena-lopes-459331-unsplash.jpg')
+background-size: cover
+
+# Scales
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@wildlittlethingsphoto?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Helena Lopes"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Helena Lopes</span></a>
+]
+
+---
+
+# Scales
+
+```{r scales-1, fig.width = 7, fig.height = 3.5, dpi = 200}
+ggplot(gapminder, aes(x = continent, y = gdpPercap)) + geom_boxplot()
+```
+
+---
+
+# Scales
+
+```{r scales-2, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gapminder, aes(x = continent, y = gdpPercap)) + geom_boxplot() + 
+  scale_y_log10(labels = scales::dollar) + coord_flip() #<<
+```
+
+---
+
+# Scales
+
+
+```{r scales-3, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gapminder, aes(x = continent, y = gdpPercap)) + geom_boxplot() + 
+  scale_y_log10(labels = scales::dollar) + coord_flip() + 
+  scale_x_discrete(labels = LETTERS[1:5])
+```
+
+---
+
+# Continous colour scales 
+
+```{r scales-4, fig.width = 8, fig.height = 3.5, dpi = 200, out.height = 400}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) + scale_x_log10()
+```
+
+---
+
+# Continuous colour scales
+
+```{r scales-5, fig.width = 8, fig.height = 3.5, dpi = 200, out.height = 400}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) + scale_x_log10() + 
+    scale_colour_viridis_c() #<<
+```
+
+---
+
+# Scales
+
+Each type of mapping has an associated scale
+
+`scale_MAPPING_KIND()`
+
+`scale_x_continuous()` for a continous x-axis scale
+
+`scale_y_discrete()` for a discrete scale
+
+Scales can transform data — the `trans` argument allows for many popular/common transformations
+
+Scales apply transformation **before** any statistical transformation / calculation
+
+If you want to apply a transformation after the stat use `coord_trans()`
+
+---
+
+# Scales and transforms
+
+```{r scales-6, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gapminder, aes(x = continent, y = gdpPercap)) + geom_boxplot() + 
+  scale_y_continuous(trans = 'log10', labels = scales::dollar) + coord_flip() #<<
+```
+
+---
+
+# Scales and breaks
+
+```{r scales-7, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) + geom_point() + 
+  scale_x_continuous(trans = 'log10', labels = scales::dollar) +
+  scale_y_continuous(breaks = c(35, 65, 83))
+```
+
+---
+
+# Scales and names
+
+```{r scales-8, fig.width = 7, fig.height = 2.5, dpi = 200}
+lab <- c('NE','MW','S','W')
+ggplot(gss_sm, aes(x = bigregion, fill = bigregion)) + geom_bar() +
+  scale_fill_discrete(name = 'Region', labels = lab) + 
+  scale_x_discrete(labels = lab)
+```
+
+---
+background-image: url('./resources/helena-lopes-459331-unsplash.jpg')
+background-size: cover
+
+# Guides
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@wildlittlethingsphoto?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Helena Lopes"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Helena Lopes</span></a>
+]
+
+---
+
+# Guides — offer finer control over legends
+
+Add to the plot using the `guides()` function
+
+`guide_legend()` is for discrete legends
+
+`guide_colourbar()` is for continuous colour ranges
+---
+
+# Guides — offer finer control over legends
+
+```{r guides-1, fig.width = 7, fig.height = 3, dpi = 200}
+lab <- c('NE','MW','S','W')
+ggplot(gss_sm, aes(x = bigregion, fill = bigregion)) + geom_bar() +
+  scale_fill_discrete(labels = lab) + scale_x_discrete(labels = lab) +
+  guides(fill = FALSE)
+```
+
+---
+
+# Guides — offer finer control over legends
+
+```{r guides-2, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gss_sm, aes(x = bigregion, fill = bigregion)) + geom_bar() +
+  scale_fill_discrete(labels = lab) + scale_x_discrete(labels = lab) +
+  guides(fill = guide_legend(ncol = 2, byrow = TRUE))
+```
+
+---
+
+# Guides — offer finer control over legends
+
+```{r guides-3, fig.width = 7, fig.height = 3, dpi = 200}
+ggplot(gss_sm, aes(x = bigregion, fill = bigregion)) + geom_bar() +
+  scale_fill_discrete(labels = lab) + scale_x_discrete(labels = lab) +
+  guides(fill = guide_legend(reverse = TRUE))
+```
+
+---
+
+# Guides — `guide_colourbar()`
+
+```{r guides-4, fig.width = 8, fig.height = 3.5, dpi = 200, out.height = 400}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) + scale_x_log10() + 
+    guides(colour = guide_colourbar(reverse = FALSE))
+```
+
+---
+
+# Guides — `guide_colourbar()`
+
+```{r guides-4b, fig.width = 8, fig.height = 3.5, dpi = 200, out.height = 400}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) + scale_x_log10() + 
+    guides(colour = guide_colourbar(reverse = TRUE))
+```
+
+---
+
+# Guides — `guide_colourbar()`
+
+```{r guides-5, fig.width = 8, fig.height = 3.5, dpi = 200, out.height = 400}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) + scale_x_log10() + 
+    guides(colour = guide_colourbar(barheight = unit(4, 'cm')))
+```
+
+---
+background-image: url('./resources/helena-lopes-459331-unsplash.jpg')
+background-size: cover
+
+# Themes
+
+.footnote[
+<a style="background-color:black;color:white;text-decoration:none;padding:4px 6px;font-family:-apple-system, BlinkMacSystemFont, &quot;San Francisco&quot;, &quot;Helvetica Neue&quot;, Helvetica, Ubuntu, Roboto, Noto, &quot;Segoe UI&quot;, Arial, sans-serif;font-size:12px;font-weight:bold;line-height:1.2;display:inline-block;border-radius:3px" href="https://unsplash.com/@wildlittlethingsphoto?utm_medium=referral&amp;utm_campaign=photographer-credit&amp;utm_content=creditBadge" target="_blank" rel="noopener noreferrer" title="Download free do whatever you want high-resolution photos from Helena Lopes"><span style="display:inline-block;padding:2px 3px"><svg xmlns="http://www.w3.org/2000/svg" style="height:12px;width:auto;position:relative;vertical-align:middle;top:-2px;fill:white" viewBox="0 0 32 32"><title>unsplash-logo</title><path d="M10 9V0h12v9H10zm12 5h10v18H0V14h10v9h12v-9z"></path></svg></span><span style="display:inline-block;padding:2px 3px">Helena Lopes</span></a>
+]
+---
+
+# Moving the legend
+
+```{r themes-1, fig.width = 8, fig.height = 3.5, dpi = 200, out.height = 400}
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+    geom_point(mapping = aes(colour = log10(pop))) + scale_x_log10() + 
+    theme(legend.position = 'top') #<<
+```
+

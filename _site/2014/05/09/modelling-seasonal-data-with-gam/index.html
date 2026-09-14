@@ -1,234 +1,382 @@
-  <!DOCTYPE html>
-<html lang="en">
-  <head prefix="dc: http://purl.org/dc/terms/ og: http://ogp.me/ns# :cc http://creativecommons.org/ns#">
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gavin Simpson">
+<meta name="dcterms.date" content="2014-05-09">
+<meta name="description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.">
+
+<title>Modelling seasonal data with GAMs – From the bottom of the heap</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../">
+<link href="../../../../assets/ico/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-6ea8f93d97803b1108a08de96725c809.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../site_libs/bootstrap/bootstrap-17807cddf6675c08221858cabd98a7b2.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-6FQL01W176');
 </script>
+<script data-ad-client="ca-pub-2908943772231164" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script defer="" src="../../../../assets/js/post-metadata.js?v=20260912"></script>
 
 
-    <meta charset="utf-8">
-    <title>Modelling seasonal data with GAMs</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="">
-    <meta name="author" content="Gavin Simpson">
-    
-    
-<!-- HTML5 metadata -->
+<meta property="og:title" content="Modelling seasonal data with GAMs – From the bottom of the heap">
+<meta property="og:description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.">
+<meta property="og:image" content="https://fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cet.png">
+<meta property="og:site_name" content="From the bottom of the heap">
+<meta property="og:image:height" content="425">
+<meta property="og:image:width" content="595">
+<meta name="twitter:title" content="Modelling seasonal data with GAMs – From the bottom of the heap">
+<meta name="twitter:description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.">
+<meta name="twitter:image" content="https://fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cet.png">
+<meta name="twitter:creator" content="@ucfagls">
+<meta name="twitter:site" content="@ucfagls">
+<meta name="twitter:image-height" content="425">
+<meta name="twitter:image-width" content="595">
+<meta name="twitter:card" content="summary_large_image">
+</head>
 
-<meta name="keywords" content="GAM, Time series, modelling, Central England Temperature" />
+<body class="nav-fixed quarto-light">
 
-
-<meta name="description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.
-" />
-
-<!-- RDFa Metadata (in DublinCore) -->
-<meta property="dc:title" content="Modelling seasonal data with GAMs" />
-<meta property="dc:creator" content="Gavin Simpson" />
-
-<meta property="dc:date" content="2014-05-09T00:00:00+02:00" />
-
-<meta property="dc:type" content="" /> <!-- article? entry?-->
-<meta property="dc:format" content="text/html" />
-<meta property="dc:language" content="en" />
-<meta property="dc:source" content="From the Bottom of the Heap" />
-<!-- RDFa Metadata (in OpenGraph) -->
-<meta property="og:title" content="Modelling seasonal data with GAMs" />
-<meta property="og:author" content="https://www.fromthebottomoftheheap.net/about/" />
-<meta property="http://ogp.me/ns/profile#first_name" content="Gavin"/>
-<meta property="http://ogp.me/ns/profile#last_name" content="Simpson"/>
-
-<meta property="http://ogp.me/ns/article#published_time" content="2014-05-09T00:00:00+02:00" />
-
-<meta property="og:site_name" content="From the Bottom of the Heap" />
-<meta property="og:url" content="https://www.fromthebottomoftheheap.net/2014/05/09/modelling-seasonal-data-with-gam/" />
-<meta property="og:type" content="article" />
-
-<meta name="og:description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how..." />
-
-<!-- Twitter Card Meta data -->
-<meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:site.id" content="@ucfagls" />
-<meta name="twitter:creator:id" content="@ucfagls" />
-<meta name="twitter:title" content="Modelling seasonal data with GAMs" />
-
-
-<meta name="twitter:description" content="In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that..." />
-
-<!-- Google Scholar Metadata -->
-<meta name="resource_type" content="From the Bottom of the Heap"/>
-<meta name="citation_journal_title" content="From the Bottom of the Heap"/>
-
-<meta name="citation_publication_date" content="09 May 2014"/>
-<meta name="citation_date" content="09 May 2014"/>
-
-<meta name="citation_author" content="Gavin Simpson"/>
-<meta name="citation_title" content="Modelling seasonal data with GAMs"/>
-
-    
-    <!-- Link to the Atom feeds -->
-    <link href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed">
-    <link href="https://www.fromthebottomoftheheap.net/feed-R.xml" type="application/atom+xml" rel="alternate" title="From the bottom of the heap ATOM feed of R posts">
-    
-    <!-- Le styles -->
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/bootstrap.css" rel="stylesheet">
-    <style type="text/css">
-      body {
-        padding-top: 60px;
-        padding-bottom: 40px;
-      }
-      .sidebar-nav {
-        padding: 9px 0;
-      }
-    </style>
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/pyg_monokai.css" rel="stylesheet">
-    <link href="https://www.fromthebottomoftheheap.net/assets/css/ftboth.css" rel="stylesheet">
-
-    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-
-    <!-- Le fav and touch icons -->
-    <link rel="shortcut icon" href="https://www.fromthebottomoftheheap.net/assets/ico/favicon.ico">
-    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-144-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-114-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-72-precomposed.png">
-    <link rel="apple-touch-icon-precomposed" href="https://www.fromthebottomoftheheap.net/assets/ico/apple-touch-icon-57-precomposed.png">
-    
-    <script data-ad-client="ca-pub-2908943772231164" async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-  </head>
-
-  <body>
-
-      <div class="navbar navbar-fixed-top">
-      <div class="navbar-inner">
-        <div class="container">
-          <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </a>
-          <a class="brand" href="https://www.fromthebottomoftheheap.net">From the bottom of the heap</a>
-          <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li ><a href="https://www.fromthebottomoftheheap.net"><i class="icon-home"></i> Home</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/about/"><i class="icon-info-sign"></i> About</a></li>
-              <li class="active"><a href="https://www.fromthebottomoftheheap.net/blog/"><i class="icon-comment"></i> Blog</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/publications/"><i class="icon-file"></i> Publications</a></li>
-              <li ><a href="https://www.fromthebottomoftheheap.net/research/"><i class="icon-wrench"></i> Research</a></li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> The Lab <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/">About</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/research/">Research</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/members/">Members</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/publications">Publications</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/lab/join/">Join the lab</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <i class="icon-filter"></i> Resources <b class="caret"></b>
-                </a>
-                <ul class="dropdown-menu">
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/teaching/">Teaching</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/workshops/">Workshops</a></li>
-                  <li><a tabindex="-1" href="https://www.fromthebottomoftheheap.net/slides/">Slides</a></li>
-                </ul>
-              </li>
-              <li  class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-hdd"></i> Code <b class="caret"></b></a>
-                <ul class="dropdown-menu">
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/">DPER Scripts</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-9-statistical-learning/">Chapter 9</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-15-analogue-methods/">Chapter 15</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/dper-scripts/chapter-19-human-impacts/">Chapter 19</a>
-                      </li>
-                    </ul>
-                  </li>
-                  <li class="dropdown-submenu">
-                    <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages">R Packages</a>
-                    <ul class="dropdown-menu">
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/">analogue</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/">permute</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/">vegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/">gratia</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/">cocorresp</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/">coenocliner</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/">temporalEF</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/">canadaHCD</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/">ggvegan</a>
-                      </li>
-                      <li>
-                        <a tabindex="-1" href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/">pcurve</a>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </div><!--/.nav-collapse -->
-        </div>
-      </div>
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../index.html"> <i class="bi bi-house-door" role="img">
+</i> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../about/index.html"> <i class="bi bi-info-circle" role="img">
+</i> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../blog/index.html"> <i class="bi bi-chat-left-text" role="img">
+</i> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../publications/index.html"> <i class="bi bi-file-earmark-text" role="img">
+</i> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../research/index.html"> <i class="bi bi-tools" role="img">
+</i> 
+<span class="menu-text">Research</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-the-lab" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-funnel" role="img">
+</i> 
+ <span class="menu-text">The Lab</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-the-lab">    
+        <li>
+    <a class="dropdown-item" href="../../../../lab/index.html">
+ <span class="dropdown-text">About</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/research/index.html">
+ <span class="dropdown-text">Research</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/members/index.html">
+ <span class="dropdown-text">Members</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/publications/index.html">
+ <span class="dropdown-text">Publications</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/join/index.html">
+ <span class="dropdown-text">Join the lab</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection" role="img">
+</i> 
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="../../../../teaching/index.html">
+ <span class="dropdown-text">Teaching</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../workshops/index.html">
+ <span class="dropdown-text">Workshops</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../slides/index.html">
+ <span class="dropdown-text">Slides</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-code" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-code-slash" role="img">
+</i> 
+ <span class="menu-text">Code</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-code">    
+        <li>
+    <a class="dropdown-item" href="../../../../code/dper-scripts/index.html">
+ <span class="dropdown-text">DPER Scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../code/r-packages/index.html">
+ <span class="dropdown-text">R Packages</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../../feed.xml"> <i class="bi bi-rss" role="img" aria-label="RSS feed">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
     </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Modelling seasonal data with GAMs</h1>
+  <div class="quarto-categories">
+    <div class="quarto-category">R</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    In previous posts (here and here) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.
+  </div>
+</div>
 
 
-    <div class="container">
-          
+<div class="quarto-title-meta">
 
-      <article>
-      <div class="row">
-        <!-- <div class="span8 offset2"> -->
-        <div class="span10">
-          <div class="clearfix">
-            <span class="post-nav"><i class="icon-arrow-left"></i> <a href="https://www.fromthebottomoftheheap.net/2014/05/15/identifying-periods-of-change-with-gams/">Identifying periods of change in time series with GAMs</a></span>
-            <span class="post-nav" style="float: right;"><a href="https://www.fromthebottomoftheheap.net/2014/03/25/file-synchronisation-with-unison/">File synchronisation with Unison</a> <i class="icon-arrow-right"></i></span>
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gavin Simpson </p>
           </div>
-          <div class="page-header">
-            <header>
-              <h1>Modelling seasonal data with GAMs </h1>
-            </header>
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="span12">
-          <div class="row">
-            <div class="span10">
-              
-            <p>In previous posts (<a href="/2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/">here</a> and <a href="/2011/07/21/smoothing-temporally-correlated-data/">here</a>) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.</p>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 9, 2014</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+
+<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
+<section id="posted-in" class="level4">
+<h4 data-anchor-id="posted-in">Posted in</h4>
+<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
+</section>
+<section id="tagged" class="level4">
+<h4 data-anchor-id="tagged">Tagged</h4>
+<p><a href="../../../../tag/gam/" class="badge text-bg-dark">GAM</a> <a href="../../../../tag/time-series/" class="badge text-bg-dark">Time series</a> <a href="../../../../tag/modelling/" class="badge text-bg-dark">modelling</a> <a href="../../../../tag/central-england-temperature/" class="badge text-bg-dark">Central England Temperature</a></p>
+</section>
+</div><div class="post-links">
+<section id="social" class="level4 side-snippet">
+<h4 data-anchor-id="social">Social</h4>
+<p>
+<a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank" rel="noopener"><img class="buy-me-coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee"></a>
+</p>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a>
+</li>
+<li>
+<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">@ucfagls</a>
+</li>
+<li>
+<i class="bi bi-github" aria-hidden="true"></i><a href="https://github.com/gavinsimpson">gavinsimpson</a>
+</li>
+<li>
+<i class="bi bi-person-badge" aria-hidden="true"></i><a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a>
+</li>
+<li>
+<i class="bi bi-rss" aria-hidden="true"></i><a href="../../../../feed.xml" type="application/atom+xml">Subscribe</a>
+</li>
+</ul>
+</section>
+<section id="blogroll" class="level4 side-snippet">
+<h4 data-anchor-id="blogroll">Blogroll</h4>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://downwithtime.wordpress.com/">Down With time</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://recology.info/">Recology</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://rweekly.org/">R Weekly</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://www.r-bloggers.com/">R Bloggers</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a>
+</li>
+<li>
+<i class="bi bi-bookmark" aria-hidden="true"></i><a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a>
+</li>
+</ul>
+</section>
+</div></div>
+<p>In previous posts (<a href="../../../../2011/06/12/additive-modelling-and-the-hadcrut3v-global-mean-temperature-series/">here</a> and <a href="../../../../2011/07/21/smoothing-temporally-correlated-data/">here</a>) I have looked at how generalized additive models (GAMs) can be used to model non-linear trends in time series data. At the time a number of readers commented that they were interested in modelling data that had more than just a trend component; how do you model data collected throughout the year over many years with a GAM? In this post I will show one way that I have found particularly useful in my research.</p>
 <p>First an equation. If we think about a time series where observations were made on a number of occasions within any given year over a number of years, we may want to model the following features of the data</p>
 <ol type="1">
 <li>any trend or long term change in the level of the time series, and</li>
@@ -238,20 +386,16 @@
 <p>I’m not going to cover point 3 in this post, but it is a relatively simple extension to what I will discuss here. So, considering points 1 and 2 only, we need an equation that describes this model</p>
 <p>\[ y = \beta_0 + f_{\mathrm{seasonal}}(x_1) + f_{\mathrm{trend}}(x_2) + \varepsilon, \quad \varepsilon \sim N(0, \sigma^2\mathbf{\Lambda}) \]</p>
 <p>where \(\beta_0\) is the intercept, \(f_{\mathrm{seasonal}}\) and \(f_{\mathrm{trend}}\) are smooth functions for the seasonal and trend features we’re interested in, and \(x_1\) and \(x_2\) are to covariate data providing some form of time indicators for the within-year and between year times. We can knock off the distributional assumptions and the intercept and this would be very close to the formula we need to stick into a call to <code>gam()</code> from the <strong>mgcv</strong> package. In pseudo code we’d have something like</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">mod</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gam</span><span class="p">(</span><span class="n">y</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">x2</span><span class="p">),</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">foo</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> mod <span class="ot">&lt;-</span> <span class="fu">gam</span>(y <span class="sc">~</span> <span class="fu">s</span>(x1) <span class="sc">+</span> <span class="fu">s</span>(x2), <span class="at">data =</span> foo)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Before we can begin modelling though, we need to identify the data we’ll use for \(x_1\) and \(x_2\). I tend to use the date of observation converted to a numeric variable for my between year data, \(x_2\), <em>if</em> the observation dates can easily be represented in R’s <code>Date</code> class. This class counts the number of days from an <em>epoch</em>, Jan 1st, 1970, with negative values indicating days before this date. Seeing as we’ll probably need a nicely formatted axis for any plots we do and it is easy to convert the <code>Date</code> object into a numeric (integer), this will do nicely. One thing to point out is that the numeric representation can get into some large values which might affect the stability of the model fitting; in such cases you can just divide this number by 100 or 1000 or some such value as this time value is only used to indicate relative position in time of the observations.</p>
 <p>For the within-year or seasonal time variable you could use the month of observation as a decimal value, which is particularly useful if you only have monthly or less frequent data. For more frequent observations I use the day of the year as my time variable. This information is also easily derived from a <code>Date</code> variable using the <code>"%j"</code> date format.</p>
-<h2 id="data-preparation">Data preparation</h2>
+<section id="data-preparation" class="level2">
+<h2 data-anchor-id="data-preparation">Data preparation</h2>
 <p>Having identified what data we’ll use, we can get to some analysis. In this post I’m going to use data from the <a href="http://www.metoffice.gov.uk/hadobs/hadcet/">Central England Temperature</a> (CET) time series, one of the longest such records available. The CET data are available for daily observations, and the methods I describe here will certainly handle such data, but to save computing time and memory (you’ll need quite a big chunk of RAM to fit a <code>gamm()</code> to the daily series) I’m just going to use the monthly data series.</p>
 <p>The CET data are available from the <a href="http://www.metoffice.gov.uk/">UK Met Office</a> website and do require a little massaging to get them into a format appropriate for our use</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">CET</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">url</span><span class="p">(</span><span class="s2">"http://www.metoffice.gov.uk/hadobs/hadcet/cetml1659on.dat"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">writeLines</span><span class="p">(</span><span class="n">readLines</span><span class="p">(</span><span class="n">CET</span><span class="p">,</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">10</span><span class="p">))</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">MONTHLY MEAN CENTRAL ENGLAND TEMPERATURE (DEGREES C)                                     
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> CET <span class="ot">&lt;-</span> <span class="fu">url</span>(<span class="st">"http://www.metoffice.gov.uk/hadobs/hadcet/cetml1659on.dat"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">writeLines</span>(<span class="fu">readLines</span>(CET, <span class="at">n =</span> <span class="dv">10</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>MONTHLY MEAN CENTRAL ENGLAND TEMPERATURE (DEGREES C)                                     
 1659-1973 MANLEY (Q.J.R.METEOROL.SOC., 1974)                                             
 1974ON PARKER ET AL. (INT.J.CLIM., 1992)                                                 
 PARKER AND HORTON (INT.J.CLIM., 2005)                                                    
@@ -260,48 +404,43 @@ PARKER AND HORTON (INT.J.CLIM., 2005)
            JAN   FEB   MAR   APR   MAY   JUN   JUL   AUG   SEP   OCT   NOV   DEC     YEAR
  1659      3.0   4.0   6.0   7.0  11.0  13.0  16.0  16.0  13.0  10.0   5.0   2.0     8.83
  1660      0.0   4.0   6.0   9.0  11.0  14.0  15.0  16.0  13.0  10.0   6.0   5.0     9.08
- 1661      5.0   5.0   6.0   8.0  11.0  14.0  15.0  15.0  13.0  11.0   8.0   6.0     9.75</code></pre>
-</figure>
+ 1661      5.0   5.0   6.0   8.0  11.0  14.0  15.0  15.0  13.0  11.0   8.0   6.0     9.75
+</code></pre>
 <p>There are 6 lines of header info and then the data are in a matrix with rows representing the year and the columns the months, with one extra column containing the derived annual mean temperature. Missing values are also indicated by either a <code>-99.99</code> or <code>-99.9</code>, which we’ll need to take account of. To read the data in and partly process it I use</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">read.table</span><span class="p">(</span><span class="n">CET</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">""</span><span class="p">,</span><span class="w"> </span><span class="n">skip</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">6</span><span class="p">,</span><span class="w"> </span><span class="n">header</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">                   </span><span class="n">fill</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">na.string</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">-99.99</span><span class="p">,</span><span class="w"> </span><span class="m">-99.9</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="n">cet</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="nb">month.abb</span><span class="p">,</span><span class="w"> </span><span class="s2">"Annual"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## remove last row of incomplete data</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cet</span><span class="p">[</span><span class="o">-</span><span class="n">nrow</span><span class="p">(</span><span class="n">cet</span><span class="p">),</span><span class="w"> </span><span class="p">]</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## get rid of the annual too - store for plotting</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">rn</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">as.numeric</span><span class="p">(</span><span class="n">rownames</span><span class="p">(</span><span class="n">cet</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">Years</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">rn</span><span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="o">:</span><span class="n">rn</span><span class="p">[</span><span class="nf">length</span><span class="p">(</span><span class="n">rn</span><span class="p">)]</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">annCET</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">[,</span><span class="w"> </span><span class="n">ncol</span><span class="p">(</span><span class="n">cet</span><span class="p">)],</span><span class="w">
-</span><span class="o">+</span><span class="w">                      </span><span class="n">Year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Years</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cet</span><span class="p">[,</span><span class="w"> </span><span class="o">-</span><span class="n">ncol</span><span class="p">(</span><span class="n">cet</span><span class="p">)]</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> cet <span class="ot">&lt;-</span> <span class="fu">read.table</span>(CET, <span class="at">sep =</span> <span class="st">""</span>, <span class="at">skip =</span> <span class="dv">6</span>, <span class="at">header =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                   <span class="at">fill =</span> <span class="cn">TRUE</span>, <span class="at">na.string =</span> <span class="fu">c</span>(<span class="sc">-</span><span class="fl">99.99</span>, <span class="sc">-</span><span class="fl">99.9</span>))</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">names</span>(cet) <span class="ot">&lt;-</span> <span class="fu">c</span>(month.abb, <span class="st">"Annual"</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="do">## remove last row of incomplete data</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> cet <span class="ot">&lt;-</span> cet[<span class="sc">-</span><span class="fu">nrow</span>(cet), ]</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="do">## get rid of the annual too - store for plotting</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> rn <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">rownames</span>(cet))</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> Years <span class="ot">&lt;-</span> rn[<span class="dv">1</span>]<span class="sc">:</span>rn[<span class="fu">length</span>(rn)]</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> annCET <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">Temperature =</span> cet[, <span class="fu">ncol</span>(cet)],</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                      <span class="at">Year =</span> Years)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> cet <span class="ot">&lt;-</span> cet[, <span class="sc">-</span><span class="fu">ncol</span>(cet)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>I used <code>fill = TRUE</code> because the final row of the file contains values for the current year, which may be incomplete. I throw this year of data away as it makes the processing easier later but that’s me just being lazy! What I end up with at this point is a data frame looking like this</p>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">     Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
+<pre class="text"><code>     Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
 1659   3   4   6   7  11  13  16  16  13  10   5   2
 1660   0   4   6   9  11  14  15  16  13  10   6   5
 1661   5   5   6   8  11  14  15  15  13  11   8   6
 1662   5   6   6   8  11  15  15  15  13  11   6   3
 1663   1   1   5   7  10  14  15  15  13  10   7   5
-1664   4   5   5   8  11  15  16  16  13   9   6   4</code></pre>
-</figure>
+1664   4   5   5   8  11  15  16  16  13   9   6   4
+</code></pre>
 <p>For use in <code>gam()</code> we need the data in long format, with variables for the temperature, and the two time variables. We also need to create some dates. As these are monthly data, I fake a day by setting it to the 15th of the month.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="c1">## stack the data</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">stack</span><span class="p">(</span><span class="n">cet</span><span class="p">)[,</span><span class="m">2</span><span class="o">:</span><span class="m">1</span><span class="p">]</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="n">cet</span><span class="p">)</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Month"</span><span class="p">,</span><span class="s2">"Temperature"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## add in Year and nMonth for numeric month and a proper Date class</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">Year</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">(</span><span class="n">Year</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="n">Years</span><span class="p">,</span><span class="w"> </span><span class="n">times</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)),</span><span class="w">
-</span><span class="o">+</span><span class="w">                  </span><span class="n">nMonth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">rep</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">12</span><span class="p">,</span><span class="w"> </span><span class="n">each</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">length</span><span class="p">(</span><span class="n">Years</span><span class="p">)),</span><span class="w">
-</span><span class="o">+</span><span class="w">                  </span><span class="n">Date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">as.Date</span><span class="p">(</span><span class="n">paste</span><span class="p">(</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">Month</span><span class="p">,</span><span class="w"> </span><span class="s2">"15"</span><span class="p">,</span><span class="w"> </span><span class="n">sep</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"-"</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">                  </span><span class="n">format</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"%Y-%b-%d"</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## sort into temporal order</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">cet</span><span class="p">[</span><span class="n">with</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">order</span><span class="p">(</span><span class="n">Date</span><span class="p">)),</span><span class="w"> </span><span class="p">]</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> 
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## Add in a Time variable</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cet</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">Time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">as.numeric</span><span class="p">(</span><span class="n">Date</span><span class="p">)</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="m">1000</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="do">## stack the data</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> cet <span class="ot">&lt;-</span> <span class="fu">stack</span>(cet)[,<span class="dv">2</span><span class="sc">:</span><span class="dv">1</span>]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">names</span>(cet) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Month"</span>,<span class="st">"Temperature"</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="do">## add in Year and nMonth for numeric month and a proper Date class</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> cet <span class="ot">&lt;-</span> <span class="fu">transform</span>(cet, <span class="at">Year =</span> (Year <span class="ot">&lt;-</span> <span class="fu">rep</span>(Years, <span class="at">times =</span> <span class="dv">12</span>)),</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                  <span class="at">nMonth =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">12</span>, <span class="at">each =</span> <span class="fu">length</span>(Years)),</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                  <span class="at">Date =</span> <span class="fu">as.Date</span>(<span class="fu">paste</span>(Year, Month, <span class="st">"15"</span>, <span class="at">sep =</span> <span class="st">"-"</span>),</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                  <span class="at">format =</span> <span class="st">"%Y-%b-%d"</span>))</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="do">## sort into temporal order</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> cet <span class="ot">&lt;-</span> cet[<span class="fu">with</span>(cet, <span class="fu">order</span>(Date)), ]</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> </span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> <span class="do">## Add in a Time variable</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> cet <span class="ot">&lt;-</span> <span class="fu">transform</span>(cet, <span class="at">Time =</span> <span class="fu">as.numeric</span>(Date) <span class="sc">/</span> <span class="dv">1000</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>The first line stacks the columns of the data frame creating a 2-column data frame containing the month identifier and the temperature data respectively. After adding some names to the data frame, I add</p>
 <ul>
 <li>a <code>Year</code> variable by repeating the rownames of the <code>cet</code> data frame 12 times, once per month,</li>
@@ -310,86 +449,84 @@ PARKER AND HORTON (INT.J.CLIM., 2005)
 </ul>
 <p>The code is a bit tricky as I create a local <code>Year</code> variable whilst assigning the <code>Year</code> variable of the transformed <code>cet</code> data frame (spot the assignment in the first line of the call to <code>transform()</code>).</p>
 <p>Next I make sure the data are in the correct temporal order; this is useful for plotting only. Finally, a <code>Time</code> variable is created which we’ll use for the trend or between-year variable; I scale by 1000 as discussed above. Once this is done, the data look like this</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">head</span><span class="p">(</span><span class="n">cet</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">str</span><span class="p">(</span><span class="n">cet</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">     Month Temperature Year nMonth       Date   Time
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">head</span>(cet)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">str</span>(cet)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>     Month Temperature Year nMonth       Date   Time
 1      Jan           3 1659      1 1659-01-15 -113.6
 356    Feb           4 1659      2 1659-02-15 -113.5
 711    Mar           6 1659      3 1659-03-15 -113.5
 1066   Apr           7 1659      4 1659-04-15 -113.5
 1421   May          11 1659      5 1659-05-15 -113.5
-1776   Jun          13 1659      6 1659-06-15 -113.4</code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">'data.frame':   4260 obs. of  6 variables:
+1776   Jun          13 1659      6 1659-06-15 -113.4
+</code></pre>
+<pre class="text"><code>'data.frame':   4260 obs. of  6 variables:
  $ Month      : Factor w/ 12 levels "Apr","Aug","Dec",..: 5 4 8 1 9 7 6 2 12 11 ...
  $ Temperature: num  3 4 6 7 11 13 16 16 13 10 ...
  $ Year       : int  1659 1659 1659 1659 1659 1659 1659 1659 1659 1659 ...
  $ nMonth     : int  1 2 3 4 5 6 7 8 9 10 ...
  $ Date       : Date, format: "1659-01-15" "1659-02-15" ...
- $ Time       : num  -114 -114 -114 -113 -113 ...</code></pre>
-</figure>
+ $ Time       : num  -114 -114 -114 -113 -113 ...
+</code></pre>
 <p>and we are good to go. First though, the obligatory time series plot (of the annual data only)</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">degree</span><span class="o">*</span><span class="n">C</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">annCET</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"CET"</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> ylab <span class="ot">&lt;-</span> <span class="fu">expression</span>(Temperature <span class="sc">~</span> (degree<span class="sc">*</span>C))</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">plot</span>(Temperature <span class="sc">~</span> Year, <span class="at">data =</span> annCET, <span class="at">type =</span> <span class="st">"l"</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>      <span class="at">ylab =</span> ylab, <span class="at">main =</span> <span class="st">"CET"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-seasonal-data-with-gam-plot-cet.png" class="img-fluid figure-img"></p>
+<figcaption>CET annual average temperature time series</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cet.png" alt="CET annual average temperature time series" /><figcaption>CET annual average temperature time series</figcaption>
-</figure>
-<p>If you plot the full data, you get a mess<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a> — try it if you want</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"l"</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">)</span></code></pre>
-</figure>
+</div>
+<p>If you plot the full data, you get a mess<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a> — try it if you want</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">plot</span>(Temperature <span class="sc">~</span> Date, <span class="at">data =</span> cet, <span class="at">type =</span> <span class="st">"l"</span>,</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>      <span class="at">ylab =</span> ylab)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>There looks to be some trend in the data and we expect seasonal variation in temperature, as despite plenty of evidence to the contrary, the UK does have a summer and it can snow there from time to time.</p>
-<h2 id="a-model-with-uncorrelated-errors">A model with uncorrelated errors</h2>
+</section>
+<section id="a-model-with-uncorrelated-errors" class="level2">
+<h2 data-anchor-id="a-model-with-uncorrelated-errors">A model with uncorrelated errors</h2>
 <p>To start our trip down the modelling rabbit hole, I fit an obviously wrong model where I assume the observations are all independent. This serves two purposes;</p>
 <ol type="1">
 <li>We get to run the data through the modelling function <code>gamm()</code> so we see how this goes and can spot errors before we set the thing off with estimating the smooths <em>and</em> the correlation matrix (which can take a lot of time with big data sets), and</li>
 <li>It is worth hammering home the point that you can easily fit noise in the data if you forget to tell the software that the data aren’t independent observations!</li>
 </ol>
 <p>Load <strong>mgcv</strong> and fit the naive model</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">require</span><span class="p">(</span><span class="s2">"mgcv"</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Loading required package: mgcv
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">require</span>(<span class="st">"mgcv"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Loading required package: mgcv
 Loading required package: nlme
-This is mgcv 1.7-29. For overview type 'help("mgcv-package")'.</code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">m</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">           </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">)</span></code></pre>
-</figure>
+This is mgcv 1.7-29. For overview type 'help("mgcv-package")'.
+</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> m <span class="ot">&lt;-</span> <span class="fu">gamm</span>(Temperature <span class="sc">~</span> <span class="fu">s</span>(nMonth, <span class="at">bs =</span> <span class="st">"cc"</span>, <span class="at">k =</span> <span class="dv">12</span>) <span class="sc">+</span> <span class="fu">s</span>(Time),</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>           <span class="at">data =</span> cet)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>which takes about a second on my 2013 Intel Xeon.</p>
 <p>The important thing to note there is the extra arguments passed to the first <code>s()</code> term in the model. <code>k</code> specifies the dimensions of the basis used for the spline. Here I set it to the maximum possible for <code>nMonth</code>, which is 12,the number of unique values. <code>bs</code> allows you to specify the basis type for the smooth term; <code>"cc"</code> indicates a <em>cyclic</em> cubic spline, which we want for the seasonal term as there should be no discontinuity between January and December.</p>
-<h3 id="cyclic-cubic-spline-basis">Cyclic cubic spline basis</h3>
+<section id="cyclic-cubic-spline-basis" class="level3">
+<h3 data-anchor-id="cyclic-cubic-spline-basis">Cyclic cubic spline basis</h3>
 <p>So what’s a cyclic cubic spline? Well, first let’s look at the standard cubic spline basis</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cubic-spline-example.png" alt="Cubic spline basis functions" /><figcaption>Cubic spline basis functions</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-seasonal-data-with-gam-plot-cubic-spline-example.png" class="img-fluid figure-img"></p>
+<figcaption>Cubic spline basis functions</figcaption>
 </figure>
+</div>
 <p>The left-hand plot shows a single basis function centred on a knot at 0.5. The x-axis here is arbitrary, but it would represent the observed covariate data, \(x_2\) say. The vertical dashed lines show the locations of the 5 interior knots plus the two boundary knots. The more knots we have the more complex the fitted spline can be. A cubic spline basis function for a given knot takes a value 1 at its knot location and a value of 0 at all other knots. The figure shows only a single basis function, but there are equivalent functions positioned at each of the other 6 knots.</p>
 <p>When we fit the model, <strong>mgcv</strong> is estimating a coefficient for each of these basis functions. The final spline is given by a weighted sum of the basis functions with the estimated coefficients used as the weights. This is illustrated in the right-hand figure, where I have arbitrarily chosen some coefficient values, and which scale each basis function. The “fitted” spline is shown by the thick black line. The values of this spline are determined by adding up the values of all the basis functions under each point on spline.</p>
 <p>A key point to note here is that there is a large discontinuity in the value taken by the spline (the thick black line) at the ends of the data, at each end of the x-axis on the plot. If <code>x</code> represented something like day of year, or month, that discontinuity would be a bad thing if, as is the case here, the variable of interest (temperature) behaved cyclically.</p>
 <p>This is where the cyclic cubic spline basis comes in. This basis has an additional constraint, which states that there should be no discontinuity at the end points of the spline. In other words, we force the ends of the cyclic spline to join up. This is illustrated below</p>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-cyclic-cubic-spline-example.png" alt="Cyclic cubic spline basis functions" /><figcaption>Cyclic cubic spline basis functions</figcaption>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-seasonal-data-with-gam-plot-cyclic-cubic-spline-example.png" class="img-fluid figure-img"></p>
+<figcaption>Cyclic cubic spline basis functions</figcaption>
 </figure>
+</div>
 <p>This time, to make it clearer, the left hand panel shows a cubic cyclic spline basis function located at a <code>x</code> = 0.167. If you were to wrap the x-axis into a loop by joining the end points the basis function would meet nicely and smoothly at the join. The basis function still takes a value of 1 at its knot and 0 at the other knots, just as before, and there are matching basis functions for each of the knots, they’re just not shown in this panel.</p>
 <p>The right hand panel shows how the “fitted” spline is derived as a weighted sum of the basis functions underneath any point on the spline. Because the basis functions all smoothly join at the end points of <code>x</code>, so does the fitted cyclic cubic spline.</p>
 <p>Similar constraints can be put on other spline types. <strong>mgcv</strong> has cyclic <em>p</em> splines as well as the cyclic cubic splines I showed here for example.</p>
-<h3 id="back-to-our-model">Back to our model</h3>
+</section>
+<section id="back-to-our-model" class="level3">
+<h3 data-anchor-id="back-to-our-model">Back to our model</h3>
 <p>With that out of the way we can look at our model fit</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">summary</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">gam</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">Family: gaussian 
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">summary</span>(m<span class="sc">$</span>gam)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>Family: gaussian 
 Link function: identity 
 
 Formula:
@@ -408,286 +545,610 @@ s(Time)   8.15   8.15   29.7  &lt;2e-16 ***
 ---
 Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-R-sq.(adj) =  0.917  Scale est. = 1.9117    n = 4260</code></pre>
-</figure>
+R-sq.(adj) =  0.917  Scale est. = 1.9117    n = 4260
+</code></pre>
 <p>which looks fine but is totally spurious because we didn’t account for the dependence in the data. Plotting the model terms is illustrative of what can go wrong if you forget to do this</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">layout</span>(<span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">2</span>))</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">plot</span>(m<span class="sc">$</span>gam, <span class="at">scale =</span> <span class="dv">0</span>)</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">layout</span>(<span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model.png" class="img-fluid figure-img"></p>
+<figcaption>Smooth terms for the naive model assuming uncorrelated errors</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model.png" alt="Smooth terms for the naive model assuming uncorrelated errors" /><figcaption>Smooth terms for the naive model assuming uncorrelated errors</figcaption>
-</figure>
+</div>
 <p>The figure shows the two splines; the one on the left is the seasonal term, the cyclic cubic spline (note how the ends join nicely!), and the one on the right is the trend term (note how ridiculously wiggly this is!) The splines are on very different scales (<code>scale = 0</code>) which illustrates the relative degrees of variation in the seasonal and trend term; there is about 1-1.5 degree rise in temperature over the period, but within a given year there is about 12 degrees variation in temperature, <em>on average</em>. Obviously, the actual data vary around these values and that is the unexplained variance.</p>
 <p>We should look at the residuals of this model too, here using the (partial) autocorrelation function</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">acf</span><span class="p">(</span><span class="n">resid</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">lme</span><span class="p">),</span><span class="w"> </span><span class="n">lag.max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">36</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ACF"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pacf</span><span class="p">(</span><span class="n">resid</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">lme</span><span class="p">),</span><span class="w"> </span><span class="n">lag.max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">36</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pACF"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">layout</span>(<span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">2</span>))</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">acf</span>(<span class="fu">resid</span>(m<span class="sc">$</span>lme), <span class="at">lag.max =</span> <span class="dv">36</span>, <span class="at">main =</span> <span class="st">"ACF"</span>)</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">pacf</span>(<span class="fu">resid</span>(m<span class="sc">$</span>lme), <span class="at">lag.max =</span> <span class="dv">36</span>, <span class="at">main =</span> <span class="st">"pACF"</span>)</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">layout</span>(<span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model-residuals.png" class="img-fluid figure-img"></p>
+<figcaption>ACF and pACF of the residuals from the naive model</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-naive-model-residuals.png" alt="ACF and pACF of the residuals from the naive model" /><figcaption>ACF and pACF of the residuals from the naive model</figcaption>
-</figure>
+</div>
 <p>As expected, the is substantial residual autocorrelation in the data that even the wiggly trend term couldn’t account for. The shapes of the ACF and the <em>p</em>ACF suggest an AR(<em>p</em>) model might be needed…</p>
-<h2 id="models-with-correlated-errors">Models with correlated errors</h2>
+</section>
+</section>
+<section id="models-with-correlated-errors" class="level2">
+<h2 data-anchor-id="models-with-correlated-errors">Models with correlated errors</h2>
 <p>It looks like some low-order AR model is needed, so I fit three models; and AR(1), an AR(2), and an AR(3). I turn on verbose output and so have to reset some other things too in the <code>ctrl</code> object. Note that these take about 5–6 seconds each to converge on my Xeon workstation.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">ctrl</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="n">niterEM</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">,</span><span class="w"> </span><span class="n">msVerbose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">,</span><span class="w"> </span><span class="n">optimMethod</span><span class="o">=</span><span class="s2">"L-BFGS-B"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> 
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## AR(1)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">            </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="o">|</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">            </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> 
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## AR(2)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">            </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="o">|</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">            </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> 
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## AR(3)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">m3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">gamm</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">nMonth</span><span class="p">,</span><span class="w"> </span><span class="n">bs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"cc"</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">12</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">s</span><span class="p">(</span><span class="n">Time</span><span class="p">,</span><span class="w"> </span><span class="n">k</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">20</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">            </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">correlation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">corARMA</span><span class="p">(</span><span class="n">form</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="m">1</span><span class="o">|</span><span class="n">Year</span><span class="p">,</span><span class="w"> </span><span class="n">p</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">3</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">            </span><span class="n">control</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ctrl</span><span class="p">)</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> ctrl <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">niterEM =</span> <span class="dv">0</span>, <span class="at">msVerbose =</span> <span class="cn">TRUE</span>, <span class="at">optimMethod=</span><span class="st">"L-BFGS-B"</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> <span class="do">## AR(1)</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> m1 <span class="ot">&lt;-</span> <span class="fu">gamm</span>(Temperature <span class="sc">~</span> <span class="fu">s</span>(nMonth, <span class="at">bs =</span> <span class="st">"cc"</span>, <span class="at">k =</span> <span class="dv">12</span>) <span class="sc">+</span> <span class="fu">s</span>(Time, <span class="at">k =</span> <span class="dv">20</span>),</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>            <span class="at">data =</span> cet, <span class="at">correlation =</span> <span class="fu">corARMA</span>(<span class="at">form =</span> <span class="sc">~</span> <span class="dv">1</span><span class="sc">|</span>Year, <span class="at">p =</span> <span class="dv">1</span>),</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>            <span class="at">control =</span> ctrl)</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> </span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> <span class="do">## AR(2)</span></span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> m2 <span class="ot">&lt;-</span> <span class="fu">gamm</span>(Temperature <span class="sc">~</span> <span class="fu">s</span>(nMonth, <span class="at">bs =</span> <span class="st">"cc"</span>, <span class="at">k =</span> <span class="dv">12</span>) <span class="sc">+</span> <span class="fu">s</span>(Time, <span class="at">k =</span> <span class="dv">20</span>),</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>            <span class="at">data =</span> cet, <span class="at">correlation =</span> <span class="fu">corARMA</span>(<span class="at">form =</span> <span class="sc">~</span> <span class="dv">1</span><span class="sc">|</span>Year, <span class="at">p =</span> <span class="dv">2</span>),</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>            <span class="at">control =</span> ctrl)</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> </span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> <span class="do">## AR(3)</span></span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> m3 <span class="ot">&lt;-</span> <span class="fu">gamm</span>(Temperature <span class="sc">~</span> <span class="fu">s</span>(nMonth, <span class="at">bs =</span> <span class="st">"cc"</span>, <span class="at">k =</span> <span class="dv">12</span>) <span class="sc">+</span> <span class="fu">s</span>(Time, <span class="at">k =</span> <span class="dv">20</span>),</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>            <span class="at">data =</span> cet, <span class="at">correlation =</span> <span class="fu">corARMA</span>(<span class="at">form =</span> <span class="sc">~</span> <span class="dv">1</span><span class="sc">|</span>Year, <span class="at">p =</span> <span class="dv">3</span>),</span>
+<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>            <span class="at">control =</span> ctrl)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>It is important to note what the <code>correlation</code> argument is doing here: <code>corARMA(form = ~ 1|Year, p = x)</code> means fit an ARMA process to the residuals, where <code>p</code> indicates the order for the AR part of the ARMA model, and <code>form = ~ 1|Year</code> means that the ARMA is nested <em>within</em> each year. This speeds up fitting no end, but is potentially risky as we don’t consider residual variation from year to year.</p>
 <p>We should probably do a lot more model checking, but for now, I cut to the chase and see which of the candidate models fits the data best. This is done via a generalized likelihood ratio test via the <code>anova()</code> method for <code>"lme"</code> objects. This is a valid comparison because the models are nested; we can go from the AR(3) to the AR(1) by setting some of the AR coefficients to 0. Technically, the models are also varying in terms of the coefficient estimates for the splines terms; we probably ought to fix those at some values whilst we choose the AR structure, but I ignore that here.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">anova</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">m1</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">m2</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">m3</span><span class="o">$</span><span class="n">lme</span><span class="p">)</span></code></pre>
-</figure>
-<figure class="highlight">
-<pre><code class="language-text" data-lang="text">       Model df   AIC   BIC logLik   Test L.Ratio p-value
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">anova</span>(m<span class="sc">$</span>lme, m1<span class="sc">$</span>lme, m2<span class="sc">$</span>lme, m3<span class="sc">$</span>lme)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<pre class="text"><code>       Model df   AIC   BIC logLik   Test L.Ratio p-value
 m$lme      1  5 14941 14973  -7466                       
 m1$lme     2  6 14657 14695  -7323 1 vs 2  286.35  &lt;.0001
 m2$lme     3  7 14631 14676  -7309 2 vs 3   27.88  &lt;.0001
-m3$lme     4  8 14631 14682  -7307 3 vs 4    2.52  0.1123</code></pre>
-</figure>
+m3$lme     4  8 14631 14682  -7307 3 vs 4    2.52  0.1123
+</code></pre>
 <p>The AR(1) provides a substantial increase in <em>fit</em> over the naive model, and the AR(2) provides a further significant increase in the fit. There is very little improvement in moving to the AR(3) however.</p>
 <p>Plotting the AR(2) model terms shows how over-fitted the naive model with uncorrelated errors was in terms of the trend term, which is now much smoother and more in keeping with our expectations</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">scale</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">0</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">layout</span>(<span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">2</span>))</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">plot</span>(m2<span class="sc">$</span>gam, <span class="at">scale =</span> <span class="dv">0</span>)</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">layout</span>(<span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-seasonal-data-with-gam-plot-ar2-model-terms.png" class="img-fluid figure-img"></p>
+<figcaption>Smooth terms for the best fitting GAM model with AR(2)</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-ar2-model-terms.png" alt="Smooth terms for the best fitting GAM model with AR(2)" /><figcaption>Smooth terms for the best fitting GAM model with AR(2)</figcaption>
-</figure>
+</div>
 <p>Looking now at the normalized residuals (which take into account the covariance matrix of the residuals), we see no important or significant residual autocorrelation suggesting that the AR(2) model is sufficient and we can, to some degree, draw inference from this model.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="n">matrix</span><span class="p">(</span><span class="m">1</span><span class="o">:</span><span class="m">2</span><span class="p">,</span><span class="w"> </span><span class="n">ncol</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">2</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">res</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">resid</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">lme</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"normalized"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">acf</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">lag.max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">36</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"ACF - AR(2) errors"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pacf</span><span class="p">(</span><span class="n">res</span><span class="p">,</span><span class="w"> </span><span class="n">lag.max</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">36</span><span class="p">,</span><span class="w"> </span><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"pACF- AR(2) errors"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">layout</span><span class="p">(</span><span class="m">1</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">layout</span>(<span class="fu">matrix</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">ncol =</span> <span class="dv">2</span>))</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> res <span class="ot">&lt;-</span> <span class="fu">resid</span>(m2<span class="sc">$</span>lme, <span class="at">type =</span> <span class="st">"normalized"</span>)</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">acf</span>(res, <span class="at">lag.max =</span> <span class="dv">36</span>, <span class="at">main =</span> <span class="st">"ACF - AR(2) errors"</span>)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">pacf</span>(res, <span class="at">lag.max =</span> <span class="dv">36</span>, <span class="at">main =</span> <span class="st">"pACF- AR(2) errors"</span>)</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">layout</span>(<span class="dv">1</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-seasonal-data-with-gam-acf-residuals-ar2-model.png" class="img-fluid figure-img"></p>
+<figcaption>ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-acf-residuals-ar2-model.png" alt="ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix" /><figcaption>ACF and pACF of the residuals from the GAM model with AR(2) correlation matrix</figcaption>
-</figure>
-<h2 id="extracting-individual-model-terms">Extracting individual model terms</h2>
+</div>
+</section>
+<section id="extracting-individual-model-terms" class="level2">
+<h2 data-anchor-id="extracting-individual-model-terms">Extracting individual model terms</h2>
 <p>The fitted GAM model object contains a lot of information that can be used to interrogate the model. For the purposes of this post I’m interested in the trend terms, so I can extract information about the contributions to the fitted values of our chosen model by getting <strong>mgcv</strong> to spit out this information using <code>predict()</code> and <code>type = "terms"</code>. In the code below, I do this for each of the four models we’ve fitted, predicting for 200 evenly-spaced values over the range of the date. Note <code>want</code> picks out the 200 values from the observed data as these are evenly spaced. For more complex data you may need to be a bit more clever about how you choose these values.</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">want</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">seq</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">nrow</span><span class="p">(</span><span class="n">cet</span><span class="p">),</span><span class="w"> </span><span class="n">length.out</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">200</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">cet</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">              </span><span class="n">data.frame</span><span class="p">(</span><span class="n">Time</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Time</span><span class="p">[</span><span class="n">want</span><span class="p">],</span><span class="w"> </span><span class="n">Date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Date</span><span class="p">[</span><span class="n">want</span><span class="p">],</span><span class="w">
-</span><span class="o">+</span><span class="w">                         </span><span class="n">nMonth</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">nMonth</span><span class="p">[</span><span class="n">want</span><span class="p">]))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> 
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## predict trend contributions</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p</span><span class="w">  </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w">  </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p1</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m1</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p2</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m2</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">p3</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">predict</span><span class="p">(</span><span class="n">m3</span><span class="o">$</span><span class="n">gam</span><span class="p">,</span><span class="w"> </span><span class="n">newdata</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"terms"</span><span class="p">,</span><span class="w"> </span><span class="n">se.fit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">TRUE</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> 
-</span><span class="o">&gt;</span><span class="w"> </span><span class="c1">## combine with the predictions data, including fitted and SEs</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">pdat</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">transform</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">                   </span><span class="n">p</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w">  </span><span class="n">se</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="n">p</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w">
-</span><span class="o">+</span><span class="w">                   </span><span class="n">p1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p1</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">se1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p1</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w">
-</span><span class="o">+</span><span class="w">                   </span><span class="n">p2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p2</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">se2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p2</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w">
-</span><span class="o">+</span><span class="w">                   </span><span class="n">p3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p3</span><span class="o">$</span><span class="n">fit</span><span class="p">[,</span><span class="m">2</span><span class="p">],</span><span class="w"> </span><span class="n">se3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">p3</span><span class="o">$</span><span class="n">se.fit</span><span class="p">[,</span><span class="m">2</span><span class="p">])</span></code></pre>
-</figure>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> want <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">1</span>, <span class="fu">nrow</span>(cet), <span class="at">length.out =</span> <span class="dv">200</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> pdat <span class="ot">&lt;-</span> <span class="fu">with</span>(cet,</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>              <span class="fu">data.frame</span>(<span class="at">Time =</span> Time[want], <span class="at">Date =</span> Date[want],</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                         <span class="at">nMonth =</span> nMonth[want]))</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> </span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> <span class="do">## predict trend contributions</span></span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> p  <span class="ot">&lt;-</span> <span class="fu">predict</span>(m<span class="sc">$</span>gam,  <span class="at">newdata =</span> pdat, <span class="at">type =</span> <span class="st">"terms"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> p1 <span class="ot">&lt;-</span> <span class="fu">predict</span>(m1<span class="sc">$</span>gam, <span class="at">newdata =</span> pdat, <span class="at">type =</span> <span class="st">"terms"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> p2 <span class="ot">&lt;-</span> <span class="fu">predict</span>(m2<span class="sc">$</span>gam, <span class="at">newdata =</span> pdat, <span class="at">type =</span> <span class="st">"terms"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> p3 <span class="ot">&lt;-</span> <span class="fu">predict</span>(m3<span class="sc">$</span>gam, <span class="at">newdata =</span> pdat, <span class="at">type =</span> <span class="st">"terms"</span>, <span class="at">se.fit =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> </span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> <span class="do">## combine with the predictions data, including fitted and SEs</span></span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a><span class="er">&gt;</span> pdat <span class="ot">&lt;-</span> <span class="fu">transform</span>(pdat,</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                   <span class="at">p  =</span> p<span class="sc">$</span>fit[,<span class="dv">2</span>],  <span class="at">se  =</span> p<span class="sc">$</span>se.fit[,<span class="dv">2</span>],</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                   <span class="at">p1 =</span> p1<span class="sc">$</span>fit[,<span class="dv">2</span>], <span class="at">se1 =</span> p1<span class="sc">$</span>se.fit[,<span class="dv">2</span>],</span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                   <span class="at">p2 =</span> p2<span class="sc">$</span>fit[,<span class="dv">2</span>], <span class="at">se2 =</span> p2<span class="sc">$</span>se.fit[,<span class="dv">2</span>],</span>
+<span id="cb24-17"><a href="#cb24-17" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>                   <span class="at">p3 =</span> p3<span class="sc">$</span>fit[,<span class="dv">2</span>], <span class="at">se3 =</span> p3<span class="sc">$</span>se.fit[,<span class="dv">2</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Note that it doesn’t matter what months get select in the 200 values as the month effect is handle by the other spline term; here we get the contribution for the trend which is based on the <code>Time</code> variable only. This would need to done be differently if you allowed the seasonal and trend splines to <em>interact</em>; I’ll look at this is a future post at some point.</p>
 <p>Now I am ready to plot the estimated trends for the four models fitted</p>
-<figure class="highlight">
-<pre><code class="language-r" data-lang="r"><span class="o">&gt;</span><span class="w"> </span><span class="n">op</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">mar</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">5</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">2</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">0.1</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="n">with</span><span class="p">(</span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="nf">range</span><span class="p">(</span><span class="n">p</span><span class="p">,</span><span class="w"> </span><span class="n">p1</span><span class="p">,</span><span class="w"> </span><span class="n">p2</span><span class="p">,</span><span class="w"> </span><span class="n">p3</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylim</span><span class="p">[</span><span class="m">1</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">floor</span><span class="p">(</span><span class="n">ylim</span><span class="p">[</span><span class="m">1</span><span class="p">])</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylim</span><span class="p">[</span><span class="m">2</span><span class="p">]</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">ceiling</span><span class="p">(</span><span class="n">ylim</span><span class="p">[</span><span class="m">2</span><span class="p">])</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">ylab</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">expression</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="p">(</span><span class="n">degree</span><span class="o">*</span><span class="n">C</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">centred</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">plot</span><span class="p">(</span><span class="n">Temperature</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">mean</span><span class="p">(</span><span class="n">Temperature</span><span class="p">)</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">cet</span><span class="p">,</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">      </span><span class="n">ylab</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylab</span><span class="p">,</span><span class="w"> </span><span class="n">ylim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">ylim</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p</span><span class="w">  </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"black"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p1</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"red"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p2</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"blue"</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">lines</span><span class="p">(</span><span class="n">p3</span><span class="w"> </span><span class="o">~</span><span class="w"> </span><span class="n">Date</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">pdat</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"forestgreen"</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">)</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">legend</span><span class="p">(</span><span class="s2">"topleft"</span><span class="p">,</span><span class="w">
-</span><span class="o">+</span><span class="w">        </span><span class="n">legend</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"Uncorrelated Errors"</span><span class="p">,</span><span class="w"> </span><span class="n">paste0</span><span class="p">(</span><span class="s2">"AR("</span><span class="p">,</span><span class="w"> </span><span class="m">1</span><span class="o">:</span><span class="m">3</span><span class="p">,</span><span class="w"> </span><span class="s2">") Errors"</span><span class="p">)),</span><span class="w">
-</span><span class="o">+</span><span class="w">        </span><span class="n">bty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"n"</span><span class="p">,</span><span class="w"> </span><span class="n">col</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="s2">"black"</span><span class="p">,</span><span class="s2">"red"</span><span class="p">,</span><span class="s2">"blue"</span><span class="p">,</span><span class="s2">"forestgreen"</span><span class="p">),</span><span class="w">
-</span><span class="o">+</span><span class="w">        </span><span class="n">lty</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="m">1</span><span class="p">,</span><span class="w"> </span><span class="n">lwd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nf">c</span><span class="p">(</span><span class="m">1</span><span class="p">,</span><span class="m">1</span><span class="p">,</span><span class="m">1</span><span class="p">))</span><span class="w">
-</span><span class="o">&gt;</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">op</span><span class="p">)</span></code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> op <span class="ot">&lt;-</span> <span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">5</span>,<span class="dv">4</span>,<span class="dv">2</span>,<span class="dv">2</span>) <span class="sc">+</span> <span class="fl">0.1</span>)</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> ylim <span class="ot">&lt;-</span> <span class="fu">with</span>(pdat, <span class="fu">range</span>(p, p1, p2, p3))</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> ylim[<span class="dv">1</span>] <span class="ot">&lt;-</span> <span class="fu">floor</span>(ylim[<span class="dv">1</span>])</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> ylim[<span class="dv">2</span>] <span class="ot">&lt;-</span> <span class="fu">ceiling</span>(ylim[<span class="dv">2</span>])</span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> ylab <span class="ot">&lt;-</span> <span class="fu">expression</span>(Temperature <span class="sc">~</span> (degree<span class="sc">*</span>C <span class="sc">~</span> centred))</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">plot</span>(Temperature <span class="sc">-</span> <span class="fu">mean</span>(Temperature) <span class="sc">~</span> Date, <span class="at">data =</span> cet, <span class="at">type =</span> <span class="st">"n"</span>,</span>
+<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>      <span class="at">ylab =</span> ylab, <span class="at">ylim =</span> ylim)</span>
+<span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(p  <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">col =</span> <span class="st">"black"</span>)</span>
+<span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(p1 <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">col =</span> <span class="st">"red"</span>)</span>
+<span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(p2 <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">col =</span> <span class="st">"blue"</span>)</span>
+<span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">lines</span>(p3 <span class="sc">~</span> Date, <span class="at">data =</span> pdat, <span class="at">col =</span> <span class="st">"forestgreen"</span>, <span class="at">lwd =</span> <span class="dv">1</span>)</span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">legend</span>(<span class="st">"topleft"</span>,</span>
+<span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>        <span class="at">legend =</span> <span class="fu">c</span>(<span class="st">"Uncorrelated Errors"</span>, <span class="fu">paste0</span>(<span class="st">"AR("</span>, <span class="dv">1</span><span class="sc">:</span><span class="dv">3</span>, <span class="st">") Errors"</span>)),</span>
+<span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>        <span class="at">bty =</span> <span class="st">"n"</span>, <span class="at">col =</span> <span class="fu">c</span>(<span class="st">"black"</span>,<span class="st">"red"</span>,<span class="st">"blue"</span>,<span class="st">"forestgreen"</span>),</span>
+<span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a><span class="sc">+</span>        <span class="at">lty =</span> <span class="dv">1</span>, <span class="at">lwd =</span> <span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>,<span class="dv">1</span>))</span>
+<span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="sc">&gt;</span> <span class="fu">par</span>(op)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="../../../../assets/img/posts/modelling-seasonal-data-with-gam-plot-model-trends.png" class="img-fluid figure-img"></p>
+<figcaption>Comparison of the fitted trend components for the four models considered</figcaption>
 </figure>
-<figure>
-<img src="https://www.fromthebottomoftheheap.net/assets/img/posts/modelling-seasonal-data-with-gam-plot-model-trends.png" alt="Comparison of the fitted trend components for the four models considered" /><figcaption>Comparison of the fitted trend components for the four models considered</figcaption>
-</figure>
+</div>
 <p>This plot nicely illustrates the reduction in wiggliness of the estimated trend in the AR(2) and AR(3) models, and how similar the two higher-order AR models are in terms of their trend estimates.</p>
 <p>I’ll leave things at this point; in the next post I’ll look at how we can look at where the estimated trend is changing in a statistically significant fashion by interrogating the fitted GAM in deeper and more devious ways.</p>
-<h2 id="disclaimer">Disclaimer</h2>
+</section>
+<section id="disclaimer" class="level2">
+<h2 data-anchor-id="disclaimer">Disclaimer</h2>
 <p>Don’t over interpret the model fits here; they were done to illustrate how to get <strong>mgcv</strong> to fit models to seasonal data. If you were doing this in anger for a real analysis then we’d want to look in a lot more detail at unmodelled features such as changes in the seasonal temperature with the trend and do a lot more in terms of model diagnostics. Such things are beyond the scope of this particular post, but I will pick some of these issues up in later postings as time permits.</p>
 <p>Note also that the precision with which the data are reported early on in the series is less than that for more recent decades. This potentially might affect the variance of the series; the data might seem less variable earlier on because they are not recorded to the same level of precision as later values. We could investigate this and also other peculiarities of this particular data set and how it was collated by going back to the references cited in the raw data file and adjusting the model to account for any idiosyncrasies.</p>
-<section class="footnotes">
-<hr />
-<ol>
-<li id="fn1"><p>It’s not a mess really; the problem is that there are so many years of data that the years are all squished up tight and, coupled with the magnitude of the seasonal variation, this leads to an irregular black band obscuring everything unless you have a very wide graphics device.<a href="#fnref1" class="footnote-back">↩</a></p></li>
-</ol>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2014/03/25/file-synchronisation-with-unison/">← Older: File synchronisation with Unison</a></span> <span class="text-end"><a href="../../../../2014/05/15/identifying-periods-of-change-with-gams/">Newer: Identifying periods of change in time series with GAMs →</a></span></p>
+</div>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
 </section>
 
-            <hr />
-            <h3>Comments</h3>
-            <div id="disqus_thread"></div>
-<script type="text/javascript">
-  var disqus_shortname = "fromthebottomoftheheap";
-  var disqus_url = "https://www.fromthebottomoftheheap.net/2014/05/09/modelling-seasonal-data-with-gam/";
-  var disqus_title = "Modelling seasonal data with GAMs";
-  //var disqus_identifier = "/2014/05/09/modelling-seasonal-data-with-gam";
 
-  (function() {
-    var dsq = document.createElement('script');
-    dsq.type = 'text/javascript';
-    dsq.async = true;
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-  })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
-
-            </div>
-            <div class="span2">
-                            <div class="side-snippet">
-                <h4>By Gavin Simpson</h4>
-              
-                <h4>09 May 2014</h4>
-              
-              </div>
-
-                            <div class="side-snippet">
-                <h4>Posted in</h4>
-                
-                <a href="https://www.fromthebottomoftheheap.net/category/r/"><span class="label label-warning">R</span></a><br>
-                
-              </div>
-       
-
-                            <div class="side-snippet">
-                <h4>Tagged</h4>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/gam/"><span class="label label-inverse">GAM</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/time-series/"><span class="label label-inverse">Time series</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/modelling/"><span class="label label-inverse">modelling</span></a><br>
-                
-                  <a href="https://www.fromthebottomoftheheap.net/tag/central-england-temperature/"><span class="label label-inverse">Central England Temperature</span></a><br>
-                
-              </div>
-
-                          <div class="side-snippet">
-              <h4>Social</h4>
-              <p><a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 45px !important;width: 150px !important;" ></a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Send me an email" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_419_e-mail.png" /> <a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My twitter profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_411_twitter.png" /> <a href="https://twitter.com/ucfagls">@ucfagls</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="My github profile" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_401_github.png" /> <a href="https://github.com/gavinsimpson">gavinsimpson</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="ORCID ID" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/orcid_24x24.png" /> <a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a></p>
-              <p><img class="bs-icon addToolTip" data-original-title="Subscribe to the blog via RSS (Atom)" data-placement="left" data-animation="true" src="https://www.fromthebottomoftheheap.net/assets/img/glyphicons/glyphicons_417_rss.png" /> <a href="https://www.fromthebottomoftheheap.net/feed.xml" type="application/atom+xml">Subscribe</a></p>
-            </div>
-
-
-                          <div class="side-snippet">
-              <h4>Blogroll</h4>
-              <ul class="unstyled">
-                <li><i class="icon-bookmark"></i> <a href="http://downwithtime.wordpress.com/">Down With time</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://contemplativemammoth.wordpress.com/">The Contemplative Mammoth</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://dynamicecology.wordpress.com/">Dynamic Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://jabberwocky.weecology.org/">Jabberwocky Ecology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://recology.info/">Recology</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://rweekly.org/">R Weekly</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://www.r-bloggers.com/">R Bloggers</a></li>
-                <li><i class="icon-bookmark"></i> <a href="https://methodsblog.wordpress.com/">Methods in Ecology &amp; Evolution</a></li>
-                <li><i class="icon-bookmark"></i> <a href="http://quantpalaeo.wordpress.com/">Musings on Quantitative Palaeoecology</a></li>
-              </ul>
-            </div>
-
-              
-            </div>
-          </div>
-        </div>
-      </div>
-      </article>
-
-        
-
-    </div><!--/.fixed-container-->
-    
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="span2">
-            <h4>Menu</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net"><small>Home</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/about/"><small>About</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/publications/"><small>Publications</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/research/"><small>Research</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/lab/"><small>The Lab</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/teaching/"><small>Teaching</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/dper-scripts/"><small>DPER Scripts</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/"><small>R Packages</small></a></li>
-            </ul>
-          </div>
-          <div class="span2">
-            <h4>R packages</h4>
-            <ul class="unstyled">
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/analogue/"><small>analogue</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/permute/"><small>permute</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/vegan/"><small>vegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/gratia/"><small>gratia</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/cocorresp/"><small>cocorresp</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/coenocliner/"><small>coenocliner</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/temporalEF/"><small>temporalEF</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/canadaHCD/"><small>canadaHCD</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/ggvegan/"><small>ggvegan</small></a></li>
-              <li><a href="https://www.fromthebottomoftheheap.net/code/r-packages/pcurve/"><small>pcurve</small></a></li>
-            </ul>        
-          </div>
-          <div class="span6">
-            <h4>Fineprint</h4>
-            <p><small>Copyright &copy; 2010&ndash;2024 Gavin Simpson. <a href="https://www.fromthebottomoftheheap.net/permissions/">Some Rights Reserved</a>&nbsp;&nbsp;&nbsp;<a rel="license" href="https://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons Licence" style="border-width:0" src="https://licensebuttons.net/l/by/4.0/80x15.png" /></a></small></p>
-            <p><small>Icons by <a href="http://www.glyphicons.com/">Glyphicons</a> used under CC-BY licence</small></p>
-          </div>
-        </div>
-      </div>
-    </footer>
-    
-        <!-- Le javascript
-    ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/jquery.min.js"></script>
-    <script src="https://www.fromthebottomoftheheap.net/assets/js/bootstrap.js"></script>
-    <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <script>
-        jQuery(function ($) {
-            $(".addToolTip").tooltip()
+<ol>
+<li id="fn1"><p>It’s not a mess really; the problem is that there are so many years of data that the years are all squished up tight and, coupled with the magnitude of the seasonal variation, this leads to an irregular black band obscuring everything unless you have a very wide graphics device.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/fromthebottomoftheheap\.net");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
         });
-        // Fix suggested by Dependabot as I don't think i can upgrade to jq >=3.5.0 with this version of bootstrap
-        jQuery.htmlPrefilter = function( html ) {
-	return html;
-	};
-    </script>
-    
-    
+      }
+    }
+  });
+  </script>
+<input type="hidden" id="giscus-base-theme" value="preferred_color_scheme">
+<input type="hidden" id="giscus-alt-theme" value="preferred_color_scheme">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "gavinsimpson/fromthebottomoftheheap-comments";
+    script.dataset.repoId = "R_kgDOUUVJuA";
+    script.dataset.category = "Blog comments";
+    script.dataset.categoryId = "DIC_kwDOUUVJuM4DFRne";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright © 2010–2026 Gavin Simpson</p>
+</div>   
+    <div class="nav-footer-center">
+<p>Content available under a <a href="../../../../permissions/">Creative Commons Attribution 4.0 licence</a>.</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:ucfagls@gmail.com">
+      <i class="bi bi-envelope" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://orcid.org/0000-0002-9084-8413">
+<p>ORCID</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
 
 
-  </body>
-</html>
 
 
+</body></html>
