@@ -47,7 +47,11 @@ invisible(render_publications_markdown(registry, cache, tmp))
 generated <- readLines(tmp, warn = FALSE)
 assert(sum(grepl("^1[.] ", generated)) == length(entries), "Generated list must contain exactly one item per publication.")
 assert(sum(grepl("file-earmark-pdf", generated, fixed = TRUE)) >= 59L, "All 59 migrated publication manuscript/reprint links must be preserved.")
-assert(sum(grepl("licence-icon", generated, fixed = TRUE)) >= 35L, "All 35 migrated licence icons must be preserved.")
+assert(sum(grepl("publication-licence", generated, fixed = TRUE)) >= 35L, "All 35 migrated licences must be preserved.")
+assert(sum(grepl("fa brands creative-commons-by", generated, fixed = TRUE)) >= 35L,
+  "Every rendered publication licence must include the Font Awesome attribution icon.")
+assert(any(grepl("fa brands creative-commons-nc", generated, fixed = TRUE)),
+  "CC BY-NC publications must include the Font Awesome non-commercial icon.")
 
 suggestions <- yaml::read_yaml(paths$suggestions)
 assert(is.list(suggestions) && is.list(suggestions$suggestions), "Version-of-record suggestions must be valid YAML.")

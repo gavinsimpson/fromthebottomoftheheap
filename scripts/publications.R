@@ -39,6 +39,11 @@ scalar_character <- function(x) {
   is.character(x) && length(x) == 1L && nzchar(x)
 }
 
+publication_license_icons <- list(
+  "cc-by" = c("creative-commons", "creative-commons-by"),
+  "cc-by-nc" = c("creative-commons", "creative-commons-by", "creative-commons-nc")
+)
+
 validate_publication_registry <- function(registry, root = ".") {
   entries <- registry$entries
   ids <- vapply(entries, function(x) x$id %||% "", character(1))
@@ -75,9 +80,11 @@ validate_publication_registry <- function(registry, root = ".") {
         if (!file.exists(local_path)) stop("Missing local publication file: ", local_path)
       }
     }
-    if (!is.null(entry$license$icon) && startsWith(entry$license$icon, "/")) {
-      icon_path <- file.path(root, sub("^/", "", entry$license$icon))
-      if (!file.exists(icon_path)) stop("Missing publication licence icon: ", icon_path)
+    if (!is.null(entry$license)) {
+      license_type <- entry$license$type %||% ""
+      if (!scalar_character(license_type) || !license_type %in% names(publication_license_icons)) {
+        stop("Publication '", ids[[i]], "' has an unsupported licence type: ", license_type)
+      }
     }
   }
   invisible(registry)
@@ -379,11 +386,17 @@ format_publication <- function(metadata, entry, owner) {
       '<i class="bi bi-file-earmark-pdf" aria-hidden="true"></i></a>'
     )
   }
-  if (!is.null(entry$license$icon)) {
+  if (!is.null(entry$license)) {
+    license_type <- entry$license$type
     label <- entry$license$label %||% "Publication licence"
+    icons <- paste0(
+      "{{< fa brands ", publication_license_icons[[license_type]], " >}}",
+      collapse = ""
+    )
     citation <- paste0(
-      citation, ' <img class="licence-icon" src="', html_escape(entry$license$icon, attribute = TRUE),
-      '" alt="', html_escape(label, attribute = TRUE), '">'
+      citation, ' <span class="publication-licence publication-licence-',
+      html_escape(license_type, attribute = TRUE), '" role="img" aria-label="',
+      html_escape(label, attribute = TRUE), '">', icons, '</span>'
     )
   }
   citation

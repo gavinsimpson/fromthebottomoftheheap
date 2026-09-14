@@ -82,9 +82,13 @@ Site-specific links and licence information stay in the registry:
     url: /assets/reprints/example.pdf
     label: Download accepted manuscript PDF
   license:
-    icon: /assets/img/cc-by.png
+    type: cc-by
     label: Creative Commons Attribution
 ```
+
+Use `type: cc-by` for a CC BY licence or `type: cc-by-nc` for CC BY-NC. The
+site renders the corresponding Font Awesome Creative Commons symbols inline;
+there is no image file to add or maintain.
 
 Use `status: preprint`, `submitted`, `in review`, `in revision`, `accepted`, or
 `in press` only while that label should replace the publication year. Remove

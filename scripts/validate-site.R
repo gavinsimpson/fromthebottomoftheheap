@@ -435,6 +435,27 @@ for (feed in c("feed.xml", "feed-R.xml")) {
   if (!file.exists(file.path(root, "_site", feed))) stop("Missing compatibility feed: ", feed)
 }
 
+publication_pages <- c(
+  file.path(root, "_site", "publications", "index.html"),
+  file.path(root, "_site", "publications", "with-altmetrics", "index.html")
+)
+for (page in publication_pages) {
+  publication_text <- paste(readLines(page, warn = FALSE), collapse = "\n")
+  if (grepl('class="licence-icon"', publication_text, fixed = TRUE) ||
+      grepl("assets/img/cc-by", publication_text, fixed = TRUE)) {
+    stop("A raster Creative Commons badge remains on publication page: ", page)
+  }
+  if (!grepl("fa-creative-commons", publication_text, fixed = TRUE) ||
+      !grepl("fa-creative-commons-by", publication_text, fixed = TRUE) ||
+      !grepl("fontawesome6-6.7.2/all.min.css", publication_text, fixed = TRUE)) {
+    stop("Font Awesome Creative Commons icons are incomplete on publication page: ", page)
+  }
+}
+main_publications <- paste(readLines(publication_pages[[1L]], warn = FALSE), collapse = "\n")
+if (!grepl("fa-creative-commons-nc", main_publications, fixed = TRUE)) {
+  stop("The main publications page is missing its CC BY-NC icons")
+}
+
 robots_source <- readLines(file.path(root, "robots.txt"), warn = FALSE)
 robots_rendered <- readLines(file.path(root, "_site", "robots.txt"), warn = FALSE)
 if (!identical(robots_source, robots_rendered)) {
