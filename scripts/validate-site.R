@@ -47,6 +47,21 @@ if (length(bad)) stop("Archived Rmd files changed: ", paste(bad, collapse = ", "
 
 quarto <- readLines(file.path(root, "_quarto.yml"), warn = FALSE)
 if (any(grepl(".Rmd", quarto, fixed = TRUE))) stop("_quarto.yml must not name any Rmd render input")
+if (!any(grepl("- blog/**/*.qmd", quarto, fixed = TRUE))) {
+  stop("_quarto.yml must render the complete set of blog archive pages")
+}
+
+post_years <- sub("^([0-9]{4})/.*", "\\1", manifest$qmd)
+expected_years <- sort(unique(post_years), decreasing = TRUE)
+expected_year_sources <- file.path(root, "blog", expected_years, "index.qmd")
+if (!all(file.exists(expected_year_sources))) {
+  stop("A generated year archive source is missing")
+}
+actual_year_sources <- list.files(file.path(root, "blog"), recursive = TRUE)
+actual_year_sources <- actual_year_sources[grepl("^[0-9]{4}/index\\.qmd$", actual_year_sources)]
+if (!identical(sort(actual_year_sources), sort(file.path(expected_years, "index.qmd")))) {
+  stop("Generated year archive sources do not match the populated post years")
+}
 
 legacy_jekyll <- c(".htaccess", "_config.yml", "_includes", "_layouts", "_plugins", "_posts")
 remaining_jekyll <- legacy_jekyll[file.exists(file.path(root, legacy_jekyll))]
@@ -166,6 +181,47 @@ if (!all(vapply(blog_pagination_markers, grepl, logical(1L), x = blog_text, fixe
 }
 if (!grepl("Here, I describe what I broke as well as outline some of the major new features in the package.", blog_text, fixed = TRUE)) {
   stop("The blog archive listing does not contain complete opening-paragraph excerpts")
+}
+
+year_links <- paste0('href="../blog/', expected_years, '/"')
+if (!grepl('id="title-block-header"', blog_text, fixed = TRUE) ||
+    !grepl('class="blog-year-selector dropdown"', blog_text, fixed = TRUE) ||
+    !grepl('class="dropdown-item active" aria-current="page" href="../blog/"', blog_text, fixed = TRUE) ||
+    !all(vapply(year_links, grepl, logical(1L), x = blog_text, fixed = TRUE))) {
+  stop("The main blog archive is missing its generated year selector")
+}
+
+for (year in expected_years) {
+  year_path <- file.path(root, "_site", "blog", year, "index.html")
+  if (!file.exists(year_path)) stop("Missing rendered year archive: ", year)
+  year_lines <- readLines(year_path, warn = FALSE)
+  year_text <- paste(year_lines, collapse = "\n")
+  expected_posts <- sum(post_years == year)
+  if (sum(grepl('class="quarto-post ', year_lines, fixed = TRUE)) != expected_posts) {
+    stop("Incorrect post count in rendered year archive: ", year)
+  }
+  if (grepl('class="listing-pagination"', year_text, fixed = TRUE)) {
+    stop("Year archive must display all posts without pagination: ", year)
+  }
+  active_year <- paste0(
+    'class="dropdown-item active" aria-current="page" href="../../blog/', year, '/">', year
+  )
+  if (!grepl(active_year, year_text, fixed = TRUE) ||
+      !all(vapply(c('id="title-block-header"', "Social", "Blogroll"), grepl,
+                  logical(1L), x = year_text, fixed = TRUE))) {
+    stop("Year archive layout or active selector is incomplete: ", year)
+  }
+}
+
+theme_text <- paste(readLines(file.path(root, "theme.scss"), warn = FALSE), collapse = "\n")
+year_layout_markers <- c(
+  ".blog-page #quarto-document-content",
+  "grid-template-columns: minmax(0, 1fr) 12rem 12rem",
+  "width: 12rem",
+  ".blog-year-selector .dropdown-item.active"
+)
+if (!all(vapply(year_layout_markers, grepl, logical(1L), x = theme_text, fixed = TRUE))) {
+  stop("The responsive year archive header styles are incomplete")
 }
 
 post_html <- file.path(root, "_site", sub("^/", "", manifest$url), "index.html")
