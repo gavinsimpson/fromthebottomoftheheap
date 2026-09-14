@@ -237,6 +237,10 @@ if (!grepl(".side-snippet .sidebar-links .bi-bluesky", theme_text, fixed = TRUE)
     !grepl("color: #0560ff", theme_text, fixed = TRUE)) {
   stop("The Bluesky butterfly is not using the official Blue500 colour")
 }
+if (!grepl(".side-snippet .sidebar-links .fa-orcid", theme_text, fixed = TRUE) ||
+    !grepl("color: #a6ce39", theme_text, fixed = TRUE)) {
+  stop("The ORCID icon is not using the ORCID brand green")
+}
 
 post_html <- file.path(root, "_site", sub("^/", "", manifest$url), "index.html")
 post_sidebar_include <- "{{< include ../../../../includes/social-blogroll.qmd >}}"
@@ -272,7 +276,8 @@ if (!all(vapply(post_html, function(path) {
   lines <- readLines(path, warn = FALSE)
   all(vapply(c(
     "buymeacoffee.com/gavinsimpson", ">Social</h4>", ">Blogroll</h4>",
-    "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social", "bi-bluesky"
+    "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social", "bi-bluesky",
+    "fa-brands fa-orcid"
   ), function(value) {
     any(grepl(value, lines, fixed = TRUE))
   }, logical(1L)))
