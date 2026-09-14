@@ -83,8 +83,8 @@ a post when either its singular `category` metadata is `R` or its plural Quarto
 tag alone does not qualify a post. The build validates that the feed contains
 only eligible post URLs, uses full HTML item descriptions, has no base64-encoded
 images or automatic redirects, and identifies its public URL correctly. Keep
-the R-bloggers link in the Blogroll, as their participation guidelines require
-a backlink.
+the R-bloggers link in the site footer, as their participation guidelines
+require a backlink.
 
 ## Publications
 

@@ -149,11 +149,20 @@ if (!grepl('class="bi bi-flask"', home_text, fixed = TRUE)) {
   stop("The Research navbar item is missing its flask icon")
 }
 home_sidebar_items <- c(
-  "Social", "Blogroll", "Buy Me A Coffee", "Musings on Quantitative Palaeoecology",
-  "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social", "r-bloggers.com"
+  "Social", "Buy Me A Coffee", "bsky.app/profile/gsimpson.bsky.social",
+  "@gsimpson.bsky.social"
 )
 if (!all(vapply(home_sidebar_items, grepl, logical(1L), x = home_text, fixed = TRUE))) {
-  stop("The home-page Social or Blogroll sidebar is incomplete")
+  stop("The home-page Social sidebar is incomplete")
+}
+if (grepl('id="blogroll" class="level4 side-snippet"', home_text, fixed = TRUE)) {
+  stop("The retired Blogroll remains on the home page")
+}
+if (!grepl('href="https://www.r-bloggers.com/"', home_text, fixed = TRUE)) {
+  stop("The site footer is missing the R-bloggers backlink")
+}
+if (!grepl('href="https://rweekly.org/"', home_text, fixed = TRUE)) {
+  stop("The site footer is missing the R Weekly link")
 }
 if (!grepl("home-posts", home_text, fixed = TRUE) || !grepl("home-sidebar", home_text, fixed = TRUE)) {
   stop("The home-page wide listing layout is missing")
@@ -213,9 +222,12 @@ for (year in expected_years) {
     'class="dropdown-item active" aria-current="page" href="../../blog/', year, '/">', year
   )
   if (!grepl(active_year, year_text, fixed = TRUE) ||
-      !all(vapply(c('id="title-block-header"', "Social", "Blogroll"), grepl,
+      !all(vapply(c('id="title-block-header"', "Social"), grepl,
                   logical(1L), x = year_text, fixed = TRUE))) {
     stop("Year archive layout or active selector is incomplete: ", year)
+  }
+  if (grepl('id="blogroll" class="level4 side-snippet"', year_text, fixed = TRUE)) {
+    stop("The retired Blogroll remains on year archive: ", year)
   }
 }
 
@@ -231,7 +243,7 @@ if (!all(vapply(year_layout_markers, grepl, logical(1L), x = theme_text, fixed =
 }
 if (!grepl(".side-snippet .sidebar-links a", theme_text, fixed = TRUE) ||
     !grepl("color: rgb(51, 51, 51)", theme_text, fixed = TRUE)) {
-  stop("The Social and Blogroll text colour is not pinned to rgb(51, 51, 51)")
+  stop("The Social text colour is not pinned to rgb(51, 51, 51)")
 }
 if (!grepl("#social", theme_text, fixed = TRUE) ||
     !grepl("#social[[:space:]]*\\{[^}]*border-left:[[:space:]]*4px[[:space:]]+solid[[:space:]]+#f43d00[^}]*padding-left:[[:space:]]*0\\.8rem", theme_text, perl = TRUE)) {
@@ -254,7 +266,7 @@ post_sidebar_include <- "{{< include ../../../../includes/social-blogroll.qmd >}
 if (!all(vapply(manifest$qmd, function(path) {
   any(grepl(post_sidebar_include, readLines(file.path(root, path), warn = FALSE), fixed = TRUE))
 }, logical(1L)))) {
-  stop("The shared Social and Blogroll sidebar is missing from a historical post source")
+  stop("The shared Social sidebar is missing from a historical post source")
 }
 rendered <- unlist(lapply(post_html, function(path) readLines(path, warn = FALSE)), use.names = FALSE)
 if (any(grepl('class="description"', rendered, fixed = TRUE))) {
@@ -282,14 +294,17 @@ if (!all(vapply(post_html, function(path) any(grepl("giscus.app/client.js", read
 if (!all(vapply(post_html, function(path) {
   lines <- readLines(path, warn = FALSE)
   all(vapply(c(
-    "buymeacoffee.com/gavinsimpson", ">Social</h4>", ">Blogroll</h4>",
+    "buymeacoffee.com/gavinsimpson", ">Social</h4>",
     "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social", "bi-bluesky",
     "fa-brands fa-orcid"
   ), function(value) {
     any(grepl(value, lines, fixed = TRUE))
   }, logical(1L)))
 }, logical(1L)))) {
-  stop("The rendered Social, Bluesky, Buy Me a Coffee, or Blogroll sidebar is missing from a historical post")
+  stop("The rendered Social, Bluesky, or Buy Me a Coffee sidebar is missing from a historical post")
+}
+if (any(grepl('id="blogroll" class="level4 side-snippet"', rendered, fixed = TRUE))) {
+  stop("The retired Blogroll remains on a historical post")
 }
 retired_twitter_sidebar <- paste0(
   '<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">'
@@ -362,7 +377,6 @@ style_parity_rules <- c(
   "pre code,[[:space:]]*pre\\.sourceCode code[[:space:]]*\\{[^}]*font-size:[[:space:]]*13px[^}]*line-height:[[:space:]]*20px",
   "blockquote[[:space:]]*\\{[^}]*border-right:[[:space:]]*5px[[:space:]]+solid[[:space:]]+#f43d00",
   "table,[[:space:]]*table\\.table[[:space:]]*\\{[^}]*margin-block:[[:space:]]*3em",
-  "#blogroll[[:space:]]+\\.sidebar-links[[:space:]]*\\{[^}]*font-size:[[:space:]]*10px",
   "\\.buy-me-coffee[[:space:]]*\\{[^}]*height:[[:space:]]*45px[^}]*width:[[:space:]]*150px",
   "\\.nav-footer[[:space:]]*\\{[^}]*min-height:[[:space:]]*150px"
 )
