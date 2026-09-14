@@ -233,6 +233,10 @@ if (!grepl(".side-snippet .sidebar-links a", theme_text, fixed = TRUE) ||
     !grepl("color: rgb(51, 51, 51)", theme_text, fixed = TRUE)) {
   stop("The Social and Blogroll text colour is not pinned to rgb(51, 51, 51)")
 }
+if (!grepl("#social", theme_text, fixed = TRUE) ||
+    !grepl("#social[[:space:]]*\\{[^}]*border-left:[[:space:]]*4px[[:space:]]+solid[[:space:]]+#f43d00[^}]*padding-left:[[:space:]]*0\\.8rem", theme_text, perl = TRUE)) {
+  stop("The Social block must match the post taxonomy border and padding")
+}
 if (!grepl(".side-snippet .sidebar-links .bi-bluesky", theme_text, fixed = TRUE) ||
     !grepl("color: #0560ff", theme_text, fixed = TRUE)) {
   stop("The Bluesky butterfly is not using the official Blue500 colour")
