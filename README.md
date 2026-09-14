@@ -39,8 +39,47 @@ chunks. Every one is guarded with `eval: false`, `echo: false`, `output: false`,
 and `include: false`, plus an execution sentinel. Inline R expressions are not
 copied because their historical evaluated text is already in the Markdown.
 
-Create future posts from `_templates/post.qmd`. New posts may execute R and use
-`freeze: auto`; historical pages intentionally do not inherit that setting.
+Create each future post at `YYYY/MM/DD/slug/index.qmd`, where the directories
+are the publication date and `slug` is a short, lowercase, hyphen-separated
+name. This path becomes the permanent public URL and the Giscus discussion key,
+so do not change it after publication without also adding a redirect and
+planning how to preserve the associated discussion.
+
+For example, to start a post dated 14 September 2026:
+
+```sh
+mkdir -p 2026/09/14/example-post
+cp _templates/post.qmd 2026/09/14/example-post/index.qmd
+```
+
+Edit the copied front matter before writing:
+
+- replace `title`, `subtitle`, and `date` (prefer an explicit ISO date over
+  `today` for a committed post);
+- keep `category` and `categories` consistent, and add any `tags`;
+- optionally add `description` and an `image` for listings and social cards;
+- leave the Giscus configuration and the four-level-deep social-blogroll
+  include unchanged.
+
+Put post images in `assets/img/posts/`, preferably with the post slug in each
+filename, and refer to them with root-relative paths such as
+`/assets/img/posts/example-post-result.png`. Other downloadable files belong in
+an appropriate directory below `assets/`.
+
+New posts may execute R and use `freeze: auto`; historical pages intentionally
+do not inherit that setting. `quarto preview` is convenient while writing, but
+it is not the release check. Before committing, run the supported build command
+above twice. Review `git status` and the rendered post in `_site/`; commit the
+post source, its assets, regenerated tag/category sources, `_site/`, and any
+`_freeze/` files created for executable code. The second build should not add
+further unexplained changes.
+
+## Publications
+
+Add and update papers in `publications/publications.yml`; do not edit the
+generated publication list. DOI, preprint, submission-to-publication, cache,
+and validation workflows are documented in
+[`publications/README.md`](publications/README.md).
 
 ## Comments
 
