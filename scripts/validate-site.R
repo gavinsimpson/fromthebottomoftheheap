@@ -47,6 +47,21 @@ if (length(bad)) stop("Archived Rmd files changed: ", paste(bad, collapse = ", "
 
 quarto <- readLines(file.path(root, "_quarto.yml"), warn = FALSE)
 if (any(grepl(".Rmd", quarto, fixed = TRUE))) stop("_quarto.yml must not name any Rmd render input")
+if (!any(grepl("- blog/**/*.qmd", quarto, fixed = TRUE))) {
+  stop("_quarto.yml must render the complete set of blog archive pages")
+}
+
+post_years <- sub("^([0-9]{4})/.*", "\\1", manifest$qmd)
+expected_years <- sort(unique(post_years), decreasing = TRUE)
+expected_year_sources <- file.path(root, "blog", expected_years, "index.qmd")
+if (!all(file.exists(expected_year_sources))) {
+  stop("A generated year archive source is missing")
+}
+actual_year_sources <- list.files(file.path(root, "blog"), recursive = TRUE)
+actual_year_sources <- actual_year_sources[grepl("^[0-9]{4}/index\\.qmd$", actual_year_sources)]
+if (!identical(sort(actual_year_sources), sort(file.path(expected_years, "index.qmd")))) {
+  stop("Generated year archive sources do not match the populated post years")
+}
 
 legacy_jekyll <- c(".htaccess", "_config.yml", "_includes", "_layouts", "_plugins", "_posts")
 remaining_jekyll <- legacy_jekyll[file.exists(file.path(root, legacy_jekyll))]
@@ -130,9 +145,24 @@ if (any(grepl("publications/365papers", home, fixed = TRUE))) stop("Home listing
 home_text <- paste(home, collapse = "\n")
 blog_text <- paste(blog, collapse = "\n")
 if (grepl('<a class="navbar-brand', home_text, fixed = TRUE)) stop("The redundant site title remains in the navbar")
-home_sidebar_items <- c("Social", "Blogroll", "Buy Me A Coffee", "Musings on Quantitative Palaeoecology")
+if (!grepl('class="bi bi-flask"', home_text, fixed = TRUE)) {
+  stop("The Research navbar item is missing its flask icon")
+}
+home_sidebar_items <- c(
+  "Social", "Buy Me A Coffee", "bsky.app/profile/gsimpson.bsky.social",
+  "@gsimpson.bsky.social"
+)
 if (!all(vapply(home_sidebar_items, grepl, logical(1L), x = home_text, fixed = TRUE))) {
-  stop("The home-page Social or Blogroll sidebar is incomplete")
+  stop("The home-page Social sidebar is incomplete")
+}
+if (grepl('id="blogroll" class="level4 side-snippet"', home_text, fixed = TRUE)) {
+  stop("The retired Blogroll remains on the home page")
+}
+if (!grepl('href="https://www.r-bloggers.com/"', home_text, fixed = TRUE)) {
+  stop("The site footer is missing the R-bloggers backlink")
+}
+if (!grepl('href="https://rweekly.org/"', home_text, fixed = TRUE)) {
+  stop("The site footer is missing the R Weekly link")
 }
 if (!grepl("home-posts", home_text, fixed = TRUE) || !grepl("home-sidebar", home_text, fixed = TRUE)) {
   stop("The home-page wide listing layout is missing")
@@ -152,8 +182,83 @@ if (grepl("quarto-listing-container-table", blog_text, fixed = TRUE) ||
     !grepl("page: 10", blog_text, fixed = TRUE)) {
   stop("The blog archive must use a ten-post paginated excerpt listing")
 }
+blog_pagination_markers <- c(
+  'aria-label", "Blog post pages',
+  'classList.add("justify-content-end")',
+  'setAttribute("aria-current", "page")',
+  'setAttribute("aria-disabled", "true")',
+  'window.scrollTo({ top: 0, left: 0, behavior: "auto" })',
+  'pageControl("Previous", "\\u00ab"',
+  'pageControl("Next", "\\u00bb"'
+)
+if (!all(vapply(blog_pagination_markers, grepl, logical(1L), x = blog_text, fixed = TRUE))) {
+  stop("The blog archive is missing its accessible Bootstrap pagination controls")
+}
 if (!grepl("Here, I describe what I broke as well as outline some of the major new features in the package.", blog_text, fixed = TRUE)) {
   stop("The blog archive listing does not contain complete opening-paragraph excerpts")
+}
+
+year_links <- paste0('href="../blog/', expected_years, '/"')
+if (!grepl('id="title-block-header"', blog_text, fixed = TRUE) ||
+    !grepl('class="blog-year-selector dropdown"', blog_text, fixed = TRUE) ||
+    !grepl('class="dropdown-item active" aria-current="page" href="../blog/"', blog_text, fixed = TRUE) ||
+    !all(vapply(year_links, grepl, logical(1L), x = blog_text, fixed = TRUE))) {
+  stop("The main blog archive is missing its generated year selector")
+}
+
+for (year in expected_years) {
+  year_path <- file.path(root, "_site", "blog", year, "index.html")
+  if (!file.exists(year_path)) stop("Missing rendered year archive: ", year)
+  year_lines <- readLines(year_path, warn = FALSE)
+  year_text <- paste(year_lines, collapse = "\n")
+  expected_posts <- sum(post_years == year)
+  if (sum(grepl('class="quarto-post ', year_lines, fixed = TRUE)) != expected_posts) {
+    stop("Incorrect post count in rendered year archive: ", year)
+  }
+  if (grepl('class="listing-pagination"', year_text, fixed = TRUE)) {
+    stop("Year archive must display all posts without pagination: ", year)
+  }
+  active_year <- paste0(
+    'class="dropdown-item active" aria-current="page" href="../../blog/', year, '/">', year
+  )
+  if (!grepl(active_year, year_text, fixed = TRUE) ||
+      !all(vapply(c('id="title-block-header"', "Social"), grepl,
+                  logical(1L), x = year_text, fixed = TRUE))) {
+    stop("Year archive layout or active selector is incomplete: ", year)
+  }
+  if (grepl('id="blogroll" class="level4 side-snippet"', year_text, fixed = TRUE)) {
+    stop("The retired Blogroll remains on year archive: ", year)
+  }
+}
+
+theme_text <- paste(readLines(file.path(root, "theme.scss"), warn = FALSE), collapse = "\n")
+year_layout_markers <- c(
+  ".blog-page #quarto-document-content",
+  "grid-template-columns: minmax(0, 1fr) 12rem 12rem",
+  "width: 12rem",
+  ".blog-year-selector .dropdown-item.active"
+)
+if (!all(vapply(year_layout_markers, grepl, logical(1L), x = theme_text, fixed = TRUE))) {
+  stop("The responsive year archive header styles are incomplete")
+}
+if (!grepl(".side-snippet .sidebar-links a", theme_text, fixed = TRUE) ||
+    !grepl("color: rgb(51, 51, 51)", theme_text, fixed = TRUE)) {
+  stop("The Social text colour is not pinned to rgb(51, 51, 51)")
+}
+if (!grepl("#social", theme_text, fixed = TRUE) ||
+    !grepl("#social[[:space:]]*\\{[^}]*border-left:[[:space:]]*4px[[:space:]]+solid[[:space:]]+#f43d00[^}]*padding-left:[[:space:]]*0\\.8rem", theme_text, perl = TRUE)) {
+  stop("The Social block must match the post taxonomy border and padding")
+}
+if (!grepl("#social .sidebar-links .bi,[[:space:]]*#social .sidebar-links .fa-brands[[:space:]]*\\{[^}]*color:[[:space:]]*rgb\\(51,[[:space:]]*51,[[:space:]]*51\\)", theme_text, perl = TRUE)) {
+  stop("The non-brand Social icons are not pinned to rgb(51, 51, 51)")
+}
+if (!grepl("#social .sidebar-links .bi-bluesky", theme_text, fixed = TRUE) ||
+    !grepl("color: #0560ff", theme_text, fixed = TRUE)) {
+  stop("The Bluesky butterfly is not using the official Blue500 colour")
+}
+if (!grepl("#social .sidebar-links .fa-orcid", theme_text, fixed = TRUE) ||
+    !grepl("color: #a6ce39", theme_text, fixed = TRUE)) {
+  stop("The ORCID icon is not using the ORCID brand green")
 }
 
 post_html <- file.path(root, "_site", sub("^/", "", manifest$url), "index.html")
@@ -161,7 +266,7 @@ post_sidebar_include <- "{{< include ../../../../includes/social-blogroll.qmd >}
 if (!all(vapply(manifest$qmd, function(path) {
   any(grepl(post_sidebar_include, readLines(file.path(root, path), warn = FALSE), fixed = TRUE))
 }, logical(1L)))) {
-  stop("The shared Social and Blogroll sidebar is missing from a historical post source")
+  stop("The shared Social sidebar is missing from a historical post source")
 }
 rendered <- unlist(lapply(post_html, function(path) readLines(path, warn = FALSE)), use.names = FALSE)
 if (any(grepl('class="description"', rendered, fixed = TRUE))) {
@@ -188,11 +293,24 @@ if (!all(vapply(post_html, function(path) any(grepl("giscus.app/client.js", read
 }
 if (!all(vapply(post_html, function(path) {
   lines <- readLines(path, warn = FALSE)
-  all(vapply(c("buymeacoffee.com/gavinsimpson", ">Social</h4>", ">Blogroll</h4>"), function(value) {
+  all(vapply(c(
+    "buymeacoffee.com/gavinsimpson", ">Social</h4>",
+    "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social", "bi-bluesky",
+    "fa-brands fa-orcid"
+  ), function(value) {
     any(grepl(value, lines, fixed = TRUE))
   }, logical(1L)))
 }, logical(1L)))) {
-  stop("The rendered Social, Buy Me a Coffee, or Blogroll sidebar is missing from a historical post")
+  stop("The rendered Social, Bluesky, or Buy Me a Coffee sidebar is missing from a historical post")
+}
+if (any(grepl('id="blogroll" class="level4 side-snippet"', rendered, fixed = TRUE))) {
+  stop("The retired Blogroll remains on a historical post")
+}
+retired_twitter_sidebar <- paste0(
+  '<i class="bi bi-twitter" aria-hidden="true"></i><a href="https://twitter.com/ucfagls">'
+)
+if (any(grepl(retired_twitter_sidebar, rendered, fixed = TRUE))) {
+  stop("The retired Twitter profile remains in a rendered Social sidebar")
 }
 giscus_ids <- c(
   'script.dataset.repoId = "R_kgDOUUVJuA";',
@@ -259,7 +377,6 @@ style_parity_rules <- c(
   "pre code,[[:space:]]*pre\\.sourceCode code[[:space:]]*\\{[^}]*font-size:[[:space:]]*13px[^}]*line-height:[[:space:]]*20px",
   "blockquote[[:space:]]*\\{[^}]*border-right:[[:space:]]*5px[[:space:]]+solid[[:space:]]+#f43d00",
   "table,[[:space:]]*table\\.table[[:space:]]*\\{[^}]*margin-block:[[:space:]]*3em",
-  "#blogroll[[:space:]]+\\.sidebar-links[[:space:]]*\\{[^}]*font-size:[[:space:]]*10px",
   "\\.buy-me-coffee[[:space:]]*\\{[^}]*height:[[:space:]]*45px[^}]*width:[[:space:]]*150px",
   "\\.nav-footer[[:space:]]*\\{[^}]*min-height:[[:space:]]*150px"
 )
@@ -345,11 +462,53 @@ for (feed in c("index.xml", "feed.xml", "feed-R/index.xml", "feed-R.xml")) {
     stop("Post sidebar content leaked into feed: ", feed)
   }
 }
-r_routes <- manifest$url[tolower(manifest$category) == "r"]
+r_taxonomy <- lapply(dated_qmd, function(path) {
+  lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
+  yaml_end <- which(trimws(lines[-1L]) == "---")[[1L]] + 1L
+  metadata <- yaml::yaml.load(paste(lines[2L:(yaml_end - 1L)], collapse = "\n"))
+  c(
+    as.character(unlist(metadata$category, use.names = FALSE)),
+    as.character(unlist(metadata$categories, use.names = FALSE))
+  )
+})
+r_qmd <- dated_qmd[vapply(r_taxonomy, function(values) {
+  any(tolower(trimws(values)) == "r")
+}, logical(1L))]
+r_routes <- paste0(
+  "/",
+  sub("index\\.qmd$", "", sub(paste0("^", root, "/"), "", r_qmd))
+)
 r_feed <- paste(readLines(file.path(root, "_site", "feed-R.xml"), warn = FALSE), collapse = "\n")
-dated_links <- unique(regmatches(r_feed, gregexpr("https://fromthebottomoftheheap\\.net/[0-9]{4}/[0-9]{2}/[0-9]{2}/[^<\"]+/", r_feed, perl = TRUE))[[1L]])
-dated_paths <- sub("^https://fromthebottomoftheheap\\.net", "", dated_links)
+item_links <- unique(regmatches(
+  r_feed,
+  gregexpr("<link>https://fromthebottomoftheheap\\.net/[0-9]{4}/[0-9]{2}/[0-9]{2}/[^<]+/</link>", r_feed, perl = TRUE)
+)[[1L]])
+dated_paths <- sub(
+  "</link>$",
+  "",
+  sub("^<link>https://fromthebottomoftheheap\\.net", "", item_links)
+)
 if (length(setdiff(dated_paths, r_routes))) stop("The R compatibility feed contains a non-R post")
+if (!grepl('<atom:link href="https://fromthebottomoftheheap.net/feed-R.xml" rel="self"', r_feed, fixed = TRUE)) {
+  stop("The R compatibility feed has the wrong self URL")
+}
+item_count <- lengths(regmatches(r_feed, gregexpr("<item>", r_feed, fixed = TRUE)))
+full_description_count <- lengths(regmatches(
+  r_feed,
+  gregexpr("<description><!\\[CDATA\\[", r_feed, perl = TRUE)
+))
+if (item_count < 2L || full_description_count != item_count) {
+  stop("The R feed must contain at least two full-content item descriptions")
+}
+if (grepl("data:image/[^;]+;base64,", r_feed, ignore.case = TRUE, perl = TRUE)) {
+  stop("The R feed contains a base64-encoded image")
+}
+if (grepl("http-equiv=[\"']refresh|window\\.location|location\\.href", r_feed, ignore.case = TRUE, perl = TRUE)) {
+  stop("The R feed contains automatic redirect code")
+}
+if (grepl('(href|src)="(\\.\\./)+', r_feed, perl = TRUE)) {
+  stop("The R feed contains a relative link that may fail in an external aggregator")
+}
 
 link_status <- system2("python3", c("scripts/check-links.py", "_site"))
 if (!identical(link_status, 0L)) stop("Rendered internal-link validation failed")

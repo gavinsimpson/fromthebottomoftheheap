@@ -74,6 +74,18 @@ post source, its assets, regenerated tag/category sources, `_site/`, and any
 `_freeze/` files created for executable code. The second build should not add
 further unexplained changes.
 
+### R-bloggers feed
+
+The dedicated R-only, full-content RSS feed is published at
+<https://fromthebottomoftheheap.net/feed-R.xml>. The archive generator includes
+a post when either its singular `category` metadata is `R` or its plural Quarto
+`categories` metadata contains `R`. The feed is the union of those sets; an `R`
+tag alone does not qualify a post. The build validates that the feed contains
+only eligible post URLs, uses full HTML item descriptions, has no base64-encoded
+images or automatic redirects, and identifies its public URL correctly. Keep
+the R-bloggers link in the site footer, as their participation guidelines
+require a backlink.
+
 ## Publications
 
 Add and update papers in `publications/publications.yml`; do not edit the
