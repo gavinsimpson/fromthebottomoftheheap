@@ -145,6 +145,9 @@ if (any(grepl("publications/365papers", home, fixed = TRUE))) stop("Home listing
 home_text <- paste(home, collapse = "\n")
 blog_text <- paste(blog, collapse = "\n")
 if (grepl('<a class="navbar-brand', home_text, fixed = TRUE)) stop("The redundant site title remains in the navbar")
+if (!grepl('class="bi bi-flask"', home_text, fixed = TRUE)) {
+  stop("The Research navbar item is missing its flask icon")
+}
 home_sidebar_items <- c(
   "Social", "Blogroll", "Buy Me A Coffee", "Musings on Quantitative Palaeoecology",
   "bsky.app/profile/gsimpson.bsky.social", "@gsimpson.bsky.social"
@@ -225,6 +228,14 @@ year_layout_markers <- c(
 )
 if (!all(vapply(year_layout_markers, grepl, logical(1L), x = theme_text, fixed = TRUE))) {
   stop("The responsive year archive header styles are incomplete")
+}
+if (!grepl(".side-snippet .sidebar-links a", theme_text, fixed = TRUE) ||
+    !grepl("color: rgb(51, 51, 51)", theme_text, fixed = TRUE)) {
+  stop("The Social and Blogroll text colour is not pinned to rgb(51, 51, 51)")
+}
+if (!grepl(".side-snippet .sidebar-links .bi-bluesky", theme_text, fixed = TRUE) ||
+    !grepl("color: #0560ff", theme_text, fixed = TRUE)) {
+  stop("The Bluesky butterfly is not using the official Blue500 colour")
 }
 
 post_html <- file.path(root, "_site", sub("^/", "", manifest$url), "index.html")
