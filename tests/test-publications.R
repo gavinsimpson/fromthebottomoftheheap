@@ -6,6 +6,11 @@ assert <- function(ok, message) {
   if (!isTRUE(ok)) stop(message, call. = FALSE)
 }
 
+assert_error <- function(expression, message) {
+  failed <- inherits(try(force(expression), silent = TRUE), "try-error")
+  assert(failed, message)
+}
+
 paths <- publication_paths()
 registry <- read_publication_registry(paths$registry)
 validate_publication_registry(registry)
@@ -18,6 +23,16 @@ doi_entries <- vapply(entries, function(x) nzchar(normalize_doi(x$doi)), logical
 assert(length(entries) >= 88L, "The registry must retain all 88 migrated publications.")
 assert(length(cache$records) == sum(doi_entries), "Every DOI entry must have one cached metadata record.")
 assert(setequal(names(cache$records), ids[doi_entries]), "The cache contains missing or orphaned publication records.")
+assert(identical(as.integer(cache$schema_version), 2L), "The publication cache must use schema version 2.")
+
+featured <- unlist(registry$featured, use.names = FALSE)
+expected_featured <- c(
+  "miranda-velez-et-al-2026", "gerlich-et-al-2025",
+  "turner-et-al-2024", "doi-10-1111-fwb-14192"
+)
+assert(identical(featured, expected_featured), "Featured publications must retain their configured display order.")
+assert(length(featured) <= 4L && !anyDuplicated(featured), "Featured publications must be unique and limited to four.")
+validate_featured_publications(registry, cache)
 
 for (entry in entries[doi_entries]) {
   cached <- cache$records[[entry$id]]
@@ -45,7 +60,43 @@ tmp <- tempfile(fileext = ".md")
 on.exit(unlink(tmp), add = TRUE)
 invisible(render_publications_markdown(registry, cache, tmp))
 generated <- readLines(tmp, warn = FALSE)
-assert(sum(grepl("^1[.] ", generated)) == length(entries), "Generated list must contain exactly one item per publication.")
+assert(sum(grepl("data-publication-id=", generated, fixed = TRUE)) == length(entries),
+  "Generated year lists must contain exactly one item per publication.")
+assert(any(grepl("<strong>94 publications</strong>", generated, fixed = TRUE)), "Generated page must show the total publication count.")
+assert(any(grepl("row-cols-1 row-cols-lg-2", generated, fixed = TRUE)), "Featured cards must use the responsive Bootstrap grid.")
+assert(sum(grepl("row g-0 h-100 featured-publication-layout", generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl("class=\"featured-publication-media\"", generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl("class=\"featured-publication-content\"", generated, fixed = TRUE)) == length(featured),
+  "Featured thumbnails must sit beside card text on narrow screens and above it on wide screens.")
+assert(sum(grepl("<article class=\"card h-100 featured-publication\"", generated, fixed = TRUE)) == length(featured),
+  "Every configured featured publication must render one Bootstrap card.")
+assert(sum(grepl("data-bs-target=\"#abstract-", generated, fixed = TRUE)) == length(featured),
+  "Every featured card must render an abstract collapse control.")
+long_featured_authors <- sum(vapply(featured, function(id) {
+  length(metadata[[match(id, ids)]]$author %||% list()) > 5L
+}, logical(1)))
+assert(sum(grepl("featured-publication-authors-more", generated, fixed = TRUE)) == long_featured_authors,
+  "Every featured author list longer than five must render one linked ellipsis.")
+assert(sum(grepl("class=\"publication-group\"", generated, fixed = TRUE)) == length(unique(vapply(seq_along(entries), function(i) {
+  if (nzchar(entries[[i]]$status %||% "")) "current-work" else date_year(metadata[[i]])
+}, character(1)))), "Every populated publication section must render once.")
+
+listed_ids <- sub('.*data-publication-id="([^"]+)".*', "\\1", generated[grepl("data-publication-id=", generated, fixed = TRUE)])
+assert(setequal(listed_ids, ids) && !anyDuplicated(listed_ids), "Each publication must occur exactly once in the main bibliography.")
+
+thumbnail_files <- file.path(paths$thumbnails, paste0(featured, ".webp"))
+assert(all(file.exists(thumbnail_files)), "Every featured publication must have a generated WebP thumbnail.")
+assert(setequal(list.files(paths$thumbnails, pattern = "[.]webp$"), basename(thumbnail_files)),
+  "The thumbnail directory must not contain obsolete WebP files.")
+thumbnail_info <- magick::image_info(magick::image_read(thumbnail_files))
+assert(all(thumbnail_info$format == "WEBP") && all(thumbnail_info$width == 720L),
+  "Featured thumbnails must be 720-pixel-wide WebP images.")
+
+assert(identical(clean_abstract("<jats:p>A <jats:italic>short</jats:italic> abstract.</jats:p>"), "A short abstract."),
+  "JATS cleanup must retain inline word boundaries without markup.")
+assert(identical(publication_metadata(registry$entries[[match("miranda-velez-et-al-2026", ids)]], cache)$abstract,
+  registry$entries[[match("miranda-velez-et-al-2026", ids)]]$overrides$abstract),
+  "A YAML abstract override must take precedence over cached metadata.")
 assert(sum(grepl("file-earmark-pdf", generated, fixed = TRUE)) >= 59L, "All 59 migrated publication manuscript/reprint links must be preserved.")
 assert(sum(grepl("publication-licence", generated, fixed = TRUE)) >= 35L, "All 35 migrated licences must be preserved.")
 assert(sum(grepl("fa brands creative-commons-by", generated, fixed = TRUE)) >= 35L,
@@ -59,9 +110,29 @@ assert(any(vapply(entries, function(x) isTRUE(x$check_for_version_of_record), lo
   "At least one migrated preprint should exercise version-of-record monitoring.")
 
 original_fetch <- fetch_doi_metadata
+original_abstract_fetch <- fetch_crossref_abstract
 fetch_doi_metadata <- function(doi) stop("Network access should not occur for a complete cache.")
+fetch_crossref_abstract <- function(doi) stop("Abstract network access should not occur for a complete cache.")
 invisible(refresh_publication_cache(registry, paths$cache, refresh_all = FALSE))
 fetch_doi_metadata <- original_fetch
+fetch_crossref_abstract <- original_abstract_fetch
+
+abstract_registry <- registry
+abstract_id <- "gerlich-et-al-2025"
+abstract_cache <- cache
+abstract_cache$records[[abstract_id]]$metadata$abstract <- NULL
+abstract_path <- tempfile(fileext = ".json")
+writeLines(canonical_json(abstract_cache), abstract_path, useBytes = TRUE)
+fetch_crossref_abstract <- function(doi) clean_abstract("<jats:p>Retrieved abstract.</jats:p>")
+refreshed <- refresh_publication_cache(abstract_registry, abstract_path, refresh_all = FALSE)$cache
+fetch_crossref_abstract <- original_abstract_fetch
+unlink(abstract_path)
+assert(identical(refreshed$records[[abstract_id]]$metadata$abstract, "Retrieved abstract."),
+  "A missing featured abstract must be fetched and cached.")
+
+invalid_registry <- registry
+invalid_registry$featured <- c(featured, entries[[5L]]$id)
+assert_error(validate_publication_registry(invalid_registry), "More than four featured publications must fail validation.")
 
 override_test <- merge_metadata(list(title = "Publisher title", page = "1-2"), list(title = "Corrected title"))
 assert(identical(override_test$title, "Corrected title") && identical(override_test$page, "1-2"),
