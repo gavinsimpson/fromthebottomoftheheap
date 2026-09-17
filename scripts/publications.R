@@ -626,6 +626,7 @@ render_featured_card <- function(entry, metadata, owner) {
   title <- safe_csl_text(sub("[[:space:].]+$", "", field_text(metadata$title)))
   plain_title <- clean_abstract(field_text(metadata$title))
   authors <- format_featured_people(metadata$author, owner, id)
+  full_authors <- format_people(metadata$author, owner)
   landing <- publication_landing_url(entry, metadata)
   pdf <- publication_pdf_link(entry, local_only = TRUE)
   abstract_id <- paste0("abstract-", id)
@@ -671,11 +672,21 @@ render_featured_card <- function(entry, metadata, owner) {
     '<div class="modal-dialog modal-xl modal-dialog-centered">',
     '<div class="modal-content">',
     '<div class="modal-header">',
-    paste0('<h4 class="modal-title fs-5" id="', html_escape(abstract_id, TRUE), '-label">Abstract</h4>'),
+    paste0('<h2 class="modal-title h4" id="', html_escape(abstract_id, TRUE), '-label">Abstract</h2>'),
     '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>',
     "</div>",
-    paste0('<div class="modal-body featured-publication-abstract"><p class="fw-semibold">', title, "</p>", abstract_html(metadata$abstract), "</div>"),
+    paste0(
+      '<div class="modal-body featured-publication-abstract">',
+      '<p class="featured-publication-modal-title"><a href="', html_escape(landing, TRUE), '">', title, '</a></p>',
+      '<p class="featured-publication-modal-authors">', full_authors, '</p>',
+      abstract_html(metadata$abstract),
+      '</div>'
+    ),
     '<div class="modal-footer">',
+    paste0(
+      '<a class="btn btn-outline-secondary featured-publication-modal-pdf" href="', html_escape(pdf$url, TRUE),
+      '" aria-label="Download publication PDF"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF</a>'
+    ),
     '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>',
     "</div>",
     "</div>",

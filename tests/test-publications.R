@@ -90,7 +90,7 @@ assert(!any(grepl("featured-publication-publisher", generated, fixed = TRUE)),
   "Featured cards must not duplicate their linked title with a publisher button.")
 assert(sum(grepl("class=\"featured-publication-controls\"", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("aria-label=\"Download PDF\"", generated, fixed = TRUE)) == length(featured) &&
-    !any(grepl("> PDF</a>", generated, fixed = TRUE)),
+    !any(grepl('aria-label="Download PDF".*> PDF</a>', generated)),
   "Every featured card must render an icon-only PDF control beneath its thumbnail.")
 assert(sum(grepl("featured-publication-title", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("featured-publication-details", generated, fixed = TRUE)) == length(featured) &&
@@ -104,6 +104,12 @@ assert(sum(grepl("data-bs-toggle=\"modal\" data-bs-target=\"#abstract-", generat
     sum(grepl("modal-dialog modal-xl modal-dialog-centered", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("data-bs-dismiss=\"modal\"", generated, fixed = TRUE)) == 2L * length(featured),
   "Every featured card must render a centred, scrollable abstract modal with two close controls.")
+assert(sum(grepl('class="modal-title h4"', generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl('class="featured-publication-modal-title"><a href="https://doi.org/', generated, fixed = TRUE)) == length(featured),
+  "Every featured modal must render a prominent heading and a DOI-linked publication title.")
+assert(sum(grepl('class="featured-publication-modal-authors"', generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl('class="btn btn-outline-secondary featured-publication-modal-pdf"', generated, fixed = TRUE)) == length(featured),
+  "Every featured modal must render its full author list and a PDF footer button.")
 long_featured_authors <- sum(vapply(featured, function(id) {
   length(metadata[[match(id, ids)]]$author %||% list()) > 4L
 }, logical(1)))
