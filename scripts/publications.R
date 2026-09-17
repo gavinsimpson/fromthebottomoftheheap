@@ -442,11 +442,14 @@ format_featured_people <- function(people, owner, publication_id, limit = 4L) {
   target <- paste0("authors-", publication_id)
   paste0(
     paste(labels[seq_len(limit)], collapse = ", "),
-    ', <a class="featured-publication-authors-more" href="#', html_escape(target, TRUE),
+    '<a class="featured-publication-authors-more collapsed" href="#', html_escape(target, TRUE),
     '" role="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="',
-    html_escape(target, TRUE), '" aria-label="Show remaining authors">…</a>',
+    html_escape(target, TRUE), '" aria-label="Show remaining authors">, …</a>',
     '<span class="collapse featured-publication-authors-rest" id="', html_escape(target, TRUE),
-    '">, ', format_people(people[-seq_len(limit)], owner), "</span>"
+    '">, ', format_people(people[-seq_len(limit)], owner),
+    ' <a class="featured-publication-authors-less" href="#', html_escape(target, TRUE),
+    '" role="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="',
+    html_escape(target, TRUE), '" aria-label="Collapse author list"><i class="bi bi-chevron-up" aria-hidden="true"></i></a></span>'
   )
 }
 
@@ -643,8 +646,13 @@ render_featured_card <- function(entry, metadata, owner) {
       '" loading="lazy">'
     ),
     "</div>",
-    '<div class="featured-publication-pdf">',
-    paste0('<a class="btn btn-outline-secondary btn-sm" href="', html_escape(pdf$url, TRUE), '"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF</a>'),
+    '<div class="featured-publication-controls">',
+    paste0(
+      '<a class="btn btn-outline-secondary btn-sm" href="', html_escape(pdf$url, TRUE),
+      '" aria-label="Download PDF" title="Download PDF"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i></a>',
+      '<button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#',
+      html_escape(abstract_id, TRUE), '" aria-controls="', html_escape(abstract_id, TRUE), '">Abstract</button>'
+    ),
     "</div>",
     "</div>",
     '<div class="featured-publication-content">',
@@ -653,20 +661,13 @@ render_featured_card <- function(entry, metadata, owner) {
     paste0('<p class="card-text featured-publication-authors">', authors, "</p>"),
     paste0('<p class="card-text text-body-secondary featured-publication-details">', featured_bibliographic_details(metadata), "</p>"),
     doi_line,
-    '<div class="d-flex flex-wrap mt-auto featured-publication-actions">',
-    paste0(
-      '<button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#',
-      html_escape(abstract_id, TRUE), '" aria-controls="', html_escape(abstract_id, TRUE),
-      '">Abstract</button>'
-    ),
-    "</div>",
     "</div>",
     "</div>",
     "</div>",
     "</article>",
     paste0('<div class="modal fade featured-publication-abstract-modal" id="', html_escape(abstract_id, TRUE),
       '" tabindex="-1" aria-labelledby="', html_escape(abstract_id, TRUE), '-label" aria-hidden="true">'),
-    '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">',
+    '<div class="modal-dialog modal-xl modal-dialog-centered">',
     '<div class="modal-content">',
     '<div class="modal-header">',
     paste0('<h4 class="modal-title fs-5" id="', html_escape(abstract_id, TRUE), '-label">Abstract</h4>'),

@@ -71,18 +71,20 @@ assert(sum(grepl("row g-0 h-100 featured-publication-layout", generated, fixed =
   "Featured thumbnails must sit beside card text at every screen width.")
 assert(!any(grepl("featured-publication-publisher", generated, fixed = TRUE)),
   "Featured cards must not duplicate their linked title with a publisher button.")
-assert(sum(grepl("class=\"featured-publication-pdf\"", generated, fixed = TRUE)) == length(featured),
-  "Every featured PDF button must render beneath its thumbnail.")
+assert(sum(grepl("class=\"featured-publication-controls\"", generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl("aria-label=\"Download PDF\"", generated, fixed = TRUE)) == length(featured) &&
+    !any(grepl("> PDF</a>", generated, fixed = TRUE)),
+  "Every featured card must render an icon-only PDF control beneath its thumbnail.")
 assert(sum(grepl("featured-publication-title", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("featured-publication-details", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("featured-publication-doi", generated, fixed = TRUE)) == length(featured),
   "Every featured card must render the explicit title and metadata typography hooks.")
-assert(sum(grepl("featured-publication-actions", generated, fixed = TRUE)) == length(featured),
-  "Every featured card must render an action group with explicit wrapping gaps.")
+assert(!any(grepl("featured-publication-actions", generated, fixed = TRUE)),
+  "Featured card controls must not remain in the bibliographic text column.")
 assert(sum(grepl("<article class=\"card h-100 featured-publication\"", generated, fixed = TRUE)) == length(featured),
   "Every configured featured publication must render one Bootstrap card.")
 assert(sum(grepl("data-bs-toggle=\"modal\" data-bs-target=\"#abstract-", generated, fixed = TRUE)) == length(featured) &&
-    sum(grepl("modal-dialog modal-dialog-centered modal-dialog-scrollable", generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl("modal-dialog modal-xl modal-dialog-centered", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("data-bs-dismiss=\"modal\"", generated, fixed = TRUE)) == 2L * length(featured),
   "Every featured card must render a centred, scrollable abstract modal with two close controls.")
 long_featured_authors <- sum(vapply(featured, function(id) {
@@ -94,8 +96,10 @@ sample_people <- lapply(seq_len(6L), function(i) list(family = paste0("Author", 
 sample_authors <- format_featured_people(sample_people, list(family = "Nobody"), "sample")
 assert(all(vapply(seq_len(6L), function(i) {
   length(gregexpr(paste0("Author", i), sample_authors, fixed = TRUE)[[1L]]) == 1L
-}, logical(1))) && grepl("authors-sample", sample_authors, fixed = TRUE),
-  "Expanded featured author lists must append only the omitted authors without duplication.")
+}, logical(1))) && grepl("authors-sample", sample_authors, fixed = TRUE) &&
+    grepl("featured-publication-authors-less", sample_authors, fixed = TRUE) &&
+    grepl("bi-chevron-up", sample_authors, fixed = TRUE),
+  "Expanded featured author lists must append only the omitted authors and end with a collapse control.")
 assert(sum(grepl("class=\"publication-group\"", generated, fixed = TRUE)) == length(unique(vapply(seq_along(entries), function(i) {
   if (nzchar(entries[[i]]$status %||% "")) "current-work" else date_year(metadata[[i]])
 }, character(1)))), "Every populated publication section must render once.")
