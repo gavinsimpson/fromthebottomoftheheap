@@ -69,8 +69,10 @@ assert(sum(grepl("row g-0 h-100 featured-publication-layout", generated, fixed =
     sum(grepl("class=\"featured-publication-media\"", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("class=\"featured-publication-content\"", generated, fixed = TRUE)) == length(featured),
   "Featured thumbnails must sit beside card text at every screen width.")
-assert(sum(grepl("featured-publication-publisher", generated, fixed = TRUE)) == length(featured),
-  "Every featured card must render the muted-orange publisher button.")
+assert(!any(grepl("featured-publication-publisher", generated, fixed = TRUE)),
+  "Featured cards must not duplicate their linked title with a publisher button.")
+assert(sum(grepl("class=\"featured-publication-pdf\"", generated, fixed = TRUE)) == length(featured),
+  "Every featured PDF button must render beneath its thumbnail.")
 assert(sum(grepl("featured-publication-title", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("featured-publication-details", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("featured-publication-doi", generated, fixed = TRUE)) == length(featured),
@@ -79,13 +81,21 @@ assert(sum(grepl("featured-publication-actions", generated, fixed = TRUE)) == le
   "Every featured card must render an action group with explicit wrapping gaps.")
 assert(sum(grepl("<article class=\"card h-100 featured-publication\"", generated, fixed = TRUE)) == length(featured),
   "Every configured featured publication must render one Bootstrap card.")
-assert(sum(grepl("data-bs-target=\"#abstract-", generated, fixed = TRUE)) == length(featured),
-  "Every featured card must render an abstract collapse control.")
+assert(sum(grepl("data-bs-toggle=\"modal\" data-bs-target=\"#abstract-", generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl("modal-dialog modal-dialog-centered modal-dialog-scrollable", generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl("data-bs-dismiss=\"modal\"", generated, fixed = TRUE)) == 2L * length(featured),
+  "Every featured card must render a centred, scrollable abstract modal with two close controls.")
 long_featured_authors <- sum(vapply(featured, function(id) {
-  length(metadata[[match(id, ids)]]$author %||% list()) > 5L
+  length(metadata[[match(id, ids)]]$author %||% list()) > 4L
 }, logical(1)))
 assert(sum(grepl("featured-publication-authors-more", generated, fixed = TRUE)) == long_featured_authors,
-  "Every featured author list longer than five must render one linked ellipsis.")
+  "Every featured author list longer than four must render one linked ellipsis.")
+sample_people <- lapply(seq_len(6L), function(i) list(family = paste0("Author", i), given = "A"))
+sample_authors <- format_featured_people(sample_people, list(family = "Nobody"), "sample")
+assert(all(vapply(seq_len(6L), function(i) {
+  length(gregexpr(paste0("Author", i), sample_authors, fixed = TRUE)[[1L]]) == 1L
+}, logical(1))) && grepl("authors-sample", sample_authors, fixed = TRUE),
+  "Expanded featured author lists must append only the omitted authors without duplication.")
 assert(sum(grepl("class=\"publication-group\"", generated, fixed = TRUE)) == length(unique(vapply(seq_along(entries), function(i) {
   if (nzchar(entries[[i]]$status %||% "")) "current-work" else date_year(metadata[[i]])
 }, character(1)))), "Every populated publication section must render once.")

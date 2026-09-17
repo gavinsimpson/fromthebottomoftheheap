@@ -435,7 +435,7 @@ format_people <- function(people, owner) {
   paste0(paste(labels[-length(labels)], collapse = ", "), ", &amp; ", labels[[length(labels)]])
 }
 
-format_featured_people <- function(people, owner, publication_id, limit = 5L) {
+format_featured_people <- function(people, owner, publication_id, limit = 4L) {
   if (!is.list(people) || !length(people)) return("")
   if (length(people) <= limit) return(format_people(people, owner))
   labels <- vapply(people, format_person, character(1), owner = owner)
@@ -444,10 +444,9 @@ format_featured_people <- function(people, owner, publication_id, limit = 5L) {
     paste(labels[seq_len(limit)], collapse = ", "),
     ', <a class="featured-publication-authors-more" href="#', html_escape(target, TRUE),
     '" role="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="',
-    html_escape(target, TRUE), '" aria-label="Show complete author list">…</a>',
-    '<span class="collapse featured-publication-authors-full" id="', html_escape(target, TRUE),
-    '"><span class="d-block mt-2"><span class="visually-hidden">Complete author list: </span>',
-    format_people(people, owner), "</span></span>"
+    html_escape(target, TRUE), '" aria-label="Show remaining authors">…</a>',
+    '<span class="collapse featured-publication-authors-rest" id="', html_escape(target, TRUE),
+    '">, ', format_people(people[-seq_len(limit)], owner), "</span>"
   )
 }
 
@@ -637,11 +636,16 @@ render_featured_card <- function(entry, metadata, owner) {
     paste0('<article class="card h-100 featured-publication" id="featured-', html_escape(id, TRUE), '">'),
     '<div class="row g-0 h-100 featured-publication-layout">',
     '<div class="featured-publication-media">',
+    '<div class="featured-publication-thumbnail-wrap">',
     paste0(
       '<img class="img-fluid featured-publication-thumbnail" src="/assets/img/publications/',
       html_escape(id, TRUE), '.webp" alt="First page of ', html_escape(plain_title, TRUE),
       '" loading="lazy">'
     ),
+    "</div>",
+    '<div class="featured-publication-pdf">',
+    paste0('<a class="btn btn-outline-secondary btn-sm" href="', html_escape(pdf$url, TRUE), '"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF</a>'),
+    "</div>",
     "</div>",
     '<div class="featured-publication-content">',
     '<div class="card-body d-flex flex-column">',
@@ -650,21 +654,31 @@ render_featured_card <- function(entry, metadata, owner) {
     paste0('<p class="card-text text-body-secondary featured-publication-details">', featured_bibliographic_details(metadata), "</p>"),
     doi_line,
     '<div class="d-flex flex-wrap mt-auto featured-publication-actions">',
-    paste0('<a class="btn btn-sm featured-publication-publisher" href="', html_escape(landing, TRUE), '">Publisher or repository</a>'),
-    paste0('<a class="btn btn-outline-secondary btn-sm" href="', html_escape(pdf$url, TRUE), '"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF</a>'),
     paste0(
-      '<button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#',
-      html_escape(abstract_id, TRUE), '" aria-expanded="false" aria-controls="', html_escape(abstract_id, TRUE),
+      '<button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#',
+      html_escape(abstract_id, TRUE), '" aria-controls="', html_escape(abstract_id, TRUE),
       '">Abstract</button>'
     ),
-    "</div>",
-    paste0('<div class="collapse mt-3" id="', html_escape(abstract_id, TRUE), '">'),
-    paste0('<div class="border-top pt-3 featured-publication-abstract"><h4 class="h6">Abstract</h4>', abstract_html(metadata$abstract), "</div>"),
     "</div>",
     "</div>",
     "</div>",
     "</div>",
     "</article>",
+    paste0('<div class="modal fade featured-publication-abstract-modal" id="', html_escape(abstract_id, TRUE),
+      '" tabindex="-1" aria-labelledby="', html_escape(abstract_id, TRUE), '-label" aria-hidden="true">'),
+    '<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">',
+    '<div class="modal-content">',
+    '<div class="modal-header">',
+    paste0('<h4 class="modal-title fs-5" id="', html_escape(abstract_id, TRUE), '-label">Abstract</h4>'),
+    '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>',
+    "</div>",
+    paste0('<div class="modal-body featured-publication-abstract"><p class="fw-semibold">', title, "</p>", abstract_html(metadata$abstract), "</div>"),
+    '<div class="modal-footer">',
+    '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>',
+    "</div>",
+    "</div>",
+    "</div>",
+    "</div>",
     "</div>"
   )
 }
