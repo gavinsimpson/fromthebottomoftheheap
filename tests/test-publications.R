@@ -27,7 +27,8 @@ assert(identical(as.integer(cache$schema_version), 2L), "The publication cache m
 
 featured <- unlist(registry$featured, use.names = FALSE)
 expected_featured <- c(
-  "miranda-velez-et-al-2026", "gerlich-et-al-2025"
+  "miranda-velez-et-al-2026", "gerlich-et-al-2025",
+  "turner-et-al-2024", "doi-10-1111-fwb-14192"
 )
 assert(identical(featured, expected_featured), "Featured publications must retain their configured display order.")
 assert(length(featured) <= 4L && !anyDuplicated(featured), "Featured publications must be unique and limited to four.")
