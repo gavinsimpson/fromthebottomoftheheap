@@ -628,7 +628,7 @@ render_featured_card <- function(entry, metadata, owner) {
   abstract_id <- paste0("abstract-", id)
   doi <- normalize_doi(entry$doi %||% metadata$DOI)
   doi_line <- if (nzchar(doi)) paste0(
-    '<p class="card-text small mb-3"><span class="visually-hidden">DOI: </span>',
+    '<p class="card-text featured-publication-doi mb-3"><span class="visually-hidden">DOI: </span>',
     html_escape(doi), "</p>"
   ) else ""
 
@@ -645,9 +645,9 @@ render_featured_card <- function(entry, metadata, owner) {
     "</div>",
     '<div class="featured-publication-content">',
     '<div class="card-body d-flex flex-column">',
-    paste0('<h3 class="card-title h5"><a href="', html_escape(landing, TRUE), '">', title, "</a></h3>"),
+    paste0('<h3 class="card-title featured-publication-title"><a href="', html_escape(landing, TRUE), '">', title, "</a></h3>"),
     paste0('<p class="card-text featured-publication-authors">', authors, "</p>"),
-    paste0('<p class="card-text text-body-secondary">', featured_bibliographic_details(metadata), "</p>"),
+    paste0('<p class="card-text text-body-secondary featured-publication-details">', featured_bibliographic_details(metadata), "</p>"),
     doi_line,
     '<div class="d-flex flex-wrap mt-auto featured-publication-actions">',
     paste0('<a class="btn btn-sm featured-publication-publisher" href="', html_escape(landing, TRUE), '">Publisher or repository</a>'),

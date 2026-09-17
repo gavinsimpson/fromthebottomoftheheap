@@ -70,6 +70,10 @@ assert(sum(grepl("row g-0 h-100 featured-publication-layout", generated, fixed =
   "Featured thumbnails must sit beside card text at every screen width.")
 assert(sum(grepl("featured-publication-publisher", generated, fixed = TRUE)) == length(featured),
   "Every featured card must render the muted-orange publisher button.")
+assert(sum(grepl("featured-publication-title", generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl("featured-publication-details", generated, fixed = TRUE)) == length(featured) &&
+    sum(grepl("featured-publication-doi", generated, fixed = TRUE)) == length(featured),
+  "Every featured card must render the explicit title and metadata typography hooks.")
 assert(sum(grepl("featured-publication-actions", generated, fixed = TRUE)) == length(featured),
   "Every featured card must render an action group with explicit wrapping gaps.")
 assert(sum(grepl("<article class=\"card h-100 featured-publication\"", generated, fixed = TRUE)) == length(featured),
