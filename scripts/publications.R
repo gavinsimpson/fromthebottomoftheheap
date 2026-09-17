@@ -442,11 +442,11 @@ format_featured_people <- function(people, owner, publication_id, limit = 4L) {
   target <- paste0("authors-", publication_id)
   paste0(
     paste(labels[seq_len(limit)], collapse = ", "),
-    '<a class="featured-publication-authors-more collapsed" href="#', html_escape(target, TRUE),
+    ', <a class="featured-publication-authors-more collapsed" href="#', html_escape(target, TRUE),
     '" role="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="',
-    html_escape(target, TRUE), '" aria-label="Show remaining authors">, …</a>',
+    html_escape(target, TRUE), '" aria-label="Show remaining authors">…</a>',
     '<span class="collapse featured-publication-authors-rest" id="', html_escape(target, TRUE),
-    '">, ', format_people(people[-seq_len(limit)], owner),
+    '"> ', format_people(people[-seq_len(limit)], owner),
     ' <a class="featured-publication-authors-less" href="#', html_escape(target, TRUE),
     '" role="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="',
     html_escape(target, TRUE), '" aria-label="Collapse author list"><i class="bi bi-chevron-up" aria-hidden="true"></i></a></span>'

@@ -97,6 +97,7 @@ sample_authors <- format_featured_people(sample_people, list(family = "Nobody"),
 assert(all(vapply(seq_len(6L), function(i) {
   length(gregexpr(paste0("Author", i), sample_authors, fixed = TRUE)[[1L]]) == 1L
 }, logical(1))) && grepl("authors-sample", sample_authors, fixed = TRUE) &&
+    grepl('aria-label="Show remaining authors">…</a>', sample_authors, fixed = TRUE) &&
     grepl("featured-publication-authors-less", sample_authors, fixed = TRUE) &&
     grepl("bi-chevron-up", sample_authors, fixed = TRUE),
   "Expanded featured author lists must append only the omitted authors and end with a collapse control.")
