@@ -16,11 +16,15 @@ After editing `publications.yml`, run:
 Rscript scripts/prepare-publications.R
 ```
 
-This validates the registry, fetches metadata only for a new or changed DOI,
-updates `doi-cache.json` when necessary, and regenerates the ignored
-`_generated-publications.md` intermediate. It does not invoke Quarto or change
-anything in `_site/`. For a status-only change to an already-cached DOI, it
-normally makes no cache change but still regenerates the intermediate.
+This validates the registry, fetches citation metadata only for a new or
+changed DOI, and fetches a Crossref abstract only when a featured publication
+does not already have a cached or overridden abstract. It updates
+`doi-cache.json` when necessary, regenerates the ignored
+`_generated-publications.md` and `_generated-publication-years.md`
+intermediates, and generates featured-paper thumbnails under
+`assets/img/publications/`. It does not invoke Quarto or change anything in
+`_site/`. For a status-only change to an already-cached DOI, it normally makes
+no cache change but still regenerates the intermediates.
 
 ### Force-refresh all DOI metadata without rendering the site
 
@@ -89,6 +93,48 @@ Site-specific links and licence information stay in the registry:
 Use `type: cc-by` for a CC BY licence or `type: cc-by-nc` for CC BY-NC. The
 site renders the corresponding Font Awesome Creative Commons symbols inline;
 there is no image file to add or maintain.
+
+## Feature publications above the complete list
+
+The optional top-level `featured` list contains publication IDs in display
+order. It may contain at most four unique IDs:
+
+```yaml
+featured:
+- simpson-2026-short-description
+- doi-10-1111-fwb-14192
+entries:
+```
+
+Each featured publication must have structured metadata, exactly one locally
+hosted `kind: pdf` link, an abstract, and a DOI or explicit
+publisher/repository destination. Featured papers remain in their normal year
+group in the complete bibliography.
+
+The preparation command retrieves missing featured abstracts from Crossref and
+caches their cleaned text. If Crossref has no abstract, supply the
+authoritative text through the existing override mechanism:
+
+```yaml
+  overrides:
+    abstract: >-
+      The abstract text goes here.
+```
+
+An override always wins over cached metadata. Preparation fails rather than
+rendering a featured card without an abstract.
+
+R generates each featured thumbnail from page one of its local PDF. The build
+environment pins `pdftools` and `magick`; the resulting WebP files in
+`assets/img/publications/` are generated assets and should be committed. When
+a featured ID is removed, its obsolete thumbnail is removed on the next
+preparation. Render the publications page after changing the featured list so
+that the matching thumbnail is copied into `_site/`.
+
+The total in the page sidebar and the section counts are generated from the
+registry. Temporary statuses appear under **Unpublished**; all other
+publications are grouped by year, newest first. Do not hand-edit those counts
+or groups.
 
 Use `status: preprint`, `submitted`, `in review`, `in revision`, `accepted`, or
 `in press` only while that label should replace the publication year. Remove
@@ -184,10 +230,12 @@ Prepare the changed record without rendering the site:
 Rscript scripts/prepare-publications.R
 ```
 
-This fetches and caches metadata for a new or changed DOI. Render the targeted
-publications page when you want to review the website output, and use the full
-release command only when preparing to deploy, as described above. Commit
-`publications/publications.yml`, `publications/doi-cache.json`, the rendered
+This fetches and caches metadata for a new or changed DOI, plus any missing
+featured abstract. Render the targeted publications page when you want to
+review the website output, and use the full release command only when preparing
+to deploy, as described above. Commit `publications/publications.yml`,
+`publications/doi-cache.json`, generated featured thumbnails, the rendered
 `_site/` changes when publishing them, and the manuscript PDF if it is hosted
-locally. Do not commit `publications/_generated-publications.md`; it is an
-ignored build intermediate.
+locally. Do not commit `publications/_generated-publications.md` or
+`publications/_generated-publication-years.md`; they are ignored build
+intermediates.

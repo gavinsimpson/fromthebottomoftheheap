@@ -7,7 +7,9 @@ publication_paths <- function(root = ".") {
     registry = file.path(root, "publications", "publications.yml"),
     cache = file.path(root, "publications", "doi-cache.json"),
     suggestions = file.path(root, "publications", "doi-suggestions.yml"),
-    generated = file.path(root, "publications", "_generated-publications.md")
+    generated = file.path(root, "publications", "_generated-publications.md"),
+    generated_selector = file.path(root, "publications", "_generated-publication-years.md"),
+    thumbnails = file.path(root, "assets", "img", "publications")
   )
 }
 
@@ -28,10 +30,14 @@ read_publication_registry <- function(path) {
 
 read_publication_cache <- function(path) {
   if (!file.exists(path)) {
-    return(list(schema_version = 1L, records = list()))
+    return(list(schema_version = 2L, records = list()))
   }
   cache <- jsonlite::read_json(path, simplifyVector = FALSE)
   cache$records <- cache$records %||% list()
+  for (id in names(cache$records)) {
+    abstract <- cache$records[[id]]$metadata$abstract %||% ""
+    if (scalar_character(abstract)) cache$records[[id]]$metadata$abstract <- clean_abstract(abstract)
+  }
   cache
 }
 
@@ -50,6 +56,17 @@ validate_publication_registry <- function(registry, root = ".") {
   if (any(!nzchar(ids))) stop("Every publication needs a non-empty id.")
   if (anyDuplicated(ids)) {
     stop("Duplicate publication ids: ", paste(unique(ids[duplicated(ids)]), collapse = ", "))
+  }
+
+  featured <- unlist(registry$featured %||% character(), use.names = FALSE)
+  if (!is.character(featured) || any(!nzchar(featured))) {
+    stop("The top-level 'featured' field must be a list of publication ids.")
+  }
+  if (length(featured) > 4L) stop("At most four publications may be featured.")
+  if (anyDuplicated(featured)) stop("Featured publication ids must be unique.")
+  unknown_featured <- setdiff(featured, ids)
+  if (length(unknown_featured)) {
+    stop("Unknown featured publication ids: ", paste(unknown_featured, collapse = ", "))
   }
 
   dois <- vapply(entries, function(x) normalize_doi(x$doi), character(1))
@@ -87,6 +104,16 @@ validate_publication_registry <- function(registry, root = ".") {
       }
     }
   }
+
+  for (id in featured) {
+    entry <- entries[[match(id, ids)]]
+    local_pdfs <- Filter(function(link) {
+      identical(link$kind %||% "", "pdf") && scalar_character(link$url) && startsWith(link$url, "/")
+    }, entry$links %||% list())
+    if (length(local_pdfs) != 1L) {
+      stop("Featured publication '", id, "' must have exactly one local PDF link.")
+    }
+  }
   invisible(registry)
 }
 
@@ -100,13 +127,30 @@ normalize_csl_metadata <- function(metadata, doi = NULL) {
     "type", "title", "author", "editor", "issued", "published-print",
     "published-online", "container-title", "collection-title", "volume",
     "issue", "page", "article-number", "publisher", "publisher-place",
-    "edition", "genre", "language", "ISBN", "ISSN", "DOI", "URL"
+    "edition", "genre", "language", "ISBN", "ISSN", "DOI", "URL",
+    "abstract"
   )
   out <- metadata[intersect(fields, names(metadata))]
   if (is.list(out$author)) out$author <- lapply(out$author, normalize_name)
   if (is.list(out$editor)) out$editor <- lapply(out$editor, normalize_name)
+  if (scalar_character(out$abstract)) out$abstract <- clean_abstract(out$abstract)
   out$DOI <- normalize_doi(doi %||% out$DOI)
   out
+}
+
+clean_abstract <- function(x) {
+  if (!scalar_character(x)) return("")
+  x <- gsub("</?jats:(p|title|sec)( [^>]*)?>", "\n\n", x, ignore.case = TRUE)
+  x <- gsub("<[^>]+>", "", x)
+  replacements <- c(
+    "&nbsp;" = " ", "&#160;" = " ", "&amp;" = "&", "&lt;" = "<",
+    "&gt;" = ">", "&quot;" = '"', "&#39;" = "'"
+  )
+  for (entity in names(replacements)) x <- gsub(entity, replacements[[entity]], x, fixed = TRUE)
+  paragraphs <- trimws(unlist(strsplit(x, "[\r\n]+")))
+  paragraphs <- gsub("[[:space:]]+", " ", paragraphs)
+  if (length(paragraphs) && identical(tolower(paragraphs[[1L]]), "abstract")) paragraphs <- paragraphs[-1L]
+  paste(paragraphs[nzchar(paragraphs)], collapse = "\n\n")
 }
 
 fetch_doi_metadata <- function(doi) {
@@ -118,6 +162,22 @@ fetch_doi_metadata <- function(doi) {
     httr2::req_retry(max_tries = 3)
   response <- httr2::req_perform(request)
   normalize_csl_metadata(httr2::resp_body_json(response, simplifyVector = FALSE), doi)
+}
+
+fetch_crossref_abstract <- function(doi) {
+  doi <- normalize_doi(doi)
+  request <- httr2::request(paste0(
+    "https://api.crossref.org/works/",
+    utils::URLencode(doi, reserved = TRUE)
+  )) |>
+    httr2::req_url_query(mailto = "ucfagls@gmail.com") |>
+    httr2::req_headers(Accept = "application/json") |>
+    httr2::req_user_agent("fromthebottomoftheheap-publications/1.0 (mailto:ucfagls@gmail.com)") |>
+    httr2::req_timeout(30) |>
+    httr2::req_retry(max_tries = 3)
+  response <- httr2::req_perform(request)
+  body <- httr2::resp_body_json(response, simplifyVector = FALSE)
+  clean_abstract(body$message$abstract %||% "")
 }
 
 canonical_json <- function(x) {
@@ -145,6 +205,7 @@ write_text_if_changed <- function(text, path) {
 refresh_publication_cache <- function(registry, cache_path, refresh_all = FALSE) {
   cache <- read_publication_cache(cache_path)
   failures <- character()
+  featured <- unlist(registry$featured %||% character(), use.names = FALSE)
   expected_ids <- vapply(registry$entries, function(entry) {
     if (nzchar(normalize_doi(entry$doi))) entry$id else ""
   }, character(1))
@@ -156,25 +217,46 @@ refresh_publication_cache <- function(registry, cache_path, refresh_all = FALSE)
     if (!nzchar(doi)) next
     cached <- cache$records[[entry$id]]
     needs_fetch <- refresh_all || is.null(cached) || !identical(normalize_doi(cached$doi), doi)
-    if (!needs_fetch) next
-
-    message(if (refresh_all) "Refreshing " else "Fetching ", doi)
-    metadata <- tryCatch(fetch_doi_metadata(doi), error = identity)
-    if (inherits(metadata, "error")) {
-      if (!is.null(cached) || scalar_character(entry$fallback_markdown)) {
-        warning("Could not refresh ", doi, "; retaining available local data: ", conditionMessage(metadata))
+    if (needs_fetch) {
+      message(if (refresh_all) "Refreshing " else "Fetching ", doi)
+      metadata <- tryCatch(fetch_doi_metadata(doi), error = identity)
+      if (inherits(metadata, "error")) {
+        if (!is.null(cached) || scalar_character(entry$fallback_markdown)) {
+          warning("Could not refresh ", doi, "; retaining available local data: ", conditionMessage(metadata))
+        } else {
+          failures <- c(failures, paste0(doi, ": ", conditionMessage(metadata)))
+        }
       } else {
-        failures <- c(failures, paste0(doi, ": ", conditionMessage(metadata)))
+        cache$records[[entry$id]] <- list(doi = doi, metadata = metadata)
       }
-      next
     }
-    cache$records[[entry$id]] <- list(doi = doi, metadata = metadata)
+
+    cached <- cache$records[[entry$id]]
+    override_abstract <- entry$overrides$abstract %||% ""
+    cached_abstract <- cached$metadata$abstract %||% ""
+    needs_abstract <- entry$id %in% featured && !scalar_character(override_abstract) &&
+      (refresh_all || !scalar_character(cached_abstract))
+    if (needs_abstract && !is.null(cached)) {
+      message("Fetching Crossref abstract for ", doi)
+      abstract <- tryCatch(fetch_crossref_abstract(doi), error = identity)
+      if (inherits(abstract, "error")) {
+        if (scalar_character(cached_abstract)) {
+          warning("Could not refresh abstract for ", doi, "; retaining cached abstract: ", conditionMessage(abstract))
+        } else {
+          failures <- c(failures, paste0(doi, " abstract: ", conditionMessage(abstract)))
+        }
+      } else if (scalar_character(abstract)) {
+        cache$records[[entry$id]]$metadata$abstract <- abstract
+      } else if (!scalar_character(cached_abstract)) {
+        failures <- c(failures, paste0(doi, ": Crossref does not provide an abstract; add overrides.abstract."))
+      }
+    }
   }
 
   if (length(failures)) {
     stop("Could not fetch uncached DOI metadata:\n- ", paste(failures, collapse = "\n- "))
   }
-  cache$schema_version <- 1L
+  cache$schema_version <- 2L
   cache$records <- cache$records[sort(names(cache$records))]
   changed <- write_text_if_changed(canonical_json(cache), cache_path)
   list(cache = cache, changed = changed)
@@ -265,6 +347,41 @@ publication_metadata <- function(entry, cache) {
   metadata
 }
 
+publication_pdf_link <- function(entry, local_only = FALSE) {
+  links <- Filter(function(link) {
+    identical(link$kind %||% "", "pdf") && scalar_character(link$url) &&
+      (!local_only || startsWith(link$url, "/"))
+  }, entry$links %||% list())
+  if (length(links)) links[[1L]] else NULL
+}
+
+publication_landing_url <- function(entry, metadata) {
+  doi <- normalize_doi(entry$doi %||% metadata$DOI)
+  if (nzchar(doi)) return(paste0("https://doi.org/", doi))
+  links <- Filter(function(link) {
+    (link$kind %||% "") %in% c("publisher", "repository") && scalar_character(link$url)
+  }, entry$links %||% list())
+  if (length(links)) return(links[[1L]]$url)
+  field_text(metadata$URL)
+}
+
+validate_featured_publications <- function(registry, cache) {
+  ids <- vapply(registry$entries, function(entry) entry$id, character(1))
+  featured <- unlist(registry$featured %||% character(), use.names = FALSE)
+  for (id in featured) {
+    entry <- registry$entries[[match(id, ids)]]
+    metadata <- publication_metadata(entry, cache)
+    if (is.null(metadata)) stop("Featured publication '", id, "' needs structured metadata.")
+    if (!scalar_character(metadata$abstract)) {
+      stop("Featured publication '", id, "' needs a cached abstract or overrides.abstract.")
+    }
+    if (!scalar_character(publication_landing_url(entry, metadata))) {
+      stop("Featured publication '", id, "' needs a DOI, publisher link, or repository link.")
+    }
+  }
+  invisible(registry)
+}
+
 html_escape <- function(x, attribute = FALSE) {
   x <- paste(x %||% "", collapse = " ")
   x <- gsub("&", "&amp;", x, fixed = TRUE)
@@ -283,6 +400,12 @@ safe_csl_text <- function(x) {
     x <- gsub(paste0("&lt;/", tag, "&gt;"), paste0("</", tag, ">"), x, fixed = TRUE)
   }
   x
+}
+
+abstract_html <- function(x) {
+  paragraphs <- unlist(strsplit(x %||% "", "\n\n", fixed = TRUE))
+  paragraphs <- paragraphs[nzchar(trimws(paragraphs))]
+  paste0("<p>", vapply(paragraphs, html_escape, character(1)), "</p>", collapse = "")
 }
 
 initials <- function(given) {
@@ -311,6 +434,24 @@ format_people <- function(people, owner) {
   if (length(labels) == 1L) return(labels)
   if (length(labels) == 2L) return(paste(labels, collapse = " &amp; "))
   paste0(paste(labels[-length(labels)], collapse = ", "), ", &amp; ", labels[[length(labels)]])
+}
+
+format_featured_people <- function(people, owner, publication_id, limit = 4L) {
+  if (!is.list(people) || !length(people)) return("")
+  if (length(people) <= limit) return(format_people(people, owner))
+  labels <- vapply(people, format_person, character(1), owner = owner)
+  target <- paste0("authors-", publication_id)
+  paste0(
+    paste(labels[seq_len(limit)], collapse = ", "),
+    ', <a class="featured-publication-authors-more collapsed" href="#', html_escape(target, TRUE),
+    '" role="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="',
+    html_escape(target, TRUE), '" aria-label="Show remaining authors">…</a>',
+    '<span class="collapse featured-publication-authors-rest" id="', html_escape(target, TRUE),
+    '"> ', format_people(people[-seq_len(limit)], owner),
+    ' <a class="featured-publication-authors-less" href="#', html_escape(target, TRUE),
+    '" role="button" data-bs-toggle="collapse" aria-expanded="false" aria-controls="',
+    html_escape(target, TRUE), '" aria-label="Collapse author list"><i class="bi bi-chevron-up" aria-hidden="true"></i></a></span>'
+  )
 }
 
 date_year <- function(metadata) {
@@ -417,11 +558,151 @@ publication_sort_order <- function(entries, metadata) {
   order(!in_progress, ifelse(in_progress, vapply(status, status_rank, integer(1)), -year), seq_along(entries))
 }
 
-render_publications_markdown <- function(registry, cache, path) {
-  metadata <- lapply(registry$entries, publication_metadata, cache = cache)
-  ord <- publication_sort_order(registry$entries, metadata)
-  lines <- character()
-  for (i in ord) {
+generate_publication_thumbnails <- function(registry, cache, directory, root = ".") {
+  if (!requireNamespace("pdftools", quietly = TRUE)) stop("Install the locked pdftools package to generate publication thumbnails.")
+  if (!requireNamespace("magick", quietly = TRUE)) stop("Install the locked magick package to generate publication thumbnails.")
+  dir.create(directory, recursive = TRUE, showWarnings = FALSE)
+
+  ids <- vapply(registry$entries, function(entry) entry$id, character(1))
+  featured <- unlist(registry$featured %||% character(), use.names = FALSE)
+  expected <- file.path(directory, paste0(featured, ".webp"))
+  old <- list.files(directory, pattern = "[.]webp$", full.names = TRUE)
+  obsolete <- setdiff(old, expected)
+  if (length(obsolete)) unlink(obsolete)
+
+  for (id in featured) {
+    entry <- registry$entries[[match(id, ids)]]
+    metadata <- publication_metadata(entry, cache)
+    link <- publication_pdf_link(entry, local_only = TRUE)
+    pdf <- file.path(root, sub("^/", "", link$url))
+    png_pattern <- file.path(tempdir(), paste0(id, "-%d.%s"))
+    png <- pdftools::pdf_convert(
+      pdf, format = "png", pages = 1L, dpi = 160L,
+      filenames = png_pattern, verbose = FALSE
+    )[[1L]]
+    on.exit(unlink(png), add = TRUE)
+
+    output <- file.path(directory, paste0(id, ".webp"))
+    temporary <- tempfile(pattern = paste0(id, "-"), tmpdir = directory, fileext = ".webp")
+    on.exit(unlink(temporary), add = TRUE)
+    image <- magick::image_read(png)
+    image <- magick::image_resize(image, "720x")
+    image <- magick::image_strip(image)
+    magick::image_write(image, path = temporary, format = "webp", quality = 82)
+
+    unchanged <- file.exists(output) && identical(
+      unname(tools::md5sum(output)), unname(tools::md5sum(temporary))
+    )
+    if (!unchanged && !file.rename(temporary, output)) stop("Could not replace ", output)
+    if (unchanged) unlink(temporary)
+  }
+  invisible(expected)
+}
+
+publication_count_label <- function(n) {
+  paste(n, if (identical(as.integer(n), 1L)) "publication" else "publications")
+}
+
+featured_bibliographic_details <- function(metadata) {
+  container <- safe_csl_text(field_text(metadata$`container-title` %||% metadata$publisher))
+  year <- html_escape(date_year(metadata))
+  volume <- safe_csl_text(field_text(metadata$volume))
+  issue <- safe_csl_text(field_text(metadata[["issue"]]))
+  pages <- safe_csl_text(field_text(metadata$page %||% metadata$`article-number`))
+  details <- character()
+  if (nzchar(container)) details <- c(details, paste0("<em>", container, "</em>"))
+  if (nzchar(year)) details <- c(details, year)
+  volume_issue <- paste0(
+    if (nzchar(volume)) paste0("<strong>", volume, "</strong>") else "",
+    if (nzchar(issue)) paste0("(", issue, ")") else ""
+  )
+  if (nzchar(volume_issue)) details <- c(details, volume_issue)
+  if (nzchar(pages)) details <- c(details, pages)
+  paste(details, collapse = ", ")
+}
+
+render_featured_card <- function(entry, metadata, owner) {
+  id <- entry$id
+  title <- safe_csl_text(sub("[[:space:].]+$", "", field_text(metadata$title)))
+  plain_title <- clean_abstract(field_text(metadata$title))
+  authors <- format_featured_people(metadata$author, owner, id)
+  full_authors <- format_people(metadata$author, owner)
+  landing <- publication_landing_url(entry, metadata)
+  pdf <- publication_pdf_link(entry, local_only = TRUE)
+  abstract_id <- paste0("abstract-", id)
+  doi <- normalize_doi(entry$doi %||% metadata$DOI)
+  doi_line <- if (nzchar(doi)) paste0(
+    '<p class="card-text featured-publication-doi mb-3"><span class="visually-hidden">DOI: </span>',
+    html_escape(doi), "</p>"
+  ) else ""
+
+  c(
+    '<div class="col">',
+    paste0('<article class="card h-100 featured-publication" id="featured-', html_escape(id, TRUE), '">'),
+    '<div class="row g-0 h-100 featured-publication-layout">',
+    '<div class="featured-publication-media">',
+    '<div class="featured-publication-thumbnail-wrap">',
+    paste0(
+      '<img class="img-fluid featured-publication-thumbnail" src="/assets/img/publications/',
+      html_escape(id, TRUE), '.webp" alt="First page of ', html_escape(plain_title, TRUE),
+      '" loading="lazy">'
+    ),
+    "</div>",
+    '<div class="featured-publication-controls">',
+    paste0(
+      '<a class="btn btn-outline-secondary btn-sm" href="', html_escape(pdf$url, TRUE),
+      '" aria-label="Download PDF" title="Download PDF"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i></a>',
+      '<button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#',
+      html_escape(abstract_id, TRUE), '" aria-controls="', html_escape(abstract_id, TRUE), '">Abstract</button>'
+    ),
+    "</div>",
+    "</div>",
+    '<div class="featured-publication-content">',
+    '<div class="card-body d-flex flex-column">',
+    paste0('<h3 class="card-title featured-publication-title"><a href="', html_escape(landing, TRUE), '">', title, "</a></h3>"),
+    paste0('<p class="card-text featured-publication-authors">', authors, "</p>"),
+    paste0('<p class="card-text text-body-secondary featured-publication-details">', featured_bibliographic_details(metadata), "</p>"),
+    doi_line,
+    "</div>",
+    "</div>",
+    "</div>",
+    "</article>",
+    paste0('<div class="modal fade featured-publication-abstract-modal" id="', html_escape(abstract_id, TRUE),
+      '" tabindex="-1" aria-labelledby="', html_escape(abstract_id, TRUE), '-label" aria-hidden="true">'),
+    '<div class="modal-dialog modal-xl modal-dialog-centered">',
+    '<div class="modal-content">',
+    '<div class="modal-header">',
+    paste0('<h2 class="modal-title h4" id="', html_escape(abstract_id, TRUE), '-label">Abstract</h2>'),
+    '<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>',
+    "</div>",
+    paste0(
+      '<div class="modal-body featured-publication-abstract">',
+      '<p class="featured-publication-modal-title"><a href="', html_escape(landing, TRUE), '">', title, '</a></p>',
+      '<p class="featured-publication-modal-authors">', full_authors, '</p>',
+      abstract_html(metadata$abstract),
+      '</div>'
+    ),
+    '<div class="modal-footer">',
+    paste0(
+      '<a class="btn btn-outline-secondary featured-publication-modal-pdf" href="', html_escape(pdf$url, TRUE),
+      '" aria-label="Download publication PDF"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF</a>'
+    ),
+    '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>',
+    "</div>",
+    "</div>",
+    "</div>",
+    "</div>",
+    "</div>"
+  )
+}
+
+render_publication_group <- function(id, title, indices, registry, metadata) {
+  lines <- c(
+    paste0('<section class="publication-group" id="', html_escape(id, TRUE), '">'),
+    paste0('<h2 class="publication-year-heading">', html_escape(title), "</h2>"),
+    '<ul class="list-group list-group-flush publication-list">'
+  )
+  for (i in indices) {
     entry <- registry$entries[[i]]
     value <- if (is.null(metadata[[i]])) {
       entry$fallback_markdown
@@ -429,7 +710,72 @@ render_publications_markdown <- function(registry, cache, path) {
       format_publication(metadata[[i]], entry, registry$owner %||% list(family = "Simpson", given_initial = "G"))
     }
     if (!scalar_character(value)) stop("No renderable metadata for publication '", entry$id, "'.")
-    lines <- c(lines, paste0("1. ", value), "")
+    lines <- c(lines, paste0('<li class="list-group-item px-0" data-publication-id="', html_escape(entry$id, TRUE), '" markdown="1">', value, "</li>"))
+  }
+  c(lines, "</ul>", "</section>", "")
+}
+
+render_publications_markdown <- function(registry, cache, path, selector_path) {
+  metadata <- lapply(registry$entries, publication_metadata, cache = cache)
+  validate_featured_publications(registry, cache)
+  entries <- registry$entries
+  status <- vapply(entries, function(entry) entry$status %||% "", character(1))
+  years <- vapply(seq_along(entries), function(i) {
+    as.character(entries[[i]]$year %||% if (is.null(metadata[[i]])) "" else date_year(metadata[[i]]))
+  }, character(1))
+  published <- !nzchar(status)
+  if (any(published & !grepl("^[0-9]{4}$", years))) {
+    stop("Every published publication must have a four-digit year.")
+  }
+
+  featured <- unlist(registry$featured %||% character(), use.names = FALSE)
+  entry_ids <- vapply(entries, function(entry) entry$id, character(1))
+  year_values <- sort(unique(years[published]), decreasing = TRUE)
+  current <- which(!published)[order(vapply(status[!published], status_rank, integer(1)), which(!published))]
+
+  selector <- c(
+    '<aside class="publication-navigation">',
+    paste0('<p class="publication-total"><strong>', publication_count_label(length(entries)), "</strong></p>"),
+    '<nav class="publication-year-selector dropdown side-snippet" aria-label="Jump to publication year">',
+    '<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Jump to year</button>',
+    '<ul class="dropdown-menu dropdown-menu-end">'
+  )
+  if (length(current)) selector <- c(selector, paste0('<li><a class="dropdown-item" href="#unpublished">Unpublished (', length(current), ")</a></li>"))
+  for (year in year_values) {
+    count <- sum(published & years == year)
+    selector <- c(selector, paste0('<li><a class="dropdown-item" href="#year-', year, '">', year, " (", count, ")</a></li>"))
+  }
+  selector <- c(selector, "</ul>", "</nav>", "</aside>", "")
+  write_text_if_changed(paste(selector, collapse = "\n"), selector_path)
+
+  lines <- character()
+
+  if (length(featured)) {
+    lines <- c(
+      lines,
+      '<section class="featured-publications-section">',
+      '<h2>Featured publications</h2>',
+      '<div class="featured-publications">'
+    )
+    for (id in featured) {
+      i <- match(id, entry_ids)
+      lines <- c(lines, render_featured_card(entries[[i]], metadata[[i]], registry$owner))
+    }
+    lines <- c(lines, "</div>", "</section>", "")
+  }
+
+  if (length(current)) {
+    lines <- c(lines, render_publication_group(
+      "unpublished", paste0("Unpublished (", publication_count_label(length(current)), ")"),
+      current, registry, metadata
+    ))
+  }
+  for (year in year_values) {
+    indices <- which(published & years == year)
+    lines <- c(lines, render_publication_group(
+      paste0("year-", year), paste0(year, " (", publication_count_label(length(indices)), ")"),
+      indices, registry, metadata
+    ))
   }
   write_text_if_changed(paste(lines, collapse = "\n"), path)
 }
