@@ -27,8 +27,7 @@ assert(identical(as.integer(cache$schema_version), 2L), "The publication cache m
 
 featured <- unlist(registry$featured, use.names = FALSE)
 expected_featured <- c(
-  "miranda-velez-et-al-2026", "gerlich-et-al-2025",
-  "turner-et-al-2024", "doi-10-1111-fwb-14192"
+  "miranda-velez-et-al-2026", "gerlich-et-al-2025"
 )
 assert(identical(featured, expected_featured), "Featured publications must retain their configured display order.")
 assert(length(featured) <= 4L && !anyDuplicated(featured), "Featured publications must be unique and limited to four.")
@@ -63,11 +62,16 @@ generated <- readLines(tmp, warn = FALSE)
 assert(sum(grepl("data-publication-id=", generated, fixed = TRUE)) == length(entries),
   "Generated year lists must contain exactly one item per publication.")
 assert(any(grepl("<strong>94 publications</strong>", generated, fixed = TRUE)), "Generated page must show the total publication count.")
-assert(any(grepl("row-cols-1 row-cols-lg-2", generated, fixed = TRUE)), "Featured cards must use the responsive Bootstrap grid.")
+assert(any(grepl("<div class=\"featured-publications\">", generated, fixed = TRUE)),
+  "Featured cards must render in the single-column featured list.")
 assert(sum(grepl("row g-0 h-100 featured-publication-layout", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("class=\"featured-publication-media\"", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("class=\"featured-publication-content\"", generated, fixed = TRUE)) == length(featured),
-  "Featured thumbnails must sit beside card text on narrow screens and above it on wide screens.")
+  "Featured thumbnails must sit beside card text at every screen width.")
+assert(sum(grepl("featured-publication-publisher", generated, fixed = TRUE)) == length(featured),
+  "Every featured card must render the muted-orange publisher button.")
+assert(sum(grepl("featured-publication-actions", generated, fixed = TRUE)) == length(featured),
+  "Every featured card must render an action group with explicit wrapping gaps.")
 assert(sum(grepl("<article class=\"card h-100 featured-publication\"", generated, fixed = TRUE)) == length(featured),
   "Every configured featured publication must render one Bootstrap card.")
 assert(sum(grepl("data-bs-target=\"#abstract-", generated, fixed = TRUE)) == length(featured),
@@ -131,7 +135,7 @@ assert(identical(refreshed$records[[abstract_id]]$metadata$abstract, "Retrieved 
   "A missing featured abstract must be fetched and cached.")
 
 invalid_registry <- registry
-invalid_registry$featured <- c(featured, entries[[5L]]$id)
+invalid_registry$featured <- ids[seq_len(5L)]
 assert_error(validate_publication_registry(invalid_registry), "More than four featured publications must fail validation.")
 
 override_test <- merge_metadata(list(title = "Publisher title", page = "1-2"), list(title = "Corrected title"))

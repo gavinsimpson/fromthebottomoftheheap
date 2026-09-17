@@ -649,8 +649,8 @@ render_featured_card <- function(entry, metadata, owner) {
     paste0('<p class="card-text featured-publication-authors">', authors, "</p>"),
     paste0('<p class="card-text text-body-secondary">', featured_bibliographic_details(metadata), "</p>"),
     doi_line,
-    '<div class="d-flex flex-wrap gap-2 mt-auto">',
-    paste0('<a class="btn btn-primary btn-sm" href="', html_escape(landing, TRUE), '">Publisher or repository</a>'),
+    '<div class="d-flex flex-wrap mt-auto featured-publication-actions">',
+    paste0('<a class="btn btn-sm featured-publication-publisher" href="', html_escape(landing, TRUE), '">Publisher or repository</a>'),
     paste0('<a class="btn btn-outline-secondary btn-sm" href="', html_escape(pdf$url, TRUE), '"><i class="bi bi-file-earmark-pdf" aria-hidden="true"></i> PDF</a>'),
     paste0(
       '<button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#',
@@ -726,7 +726,7 @@ render_publications_markdown <- function(registry, cache, path) {
       lines,
       '<section class="featured-publications-section">',
       '<h2>Featured publications</h2>',
-      '<div class="row row-cols-1 row-cols-lg-2 g-4 featured-publications">'
+      '<div class="featured-publications">'
     )
     for (id in featured) {
       i <- match(id, entry_ids)
