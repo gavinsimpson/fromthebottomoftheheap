@@ -131,9 +131,10 @@ a featured ID is removed, its obsolete thumbnail is removed on the next
 preparation. Render the publications page after changing the featured list so
 that the matching thumbnail is copied into `_site/`.
 
-The page count and section counts are generated from the registry. Temporary
-statuses appear under **Current work**; all other publications are grouped by
-year, newest first. Do not hand-edit those counts or groups.
+The total in the page sidebar and the section counts are generated from the
+registry. Temporary statuses appear under **Unpublished**; all other
+publications are grouped by year, newest first. Do not hand-edit those counts
+or groups.
 
 Use `status: preprint`, `submitted`, `in review`, `in revision`, `accepted`, or
 `in press` only while that label should replace the publication year. Remove

@@ -723,24 +723,21 @@ render_publications_markdown <- function(registry, cache, path, selector_path) {
   current <- which(!published)[order(vapply(status[!published], status_rank, integer(1)), which(!published))]
 
   selector <- c(
-    '<nav class="publication-year-selector dropdown side-snippet publication-navigation" aria-label="Jump to publication year">',
+    '<aside class="publication-navigation">',
+    paste0('<p class="publication-total"><strong>', publication_count_label(length(entries)), "</strong></p>"),
+    '<nav class="publication-year-selector dropdown side-snippet" aria-label="Jump to publication year">',
     '<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Jump to year</button>',
     '<ul class="dropdown-menu dropdown-menu-end">'
   )
-  if (length(current)) selector <- c(selector, paste0('<li><a class="dropdown-item" href="#current-work">Current work (', length(current), ")</a></li>"))
-  if (length(current) && length(year_values)) selector <- c(selector, '<li><hr class="dropdown-divider"></li>')
+  if (length(current)) selector <- c(selector, paste0('<li><a class="dropdown-item" href="#unpublished">Unpublished (', length(current), ")</a></li>"))
   for (year in year_values) {
     count <- sum(published & years == year)
     selector <- c(selector, paste0('<li><a class="dropdown-item" href="#year-', year, '">', year, " (", count, ")</a></li>"))
   }
-  selector <- c(selector, "</ul>", "</nav>", "")
+  selector <- c(selector, "</ul>", "</nav>", "</aside>", "")
   write_text_if_changed(paste(selector, collapse = "\n"), selector_path)
 
-  lines <- c(
-    '<section class="publication-summary">',
-    paste0('<p class="publication-total mb-0"><strong>', publication_count_label(length(entries)), "</strong></p>"),
-    "</section>", ""
-  )
+  lines <- character()
 
   if (length(featured)) {
     lines <- c(
@@ -758,7 +755,7 @@ render_publications_markdown <- function(registry, cache, path, selector_path) {
 
   if (length(current)) {
     lines <- c(lines, render_publication_group(
-      "current-work", paste0("Current work (", publication_count_label(length(current)), ")"),
+      "unpublished", paste0("Unpublished (", publication_count_label(length(current)), ")"),
       current, registry, metadata
     ))
   }

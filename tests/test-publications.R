@@ -69,11 +69,17 @@ published_years <- unique(vapply(seq_along(entries), function(i) {
 published_years <- published_years[nzchar(published_years)]
 assert(sum(grepl("data-publication-id=", generated, fixed = TRUE)) == length(entries),
   "Generated year lists must contain exactly one item per publication.")
-assert(any(grepl("<strong>94 publications</strong>", generated, fixed = TRUE)), "Generated page must show the total publication count.")
+assert(!any(grepl("<strong>94 publications</strong>", generated, fixed = TRUE)) &&
+    any(grepl("<strong>94 publications</strong>", generated_selector, fixed = TRUE)),
+  "The generated sidebar must show the total publication count.")
 assert(!any(grepl("publication-year-selector", generated, fixed = TRUE)) &&
     any(grepl("publication-year-selector", generated_selector, fixed = TRUE)) &&
     length(grep('class="dropdown-item" href="#year-', generated_selector, fixed = TRUE)) == length(published_years),
   "The generated year selector must be separate from the main publication content.")
+assert(any(grepl('href="#unpublished">Unpublished (', generated_selector, fixed = TRUE)) &&
+    !any(grepl("dropdown-divider", generated_selector, fixed = TRUE)) &&
+    any(grepl('id="unpublished"', generated, fixed = TRUE)),
+  "Unpublished publications must be presented like the year groups.")
 assert(any(grepl("<div class=\"featured-publications\">", generated, fixed = TRUE)),
   "Featured cards must render in the single-column featured list.")
 assert(sum(grepl("row g-0 h-100 featured-publication-layout", generated, fixed = TRUE)) == length(featured) &&
