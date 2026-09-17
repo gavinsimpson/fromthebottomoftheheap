@@ -57,12 +57,23 @@ for (i in seq_along(entries)) {
 }
 
 tmp <- tempfile(fileext = ".md")
-on.exit(unlink(tmp), add = TRUE)
-invisible(render_publications_markdown(registry, cache, tmp))
+selector_tmp <- tempfile(fileext = ".md")
+on.exit(unlink(c(tmp, selector_tmp)), add = TRUE)
+invisible(render_publications_markdown(registry, cache, tmp, selector_tmp))
 generated <- readLines(tmp, warn = FALSE)
+generated_selector <- readLines(selector_tmp, warn = FALSE)
+published_years <- unique(vapply(seq_along(entries), function(i) {
+  if (nzchar(entries[[i]]$status %||% "")) return("")
+  as.character(entries[[i]]$year %||% if (is.null(metadata[[i]])) "" else date_year(metadata[[i]]))
+}, character(1)))
+published_years <- published_years[nzchar(published_years)]
 assert(sum(grepl("data-publication-id=", generated, fixed = TRUE)) == length(entries),
   "Generated year lists must contain exactly one item per publication.")
 assert(any(grepl("<strong>94 publications</strong>", generated, fixed = TRUE)), "Generated page must show the total publication count.")
+assert(!any(grepl("publication-year-selector", generated, fixed = TRUE)) &&
+    any(grepl("publication-year-selector", generated_selector, fixed = TRUE)) &&
+    length(grep('class="dropdown-item" href="#year-', generated_selector, fixed = TRUE)) == length(published_years),
+  "The generated year selector must be separate from the main publication content.")
 assert(any(grepl("<div class=\"featured-publications\">", generated, fixed = TRUE)),
   "Featured cards must render in the single-column featured list.")
 assert(sum(grepl("row g-0 h-100 featured-publication-layout", generated, fixed = TRUE)) == length(featured) &&

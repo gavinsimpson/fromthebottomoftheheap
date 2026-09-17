@@ -8,6 +8,7 @@ publication_paths <- function(root = ".") {
     cache = file.path(root, "publications", "doi-cache.json"),
     suggestions = file.path(root, "publications", "doi-suggestions.yml"),
     generated = file.path(root, "publications", "_generated-publications.md"),
+    generated_selector = file.path(root, "publications", "_generated-publication-years.md"),
     thumbnails = file.path(root, "assets", "img", "publications")
   )
 }
@@ -703,7 +704,7 @@ render_publication_group <- function(id, title, indices, registry, metadata) {
   c(lines, "</ul>", "</section>", "")
 }
 
-render_publications_markdown <- function(registry, cache, path) {
+render_publications_markdown <- function(registry, cache, path, selector_path) {
   metadata <- lapply(registry$entries, publication_metadata, cache = cache)
   validate_featured_publications(registry, cache)
   entries <- registry$entries
@@ -721,20 +722,25 @@ render_publications_markdown <- function(registry, cache, path) {
   year_values <- sort(unique(years[published]), decreasing = TRUE)
   current <- which(!published)[order(vapply(status[!published], status_rank, integer(1)), which(!published))]
 
-  lines <- c(
-    '<section class="publication-summary d-flex flex-wrap align-items-center justify-content-between gap-3">',
-    paste0('<p class="publication-total mb-0"><strong>', publication_count_label(length(entries)), "</strong></p>"),
-    '<nav class="publication-year-selector dropdown" aria-label="Jump to publication year">',
+  selector <- c(
+    '<nav class="publication-year-selector dropdown side-snippet publication-navigation" aria-label="Jump to publication year">',
     '<button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Jump to year</button>',
     '<ul class="dropdown-menu dropdown-menu-end">'
   )
-  if (length(current)) lines <- c(lines, paste0('<li><a class="dropdown-item" href="#current-work">Current work (', length(current), ")</a></li>"))
-  if (length(current) && length(year_values)) lines <- c(lines, '<li><hr class="dropdown-divider"></li>')
+  if (length(current)) selector <- c(selector, paste0('<li><a class="dropdown-item" href="#current-work">Current work (', length(current), ")</a></li>"))
+  if (length(current) && length(year_values)) selector <- c(selector, '<li><hr class="dropdown-divider"></li>')
   for (year in year_values) {
     count <- sum(published & years == year)
-    lines <- c(lines, paste0('<li><a class="dropdown-item" href="#year-', year, '">', year, " (", count, ")</a></li>"))
+    selector <- c(selector, paste0('<li><a class="dropdown-item" href="#year-', year, '">', year, " (", count, ")</a></li>"))
   }
-  lines <- c(lines, "</ul>", "</nav>", "</section>", "")
+  selector <- c(selector, "</ul>", "</nav>", "")
+  write_text_if_changed(paste(selector, collapse = "\n"), selector_path)
+
+  lines <- c(
+    '<section class="publication-summary">',
+    paste0('<p class="publication-total mb-0"><strong>', publication_count_label(length(entries)), "</strong></p>"),
+    "</section>", ""
+  )
 
   if (length(featured)) {
     lines <- c(

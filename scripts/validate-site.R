@@ -455,6 +455,17 @@ main_publications <- paste(readLines(publication_pages[[1L]], warn = FALSE), col
 if (!grepl("fa-creative-commons-nc", main_publications, fixed = TRUE)) {
   stop("The main publications page is missing its CC BY-NC icons")
 }
+publication_navigation <- regexpr('class="publication-year-selector dropdown side-snippet publication-navigation"', main_publications, fixed = TRUE)[[1L]]
+publication_summary <- regexpr('class="publication-summary"', main_publications, fixed = TRUE)[[1L]]
+publication_social_wrapper <- regexpr('class="publications-social"', main_publications, fixed = TRUE)[[1L]]
+publication_social <- regexpr('id="social"', main_publications, fixed = TRUE)[[1L]]
+if (any(c(publication_navigation, publication_summary,
+          publication_social_wrapper, publication_social) < 1L) ||
+    !(publication_navigation < publication_summary && publication_summary < publication_social_wrapper &&
+      publication_social_wrapper < publication_social) ||
+    !all(vapply(home_sidebar_items, grepl, logical(1L), x = main_publications, fixed = TRUE))) {
+  stop("The publications page year selector and Social sidebar are incomplete")
+}
 
 robots_source <- readLines(file.path(root, "robots.txt"), warn = FALSE)
 robots_rendered <- readLines(file.path(root, "_site", "robots.txt"), warn = FALSE)

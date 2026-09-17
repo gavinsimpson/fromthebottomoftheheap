@@ -9,7 +9,7 @@ result <- refresh_publication_cache(registry, paths$cache, refresh_all = TRUE)
 relationships_changed <- refresh_version_of_record_suggestions(registry, paths$suggestions)
 validate_featured_publications(registry, result$cache)
 invisible(generate_publication_thumbnails(registry, result$cache, paths$thumbnails))
-invisible(render_publications_markdown(registry, result$cache, paths$generated))
+invisible(render_publications_markdown(registry, result$cache, paths$generated, paths$generated_selector))
 
 message(if (result$changed) "Publication metadata cache updated." else "Publication metadata is unchanged.")
 if (relationships_changed) message("Version-of-record suggestions updated.")

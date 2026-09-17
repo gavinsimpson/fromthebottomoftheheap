@@ -20,10 +20,11 @@ This validates the registry, fetches citation metadata only for a new or
 changed DOI, and fetches a Crossref abstract only when a featured publication
 does not already have a cached or overridden abstract. It updates
 `doi-cache.json` when necessary, regenerates the ignored
-`_generated-publications.md` intermediate, and generates featured-paper
-thumbnails under `assets/img/publications/`. It does not invoke Quarto or
-change anything in `_site/`. For a status-only change to an already-cached DOI,
-it normally makes no cache change but still regenerates the intermediate.
+`_generated-publications.md` and `_generated-publication-years.md`
+intermediates, and generates featured-paper thumbnails under
+`assets/img/publications/`. It does not invoke Quarto or change anything in
+`_site/`. For a status-only change to an already-cached DOI, it normally makes
+no cache change but still regenerates the intermediates.
 
 ### Force-refresh all DOI metadata without rendering the site
 
@@ -234,5 +235,6 @@ review the website output, and use the full release command only when preparing
 to deploy, as described above. Commit `publications/publications.yml`,
 `publications/doi-cache.json`, generated featured thumbnails, the rendered
 `_site/` changes when publishing them, and the manuscript PDF if it is hosted
-locally. Do not commit `publications/_generated-publications.md`; it is an
-ignored build intermediate.
+locally. Do not commit `publications/_generated-publications.md` or
+`publications/_generated-publication-years.md`; they are ignored build
+intermediates.
