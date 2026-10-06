@@ -25,12 +25,7 @@ assert(length(cache$records) == sum(doi_entries), "Every DOI entry must have one
 assert(setequal(names(cache$records), ids[doi_entries]), "The cache contains missing or orphaned publication records.")
 assert(identical(as.integer(cache$schema_version), 2L), "The publication cache must use schema version 2.")
 
-featured <- unlist(registry$featured, use.names = FALSE)
-expected_featured <- c(
-  "miranda-velez-et-al-2026", "gerlich-et-al-2025",
-  "turner-et-al-2024", "doi-10-1111-fwb-14192"
-)
-assert(identical(featured, expected_featured), "Featured publications must retain their configured display order.")
+featured <- unlist(registry$featured %||% character(), use.names = FALSE)
 assert(length(featured) <= 4L && !anyDuplicated(featured), "Featured publications must be unique and limited to four.")
 validate_featured_publications(registry, cache)
 
@@ -62,6 +57,18 @@ on.exit(unlink(c(tmp, selector_tmp)), add = TRUE)
 invisible(render_publications_markdown(registry, cache, tmp, selector_tmp))
 generated <- readLines(tmp, warn = FALSE)
 generated_selector <- readLines(selector_tmp, warn = FALSE)
+rendered_featured_ids <- function(lines) {
+  cards <- lines[grepl('<article class="card h-100 featured-publication"', lines, fixed = TRUE)]
+  sub('.*id="featured-([^"]+)".*', "\\1", cards)
+}
+assert(identical(rendered_featured_ids(generated), vapply(featured, html_escape, character(1), attribute = TRUE, USE.NAMES = FALSE)),
+  "Rendered featured publications must match the configured selection and display order.")
+reordered_registry <- registry
+reordered_registry$featured <- rev(featured)
+invisible(render_publications_markdown(reordered_registry, cache, tmp, selector_tmp))
+assert(identical(rendered_featured_ids(readLines(tmp, warn = FALSE)),
+    vapply(rev(featured), html_escape, character(1), attribute = TRUE, USE.NAMES = FALSE)),
+  "Changing the configured featured order must change the rendered card order.")
 published_years <- unique(vapply(seq_along(entries), function(i) {
   if (nzchar(entries[[i]]$status %||% "")) return("")
   as.character(entries[[i]]$year %||% if (is.null(metadata[[i]])) "" else date_year(metadata[[i]]))
@@ -80,8 +87,8 @@ assert(any(grepl('href="#unpublished">Unpublished (', generated_selector, fixed 
     !any(grepl("dropdown-divider", generated_selector, fixed = TRUE)) &&
     any(grepl('id="unpublished"', generated, fixed = TRUE)),
   "Unpublished publications must be presented like the year groups.")
-assert(any(grepl("<div class=\"featured-publications\">", generated, fixed = TRUE)),
-  "Featured cards must render in the single-column featured list.")
+assert(any(grepl("<div class=\"featured-publications\">", generated, fixed = TRUE)) == (length(featured) > 0L),
+  "The featured list must render only when publications are configured.")
 assert(sum(grepl("row g-0 h-100 featured-publication-layout", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("class=\"featured-publication-media\"", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("class=\"featured-publication-content\"", generated, fixed = TRUE)) == length(featured),
@@ -94,7 +101,10 @@ assert(sum(grepl("class=\"featured-publication-controls\"", generated, fixed = T
   "Every featured card must render an icon-only PDF control beneath its thumbnail.")
 assert(sum(grepl("featured-publication-title", generated, fixed = TRUE)) == length(featured) &&
     sum(grepl("featured-publication-details", generated, fixed = TRUE)) == length(featured) &&
-    sum(grepl("featured-publication-doi", generated, fixed = TRUE)) == length(featured),
+    sum(grepl("featured-publication-doi", generated, fixed = TRUE)) == sum(vapply(featured, function(id) {
+      i <- match(id, ids)
+      nzchar(normalize_doi(entries[[i]]$doi %||% metadata[[i]]$DOI))
+    }, logical(1))),
   "Every featured card must render the explicit title and metadata typography hooks.")
 assert(!any(grepl("featured-publication-actions", generated, fixed = TRUE)),
   "Featured card controls must not remain in the bibliographic text column.")
@@ -105,8 +115,8 @@ assert(sum(grepl("data-bs-toggle=\"modal\" data-bs-target=\"#abstract-", generat
     sum(grepl("data-bs-dismiss=\"modal\"", generated, fixed = TRUE)) == 2L * length(featured),
   "Every featured card must render a centred, scrollable abstract modal with two close controls.")
 assert(sum(grepl('class="modal-title h4"', generated, fixed = TRUE)) == length(featured) &&
-    sum(grepl('class="featured-publication-modal-title"><a href="https://doi.org/', generated, fixed = TRUE)) == length(featured),
-  "Every featured modal must render a prominent heading and a DOI-linked publication title.")
+    sum(grepl('class="featured-publication-modal-title"><a href="', generated, fixed = TRUE)) == length(featured),
+  "Every featured modal must render a prominent heading and a linked publication title.")
 assert(sum(grepl('class="featured-publication-modal-authors"', generated, fixed = TRUE)) == length(featured) &&
     sum(grepl('class="btn btn-outline-secondary featured-publication-modal-pdf"', generated, fixed = TRUE)) == length(featured),
   "Every featured modal must render its full author list and a PDF footer button.")
@@ -131,13 +141,16 @@ assert(sum(grepl("class=\"publication-group\"", generated, fixed = TRUE)) == len
 listed_ids <- sub('.*data-publication-id="([^"]+)".*', "\\1", generated[grepl("data-publication-id=", generated, fixed = TRUE)])
 assert(setequal(listed_ids, ids) && !anyDuplicated(listed_ids), "Each publication must occur exactly once in the main bibliography.")
 
-thumbnail_files <- file.path(paths$thumbnails, paste0(featured, ".webp"))
+thumbnail_files <- vapply(featured, function(id) file.path(paths$thumbnails, paste0(id, ".webp")),
+  character(1), USE.NAMES = FALSE)
 assert(all(file.exists(thumbnail_files)), "Every featured publication must have a generated WebP thumbnail.")
 assert(setequal(list.files(paths$thumbnails, pattern = "[.]webp$"), basename(thumbnail_files)),
   "The thumbnail directory must not contain obsolete WebP files.")
-thumbnail_info <- magick::image_info(magick::image_read(thumbnail_files))
-assert(all(thumbnail_info$format == "WEBP") && all(thumbnail_info$width == 720L),
-  "Featured thumbnails must be 720-pixel-wide WebP images.")
+if (length(thumbnail_files)) {
+  thumbnail_info <- magick::image_info(magick::image_read(thumbnail_files))
+  assert(all(thumbnail_info$format == "WEBP") && all(thumbnail_info$width == 720L),
+    "Featured thumbnails must be 720-pixel-wide WebP images.")
+}
 
 assert(identical(clean_abstract("<jats:p>A <jats:italic>short</jats:italic> abstract.</jats:p>"), "A short abstract."),
   "JATS cleanup must retain inline word boundaries without markup.")
@@ -164,10 +177,15 @@ invisible(refresh_publication_cache(registry, paths$cache, refresh_all = FALSE))
 fetch_doi_metadata <- original_fetch
 fetch_crossref_abstract <- original_abstract_fetch
 
-abstract_registry <- registry
-abstract_id <- "gerlich-et-al-2025"
-abstract_cache <- cache
-abstract_cache$records[[abstract_id]]$metadata$abstract <- NULL
+abstract_id <- "sample-publication"
+abstract_doi <- "10.1234/example"
+abstract_registry <- list(
+  featured = abstract_id,
+  entries = list(list(id = abstract_id, doi = abstract_doi))
+)
+abstract_cache <- list(schema_version = 2L, records = setNames(list(
+  list(doi = abstract_doi, metadata = list(title = "Sample publication"))
+), abstract_id))
 abstract_path <- tempfile(fileext = ".json")
 writeLines(canonical_json(abstract_cache), abstract_path, useBytes = TRUE)
 fetch_crossref_abstract <- function(doi) clean_abstract("<jats:p>Retrieved abstract.</jats:p>")
