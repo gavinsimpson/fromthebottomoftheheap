@@ -76,8 +76,9 @@ published_years <- unique(vapply(seq_along(entries), function(i) {
 published_years <- published_years[nzchar(published_years)]
 assert(sum(grepl("data-publication-id=", generated, fixed = TRUE)) == length(entries),
   "Generated year lists must contain exactly one item per publication.")
-assert(!any(grepl("<strong>94 publications</strong>", generated, fixed = TRUE)) &&
-    any(grepl("<strong>94 publications</strong>", generated_selector, fixed = TRUE)),
+expected_total <- paste0("<strong>", length(entries), " publications</strong>")
+assert(!any(grepl(expected_total, generated, fixed = TRUE)) &&
+    any(grepl(expected_total, generated_selector, fixed = TRUE)),
   "The generated sidebar must show the total publication count.")
 assert(!any(grepl("publication-year-selector", generated, fixed = TRUE)) &&
     any(grepl("publication-year-selector", generated_selector, fixed = TRUE)) &&
