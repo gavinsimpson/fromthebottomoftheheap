@@ -2,17 +2,15 @@
 
 root <- normalizePath(getwd(), mustWork = TRUE)
 site <- file.path(root, "_site")
+source(file.path(root, "scripts", "feeds.R"))
 
 strip_post_sidebars <- function(path) {
   if (!file.exists(path)) return(invisible(FALSE))
   feed <- paste(readLines(path, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-  feed <- gsub(
-    '(?s)<div class="post-links">.*?</div></div>\n<p>',
-    "</div><p>",
-    feed,
-    perl = TRUE
-  )
-  writeLines(strsplit(feed, "\n", fixed = TRUE)[[1L]], path, useBytes = TRUE)
+  feed <- strip_post_sidebar_html(feed)
+  lines <- strsplit(feed, "\n", fixed = TRUE)[[1L]]
+  lines <- sub("(<description><!\\[CDATA\\[)[ \t]+$", "\\1", lines)
+  writeLines(lines, path, useBytes = TRUE)
   invisible(TRUE)
 }
 
@@ -47,13 +45,11 @@ if (file.exists(file.path(site, "feed-R", "index.xml"))) {
   writeLines(lines, r_feed, useBytes = TRUE)
 }
 
-# Quarto derives sitemap last-modified values from filesystem mtimes, which
-# makes an otherwise identical local render change this committed artifact.
-# lastmod is optional in the sitemap protocol, so omit it deterministically.
+# Omit optional filesystem timestamps and sort URLs for deterministic builds.
 sitemap <- file.path(site, "sitemap.xml")
 if (file.exists(sitemap)) {
   lines <- readLines(sitemap, warn = FALSE, encoding = "UTF-8")
-  writeLines(lines[!grepl("<lastmod>", lines, fixed = TRUE)], sitemap, useBytes = TRUE)
+  writeLines(normalize_sitemap(lines), sitemap, useBytes = TRUE)
 }
 
 writeLines(

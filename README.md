@@ -45,6 +45,12 @@ name. This path becomes the permanent public URL and the Giscus discussion key,
 so do not change it after publication without also adding a redirect and
 planning how to preserve the associated discussion.
 
+The build discovers posts directly from these dated QMD files. Published posts
+are automatically added to the home page, blog archive, year archives, category
+and tag pages, and feeds; do not add new posts to the historical migration
+manifest. Set `draft: true` while writing and remove it or set `draft: false`
+when ready to publish. Drafts are excluded from generated listings and feeds.
+
 For example, to start a post dated 14 September 2026:
 
 ```sh

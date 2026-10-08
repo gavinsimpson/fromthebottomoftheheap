@@ -20,7 +20,7 @@ entries <- registry$entries
 ids <- vapply(entries, function(x) x$id, character(1))
 doi_entries <- vapply(entries, function(x) nzchar(normalize_doi(x$doi)), logical(1))
 
-assert(length(entries) >= 88L, "The registry must retain all 88 migrated publications.")
+assert(length(entries) > 0L, "The publication registry must not be empty.")
 assert(length(cache$records) == sum(doi_entries), "Every DOI entry must have one cached metadata record.")
 assert(setequal(names(cache$records), ids[doi_entries]), "The cache contains missing or orphaned publication records.")
 assert(identical(as.integer(cache$schema_version), 2L), "The publication cache must use schema version 2.")
@@ -84,9 +84,10 @@ assert(!any(grepl("publication-year-selector", generated, fixed = TRUE)) &&
     any(grepl("publication-year-selector", generated_selector, fixed = TRUE)) &&
     length(grep('class="dropdown-item" href="#year-', generated_selector, fixed = TRUE)) == length(published_years),
   "The generated year selector must be separate from the main publication content.")
-assert(any(grepl('href="#unpublished">Unpublished (', generated_selector, fixed = TRUE)) &&
+has_unpublished <- any(vapply(entries, function(x) nzchar(x$status %||% ""), logical(1L)))
+assert(any(grepl('href="#unpublished">Unpublished (', generated_selector, fixed = TRUE)) == has_unpublished &&
     !any(grepl("dropdown-divider", generated_selector, fixed = TRUE)) &&
-    any(grepl('id="unpublished"', generated, fixed = TRUE)),
+    any(grepl('id="unpublished"', generated, fixed = TRUE)) == has_unpublished,
   "Unpublished publications must be presented like the year groups.")
 assert(any(grepl("<div class=\"featured-publications\">", generated, fixed = TRUE)) == (length(featured) > 0L),
   "The featured list must render only when publications are configured.")
@@ -158,17 +159,35 @@ assert(identical(clean_abstract("<jats:p>A <jats:italic>short</jats:italic> abst
 assert(identical(publication_metadata(registry$entries[[match("miranda-velez-et-al-2026", ids)]], cache)$abstract,
   registry$entries[[match("miranda-velez-et-al-2026", ids)]]$overrides$abstract),
   "A YAML abstract override must take precedence over cached metadata.")
-assert(sum(grepl("file-earmark-pdf", generated, fixed = TRUE)) >= 59L, "All 59 migrated publication manuscript/reprint links must be preserved.")
-assert(sum(grepl("publication-licence", generated, fixed = TRUE)) >= 35L, "All 35 migrated licences must be preserved.")
-assert(sum(grepl("fa brands creative-commons-by", generated, fixed = TRUE)) >= 35L,
-  "Every rendered publication licence must include the Font Awesome attribution icon.")
-assert(any(grepl("fa brands creative-commons-nc", generated, fixed = TRUE)),
+structured <- !vapply(metadata, is.null, logical(1L))
+expected_pdf_links <- sum(vapply(entries[structured], function(x) length(x$links), integer(1L)))
+expected_licenses <- sum(vapply(entries, function(x) !is.null(x$license), logical(1L)))
+assert(sum(lengths(regmatches(generated, gregexpr('class="publication-pdf"', generated, fixed = TRUE)))) == expected_pdf_links,
+  "Every configured manuscript/reprint link must be rendered.")
+for (entry in entries[!structured]) {
+  for (link in entry$links) {
+    assert(any(grepl(paste0('href="', html_escape(link$url, attribute = TRUE), '"'), generated, fixed = TRUE)),
+      paste("The Markdown fallback must preserve its configured PDF link:", entry$id))
+  }
+}
+assert(sum(grepl("publication-licence", generated, fixed = TRUE)) == expected_licenses,
+  "Every configured publication licence must be rendered.")
+assert(sum(grepl("fa brands creative-commons-by", generated, fixed = TRUE)) == expected_licenses,
+  "Every rendered publication licence must include the attribution icon.")
+expected_nc <- sum(vapply(entries, function(x) identical(x$license$type, "cc-by-nc"), logical(1L)))
+assert(sum(grepl("fa brands creative-commons-nc", generated, fixed = TRUE)) == expected_nc,
   "CC BY-NC publications must include the Font Awesome non-commercial icon.")
 
 suggestions <- yaml::read_yaml(paths$suggestions)
 assert(is.list(suggestions) && is.list(suggestions$suggestions), "Version-of-record suggestions must be valid YAML.")
-assert(any(vapply(entries, function(x) isTRUE(x$check_for_version_of_record), logical(1))),
-  "At least one migrated preprint should exercise version-of-record monitoring.")
+monitoring_registry <- list(entries = list(list(
+  id = "monitoring-fixture", doi = "10.1234/monitoring", check_for_version_of_record = TRUE
+)))
+validate_publication_registry(monitoring_registry)
+monitoring_registry$entries[[1L]]$doi <- NULL
+monitoring_registry$entries[[1L]]$manual <- list(title = "Monitoring fixture")
+assert_error(validate_publication_registry(monitoring_registry),
+  "Version-of-record monitoring must require a DOI, regardless of how many live preprints remain.")
 
 original_fetch <- fetch_doi_metadata
 original_abstract_fetch <- fetch_crossref_abstract

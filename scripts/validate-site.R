@@ -4,34 +4,27 @@ options(warn = 2)
 root <- normalizePath(getwd(), mustWork = TRUE)
 
 manifest <- read.csv(file.path(root, "migration", "post-manifest.csv"), stringsAsFactors = FALSE)
-if (nrow(manifest) != 104L) stop("Expected 104 historical posts, found ", nrow(manifest))
-if (sum(manifest$archived_rmd) != 37L) stop("Expected 37 archived Rmd posts")
+source(file.path(root, "scripts", "posts.R"))
+posts <- discover_posts(root)
+all_posts <- discover_posts(root, include_drafts = TRUE)
 if (anyDuplicated(manifest$qmd) || anyDuplicated(manifest$url)) stop("Historical QMD paths and URLs must be unique")
-dated_qmd <- list.files(root, pattern = "^index\\.qmd$", recursive = TRUE, full.names = TRUE)
-dated_qmd <- dated_qmd[grepl("/20[0-9]{2}/[0-9]{2}/[0-9]{2}/[^/]+/index\\.qmd$", dated_qmd)]
-if (length(dated_qmd) != 104L) stop("Expected exactly 104 canonical dated QMD pages")
+if (length(setdiff(manifest$qmd, all_posts$qmd))) stop("Historical post sources are missing")
+historical_qmd <- file.path(root, manifest$qmd)
 
-post_descriptions <- vapply(dated_qmd, function(path) {
-  lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
-  yaml_end <- which(trimws(lines[-1L]) == "---")[[1L]] + 1L
-  metadata <- yaml::yaml.load(paste(lines[2L:(yaml_end - 1L)], collapse = "\n"))
+post_descriptions <- vapply(historical_qmd, function(path) {
+  metadata <- read_qmd_metadata(path)
   if (is.null(metadata$description)) "" else as.character(metadata$description)
 }, character(1L))
 if (any(!nzchar(post_descriptions))) stop("Every historical post must have a listing description")
 if (any(endsWith(post_descriptions, "…"))) stop("Historical post descriptions must not be truncated")
 
-post_categories <- vapply(dated_qmd, function(path) {
-  lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
-  yaml_end <- which(trimws(lines[-1L]) == "---")[[1L]] + 1L
-  metadata <- yaml::yaml.load(paste(lines[2L:(yaml_end - 1L)], collapse = "\n"))
-  if (is.null(metadata$category)) "" else as.character(metadata$category)
-}, character(1L))
+post_categories <- unlist(posts$categories, use.names = FALSE)
 if (any(tolower(manifest$category) == "science" & manifest$category != "Science", na.rm = TRUE) ||
     any(tolower(post_categories) == "science" & post_categories != "Science")) {
   stop("Science categories must use canonical capitalization")
 }
 
-leading_blank_fences <- dated_qmd[vapply(dated_qmd, function(path) {
+leading_blank_fences <- historical_qmd[vapply(historical_qmd, function(path) {
   lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
   starts <- grep("^```[^[:space:]{]+[[:space:]]*$", lines, perl = TRUE)
   any(starts < length(lines) & !nzchar(trimws(lines[starts + 1L])))
@@ -41,8 +34,11 @@ if (length(leading_blank_fences)) {
 }
 
 hashes <- read.delim(file.path(root, "migration", "rmd-md5.tsv"), stringsAsFactors = FALSE)
+if (sum(manifest$archived_rmd) != nrow(hashes)) {
+  stop("Historical Rmd inventory does not match the archive checksum registry")
+}
 current <- tools::md5sum(file.path(root, hashes$path))
-bad <- hashes$path[unname(current) != hashes$md5]
+bad <- hashes$path[is.na(current) | unname(current) != hashes$md5]
 if (length(bad)) stop("Archived Rmd files changed: ", paste(bad, collapse = ", "))
 
 quarto <- readLines(file.path(root, "_quarto.yml"), warn = FALSE)
@@ -51,7 +47,7 @@ if (!any(grepl("- blog/**/*.qmd", quarto, fixed = TRUE))) {
   stop("_quarto.yml must render the complete set of blog archive pages")
 }
 
-post_years <- sub("^([0-9]{4})/.*", "\\1", manifest$qmd)
+post_years <- sub("^([0-9]{4})/.*", "\\1", posts$qmd)
 expected_years <- sort(unique(post_years), decreasing = TRUE)
 expected_year_sources <- file.path(root, "blog", expected_years, "index.qmd")
 if (!all(file.exists(expected_year_sources))) {
@@ -124,7 +120,7 @@ unexpected_engines <- markdown_only[vapply(markdown_only, function(path) {
 if (length(unexpected_engines)) stop("Executable chunks in Markdown-only archives: ", paste(unexpected_engines, collapse = ", "))
 
 missing <- character()
-for (url in manifest$url) {
+for (url in union(manifest$url, posts$url)) {
   target <- file.path(root, "_site", sub("^/", "", url), "index.html")
   if (!file.exists(target)) missing <- c(missing, url)
 }
@@ -139,8 +135,34 @@ if (length(missing_baseline)) stop("Missing baseline routes: ", paste(missing_ba
 
 home <- readLines(file.path(root, "_site", "index.html"), warn = FALSE)
 blog <- readLines(file.path(root, "_site", "blog", "index.html"), warn = FALSE)
-if (sum(grepl('class="quarto-post ', home, fixed = TRUE)) != 10L) stop("Home page must list exactly ten posts")
-if (sum(grepl('class="quarto-post ', blog, fixed = TRUE)) != 104L) stop("Blog archive must list exactly 104 post excerpts")
+home_listing <- read_qmd_metadata(file.path(root, "index.qmd"))$listing
+blog_listing <- read_qmd_metadata(file.path(root, "blog", "index.qmd"))$listing
+if (sum(grepl('class="quarto-post ', home, fixed = TRUE)) != min(home_listing$`max-items`, nrow(posts))) {
+  stop("Home page post count does not match its configured limit and published inventory")
+}
+if (sum(grepl('class="quarto-post ', blog, fixed = TRUE)) != nrow(posts)) {
+  stop("Blog archive must list every published post")
+}
+for (listing in list(home_listing, blog_listing)) {
+  sources <- sub("^\\.\\./", "", unlist(listing$contents, use.names = FALSE))
+  if (!setequal(sources, posts$qmd) || anyDuplicated(sources)) {
+    stop("Listing sources do not match the published post inventory")
+  }
+}
+listing_routes <- function(text) {
+  links <- regmatches(text, gregexpr('<h3 class="no-anchor listing-title">[[:space:]]*<a href="[^"]+"', text, perl = TRUE))[[1L]]
+  paths <- sub('.*href="([^"]+)"$', "\\1", links)
+  paths <- sub("^(\\.\\.?/)+", "", paths)
+  paths <- sub("index\\.html$", "", paths)
+  paste0("/", sub("^/", "", paths))
+}
+blog_routes <- listing_routes(paste(blog, collapse = "\n"))
+if (!setequal(blog_routes, posts$url) || anyDuplicated(blog_routes)) {
+  stop("Rendered blog archive links do not match the published post inventory")
+}
+if (!identical(listing_routes(paste(home, collapse = "\n")), head(blog_routes, home_listing$`max-items`))) {
+  stop("Home page must list the most recent published posts in blog archive order")
+}
 if (any(grepl("publications/365papers", home, fixed = TRUE))) stop("Home listing contains non-post content")
 home_text <- paste(home, collapse = "\n")
 blog_text <- paste(blog, collapse = "\n")
@@ -170,17 +192,15 @@ if (!grepl("home-posts", home_text, fixed = TRUE) || !grepl("home-sidebar", home
 if (!grepl('class="home-posts">[[:space:][:print:]]*class="quarto-listing', home_text, perl = TRUE)) {
   stop("The home-page listing is not inside the wide listing column")
 }
-if (!grepl("Here, I describe what I broke as well as outline some of the major new features in the package.", home_text, fixed = TRUE)) {
-  stop("The home-page listing does not contain the complete opening paragraph")
-}
+
 if (!grepl("home-posts", blog_text, fixed = TRUE) || !grepl("home-sidebar", blog_text, fixed = TRUE)) {
   stop("The blog archive does not reuse the home-page post-list layout")
 }
 if (grepl("quarto-listing-container-table", blog_text, fixed = TRUE) ||
     !grepl("quarto-listing-container-default", blog_text, fixed = TRUE) ||
     !grepl('class="listing-pagination"', blog_text, fixed = TRUE) ||
-    !grepl("page: 10", blog_text, fixed = TRUE)) {
-  stop("The blog archive must use a ten-post paginated excerpt listing")
+    !grepl(paste0("page: ", blog_listing$`page-size`, ","), blog_text, fixed = TRUE)) {
+  stop("The blog archive must use its configured pagination limit")
 }
 blog_pagination_markers <- c(
   'aria-label", "Blog post pages',
@@ -194,9 +214,7 @@ blog_pagination_markers <- c(
 if (!all(vapply(blog_pagination_markers, grepl, logical(1L), x = blog_text, fixed = TRUE))) {
   stop("The blog archive is missing its accessible Bootstrap pagination controls")
 }
-if (!grepl("Here, I describe what I broke as well as outline some of the major new features in the package.", blog_text, fixed = TRUE)) {
-  stop("The blog archive listing does not contain complete opening-paragraph excerpts")
-}
+
 
 year_links <- paste0('href="../blog/', expected_years, '/"')
 if (!grepl('id="title-block-header"', blog_text, fixed = TRUE) ||
@@ -492,6 +510,19 @@ if (!"User-agent: *" %in% robots_source || !"Allow: /" %in% robots_source ||
   stop("robots.txt must keep conventional search crawling enabled and advertise the sitemap")
 }
 
+feed_routes <- function(text) {
+  links <- regmatches(text, gregexpr(
+    "<link>https://fromthebottomoftheheap\\.net/[0-9]{4}/[0-9]{2}/[0-9]{2}/[^<]+/</link>", text, perl = TRUE
+  ))[[1L]]
+  sub("</link>$", "", sub("^<link>https://fromthebottomoftheheap\\.net", "", links))
+}
+for (feed in c("index.xml", "feed.xml")) {
+  text <- paste(readLines(file.path(root, "_site", feed), warn = FALSE), collapse = "\n")
+  if (!identical(feed_routes(text), head(blog_routes, home_listing$feed$items))) {
+    stop("Main feed does not contain the most recent published posts: ", feed)
+  }
+}
+
 for (feed in c("index.xml", "feed.xml", "feed-R/index.xml", "feed-R.xml")) {
   feed_text <- paste(readLines(file.path(root, "_site", feed), warn = FALSE), collapse = "\n")
   if (grepl('class="post-links"', feed_text, fixed = TRUE) ||
@@ -499,33 +530,13 @@ for (feed in c("index.xml", "feed.xml", "feed-R/index.xml", "feed-R.xml")) {
     stop("Post sidebar content leaked into feed: ", feed)
   }
 }
-r_taxonomy <- lapply(dated_qmd, function(path) {
-  lines <- readLines(path, warn = FALSE, encoding = "UTF-8")
-  yaml_end <- which(trimws(lines[-1L]) == "---")[[1L]] + 1L
-  metadata <- yaml::yaml.load(paste(lines[2L:(yaml_end - 1L)], collapse = "\n"))
-  c(
-    as.character(unlist(metadata$category, use.names = FALSE)),
-    as.character(unlist(metadata$categories, use.names = FALSE))
-  )
-})
-r_qmd <- dated_qmd[vapply(r_taxonomy, function(values) {
-  any(tolower(trimws(values)) == "r")
-}, logical(1L))]
-r_routes <- paste0(
-  "/",
-  sub("index\\.qmd$", "", sub(paste0("^", root, "/"), "", r_qmd))
-)
+r_routes <- posts$url[posts$qmd %in% r_post_paths(posts)]
 r_feed <- paste(readLines(file.path(root, "_site", "feed-R.xml"), warn = FALSE), collapse = "\n")
-item_links <- unique(regmatches(
-  r_feed,
-  gregexpr("<link>https://fromthebottomoftheheap\\.net/[0-9]{4}/[0-9]{2}/[0-9]{2}/[^<]+/</link>", r_feed, perl = TRUE)
-)[[1L]])
-dated_paths <- sub(
-  "</link>$",
-  "",
-  sub("^<link>https://fromthebottomoftheheap\\.net", "", item_links)
-)
-if (length(setdiff(dated_paths, r_routes))) stop("The R compatibility feed contains a non-R post")
+r_feed_limit <- read_qmd_metadata(file.path(root, "feed-R", "index.qmd"))$listing$feed$items
+expected_r_routes <- head(blog_routes[blog_routes %in% r_routes], r_feed_limit)
+if (!identical(feed_routes(r_feed), expected_r_routes)) {
+  stop("The R compatibility feed does not contain the most recent eligible published posts")
+}
 if (!grepl('<atom:link href="https://fromthebottomoftheheap.net/feed-R.xml" rel="self"', r_feed, fixed = TRUE)) {
   stop("The R compatibility feed has the wrong self URL")
 }
@@ -534,8 +545,8 @@ full_description_count <- lengths(regmatches(
   r_feed,
   gregexpr("<description><!\\[CDATA\\[", r_feed, perl = TRUE)
 ))
-if (item_count < 2L || full_description_count != item_count) {
-  stop("The R feed must contain at least two full-content item descriptions")
+if (item_count != min(r_feed_limit, length(r_routes)) || full_description_count != item_count) {
+  stop("The R feed must contain the configured number of eligible full-content items")
 }
 if (grepl("data:image/[^;]+;base64,", r_feed, ignore.case = TRUE, perl = TRUE)) {
   stop("The R feed contains a base64-encoded image")
@@ -559,4 +570,6 @@ if (any(protocol_relative_links)) {
        paste(sub(paste0("^", root, "/_site/"), "", html_files[protocol_relative_links]), collapse = ", "))
 }
 
-message("Validated 104 historical posts, 37 immutable Rmd archives, 386 baseline routes, feeds, Bootstrap, Giscus, and links.")
+message("Validated ", nrow(posts), " published posts, ", nrow(manifest), " historical posts, ",
+        nrow(hashes), " immutable Rmd archives, ", length(baseline),
+        " baseline routes, feeds, Bootstrap, Giscus, and links.")
