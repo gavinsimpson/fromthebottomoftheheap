@@ -10,7 +10,521 @@
 <atom:link href="https://fromthebottomoftheheap.net/feed-R/index.xml" rel="self" type="application/rss+xml"/>
 <description>My website and blog: research on lakes, past and present</description>
 <generator>quarto-1.10.18</generator>
-<lastBuildDate>Thu, 28 Mar 2024 09:00:00 GMT</lastBuildDate>
+<lastBuildDate>Sun, 11 Oct 2026 22:00:00 GMT</lastBuildDate>
+<item>
+  <title>Ordered set partitions and formulas in permute</title>
+  <dc:creator>Gavin Simpson</dc:creator>
+  <link>https://fromthebottomoftheheap.net/2026/10/12/permute-partitions-and-formulas/</link>
+  <description><![CDATA[
+
+
+
+
+
+<div class="no-row-height column-margin column-container"></div><p>I’ve been giving <strong>permute</strong> a bit of attention recently. Two additions should make it easier to set up permutation tests: an option for <em>ordered set partitions</em>, and formulas for specifying plots and blocks. That’s a rather grand name for the first addition, so let’s start with what it does.</p>
+<p>These changes are in the <a href="https://github.com/gavinsimpson/permute">development version</a>. To follow along, install it from my R-universe:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"permute"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">repos =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb1-2">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://gavinsimpson.r-universe.dev"</span>,</span>
+<span id="cb1-3">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://cloud.r-project.org"</span></span>
+<span id="cb1-4">))</span></code></pre></div></div>
+</div>
+<section id="same-groups-fewer-permutations" class="level2">
+<h2 data-anchor-id="same-groups-fewer-permutations">Same groups, fewer permutations</h2>
+<p>The <code>jackal</code> data that come with <strong>permute</strong> contain mandible lengths, in millimetres, for male and female golden jackals. They’re also used in the <a href="https://gavinsimpson.github.io/permute/articles/permutations.html">package vignette</a>. Let’s ask whether mean mandible length differs between the sexes.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"permute"</span>)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(jackal, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">package =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"permute"</span>)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">table</span>(jackal<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Sex)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+  Male Female 
+    10     10 </code></pre>
+</div>
+</div>
+<p>We could shuffle all the observation indices and use them to rearrange the sex labels. With the default <code>Within(type = "free")</code> design, the number of possible index permutations is:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">numPerms</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(jackal), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">control =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">how</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">within =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Within</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"free"</span>)))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2.432902e+18</code></pre>
+</div>
+</div>
+<p>But swapping a pair of males, or a pair of females, leaves the group labels unchanged. If our statistic is a difference of means, we haven’t created a different result by doing that.</p>
+<p>What we need are the distinct ways of assigning the observations to two labelled groups, keeping the group sizes fixed. That’s the ordered set partition. Here, <em>ordered</em> means the groups are distinguishable — male and female have different roles — rather than that observations have to be sorted inside each group.</p>
+<p>The new option is <code>type = "partition"</code> which belongs in <code>Plots()</code>. I’ll use the new formula interface here too; <code>~ Sex</code> says to get the grouping variable from <code>data</code>, to which we pass <code>jackal</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">ctrl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">how</span>(</span>
+<span id="cb6-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">plots =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Plots</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">strata =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> Sex, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"partition"</span>),</span>
+<span id="cb6-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> jackal</span>
+<span id="cb6-4">)</span>
+<span id="cb6-5"></span>
+<span id="cb6-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">numPerms</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(jackal), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">control =</span> ctrl)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 184756</code></pre>
+</div>
+</div>
+<p>That’s quite a reduction from all the possible permutations of the observation indices! In general, if the group sizes are <img src="https://latex.codecogs.com/png.latex?n_1,%20%5Cldots,%20n_K">, the number of distinct assignments is</p>
+<p><img src="https://latex.codecogs.com/png.latex?%0A%5Cfrac%7Bn!%7D%7B%5Cprod_%7Bk=1%7D%5E%7BK%7D%20n_k!%7D.%0A"></p>
+<p>The group sizes come from the data; they don’t have to be equal.</p>
+<p>We still get observation indices back from <strong>permute</strong>, so the usual indexing workflow works:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb8-2">p <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">shuffle</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(jackal), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">control =</span> ctrl)</span>
+<span id="cb8-3"></span>
+<span id="cb8-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">table</span>(jackal<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Sex[p])</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+  Male Female 
+    10     10 </code></pre>
+</div>
+</div>
+<p>The labels have been shuffled, but their counts haven’t changed. Within the returned index vector, observations that originally had the same label retain their relative order. This gives us one representative for each distinct arrangement of the labels, instead of all the index permutations that would produce it.</p>
+<p>There’s an important difference from <code>Plots(type = "free")</code>: that option moves whole plots as intact units. The partition option rearranges group membership. <code>how()</code> also selects <code>Within(type = "none")</code> automatically for a partition design. Asking to shuffle within these groups as well would put back the redundant orderings we’re trying to leave out, so other within-plot types aren’t allowed.</p>
+</section>
+<section id="a-permutation-test-with-lm" class="level2">
+<h2 data-anchor-id="a-permutation-test-with-lm">A permutation test with lm()</h2>
+<p><em>permute</em> isn’t just for use with the <em>vegan</em> package — it was designed to be agnostic to the underlying model or test statistic. As an illustration, let’s fit a linear model to the jackal data:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">fit <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(Length <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> Sex, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> jackal)</span>
+<span id="cb10-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(fit)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>(Intercept)   SexFemale 
+      113.4        -4.8 </code></pre>
+</div>
+</div>
+<p>The intercept is the mean for males, the reference level. The second coefficient is the female mean minus the male mean: females have mandibles that are, on average, 4.8 mm shorter in these data.</p>
+<p>For a permutation test, we’ll keep the lengths where they are and shuffle the sex labels. We then refit the model for each assignment and save that same coefficient. Under the null hypothesis, we’re treating the labels as exchangeable among observations; this needs to be a reasonable assumption for the data we’re analysing.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb12-2">perms <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">shuffleSet</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(jackal), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nset =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">999</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">control =</span> ctrl)</span>
+<span id="cb12-3"></span>
+<span id="cb12-4">observed <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unname</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(fit)[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>])</span>
+<span id="cb12-5">null <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(perms, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(i) {</span>
+<span id="cb12-6">  permuted <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> jackal</span>
+<span id="cb12-7">  permuted<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Sex <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> jackal<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>Sex[i]</span>
+<span id="cb12-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unname</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">coef</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(Length <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> Sex, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> permuted))[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>])</span>
+<span id="cb12-9">})</span></code></pre></div></div>
+</div>
+<p><code>shuffleSet()</code> gives us a matrix with one assignment per row. We’re sampling a manageable set here, rather than fitting a model for every possible assignment.</p>
+<p>Here’s what those coefficients look like, with the observed difference marked in red:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(null, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">breaks =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"FD"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>,</span>
+<span id="cb13-2">     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Female minus male mean mandible length (mm)"</span>,</span>
+<span id="cb13-3">     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"grey85"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">border =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"white"</span>)</span>
+<span id="cb13-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">v =</span> observed, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"firebrick"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/10/12/permute-partitions-and-formulas/index_files/figure-html/jackal-permutation-distribution-1.png" class="img-fluid figure-img" alt="Histogram of differences in mean jackal mandible length after shuffling sex labels. The distribution is centred near zero, and a red vertical line marks the observed negative difference in the left tail." width="1008"></p>
+<figcaption>Permutation distribution of the female-minus-male mean mandible length. The red line marks the observed difference.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>For a two-sided test, we count differences at least as large as the observed one in absolute value:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1">tol <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(.Machine<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>double.eps)</span>
+<span id="cb14-2">p_value <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abs</span>(null) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abs</span>(observed) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> tol)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span></span>
+<span id="cb14-3">  (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(perms) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb14-4"></span>
+<span id="cb14-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">difference_mm =</span> observed, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">p_value =</span> p_value)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>difference_mm       p_value 
+       -4.800         0.005 </code></pre>
+</div>
+</div>
+<p>The small tolerance includes ties that might otherwise be missed because of floating-point arithmetic in the model fits. Adding one to the numerator and denominator includes the observed result in this Monte Carlo test. The p-value is an estimate based on the sampled assignments, so it will vary with the random seed and the number requested.</p>
+<p>If you don’t need to build a design explicitly, <code>shufflePartition(jackal$Sex)</code> and <code>shufflePartitionSet(jackal$Sex, nset = 999)</code> are handy shortcuts. There’s also <code>allPartitions()</code> for complete enumeration when the assignment space is small enough. As with <code>allPerms()</code>, it leaves out the observed assignment by default; use <code>control = how(observed = TRUE)</code> to include it.</p>
+</section>
+<section id="less-typing-with-formulas" class="level2">
+<h2 data-anchor-id="less-typing-with-formulas">Less typing with formulas</h2>
+<p>The formula interface works for both plot strata and blocks. To show the two together, let’s use the dune meadow data from <strong>vegan</strong>. <code>dune</code> contains the species data and <code>dune.env</code> contains the matching environmental variables.</p>
+<p>Suppose we want to look at the association between vegetation and soil A1 horizon thickness, allowing comparisons only among sites with the same management and land use. We can express that restriction directly:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"vegan"</span>)</span>
+<span id="cb16-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(dune, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">package =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"vegan"</span>)</span>
+<span id="cb16-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(dune.env, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">package =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"vegan"</span>)</span>
+<span id="cb16-4"></span>
+<span id="cb16-5">formula_ctrl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">how</span>(</span>
+<span id="cb16-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">plots =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Plots</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">strata =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> Management <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> Use),</span>
+<span id="cb16-7">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">blocks =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> Management,</span>
+<span id="cb16-8">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> dune.env</span>
+<span id="cb16-9">)</span></code></pre></div></div>
+</div>
+<p><code>~ Management / Use</code> creates a grouping factor for the observed combinations of management and land use. <code>Plots()</code> defaults to <code>type = "none"</code>, while <code>Within()</code> defaults to <code>"free"</code>, so sites are shuffled within those combinations. The blocks say that sites must also stay within their management category. The plot restriction already implies that here, but writing out both makes the hierarchy clear.</p>
+<p>These restrictions assume sites are exchangeable within each management–use combination; grouping them this way doesn’t account for any remaining spatial dependence.</p>
+<p>We can check where an actual shuffle sends the observations:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb17-2">i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">shuffle</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(dune.env), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">control =</span> formula_ctrl)</span>
+<span id="cb17-3"></span>
+<span id="cb17-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">all</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">getBlocks</span>(formula_ctrl)[i] <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">getBlocks</span>(formula_ctrl))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">all</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">getStrata</span>(formula_ctrl)[i] <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">==</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">getStrata</span>(formula_ctrl))</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+<p>Both the blocks and plot groups are respected. We can use the design directly in a <strong>vegan</strong> analysis. Here I partial out the management–use groups in an RDA, then test the additional association with A1 horizon thickness:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1">env <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> dune.env</span>
+<span id="cb21-2">env<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>group <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">getStrata</span>(formula_ctrl)</span>
+<span id="cb21-3">ord <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rda</span>(dune <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> A1 <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Condition</span>(group), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> env)</span>
+<span id="cb21-4"></span>
+<span id="cb21-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb21-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">anova</span>(ord, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">permutations =</span> formula_ctrl)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Permutation test for rda under reduced model
+Blocks:  Management 
+Plots: Management/Use, plot permutation: none
+Permutation: free
+Number of permutations: 199
+
+Model: rda(formula = dune ~ A1 + Condition(group), data = env)
+         Df Variance      F Pr(&gt;F)
+Model     1   4.3492 1.3265  0.225
+Residual  8  26.2298              </code></pre>
+</div>
+</div>
+<p>There’s little evidence of an additional association in this particular analysis. Some of the groups contain only one site, so those sites can’t move at all under this design. Restrictions matter, both for what question we’re asking and for how much information is available to answer it.</p>
+<p>A couple of details are worth keeping in mind when writing these formulas. They describe grouping factors, not model terms: <code>~ Management + Use</code>, <code>~ Management:Use</code>, and <code>~ Management / Use</code> all produce groups from the combinations of those variables. The slash doesn’t create an extra level in <strong>permute</strong>’s hierarchy.</p>
+<p>Also, when <code>Plots()</code> is inside <code>how()</code>, supply <code>data</code> to <code>how()</code>, as above. If you’re constructing <code>Plots()</code> on its own, it can take its own data argument:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1">plot_groups <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Plots</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">strata =</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> Management <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> Use, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> dune.env)</span></code></pre></div></div>
+</div>
+<p>The existing factor interface still works, so there’s no need to rewrite old code. But I find the formulas easier to read, especially when grouping variables need to be combined. You can find the details in the <a href="https://gavinsimpson.github.io/permute/reference/how.html">design documentation</a>, and I’d welcome feedback on either addition through the <a href="https://github.com/gavinsimpson/permute/issues">issue tracker</a>.</p>
+<p>There are also new helpers for working with the resulting permutations: <code>permutations()</code> returns shuffled values directly, while <code>permutator()</code> lets you step through a set of permutations. I’ll show those in a follow-up post.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <guid>https://fromthebottomoftheheap.net/2026/10/12/permute-partitions-and-formulas/</guid>
+  <pubDate>Sun, 11 Oct 2026 22:00:00 GMT</pubDate>
+</item>
 <item>
   <title>gratia 0.9.0</title>
   <dc:creator>Gavin Simpson</dc:creator>
@@ -28952,329 +29466,6 @@ font-style: inherit;">1</span>)</span></code></pre></div></div>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2013/06/27/decluttering-ordination-plots-in-vegan-part-3-ordipointlabel/</guid>
   <pubDate>Thu, 27 Jun 2013 10:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Decluttering ordination plots in vegan part 2: orditorp()</title>
-  <dc:creator>Gavin Simpson</dc:creator>
-  <link>https://fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/</link>
-  <description><![CDATA[
-
-
-
-
-
-<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
-<section id="posted-in" class="level4">
-<h4 data-anchor-id="posted-in">Posted in</h4>
-<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
-</section>
-<section id="tagged" class="level4">
-<h4 data-anchor-id="tagged">Tagged</h4>
-<p><a href="../../../../tag/graphics/" class="badge text-bg-dark">Graphics</a> <a href="../../../../tag/ordination/" class="badge text-bg-dark">Ordination</a> <a href="../../../../tag/pca/" class="badge text-bg-dark">PCA</a> <a href="../../../../tag/r/" class="badge text-bg-dark">R</a> <a href="../../../../tag/vegan/" class="badge text-bg-dark">vegan</a></p>
-</section>
-</div></div><p>In the <a href="http://www.fromthebottomoftheheap.net/2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/" title="Decluttering ordination plots in vegan part 1: ordilabel()">earlier post in this series</a> I looked at the <code>ordilabel()</code> function to help tidy up ordination biplots in <a href="http://cran.r-project.org/package=vegan">vegan</a>. An alternative function vegan provides is <code>orditorp()</code>, the last four letters abbreviating the words <em><strong>t</strong>ext <strong>or</strong> <strong>p</strong>oints</em>. That is a pretty good description of what <code>orditorp()</code> does; it draws sample or species labels using text where there is room and where there isn’t a plotting character is drawn instead. Essentially it boils down to being a one stop shop for calls to <code>text()</code> or <code>points()</code> as needed. Let’s see how it works…</p>
-<p>As with last time out, I’ll illustrate how <code>orditorp()</code> works via a PCA biplot for the Dutch dune meadow data.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## load vegan and the data</span></span>
-<span id="cb1-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">require</span>(vegan)</span>
-<span id="cb1-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data</span>(dune)</span>
-<span id="cb1-4">ord <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rda</span>(dune) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># PCA of Dune data</span></span>
-<span id="cb1-5"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## species priority; which species drawn last, i.e. on top</span></span>
-<span id="cb1-6">priSpp <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diversity</span>(dune, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">index =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"invsimpson"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">MARGIN =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb1-7"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## sample priority</span></span>
-<span id="cb1-8">priSite <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">diversity</span>(dune, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">index =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"invsimpson"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">MARGIN =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb1-9"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## scaling to use</span></span>
-<span id="cb1-10">scl <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span></span></code></pre></div></div>
-<p>I won’t explain any of the code above; it is the same as that used in the <a href="../../../../2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/" title="Decluttering ordination plots in vegan part 1: ordilabel()">earlier post</a> where an explanation was also provided. <code>orditorp()</code> takes an ordination object as the first argument and in addition the <code>display</code> argument controls which set of scores is displayed. Note that <code>orditorp()</code> can only plot one set of scores at a time, which as we’ll see in a minute is not exactly ideal nor foolproof. Like <code>ordilabel()</code>, you are free to specify the importance of each sample or species via argument <code>priority</code>. In <code>ordilable()</code> the <code>priority</code> controlled the plotting order such that those samples or species with high priority were plotted last (uppermost). Instead, <code>orditorp()</code> draws labels for samples or species (if it can) for those with the highest priority first.</p>
-<p>So we have something to talk to, recreate the basic samples and species biplot as used in the previous post but updated to use <code>orditorp()</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(ord, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"n"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span>
-<span id="cb2-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">orditorp</span>(ord, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">display =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"sites"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">priority =</span> priSite, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> scl,</span>
-<span id="cb2-3">         <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">19</span>)</span>
-<span id="cb2-4"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## You may prefer separate plots, but here species as well</span></span>
-<span id="cb2-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">orditorp</span>(ord, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">display =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"species"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">priority =</span> priSpp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> scl,</span>
-<span id="cb2-6">         <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"forestgreen"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span></code></pre></div></div>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://fromthebottomoftheheap.net/assets/img/posts/orditorp_figure_combined.png" class="img-fluid figure-img"></p>
-<figcaption>PCA biplot of the Dutch dune meadow data produced using <code>orditorp()</code></figcaption>
-</figure>
-</div>
-<p>The behaviour or <code>orditorp()</code> should now be reasonably clear; labels are drawn for sample or species only if there is room to do so, with a point being used instead. <code>orditorp()</code> isn’t perfect by any means. Because it can only drawn one set of scores at a time, there is no easy way to stop the species labels plotting over the sample labels and vice versa.</p>
-<p>How it works is, first <code>orditorp()</code> calculates the heights and widths of the labels, adds a bit of space to this (more on this later) and then works out if the box given by the current sample or species label width/height, centred on the axis score coordinate, will obscure the label boxes of any labels previously drawn. If the label box doesn’t obscure any previous label boxes the label is drawn at the sample or species score coordinates. If it does obscure an existing label then a point is drawn instead. <code>orditorp()</code> draws the labels in order of <code>priority</code> and as it draws each subsequent label it checks to see if previous labels are not obscured.</p>
-<p>This process isn’t infallible of course; for example the second highest priority sample or species could lie very close to the highest priority one in ordination space and if so <code>orditorp()</code> would not draw a label for this second highest priority sample or species because it would obscure the label of the highest priority one.</p>
-<p>The amount of spacing or padding <em>around</em> each label is specified via the <code>air</code> argument which has a default of <code>1</code>. <code>air</code> is interpreted as the proportion of half the label width or height that the label occupies. The default of <code>1</code> therefore means that in fact there is no additional spacing beyond the confines of the box that encloses the label. If <code>air</code> is greater than 1 proportionally more padding is added whilst values less than 1 indicate that labels can overlap. The figure below shows the species scores only with two values for <code>air</code>. In the left hand panel <code>air = 2</code> is used and the labels are padded either side of the label by the <em>entire</em> string width or height. The right hand panel uses <code>air = 0.5</code> which allows labels to overlap by up to a quarter of the string width or height in any direction from the plotting coordinate (in other words, the box that cannot be obscured when plotting subsequent labels is half the string width wide and half the string height high, centred on the plotting coordinates for the label).</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">layout</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">matrix</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>))</span>
-<span id="cb3-2">op <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mar =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.1</span>)</span>
-<span id="cb3-3"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## site/sample scores</span></span>
-<span id="cb3-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(ord, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"n"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">expression</span>(air <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb3-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">orditorp</span>(ord, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">display =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"species"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">priority =</span> priSite, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> scl,</span>
-<span id="cb3-6">         <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"forestgreen"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">air =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb3-7"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## Species scores</span></span>
-<span id="cb3-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(ord, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"n"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">expression</span>(air <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">==</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb3-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">orditorp</span>(ord, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">display =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"species"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">priority =</span> priSpp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> scl,</span>
-<span id="cb3-10">         <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"forestgreen"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">pch =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">air =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.5</span>)</span>
-<span id="cb3-11"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(op)</span>
-<span id="cb3-12"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">layout</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span></code></pre></div></div>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://fromthebottomoftheheap.net/assets/img/posts/orditorp_figure_air.png" class="img-fluid figure-img"></p>
-<figcaption>PCA species plot of the Dutch dune meadow data produced using <code>orditorp()</code> showing the effect of changing argument <code>air</code>.</figcaption>
-</figure>
-</div>
-<p>One point that should be noted is that <code>orditorp()</code> doesn’t stop labels and points from overlaying one another, though as the labels are drawn after the points they shouldn’t get obscured too much. We could improve the situation a bit by drawing an opaque box around the label, or even make it partially transparent, so that the label always stood out from the plotting points. Although we’d run the risk of hiding points under labels and thus hiding information from the person looking at the figure.</p>
-<p>One additional point to make is that <code>orditorp()</code> returns a logical vector indicating which sample or species scores were drawn with labels (<code>TRUE</code>) or points (<code>FALSE</code>), which might be useful for further plotting or adding to the diagram. So there were have <code>orditorp()</code>.</p>
-<p>Next time I’ll take a look at <code>ordipointlabel()</code> which tackles the problem of producing a tidy ordination diagram in a far more complex way than either <code>ordilabel()</code> or <code>orditorp()</code>.</p>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2013/01/12/decluttering-ordination-plots-in-vegan-part-1-ordilabel/">← Older: Decluttering ordination plots in vegan part 1: ordilabel()</a></span> <span class="text-end"><a href="../../../../2013/06/27/decluttering-ordination-plots-in-vegan-part-3-ordipointlabel/">Newer: Decluttering ordination plots part 3: ordipointlabel() →</a></span></p>
-</div>
-
-
-
- ]]></description>
-  <category>R</category>
-  <guid>https://fromthebottomoftheheap.net/2013/01/13/decluttering-ordination-plots-in-vegan-part-2-orditorp/</guid>
-  <pubDate>Sun, 13 Jan 2013 11:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
