@@ -13,3 +13,9 @@ the current publication registry or post inventory. Fixed values are appropriate
 when they express an intentional configuration or requirement, such as the
 configured number of posts per page; where possible, reference that
 configuration rather than duplicate its value.
+
+## Blog posts
+
+Always quote package names in R `library()` calls. Use `library("permute")`,
+not `library(permute)`, and apply this convention to all package-loading
+examples in blog posts.
