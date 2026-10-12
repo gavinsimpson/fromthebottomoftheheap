@@ -45,7 +45,6 @@ To see prepared changes in the committed website output without rebuilding
 every page, run:
 
 ```sh
-Rscript scripts/prepare-publications.R
 quarto render publications/index.qmd
 Rscript tests/test-publications.R
 ```
@@ -56,12 +55,10 @@ publication changes.
 
 ### Run the full release verification
 
-Run `Rscript scripts/render-site.R` only when you want the complete release
-build and validation suite. It deliberately regenerates and checks the entire
-site. Following the repository release policy, run it twice before committing
-a deployable release; the second run should produce no unexplained changes.
-This full render is a release check, not a prerequisite for updating the
-publications cache.
+Run `Rscript scripts/render-site.R` for a complete release build, then
+`Rscript scripts/check-site.R` to run the validation suite against the rendered
+site. Run each command once; validation does not rebuild the site. A full
+render is not a prerequisite for updating the publications cache.
 
 ## Add a publication with a DOI
 

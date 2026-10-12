@@ -57,8 +57,10 @@ assert(setequal(listing_sources("index.qmd", ""), posts$qmd), "Publishing again 
 assert(identical(listing_sources("feed-R/index.qmd", "../"), existing), "An R tag alone must not qualify for the R feed.")
 generated_files <- list.files(fixture, pattern = "index\\.qmd$", recursive = TRUE, full.names = TRUE)
 before <- tools::md5sum(generated_files)
+before_mtime <- file.info(generated_files)$mtime
 generate()
 assert(identical(before, tools::md5sum(generated_files)), "Regenerating unchanged archives must be deterministic.")
+assert(identical(before_mtime, file.info(generated_files)$mtime), "Unchanged archives must not be rewritten.")
 setwd(original_directory)
 unlink(fixture, recursive = TRUE)
 cat("Post discovery and archive tests passed.\n")

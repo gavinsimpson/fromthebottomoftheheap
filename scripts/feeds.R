@@ -22,3 +22,22 @@ normalize_sitemap <- function(lines) {
   result <- paste0(prefix, paste(blocks[order(urls, method = "radix")], collapse = "\n  "), suffix)
   strsplit(result, "\n", fixed = TRUE)[[1L]]
 }
+
+# Quarto 1.10.18 ignores existing sitemap entries without lastmod, which our
+# deterministic cleanup deliberately omits. During a focused build the
+# published inventory is unchanged, so preserve untouched URLs and prefer
+# freshly rendered entries for URLs present in both documents.
+merge_sitemaps <- function(previous, current) {
+  text <- paste(current, collapse = "\n")
+  blocks <- function(lines) {
+    value <- paste(lines, collapse = "\n")
+    regmatches(value, gregexpr("(?s)<url>.*?</url>", value, perl = TRUE))[[1L]]
+  }
+  entries <- c(blocks(previous), blocks(current))
+  urls <- sub("(?s).*<loc>(.*?)</loc>.*", "\\1", entries, perl = TRUE)
+  entries <- entries[!duplicated(urls, fromLast = TRUE)]
+  prefix <- sub("(?s)<url>.*$", "", text, perl = TRUE)
+  suffix <- sub("(?s)^.*</url>", "", text, perl = TRUE)
+  normalize_sitemap(strsplit(paste0(prefix, paste(entries, collapse = "\n  "), suffix),
+    "\n", fixed = TRUE)[[1L]])
+}

@@ -34,4 +34,11 @@ assert(identical(normalized, normalize_sitemap(sitemap(rev(urls)))) &&
 assert(!any(grepl("lastmod", normalized)) && all(vapply(urls, function(url) {
   any(grepl(paste0("<loc>", url, "</loc>"), normalized, fixed = TRUE))
 }, logical(1L))), "Sitemap normalization must preserve every URL while removing filesystem timestamps.")
-cat("Feed cleanup tests passed.\n")
+partial <- sitemap(c(urls[[1L]], "https://example.test/new/"))
+merged <- merge_sitemaps(normalized, partial)
+assert(all(vapply(c(urls, "https://example.test/new/"), function(url) {
+  sum(grepl(paste0("<loc>", url, "</loc>"), merged, fixed = TRUE)) == 1L
+}, logical(1L))), "Partial sitemap updates must preserve untouched URLs without duplicates.")
+assert(identical(merged, merge_sitemaps(merged, partial)) && !any(grepl("lastmod", merged)),
+  "Partial sitemap merging must be deterministic and omit filesystem timestamps.")
+cat("Feed cleanup and sitemap tests passed.\n")

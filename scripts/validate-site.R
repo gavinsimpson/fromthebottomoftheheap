@@ -453,6 +453,16 @@ for (feed in c("feed.xml", "feed-R.xml")) {
   if (!file.exists(file.path(root, "_site", feed))) stop("Missing compatibility feed: ", feed)
 }
 
+sitemap <- readLines(file.path(root, "_site", "sitemap.xml"), warn = FALSE)
+site_url <- sub("/+$", "", yaml::read_yaml(file.path(root, "_quarto.yml"))$website$`site-url`)
+expected_sitemap_urls <- paste0(site_url, posts$url, "index.html")
+missing_sitemap_urls <- expected_sitemap_urls[!vapply(expected_sitemap_urls, function(url) {
+  any(grepl(paste0("<loc>", url, "</loc>"), sitemap, fixed = TRUE))
+}, logical(1L))]
+if (length(missing_sitemap_urls)) {
+  stop("Published posts missing from sitemap: ", paste(missing_sitemap_urls, collapse = ", "))
+}
+
 publication_pages <- c(
   file.path(root, "_site", "publications", "index.html"),
   file.path(root, "_site", "publications", "with-altmetrics", "index.html")

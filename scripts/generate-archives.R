@@ -7,6 +7,15 @@ posts <- discover_posts(root)
 if (!nrow(posts)) stop("No published dated QMD posts found")
 years <- sort(unique(posts$year), decreasing = TRUE)
 
+# Preserve mtimes as well as bytes when the published inventory is unchanged.
+write_if_changed <- function(lines, path, ...) {
+  if (file.exists(path) && identical(readLines(path, warn = FALSE, encoding = "UTF-8"), lines)) {
+    return(invisible(FALSE))
+  }
+  writeLines(lines, path, ...)
+  invisible(TRUE)
+}
+
 year_selector <- function(selected_year = NULL) {
   item <- function(label, href, active = FALSE) {
     paste0(
@@ -97,7 +106,7 @@ write_post_listing <- function(path, prefix, home = FALSE) {
       more_posts = home
     )
   )
-  writeLines(lines, file.path(root, path), useBytes = TRUE)
+  write_if_changed(lines, file.path(root, path), useBytes = TRUE)
 }
 
 write_post_listing("index.qmd", "", home = TRUE)
@@ -128,7 +137,7 @@ write_year_listing <- function(year) {
       header = blog_header(year)
     )
   )
-  writeLines(lines, path, useBytes = TRUE)
+  write_if_changed(lines, path, useBytes = TRUE)
 }
 
 for (year in years) write_year_listing(year)
@@ -160,7 +169,7 @@ write_archive <- function(kind, values, selected) {
     "comments: false",
     "---"
   )
-  writeLines(lines, path, useBytes = TRUE)
+  write_if_changed(lines, path, useBytes = TRUE)
 }
 
 # Remove obsolete generated archives when a post is removed, retagged, or
@@ -193,7 +202,7 @@ r_qmd <- r_post_paths(posts)
 if (!length(r_qmd)) stop("No published posts have R in their category or categories metadata")
 
 r_contents <- paste0("    - ../", r_qmd)
-writeLines(c(
+write_if_changed(c(
   "---",
   "title: R posts",
   "listing:",

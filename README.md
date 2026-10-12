@@ -8,18 +8,54 @@ means deliberately upgrading Quarto and rerunning the validation suite.
 
 ## Render locally
 
-Install Quarto 1.10.18 and R, then install `renv` once if necessary. The single
-supported build command is:
+Install Quarto 1.10.18 and R, then install `renv` once if necessary. On a new
+checkout, or after updating `renv.lock`, restore the R environment once:
+
+```sh
+Rscript -e 'renv::restore()'
+```
+
+Build once, then validate the result once:
 
 ```sh
 Rscript scripts/render-site.R
+Rscript scripts/check-site.R
 ```
 
-That command restores/checks the small locked R environment, regenerates tag
-and category pages, renders Quarto, creates `/feed.xml` and `/feed-R.xml`, and
-validates routes, assets, Bootstrap, Giscus, links, and historical execution
-safeguards. Run it twice before committing a release; the second run must not
-create unexplained tracked changes.
+The build regenerates archives, renders Quarto once, and creates `/feed.xml`
+and `/feed-R.xml`. Quarto's pre-render hook prepares publications when needed.
+The separate check command runs all the tests and validates routes, assets,
+Bootstrap, Giscus, feeds, links, and historical execution safeguards against
+the existing `_site/`. It does not render or install packages. There is no
+requirement to build twice.
+
+For a prose or code edit to an existing post, supply its source path:
+
+```sh
+Rscript scripts/render-site.R 2026/10/12/permute-partitions-and-formulas/index.qmd
+Rscript scripts/check-site.R
+```
+
+This renders the post and its dependent listings and feeds, preserving
+unrelated pages and updating the search index and sitemap. The edited post's
+R chunks execute normally. Validation still checks the whole site.
+
+Use a full build after publishing or removing posts, changing taxonomy
+membership, or editing shared configuration, templates, includes, themes, or
+bibliographies. A focused build refuses to proceed if archive membership
+changes, the rendered site is incomplete, or Quarto's listing dependency cache
+is missing or stale. A full build initializes that ignored `.quarto/` cache.
+
+The project uses `renv`'s explicit dependency mode: add packages needed by new
+executable examples to `DESCRIPTION`, then update `renv.lock` with
+`renv::snapshot()`. Installing or recording a package without declaring it can
+produce the repeated out-of-sync startup note. Use `renv::status()` to diagnose
+environment changes; routine builds do not run `renv::restore()` again.
+
+When changing the build tooling, `Rscript tests/test-render-site.R` exercises
+full and focused renders on a small temporary site, including executable R,
+feeds, search, sitemap preservation, and draft safeguards. It is separate from
+the normal validation command so that validation never invokes Quarto.
 
 Source and `_site/` are committed. Netlify runs no build command and publishes
 the committed `_site` directory. `netlify.toml` canonicalizes the `www`
@@ -75,10 +111,9 @@ an appropriate directory below `assets/`.
 New posts may execute R and use `freeze: auto`; historical pages intentionally
 do not inherit that setting. `quarto preview` is convenient while writing, but
 it is not the release check. Before committing, run the supported build command
-above twice. Review `git status` and the rendered post in `_site/`; commit the
-post source, its assets, regenerated tag/category sources, `_site/`, and any
-`_freeze/` files created for executable code. The second build should not add
-further unexplained changes.
+above, then the check command once. Review `git status` and the rendered post
+in `_site/`; commit the post source, its assets, regenerated tag/category
+sources, `_site/`, and any `_freeze/` files created for executable code.
 
 ### R-bloggers feed
 
