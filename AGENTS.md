@@ -16,6 +16,12 @@ configuration rather than duplicate its value.
 
 ## Blog posts
 
+Use executable R chunks in blog posts unless instructed not to. Generate
+displayed results and figures from those chunks.
+
+Put package installation commands in R chunks too, but set the chunk option
+`eval: false` so rendering the post does not install packages.
+
 Always quote package names in R `library()` calls. Use `library("permute")`,
 not `library(permute)`, and apply this convention to all package-loading
 examples in blog posts.

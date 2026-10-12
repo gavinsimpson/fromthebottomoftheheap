@@ -36,7 +36,9 @@ In my last post on **permute**, I looked at ordered set partitions and the new f
 
 These functions are in the [development version of permute](https://github.com/gavinsimpson/permute). To follow along, install it from my R-universe:
 
-```r
+```{r}
+#| label: install-permute
+#| eval: false
 install.packages("permute", repos = c(
   "https://gavinsimpson.r-universe.dev",
   "https://cloud.r-project.org"
@@ -47,25 +49,21 @@ install.packages("permute", repos = c(
 
 Let's use [`PlantGrowth`](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/PlantGrowth.html), which comes with R. It records dried plant weights under a control and two treatment conditions. We don't need to download anything:
 
-```r
+```{r}
+#| label: plantgrowth-data
+#| message: false
 library("permute")
 data(PlantGrowth, package = "datasets")
 
 aggregate(weight ~ group, data = PlantGrowth, FUN = mean)
 ```
 
-```text
-  group weight
-1  ctrl  5.032
-2  trt1  4.661
-3  trt2  5.526
-```
-
 The group means differ, but is that more variation than we'd expect if plant weights were unrelated to the treatments? We can use the overall F statistic from a linear model to measure how different the groups are. Larger values mean more variation between groups relative to the variation within them.
 
 I'll wrap that calculation in a small function, because we'll be doing it quite a few times:
 
-```r
+```{r}
+#| label: observed-f-statistic
 f_stat <- function(weight, group) {
   fit <- lm(weight ~ group)
   unname(summary(fit)$fstatistic[["value"]])
@@ -73,10 +71,6 @@ f_stat <- function(weight, group) {
 
 observed <- with(PlantGrowth, f_stat(weight, group))
 observed
-```
-
-```text
-[1] 4.846088
 ```
 
 This is an overall test across the groups. It doesn't tell us which particular treatments differ.
@@ -87,7 +81,8 @@ For the permutation test, we'll leave the group labels in place and shuffle the 
 
 Usually, `shuffleSet()` returns indices, which we then use to rearrange our data. `permutations()` does that indexing step for us:
 
-```r
+```{r}
+#| label: shuffle-weights
 ctrl <- how(nperm = 9999)
 
 set.seed(42)
@@ -96,34 +91,26 @@ shuffled <- permutations(PlantGrowth$weight, control = ctrl)
 dim(shuffled)
 ```
 
-```text
-[1] 9999   30
-```
-
 Each row contains one shuffled version of the weight vector. Columns correspond to the original observation positions, so we can pair every row with the unchanged `PlantGrowth$group` vector. Here are the first few values from a few rows:
 
-```r
+```{r}
+#| label: inspect-shuffled-values
 as.matrix(shuffled)[seq_len(3), seq_len(5)]
-```
-
-```text
-     [,1] [,2] [,3] [,4] [,5]
-[1,] 6.03 4.50 4.17 5.37 5.14
-[2,] 4.81 5.87 5.12 5.29 4.53
-[3,] 5.14 4.53 4.50 4.17 6.03
 ```
 
 Those are plant weights, ready to use. `as.matrix()` just removes the extra permutation metadata for this little peek; we don't need it for the calculation.
 
 Now fit the model for each row and collect the F statistics:
 
-```r
+```{r}
+#| label: permutation-statistics
 null_values <- apply(shuffled, 1, f_stat, group = PlantGrowth$group)
 ```
 
 That's our permutation distribution. The p-value is the proportion of results at least as large as the observed F statistic, including the observed result itself:
 
-```r
+```{r}
+#| label: values-p-value
 tol <- sqrt(.Machine$double.eps)
 p_value <- (1 + sum(null_values >= observed - tol)) /
   (length(null_values) + 1)
@@ -131,16 +118,19 @@ p_value <- (1 + sum(null_values >= observed - tol)) /
 c(F = observed, p_value = p_value)
 ```
 
-```text
-       F  p_value
-4.846088 0.014200
-```
-
 The small tolerance lets us count ties despite minor numerical differences in the model fits. Adding one to the numerator and denominator includes the observed statistic in this Monte Carlo test. We count the upper tail because larger F statistics are more extreme; there's no need to double the result for a test of differences in either direction.
 
 We can also have a look at the data and the permutation distribution:
 
-```r
+```{r}
+#| label: plantgrowth-permutation-distribution
+#| fig-cap: "Plant weights by group (left) and the permutation distribution of the F statistic (right). The red line marks the observed F statistic."
+#| fig-alt: "Two panels: boxplots of dried plant weight for the control and two treatments, and a histogram of F statistics after shuffling weights. The observed F statistic is marked by a red line in the right tail."
+#| fig-width: 8
+#| fig-height: 4.5
+#| dpi: 144
+#| fig-keep: last
+#| fig-show: hold
 old_par <- par(mfrow = c(1, 2))
 boxplot(weight ~ group, data = PlantGrowth,
         xlab = "Group", ylab = "Dried plant weight",
@@ -152,8 +142,6 @@ abline(v = observed, col = "firebrick", lwd = 2)
 par(old_par)
 ```
 
-![Plant weights by group (left) and the permutation distribution of the F statistic (right). The red line marks the observed F statistic.](/assets/img/posts/permute-permutations-and-permutator.png){fig-alt="Two panels: boxplots of dried plant weight for the control and two treatments, and a histogram of F statistics after shuffling weights. The observed F statistic is marked by a red line in the right tail."}
-
 The observed value sits out in the right tail. For this unrestricted permutation test, there's evidence of differences among the treatment groups. The p-value is estimated from random permutations, so it will vary with the seed and the number we request.
 
 `permutations()` works with an atomic vector, rather than a whole data frame. If you give it a factor, it returns the shuffled character labels. It also follows the usual `shuffleSet()` rules about checking and complete enumeration, so the number of returned rows can differ from the number requested for small permutation spaces. Use the size of the returned object in subsequent calculations, as we did above.
@@ -164,7 +152,8 @@ Sometimes a loop is a more convenient place to fit a model, collect several resu
 
 Calling it creates a function. Calling *that* function returns the next permutation of observation indices. I'll reset the seed so that we use the same set we used above:
 
-```r
+```{r}
+#| label: iterate-permutations
 set.seed(42)
 next_perm <- permutator(nrow(PlantGrowth), control = ctrl)
 
@@ -180,38 +169,28 @@ Here `i` contains indices, so `PlantGrowth$weight[i]` does the shuffling. The it
 
 Once we've used them all, another call returns `NULL`:
 
-```r
+```{r}
+#| label: exhausted-iterator
 is.null(next_perm())
-```
-
-```text
-[1] TRUE
 ```
 
 An iterator remembers how far you've got. If you run the loop again with this exhausted iterator, it won't start over; create a fresh one first.
 
 Did the two approaches give us the same F statistics?
 
-```r
+```{r}
+#| label: compare-results
 all.equal(null_values, null_iter)
-```
-
-```text
-[1] TRUE
 ```
 
 They did. We reset the seed and used the same design, so both helpers worked through the same underlying index permutations. We can calculate the p-value from the loop results in exactly the same way:
 
-```r
+```{r}
+#| label: iterator-p-value
 p_iter <- (1 + sum(null_iter >= observed - tol)) /
   (length(null_iter) + 1)
 
 c(values = p_value, iterator = p_iter)
-```
-
-```text
-  values iterator
-  0.0142   0.0142
 ```
 
 One detail to keep in mind: `permutator()` generates and stores the permutation matrix when you create the iterator. It hands out rows one at a time, but it isn't generating them lazily or removing the need to store the index matrix.
@@ -220,7 +199,8 @@ One detail to keep in mind: `permutator()` generates and stores the permutation 
 
 You can also pass an existing index matrix to `permutator()`. This is useful when you want several calculations to use exactly the same permutations, or want to revisit a saved set later:
 
-```r
+```{r}
+#| label: reuse-permutations
 set.seed(42)
 indices <- shuffleSet(nrow(PlantGrowth), control = ctrl)
 
@@ -229,19 +209,12 @@ i <- next_perm()
 head(PlantGrowth$weight[i])
 ```
 
-```text
-[1] 6.03 4.50 4.17 5.37 5.14 6.11
-```
-
 Creating another iterator over that matrix starts from the beginning:
 
-```r
+```{r}
+#| label: replay-permutations
 replay <- permutator(perms = indices)
 identical(i, replay())
-```
-
-```text
-[1] TRUE
 ```
 
 Supply either `perms` or the generation arguments such as `n`, `nset`, and `control`. The matrix passed to `perms` must contain observation indices, such as those returned by `shuffleSet()`. The shuffled weights from `permutations()` aren't interchangeable with that matrix.
