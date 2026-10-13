@@ -10,7 +10,508 @@
 <atom:link href="https://fromthebottomoftheheap.net/index.xml" rel="self" type="application/rss+xml"/>
 <description>My website and blog: research on lakes, past and present</description>
 <generator>quarto-1.10.18</generator>
-<lastBuildDate>Sun, 11 Oct 2026 22:00:00 GMT</lastBuildDate>
+<lastBuildDate>Mon, 12 Oct 2026 22:00:00 GMT</lastBuildDate>
+<item>
+  <title>Creating a permutation test, two ways</title>
+  <dc:creator>Gavin Simpson</dc:creator>
+  <link>https://fromthebottomoftheheap.net/2026/10/13/permute-permutations-and-permutator/</link>
+  <description><![CDATA[
+
+
+
+
+
+<div class="no-row-height column-margin column-container"></div><p>In my last post on <strong>permute</strong>, I looked at ordered set partitions and the new formula interface for plots and blocks. This time I want to show two helpers for the next part of writing a permutation test: taking those permutations and doing something with them.</p>
+<p><code>permutations()</code> gives you the shuffled values directly. <code>permutator()</code> gives you a function that hands out the next set of observation indices each time you call it. Both use the same permutation machinery underneath, so we can use them to build the same test in two slightly different ways.</p>
+<p>These functions are in the <a href="https://github.com/gavinsimpson/permute">development version of permute</a>. To follow along, install it from my R-universe:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"permute"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">repos =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(</span>
+<span id="cb1-2">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://gavinsimpson.r-universe.dev"</span>,</span>
+<span id="cb1-3">  <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"https://cloud.r-project.org"</span></span>
+<span id="cb1-4">))</span></code></pre></div></div>
+</div>
+<section id="something-different-from-jackals" class="level2">
+<h2 data-anchor-id="something-different-from-jackals">Something different from jackals</h2>
+<p>Let’s use <a href="https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/PlantGrowth.html"><code>PlantGrowth</code></a>, which comes with R. It records dried plant weights under a control and two treatment conditions:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"permute"</span>)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data</span>(PlantGrowth, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">package =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"datasets"</span>)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">aggregate</span>(weight <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> group, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> PlantGrowth, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">FUN =</span> mean)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  group weight
+1  ctrl  5.032
+2  trt1  4.661
+3  trt2  5.526</code></pre>
+</div>
+</div>
+<p>The group means differ, but is that more variation than we’d expect if plant weights were unrelated to the treatments? We can use the overall F statistic from a linear model to measure how different the groups are. Larger values mean more variation between groups relative to the variation within them.</p>
+<p>I’ll wrap that calculation in a small function, because we’ll be doing it quite a few times:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">f_stat <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">function</span>(weight, group) {</span>
+<span id="cb4-2">  fit <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">lm</span>(weight <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> group)</span>
+<span id="cb4-3">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">unname</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">summary</span>(fit)<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>fstatistic[[<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"value"</span>]])</span>
+<span id="cb4-4">}</span>
+<span id="cb4-5"></span>
+<span id="cb4-6">observed <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">with</span>(PlantGrowth, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">f_stat</span>(weight, group))</span>
+<span id="cb4-7">observed</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4.846088</code></pre>
+</div>
+</div>
+<p>This is an overall test across the groups. It doesn’t tell us which particular treatments differ.</p>
+<p>For the permutation test, we’ll leave the group labels in place and shuffle the weights among them. Under the null hypothesis, we’re assuming those weights are exchangeable across the treatment groups.</p>
+</section>
+<section id="give-me-the-shuffled-values" class="level2">
+<h2 data-anchor-id="give-me-the-shuffled-values">Give me the shuffled values</h2>
+<p>Usually, <code>shuffleSet()</code> returns permuted <em>indices</em>, which we then use to rearrange our data. <code>permutations()</code> does that indexing step for us:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">ctrl <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">how</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">nperm =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">9999</span>)</span>
+<span id="cb6-2"></span>
+<span id="cb6-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb6-4">shuffled <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">permutations</span>(PlantGrowth<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>weight, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">control =</span> ctrl)</span>
+<span id="cb6-5"></span>
+<span id="cb6-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">dim</span>(shuffled)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 9999   30</code></pre>
+</div>
+</div>
+<p>Each row contains one shuffled version of the weight vector. Columns correspond to the original observation positions, so we can pair every row with the unchanged <code>PlantGrowth$group</code> vector. Here are the first few values from a few rows:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as.matrix</span>(shuffled)[<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq_len</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>), <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq_len</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>)]</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     [,1] [,2] [,3] [,4] [,5]
+[1,] 6.03 4.50 4.17 5.37 5.14
+[2,] 4.81 5.87 5.12 5.29 4.53
+[3,] 5.14 4.53 4.50 4.17 6.03</code></pre>
+</div>
+</div>
+<p>Those are plant weights, ready to use. <code>as.matrix()</code> just removes the extra permutation metadata for this little look.</p>
+<p>Now fit the model for each row in <code>shuffled</code> and collect the F statistics:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1">null_values <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">apply</span>(shuffled, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, f_stat, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">group =</span> PlantGrowth<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>group)</span></code></pre></div></div>
+</div>
+<p>That’s our permutation distribution. The <img src="https://latex.codecogs.com/png.latex?p">-value is the proportion of results at least as large as the observed F statistic, including the observed result itself:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1">tol <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sqrt</span>(.Machine<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>double.eps)</span>
+<span id="cb11-2">p_value <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(null_values <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> observed <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> tol)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span></span>
+<span id="cb11-3">  (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(null_values) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb11-4"></span>
+<span id="cb11-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">F =</span> observed, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">p_value =</span> p_value)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>       F  p_value 
+4.846088 0.014200 </code></pre>
+</div>
+</div>
+<p>The small tolerance lets us count ties despite minor numerical differences in the model fits. Adding one to the numerator and denominator includes the observed statistic in this Monte Carlo test. We count the upper tail because larger F statistics are more extreme; there’s no need to double the result for a test of differences in either direction.</p>
+<p>We can also have a look at the data and the permutation distribution:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">old_par <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">par</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">mfrow =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>))</span>
+<span id="cb13-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">boxplot</span>(weight <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> group, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> PlantGrowth,</span>
+<span id="cb13-3">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Group"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Dried plant weight"</span>,</span>
+<span id="cb13-4">        <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"grey85"</span>)</span>
+<span id="cb13-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">hist</span>(null_values, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">breaks =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">40</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">""</span>,</span>
+<span id="cb13-6">     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"F statistic after shuffling weights"</span>,</span>
+<span id="cb13-7">     <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"grey85"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">border =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"white"</span>)</span>
+<span id="cb13-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">abline</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">v =</span> observed, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"firebrick"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">lwd =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb13-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">par</span>(old_par)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/10/13/permute-permutations-and-permutator/index_files/figure-html/plantgrowth-permutation-distribution-1.png" class="img-fluid figure-img" alt="Two panels: boxplots of dried plant weight for the control and two treatments, and a histogram of F statistics after shuffling weights. The observed F statistic is marked by a red line in the right tail." width="1152"></p>
+<figcaption>Plant weights by group (left) and the permutation distribution of the F statistic (right). The red line marks the observed F statistic.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The observed value sits out in the right tail. For this unrestricted permutation test, there’s evidence of differences among the treatment groups. The p-value is estimated from random permutations, so it will vary with the seed and the number we request.</p>
+<p><code>permutations()</code> works with an atomic vector, rather than a whole data frame. If you give it a factor, it returns the shuffled character labels. It also follows the usual <code>shuffleSet()</code> rules about checking and complete enumeration, so the number of returned rows can differ from the number requested for small permutation spaces. Use the size of the returned object in subsequent calculations, as we did above.</p>
+</section>
+<section id="one-permutation-at-a-time" class="level2">
+<h2 data-anchor-id="one-permutation-at-a-time">One permutation at a time</h2>
+<p>Sometimes a loop<sup>1</sup> is a more convenient place to fit a model, collect several results, or keep track of progress. That’s one situation where <code>permutator()</code> comes in.</p>
+<p>Calling it creates a function. Calling <em>that</em> function returns the next permutation of observation indices. I’ll reset the seed so that we use the same set we used above:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb14-2">next_perm <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">permutator</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(PlantGrowth), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">control =</span> ctrl)</span>
+<span id="cb14-3"></span>
+<span id="cb14-4">null_iter <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">numeric</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">attr</span>(next_perm, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nperm"</span>))</span>
+<span id="cb14-5"></span>
+<span id="cb14-6"><span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">for</span> (b <span class="cf" style="color: #003B4F;
+background-color: null;
+font-weight: bold;
+font-style: inherit;">in</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq_along</span>(null_iter)) {</span>
+<span id="cb14-7">  i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">next_perm</span>()</span>
+<span id="cb14-8">  null_iter[b] <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">f_stat</span>(PlantGrowth<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>weight[i], PlantGrowth<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>group)</span>
+<span id="cb14-9">}</span></code></pre></div></div>
+</div>
+<p>Here <code>i</code> contains indices, so <code>PlantGrowth$weight[i]</code> does the shuffling. The iterator’s <code>"nperm"</code> attribute tells us how many permutations are actually in the set; we use that to allocate the results vector.</p>
+<p>Once we’ve used all of the permutations, another call returns <code>NULL</code>:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">next_perm</span>()</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>NULL</code></pre>
+</div>
+</div>
+<p>An iterator remembers how far you’ve got. If you run the loop again with this exhausted iterator, it won’t start over; create a fresh one first.</p>
+<p>Did the two approaches give us the same F statistics?</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">all.equal</span>(null_values, null_iter)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+<p>They did. We reset the seed and used the same design, so both helpers worked through the same underlying index permutations. We can calculate the <img src="https://latex.codecogs.com/png.latex?p">-value from the loop results in exactly the same way:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1">p_iter <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> (<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sum</span>(null_iter <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;=</span> observed <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> tol)) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span></span>
+<span id="cb19-2">  (<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(null_iter) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>)</span>
+<span id="cb19-3"></span>
+<span id="cb19-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">values =</span> p_value, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">iterator =</span> p_iter)</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  values iterator 
+  0.0142   0.0142 </code></pre>
+</div>
+</div>
+<p>One detail to keep in mind: <code>permutator()</code> generates and stores the permutation matrix when you create the iterator. It hands out rows one at a time, but it isn’t generating them lazily or removing the need to store the index matrix.</p>
+</section>
+<section id="reusing-a-set" class="level2">
+<h2 data-anchor-id="reusing-a-set">Reusing a set</h2>
+<p>You can also pass an existing index matrix to <code>permutator()</code>. This is useful when you want several calculations to use exactly the same permutations, or want to revisit a saved set later:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">42</span>)</span>
+<span id="cb21-2">indices <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">shuffleSet</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">nrow</span>(PlantGrowth), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">control =</span> ctrl)</span>
+<span id="cb21-3"></span>
+<span id="cb21-4">next_perm <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">permutator</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">perms =</span> indices)</span>
+<span id="cb21-5">i <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">next_perm</span>()</span>
+<span id="cb21-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">head</span>(PlantGrowth<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">$</span>weight[i])</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 6.03 4.50 4.17 5.37 5.14 6.11</code></pre>
+</div>
+</div>
+<p>Creating another iterator over that matrix starts from the beginning:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1">replay <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">permutator</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">perms =</span> indices)</span>
+<span id="cb23-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">identical</span>(i, <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">replay</span>())</span></code></pre></div></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] TRUE</code></pre>
+</div>
+</div>
+<p>Supply either <code>perms</code> or the generation arguments such as <code>n</code>, <code>nset</code>, and <code>control</code>. The matrix passed to <code>perms</code> must contain observation indices, such as those returned by <code>shuffleSet()</code>. The shuffled weights from <code>permutations()</code> aren’t interchangeable with that matrix.</p>
+<p>For a single vector and a short calculation, I like <code>permutations()</code> with <code>apply()</code>. When the calculation fits more naturally in a loop, or I want to reuse a saved set of indices, <code>permutator()</code> is handy. Both leave the choice of permutation design with <code>how()</code>, so the same workflow extends to restricted designs when the data call for them. The <a href="https://gavinsimpson.r-universe.dev/permute/doc/manual.html">package manual</a> has the details, and feedback is welcome on the <a href="https://github.com/gavinsimpson/permute/issues">issue tracker</a>.</p>
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>Yes, I know <code>apply</code> is just a loop…↩︎</p></li>
+</ol>
+</section></div> ]]></description>
+  <category>R</category>
+  <guid>https://fromthebottomoftheheap.net/2026/10/13/permute-permutations-and-permutator/</guid>
+  <pubDate>Mon, 12 Oct 2026 22:00:00 GMT</pubDate>
+  <media:content url="https://fromthebottomoftheheap.net/assets/img/posts/permute-permutations-and-permutator.png" medium="image" type="image/png" height="68" width="144"/>
+</item>
 <item>
   <title>Ordered set partitions and formulas in permute</title>
   <dc:creator>Gavin Simpson</dc:creator>
@@ -23473,68 +23974,6 @@ individually disabled so that Quarto can never execute or display them.
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2014/11/03/randomized-complete-block-designs-and-vegan/</guid>
   <pubDate>Mon, 03 Nov 2014 11:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>analogue 0.14-0 released</title>
-  <dc:creator>Gavin Simpson</dc:creator>
-  <link>https://fromthebottomoftheheap.net/2014/10/14/analogue-0.14-0-now-available-on-CRAN/</link>
-  <description><![CDATA[
-
-
-
-
-
-<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
-<section id="posted-in" class="level4">
-<h4 data-anchor-id="posted-in">Posted in</h4>
-<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
-</section>
-<section id="tagged" class="level4">
-<h4 data-anchor-id="tagged">Tagged</h4>
-<p><a href="../../../../tag/palaeoecology/" class="badge text-bg-dark">Palaeoecology</a> <a href="../../../../tag/principal-curves/" class="badge text-bg-dark">Principal curves</a> <a href="../../../../tag/r/" class="badge text-bg-dark">R</a> <a href="../../../../tag/analogue/" class="badge text-bg-dark">analogue</a></p>
-</section>
-</div></div><p>A couple of week’s ago I packaged up a new release of <strong>analogue</strong>, which is available from <a href="http://cran.r-project.org/web/packages/analogue/index.html">CRAN</a>. Version 0.14-0 is a smaller update than the changes released in 0.12-0 and sees a continuation of the changes to dependencies to have packages in Imports rather than Depends. The main development of <strong>analogue</strong> now takes place on <a href="https://github.com/gavinsimpson/analogue/">github</a> and bugs and feature requests should be posted there. The Travis continuous integration system is used to automatically check the package as new code is checked in. There are several new functions and methods and a few bug fixes, the details of which are given below.</p>
-<p>The main user-visible change over 0.12-0 is the <strong>deprecation</strong> of the <code>plot3d.prcurve()</code> method. The functionality is now in new function <code>Plot3d()</code> and <code>plot3d.prcurve()</code> is deprecated and if called needs to use the full function name. This change is to make analogue easier to install on MacOS X as now <strong>rgl</strong> is not needed to install <strong>analogue</strong>. If you want to plot the principal curve in an interactive 3d view, you’ll need to get <strong>rgl</strong> installed first.</p>
-<section id="new-features" class="level2">
-<h2 data-anchor-id="new-features">New features</h2>
-<ul>
-<li><p><code>n2()</code> is a new utility function to calculate Hill’s N2 for sites (sample) &amp; species (variables).</p></li>
-<li><p><code>optima()</code> can now compute bootstrap WA optima and uncertainty.</p></li>
-<li><p><code>performance()</code> has a new method for objects of class<code>"crossval"</code>.</p></li>
-<li><p><code>timetrack()</code> had several improvements including a new <code>predict()</code> method, which allows further points to be added to an existing timetrack, a <code>points()</code> method to allow the addition of data to an existing timetrack plot, and the <code>plot()</code> method can create a blank plotting region allowing greater customisation.</p></li>
-<li><p><code>prcurve()</code> gets <code>predict()</code> and <code>fitted()</code> methods to predict locations of new samples on the principal curve and extract the locations of the training samples respectively.</p></li>
-<li><p><code>evenSample</code> is a utility function to look at the evenness of the distribution of samples along a gradient.</p></li>
-<li><p>Data sets <code>Pollen</code>, <code>Biome</code>, <code>Climate</code>, and <code>Location</code> from the North American Modern Pollen Database have been updated to version 1.7.3.</p></li>
-</ul>
-</section>
-<section id="bug-fixes" class="level2">
-<h2 data-anchor-id="bug-fixes">Bug fixes</h2>
-<ul>
-<li><p>The calculation of AUC in <code>roc()</code> wasn’t working correctly in some circumstances with just a couple of groups.</p></li>
-<li><p><code>crossval.pcr()</code> had a number of bugs in the k-fold CV routine which were leading to errors and the function not working.</p>
-<p>The progress bar was not being updated correctly either.</p></li>
-<li><p><code>predict.pcr()</code> was setting argument <code>ncomp</code> incorrectly if not supplied by the user.</p></li>
-<li><p><code>ChiSquare()</code> wasn’t returning the transformation parameters required to transform leave-out data during crossvalidation or new samples for which predictions were required.</p></li>
-<li><p><code>plot3d.prcurve()</code> was not using the data and ordination components of the returned object. Note this function is now deprecated.</p></li>
-<li><p><code>predict.pcr()</code> was incorrectly calling the internal function <code>fitPCR</code> with the <code>:::</code> operator.</p></li>
-</ul>
-</section>
-<section id="deprecated" class="level2">
-<h2 data-anchor-id="deprecated">Deprecated</h2>
-<ul>
-<li><code>plot3d.prcurve()</code> is deprecated. Functionality is in new function <code>Plot3d()</code>. <strong>Note</strong>: in the next version of <strong>analogue</strong>, this functionality will be removed entirely and located in a new package <a href="https://github.com/gavinsimpson/analogueExtra"><strong>analogueExtra</strong></a>.</li>
-</ul>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2014/07/31/simulating-species-abundance-data-with-the-coenocliner-package/">← Older: Simulating species abundance data with coenocliner</a></span> <span class="text-end"><a href="../../../../2014/11/03/randomized-complete-block-designs-and-vegan/">Newer: Analysing a randomised complete block design with vegan →</a></span></p>
-</div>
-
-
-</section>
-
- ]]></description>
-  <category>R</category>
-  <guid>https://fromthebottomoftheheap.net/2014/10/14/analogue-0.14-0-now-available-on-CRAN/</guid>
-  <pubDate>Tue, 14 Oct 2014 10:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
