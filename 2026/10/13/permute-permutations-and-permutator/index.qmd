@@ -1,5 +1,5 @@
 ---
-title: "A permutation test, two ways"
+title: "Creating a permutation test, two ways"
 subtitle: "Using permutations() and permutator() with R's PlantGrowth data"
 author: Gavin Simpson
 date: 2026-10-13
@@ -30,7 +30,7 @@ execute:
 {{< include ../../../../includes/social-blogroll.qmd >}}
 :::
 
-In my last post on **permute**, I looked at ordered set partitions and the new formula interface for plots and blocks. This time I want to show two helpers for the next bit of the job: taking those permutations and doing something with them.
+In my last post on **permute**, I looked at ordered set partitions and the new formula interface for plots and blocks. This time I want to show two helpers for the next part of writing a permutation test: taking those permutations and doing something with them.
 
 `permutations()` gives you the shuffled values directly. `permutator()` gives you a function that hands out the next set of observation indices each time you call it. Both use the same permutation machinery underneath, so we can use them to build the same test in two slightly different ways.
 
@@ -47,7 +47,7 @@ install.packages("permute", repos = c(
 
 ## Something different from jackals
 
-Let's use [`PlantGrowth`](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/PlantGrowth.html), which comes with R. It records dried plant weights under a control and two treatment conditions. We don't need to download anything:
+Let's use [`PlantGrowth`](https://stat.ethz.ch/R-manual/R-devel/library/datasets/html/PlantGrowth.html), which comes with R. It records dried plant weights under a control and two treatment conditions:
 
 ```{r}
 #| label: plantgrowth-data
@@ -75,11 +75,11 @@ observed
 
 This is an overall test across the groups. It doesn't tell us which particular treatments differ.
 
-For the permutation test, we'll leave the group labels in place and shuffle the weights among them. Under the null hypothesis, we're assuming those weights are exchangeable across the treatment groups. That's a stronger assumption than equal means alone, and it would need revisiting for an experiment with blocks, paired observations, or other restrictions.
+For the permutation test, we'll leave the group labels in place and shuffle the weights among them. Under the null hypothesis, we're assuming those weights are exchangeable across the treatment groups.
 
 ## Give me the shuffled values
 
-Usually, `shuffleSet()` returns indices, which we then use to rearrange our data. `permutations()` does that indexing step for us:
+Usually, `shuffleSet()` returns permuted *indices*, which we then use to rearrange our data. `permutations()` does that indexing step for us:
 
 ```{r}
 #| label: shuffle-weights
@@ -98,16 +98,16 @@ Each row contains one shuffled version of the weight vector. Columns correspond 
 as.matrix(shuffled)[seq_len(3), seq_len(5)]
 ```
 
-Those are plant weights, ready to use. `as.matrix()` just removes the extra permutation metadata for this little peek; we don't need it for the calculation.
+Those are plant weights, ready to use. `as.matrix()` just removes the extra permutation metadata for this little look.
 
-Now fit the model for each row and collect the F statistics:
+Now fit the model for each row in `shuffled` and collect the F statistics:
 
 ```{r}
 #| label: permutation-statistics
 null_values <- apply(shuffled, 1, f_stat, group = PlantGrowth$group)
 ```
 
-That's our permutation distribution. The p-value is the proportion of results at least as large as the observed F statistic, including the observed result itself:
+That's our permutation distribution. The $p$-value is the proportion of results at least as large as the observed F statistic, including the observed result itself:
 
 ```{r}
 #| label: values-p-value
@@ -148,7 +148,9 @@ The observed value sits out in the right tail. For this unrestricted permutation
 
 ## One permutation at a time
 
-Sometimes a loop is a more convenient place to fit a model, collect several results, or keep track of progress. That's where `permutator()` comes in.
+Sometimes a loop[^1] is a more convenient place to fit a model, collect several results, or keep track of progress. That's one situation where `permutator()` comes in.
+
+[^1]: Yes, I know `apply` is just a loop...
 
 Calling it creates a function. Calling *that* function returns the next permutation of observation indices. I'll reset the seed so that we use the same set we used above:
 
@@ -167,11 +169,11 @@ for (b in seq_along(null_iter)) {
 
 Here `i` contains indices, so `PlantGrowth$weight[i]` does the shuffling. The iterator's `"nperm"` attribute tells us how many permutations are actually in the set; we use that to allocate the results vector.
 
-Once we've used them all, another call returns `NULL`:
+Once we've used all of the permutations, another call returns `NULL`:
 
 ```{r}
 #| label: exhausted-iterator
-is.null(next_perm())
+next_perm()
 ```
 
 An iterator remembers how far you've got. If you run the loop again with this exhausted iterator, it won't start over; create a fresh one first.
@@ -183,7 +185,7 @@ Did the two approaches give us the same F statistics?
 all.equal(null_values, null_iter)
 ```
 
-They did. We reset the seed and used the same design, so both helpers worked through the same underlying index permutations. We can calculate the p-value from the loop results in exactly the same way:
+They did. We reset the seed and used the same design, so both helpers worked through the same underlying index permutations. We can calculate the $p$-value from the loop results in exactly the same way:
 
 ```{r}
 #| label: iterator-p-value
