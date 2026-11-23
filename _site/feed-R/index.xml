@@ -9,8 +9,368 @@
 <link>https://fromthebottomoftheheap.net/feed-R/</link>
 <atom:link href="https://fromthebottomoftheheap.net/feed-R/index.xml" rel="self" type="application/rss+xml"/>
 <description>My website and blog: research on lakes, past and present</description>
-<generator>quarto-1.10.18</generator>
-<lastBuildDate>Mon, 12 Oct 2026 22:00:00 GMT</lastBuildDate>
+<generator>quarto-1.11.9</generator>
+<lastBuildDate>Sun, 22 Nov 2026 23:00:00 GMT</lastBuildDate>
+<item>
+  <title>gratia 0.12.1</title>
+  <dc:creator>Gavin Simpson</dc:creator>
+  <link>https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/</link>
+  <description><![CDATA[
+
+
+
+
+
+<!-- Confirm the announcement date and series dates once 0.12.1 is on CRAN. -->
+<div class="no-row-height column-margin column-container"></div><p>A new version of gratia, 0.12.1, is now available on CRAN. This is a major new release, with a tonne of new features, improvements and bug fixes. There are so many changes in this version that ~1/2 of the <a href="https://gavinsimpson.github.io/gratia/news/index.html">Change log</a> is dedicated to this version.</p>
+<p>This release adds ways to compare predictions, describe the spread of a response, and check whether a fitted model can generate data like those we observed. There are new plots, too, and a few changes to check before you rerun scripts written for earlier versions.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gratia"</span>)</span></code></pre></div></div>
+</div>
+<p>You’ll need R 4.4.0 or later now to use gratia. This release also requires mgcv 1.9-4 or later, ggplot2 4.0.3 or later, and patchwork 1.3.2 or later. The full list of changes is in the <a href="https://gavinsimpson.github.io/gratia/news/">release notes</a>.</p>
+<p>In this post I’ll cover a couple of new features, and over the next few days I plan to drop feed posts on all the new features as time allows.</p>
+<section id="putting-a-seasonal-smooth-on-a-circle" class="level2">
+<h2 data-anchor-id="putting-a-seasonal-smooth-on-a-circle">Putting a seasonal smooth on a circle</h2>
+<p>Here’s one new feature to try straight away. If you’ve fitted a cyclic smooth, <code>draw()</code> can show it in polar coordinates. I’ll simulate a year of temperature measurements, fit a cyclic smooth, and draw the same effect on linear and polar axes.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"mgcv"</span>)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gratia"</span>)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>)</span>
+<span id="cb2-5">day <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">365</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb2-6">temperature <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cos</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> pi <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> day <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">365</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb2-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(day), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.5</span>)</span>
+<span id="cb2-8">seasonal <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gam</span>(</span>
+<span id="cb2-9">  temperature <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">s</span>(day, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">bs =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cc"</span>),</span>
+<span id="cb2-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">knots =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">day =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">365</span>)), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"REML"</span></span>
+<span id="cb2-11">)</span></code></pre></div></div>
+</div>
+<p>The usual partial effect plot for a cyclic smooth was the same as other univariate smooths. This remains the default, but from 0.12.1, you can choose to plot these using polar coordinates, which maps the smooth to a circle, with distance from centre encoding the partial effect. This is chosen using the <code>cyclic = "polar"</code> argument to <code>draw()</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">linear <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(seasonal, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rug =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Day of year"</span>,</span>
+<span id="cb3-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Temperature effect (°C)"</span>)</span>
+<span id="cb3-3">polar <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(seasonal, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cyclic =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"polar"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rug =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>,</span>
+<span id="cb3-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Day of year"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Temperature effect (°C)"</span>)</span>
+<span id="cb3-5"></span>
+<span id="cb3-6">patchwork<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">wrap_plots</span>(linear, polar)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/index_files/figure-html/seasonal-plots-1.png" class="img-fluid figure-img" alt="The linear plot shows a summer peak and low values at both ends of the year. The polar plot joins those two ends." width="864"></p>
+<figcaption>The fitted seasonal temperature effect on linear (left) and polar (right) axes.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The fitted cycle boundaries put the end of December next to the start of January. The polar view changes the presentation of the same estimated temperature effect and its interval.</p>
+</section>
+<section id="drawing-a-tensor-product-smooth-in-3d" class="level2">
+<h2 data-anchor-id="drawing-a-tensor-product-smooth-in-3d">Drawing a tensor product smooth in 3D</h2>
+<p>Another new feature is one that I have gone back and forth on over several years: 3D surface plots of bivariate smooths. In previous versions of gratia, you could only visualise these as 2D surface plots with <code>geom_raster()</code> or <code>geom_tile()</code>. 3D plots are a bit <em>blingy</em>, and largely antithetical to the layered grammar of graphics implement in ggplot2. But still, man users find it difficult to visualise the fitted surface when it is shown as a flat surface. Then along came ggcube, and my mind was made up.</p>
+<p>In this example, I’ll use <code>data_sim("bivariate_surface")</code>, the new descriptive name for <code>"eg2"</code>. It simulates a response that depends jointly on two covariates, <code>x</code> and <code>z</code>. I’ll fit a tensor product smooth with <code>te(x, z)</code>, which allows the response to change with <code>x</code> in different ways at different values of <code>z</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">surface_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data_sim</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bivariate_surface"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">400</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">scale =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb4-2">surface_fit <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gam</span>(</span>
+<span id="cb4-3">  y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">te</span>(x, z, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>)),</span>
+<span id="cb4-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> surface_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"REML"</span></span>
+<span id="cb4-5">)</span></code></pre></div></div>
+</div>
+<p>To draw the surface in three dimensions, you’ll need ggcube (version 0.3.0 or later).</p>
+<p>The default <code>draw()</code> plot uses colour and contours to show the estimated effect on a flat grid. With <code>surface = "3d"</code>, you can also see the effect as height above the <code>x</code>–<code>z</code> plane. Here I’ve turned the view with <code>yaw</code> and used a parallel projection with <code>persp = FALSE</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(</span>
+<span id="cb5-2">  surface_fit, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">surface =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"3d"</span>,</span>
+<span id="cb5-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">surface_3d =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">yaw =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">45</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">persp =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb5-4">)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/index_files/figure-html/tensor-surface-3d-1.png" class="img-fluid figure-img" alt="A tilted surface over x and z with orange peaks and a blue low region. Contours trace the surface, and grey dots on the floor show where observations were taken." width="768"></p>
+<figcaption>The fitted tensor product smooth viewed in three dimensions. Height and colour show the smooth contribution to the linear predictor.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>To see how uncertainty in the smooth changes across the grid, I’ll draw it again from the same angle with <code>ci_3d = TRUE</code>. This adds two translucent surfaces at the lower and upper pointwise interval limits.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(</span>
+<span id="cb6-2">  surface_fit, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">surface =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"3d"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ci_3d =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb6-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">surface_3d =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">yaw =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">45</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">persp =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb6-4">)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/index_files/figure-html/tensor-surface-3d-intervals-1.png" class="img-fluid figure-img" alt="The coloured fitted surface sits between two translucent grey surfaces that follow its shape." width="768"></p>
+<figcaption>The same fitted smooth with translucent surfaces marking the lower and upper pointwise interval limits.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="what-else-is-new" class="level2">
+<h2 data-anchor-id="what-else-is-new">What else is new?</h2>
+<ul>
+<li><strong>More control over effect plots.</strong> Style smooths, intervals, and diagnostic plots through ggplot2 component themes. Overlay or separate factor-related curves, draw parametric interactions, or display a surface in 3D with the optional ggcube package.</li>
+<li><strong>Ways to ask more of a fitted GAM.</strong> Use <code>conditional_differences()</code> to compare complete predictions between treatments and <code>compare_smooths()</code> to compare smooth contributions from separate models. Plot conditional prediction surfaces, look at how response variability changes with a covariate using <code>conditional_moments()</code>, or use <code>ale()</code> to estimate accumulated local effects.</li>
+<li><strong>More model checks and sampling tools.</strong> Try posterior predictive plots, scalable diagnostic displays, residual plots against covariates, or new simulation-based and categorical residuals. Posterior sampling can retain several chains and report coefficient sampling diagnostics. Supported GAMs can also use the new likelihood, LOO, and WAIC methods.</li>
+<li><strong>Wider model support.</strong> The release expands support for models fitted with scam, gamm4, glmmTMB, sdmTMB, and GJRM. It also adds interval tools for supported shape-constrained <code>mgcv::scasm()</code> smooths. The available operations and uncertainty calculations depend on the model class.</li>
+</ul>
+</section>
+<section id="what-to-check-when-upgrading" class="level2">
+<h2 data-anchor-id="what-to-check-when-upgrading">What to check when upgrading</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>If your code does this</th>
+<th>Check this in 0.12.1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Generates posterior draws</td>
+<td>Name the sampling controls and supply <code>n_draws</code> explicitly when generating coefficient or sample draws. Use <code>n_grid</code> to set the resolution of an automatic smooth or derivative grid.</td>
+</tr>
+<tr class="even">
+<td>Uses <code>fitted_samples()</code> as draws of the expected response</td>
+<td>It now returns distribution parameters by default. Request <code>quantity = "expectation"</code> for expected responses where available. Check any code that uses parameter names.</td>
+</tr>
+<tr class="odd">
+<td>Assembles a figure from <code>draw()</code> or <code>assemble()</code></td>
+<td>An unselected GAM plot can now include parametric terms. Set <code>parametric = FALSE</code> for the old layout. Parametric plots use model-scale coordinates by default. Use <code>back_transform = TRUE</code> for the original covariate scale where supported.</td>
+</tr>
+<tr class="even">
+<td>Sets plot colours and widths in <code>draw()</code>, or uses <code>grouped_by</code></td>
+<td>Move appearance settings into <code>theme()</code> and use <code>grouped</code> for curve overlays. The old arguments are deprecated.</td>
+</tr>
+<tr class="odd">
+<td>Calls <code>gratia::fixef()</code></td>
+<td>Use <code>gratia::fixed_effects()</code> for supported models. For fits from nlme or lme4, use the fitting package’s <code>fixef()</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>If you rely on a fixed seed to regenerate simulated responses, <code>posterior_samples()</code> still gives reproducible results, but its response draws for that seed can differ from those in earlier releases.</p>
+<p>Over the next few posts I’ll work through plot themes, updating sampling scripts, treatment contrasts, and the difference between fitted distribution parameters and response moments. They’ll appear with the other <a href="../../../../tag/gratia/">gratia posts</a>.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <guid>https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/</guid>
+  <pubDate>Sun, 22 Nov 2026 23:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Creating a permutation test, two ways</title>
   <dc:creator>Gavin Simpson</dc:creator>
@@ -29237,346 +29597,6 @@ Wickham, H. (2009). <em>ggplot2: Elegant graphics for data analysis</em>. Spring
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2013/10/23/time-series-plots-with-lattice-and-ggplot/</guid>
   <pubDate>Wed, 23 Oct 2013 10:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Using Arial in R figures destined for PLOS ONE</title>
-  <dc:creator>Gavin Simpson</dc:creator>
-  <link>https://fromthebottomoftheheap.net/2013/09/09/preparing-figures-for-plos-one-with-r/</link>
-  <description><![CDATA[
-
-
-
-
-
-<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
-<section id="posted-in" class="level4">
-<h4 data-anchor-id="posted-in">Posted in</h4>
-<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
-</section>
-<section id="tagged" class="level4">
-<h4 data-anchor-id="tagged">Tagged</h4>
-<p><a href="../../../../tag/plotting/" class="badge text-bg-dark">Plotting</a> <a href="../../../../tag/r/" class="badge text-bg-dark">R</a> <a href="../../../../tag/graphics/" class="badge text-bg-dark">Graphics</a> <a href="../../../../tag/publications/" class="badge text-bg-dark">Publications</a> <a href="../../../../tag/journals/" class="badge text-bg-dark">Journals</a></p>
-</section>
-</div></div><p>Despite the refreshing change that the journal <a href="http://www.plosone.org/">PLOS ONE</a> represents in terms of open access and an refreshing change to the stupidity that is quality/novelty selection by the two or three people that review a paper, it’s submission requirements are far less progressive. Yes they make you <a href="http://www.plosone.org/static/figureGuidelines">jump through a lot of hoops</a> getting your figures and tables just so, and I can appreciate why they want some control over this in terms of the look and feel of the journal. A couple of things grate though:</p>
-<ul>
-<li>The insistence on only <acronym title="Encapsulated Postscript">EPS</acronym> files as the single acceptable vector-format</li>
-<li>The insistence that Arial be used as the font face in the figures</li>
-</ul>
-<p>The choice of EPS is a pain, but can be worked round relatively easily and R can output to an EPS file via the <code>postscript()</code> device, as long as you follow a few basic guidelines, which I’ll cover below. But the use of Arial! <em>facepalm</em>…</p>
-<p>Firstly, you may not legally be able to install these fonts on your computer (even though they are available in several forms on the internet) unless you have a licence for a Microsoft product that ships them — though given the dominance of Windows in the consumer PC market, most people will have a valid Windows licence somewhere. Secondly, you need to work very hard to use these fonts in some applications, including R as we’ll see, simply because those applications were built to use different or open font definitions.</p>
-<p>What is doubly frustrating about this is that there are entirely free and open fonts that could be mandated by PLOS ONE. The <a href="https://fedorahosted.org/liberation-fonts/">Liberation Fonts suite</a> for example is one such set of fonts, the creation of which was sponsored by Red Hat. The aim was to provide a font that is metric compatible (i.e.&nbsp;the glyphs occupy the same physical space) with Microsoft’s Arial, Times New Roman, and Courier New fonts that are prevalent in the Windows world. The Liberation Fonts aren’t <em>copies</em> of the Microsoft ones, but for a given string, they should occupy the same amount of real estate in the document or on screen. Or PLOS ONE could have stuck with the standard set of Postscript fonts, for which there are free equivalents.</p>
-<p>Bob O’Hara <a href="http://occamstypewriter.org/boboh/2012/04/25/why_does_plos_hate_openness/">raised this issue over a year ago</a>, and Michael Eisen took the time to <a href="http://occamstypewriter.org/boboh/2012/04/25/why_does_plos_hate_openness/#comment-2528">comment</a> that this was an acknowledged issue and indicated that the problems stemmed from the publishing tools used by PLOS.</p>
-<p>Despite the draconian restrictions, PLOS ONE does have a pretty good <a href="http://www.plosone.org/static/figureGuidelines">set of instructions or tips</a> to go alongside them, to help authors prepare figures for the journal. These instructions even include some tips on creating your figures in R with the Arial font family. These instructions basically involve converting the <code>.ttf</code> (TrueType font files) into <code>.afm</code> (Adobe Font Metric) files via the <code>tt2afm</code> utility and subsequently registering the <code>.afm</code> files with R’s <code>postscript()</code> plotting device.</p>
-<p>Firstly, the instructions refer to an older way of specifying font families (as a vector paths to four or five <code>.afm</code> files — the fifth file would be for the Symbol font, and if missing R will use the default); there is no reason to presume that R will continue to maintain this backwards-compatible behaviour. Second, they require the user to get and install the <code>tt2afm</code> utility (or some other utility that achieves the same job). Thirdly, the instructions are incomplete if you wish to have the figure reproduce on any system; the fonts need to be embedded for those users that don’t have Arial installed. Admittedly, PLOS ONE’s production system <em>will</em> have these fonts, so that this is missing is irrelevant, but it is something one may need to consider when working with colleagues using a range of OSes.</p>
-<p>The new way of referring to font families is a little more convoluted now in modern versions of R. Thankfully, a very simple solution is present that handles the registration of fonts with R’s graphics devices, <em>and</em> as an added bonus will convert <code>.tty</code> font files into the Type1 font equivalents. This solution is Winston Chang’s <strong><a href="https://github.com/wch/extrafont">extrafont</a></strong> package. In the code chunks below, I’ll walk you through installing and using the package to produce a figure suitable for submission to PLOS ONE or any other journal that demands the use of the proprietary Arial font.</p>
-<p>First up, install the <strong>extrafont</strong> package from your local CRAN mirror. For the code below to work, you’ll need version 0.15 or later, which was released to CRAN a few days ago (as of writing). <strong>extrafont</strong> relies on two additional packages</p>
-<ul>
-<li><strong>extrafontdb</strong> contains the font database that <strong>extrafont</strong> will use. Initially this is an empty package skeleton, but as you’ll see in a minute, it will be populated with the information regarding fonts found on your system that you can use within R graphics devices. The reason this is a separate package is that it won’t get overwritten each time a new version of the main <strong>extrafont</strong> package is installed. Hence you only need to go through the potentially lengthy process of searching for and converting suitable fonts on system once.</li>
-<li><strong>Rttf2pt1</strong> contains an R wrapper for the <code>ttf2pt1</code> programme that can convert TrueType fonts into Postscript Type1 fonts, one of the font types that R can use. This is again in a separate package, but this time for licensing reasons. (<code>ttf2pt1</code> is licensed under a 3-clause BSD licence while <strong>extrafont</strong> is GPL-2 licensed, if this matters to you.)</li>
-</ul>
-<p>As all of this is available on CRAN, thanks to Winston and the CRAN maintainers, you can get up and running simply by installing <strong>extrafont</strong> via</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"extrafont"</span>)</span></code></pre></div></div>
-<p>Assuming that the package installs for you then each time you wish to use it, you need to load the package into your R session (as with most other R packages)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"extrafont"</span>)</span></code></pre></div></div>
-<p>The first time you use the package, you will need to register fonts with the <strong>extrafont</strong> database. This process will search your computer for fonts, register them with the database and convert the font metric information in the <code>.ttf</code> files into <code>.afm</code> equivalents, plus a number of other steps like linking to the <code>.ttf</code> files for the actual glyphs (the <code>.afm</code> files only contain the metrics or size and other metadata for the font, not the individual characters or <em>glyphs</em>, which only live in the <code>.ttf</code> files) to allow font embedding. To initiate this process, run</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">font_import</span>()</span></code></pre></div></div>
-<p>This can take some time, depending on how many fonts you have installed on your system. However, you only need to do this once (assuming you don’t install fonts regularly) or at the most after you’ve added fonts to your system. You’ll need to confirm the process when asked (just hit <code>y</code> followed by return), and as it is doing its thing, you should see a series of statements printed to the console as each font is found and converted, eg</p>
-<pre class="rout"><code>&gt; font_import()
-Importing fonts may take a few minutes, depending on the number of fonts and the speed of the system.
-Continue? [y/n] y
-Scanning ttf files in /usr/share/fonts/ ...
-Extracting .afm files from .ttf files...
-/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSans-Bold
-/usr/share/fonts/dejavu/DejaVuSans-BoldOblique.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSans-BoldOblique
-/usr/share/fonts/dejavu/DejaVuSans-ExtraLight.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSans-ExtraLight
-/usr/share/fonts/dejavu/DejaVuSans-Oblique.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSans-Oblique
-/usr/share/fonts/dejavu/DejaVuSans.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSans
-/usr/share/fonts/dejavu/DejaVuSansCondensed-Bold.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSansCondensed-Bold
-/usr/share/fonts/dejavu/DejaVuSansCondensed-BoldOblique.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSansCondensed-BoldOblique
-/usr/share/fonts/dejavu/DejaVuSansCondensed-Oblique.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSansCondensed-Oblique
-/usr/share/fonts/dejavu/DejaVuSansCondensed.ttf =&gt; /home/gavin/R/build/3.0-patched/library/extrafontdb/metrics/DejaVuSansCondensed
-....
-</code></pre>
-<p>Once this is finished, you can get a list of fonts it found and registered via the <code>fonts()</code> function</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## When it is finished, look at the fonts it has found</span></span>
-<span id="cb5-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">fonts</span>()</span></code></pre></div></div>
-<p>On my system, this returned</p>
-<pre class="rout"><code>&gt; fonts()
- [1] "Abyssinica SIL"         "Andale Mono"            "Arial Black"           
- [4] "Arial"                  "Comic Sans MS"          "Courier New"           
- [7] "DejaVu Sans"            "DejaVu Sans Light"      "DejaVu Sans Condensed" 
-[10] "DejaVu Sans Mono"       "DejaVu Serif"           "DejaVu Serif Condensed"
-[13] "Droid Arabic Naskh"     "Droid Sans"             "Droid Sans Arabic"     
-[16] "Droid Sans Armenian"    "Droid Sans Devanagari"  "Droid Sans Ethiopic"   
-[19] "Droid Sans Fallback"    "Droid Sans Georgian"    "Droid Sans Hebrew"     
-[22] "Droid Sans Mono"        "Droid Sans Tamil"       "Droid Sans Thai"       
-[25] "Droid Serif"            "FreeMono"               "FreeSans"              
-[28] "FreeSerif"              "Georgia"                "Impact"                
-[31] "Jomolhari"              "Khmer OS"               "Khmer OS Content"      
-[34] "Khmer OS System"        "Liberation Mono"        "Liberation Sans"       
-[37] "Liberation Sans Narrow" "Liberation Serif"       "LKLUG"                 
-[40] "Lohit Assamese"         "Lohit Bengali"          "Lohit Devanagari"      
-[43] "Lohit Gujarati"         "Lohit Kannada"          "Lohit Oriya"           
-[46] "Lohit Punjabi"          "Lohit Tamil"            "Lohit Telugu"          
-[49] "Meera"                  "Mingzat"                "NanumGothic"           
-[52] "NanumGothicExtraBold"   "Eeyek Unicode"          "Nuosu SIL"             
-[55] "OpenSymbol"             "Padauk"                 "PT Sans"               
-[58] "PT Sans Narrow"         "Tahoma"                 "Times New Roman"       
-[61] "Trebuchet MS"           "Verdana"                "VL Gothic"             
-[64] "Waree"                  "Webdings"
-</code></pre>
-<p>Having loaded (or discovered and registered fonts with the system), you need to register the fonts with a particular graphics device. In particular, you need to do this for the <code>pdf()</code> or <code>postscript()</code> devices. For PLOS ONE, you’ll be wanting the <code>postscript()</code> device as that journal requires EPS format files. Here I’ll show both as PDF is generally more useful than EPS when passing figures between colleagues.</p>
-<p>The <code>loadfonts()</code> function is used to register fonts and by default it will register them with the <code>pdf()</code> device. The <code>postscript()</code> device can be specified via the <code>device = "postscript"</code> argument</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loadfonts</span>() <span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## for pdf()</span></span>
-<span id="cb7-2"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## or</span></span>
-<span id="cb7-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">loadfonts</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">device =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"postscript"</span>) <span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## for postscript()</span></span></code></pre></div></div>
-<p>R will print messages about which fonts have been registered; you can silence this by adding <code>quiet = TRUE</code> to the call to <code>loadfonts()</code>.</p>
-<p>Now we are in a position to produce a plot and export it from R in PDF or EPS formats. By way of illustration, I’ll use a kernel density estimate (KDE) of the probability density function of the Old Faithful duration between eruption data, available in object <code>faithful</code> (note this is now available without an explicit <code>data()</code> call)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1">dens <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">with</span>(faithful, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">density</span>(waiting))</span>
-<span id="cb8-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(dens)</span></code></pre></div></div>
-<section id="exporting-eps-files-via-postscript" class="level2">
-<h2 data-anchor-id="exporting-eps-files-via-postscript">Exporting EPS files via <code>postscript()</code></h2>
-<p>To export an EPS file, we use the <code>postscript()</code> device, though to get true EPS output, some additional arguments need to be specified. These are</p>
-<ul>
-<li><code>paper = "special"</code></li>
-<li><code>onefile = FALSE</code></li>
-<li><code>horizontal = FALSE</code></li>
-</ul>
-<p>In addition, we need to tell the plot use a particular font family, in this case we use <code>family = "Arial"</code>. The character value you pass <code>family</code> is one of the entries returned by <code>fonts()</code> (see above). Here is a call that will generate an EPS file of the KDE of the Old Faithful data</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">postscript</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"myfig.eps"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">height =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">width =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6.83</span>,</span>
-<span id="cb9-2">           <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">family =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Arial"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">paper =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"special"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">onefile =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>,</span>
-<span id="cb9-3">           <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">horizontal =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>)</span>
-<span id="cb9-4">op <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mar =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.05</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.05</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.1</span>)</span>
-<span id="cb9-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(dens, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">""</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Duration between eruptions (minutes)"</span>)</span>
-<span id="cb9-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(op)</span>
-<span id="cb9-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dev.off</span>()</span></code></pre></div></div>
-<p>Notice that here I use the <code>width = 6.83</code> (in inches) which corresponds to a 3-column figure in the PLOS One world. Other dimensions for figures can be found on the PLOS ONE <a href="http://www.plosone.org/static/figureGuidelines#dimensions">Guidelines for Figure and Table Preparation</a>.</p>
-</section>
-<section id="exporting-pdf-files-via-pdf" class="level2">
-<h2 data-anchor-id="exporting-pdf-files-via-pdf">Exporting PDF files via <code>pdf()</code></h2>
-<p>A similar invocation is required for the <code>pdf()</code> device, but there is no <code>horizontal</code> argument:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">pdf</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"myfig.pdf"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">height =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">width =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">6.83</span>,</span>
-<span id="cb10-2">           <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">family =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Arial"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">paper =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"special"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">onefile =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">FALSE</span>)</span>
-<span id="cb10-3">op <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mar =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">5</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">4</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.05</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.05</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.1</span>)</span>
-<span id="cb10-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(dens, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">main =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">""</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Duration between eruptions (minutes)"</span>)</span>
-<span id="cb10-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">par</span>(op)</span>
-<span id="cb10-6"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dev.off</span>()</span></code></pre></div></div>
-</section>
-<section id="setting-up-for-use-on-other-devices" class="level2">
-<h2 data-anchor-id="setting-up-for-use-on-other-devices">Setting up for use on other devices</h2>
-<p>If a device has a <code>family</code> argument, then you can use the following to open a new device using a given font family (here <code>"Arial"</code>)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">dev.new</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">family =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Arial"</span>)</span></code></pre></div></div>
-<p>This is useful if you want to visualise how the figure will look as you create it. However, it works using the system font provision (on Linux and MacOS X that means Pango), not via <strong>extrafont</strong>, so do read <code>?X11</code>, <code>?windows</code>, or <code>?quartz</code> for details on how fonts are resolved there.</p>
-</section>
-<section id="embedding-fonts" class="level2">
-<h2 data-anchor-id="embedding-fonts">Embedding fonts</h2>
-<p>In order for the figure to display properly on any computer with a suitable viewer, the person viewing the file we just generated will need to have Arial installed on their system. Embedding the font (or a subset of glyphs actually used) avoids this situation, at the expense of increased file size. However, embedding fonts with R requires the use of <a href="http://pages.cs.wisc.edu/~ghost/">Ghostscript</a>, which needs to be installed. As I mentioned earlier, technically you don’t need this for submission to PLOS ONE, but I include instructions for embedding fonts for completeness.</p>
-<p>The <strong>extrafont</strong> package has a wrapper to the standard <code>embedFonts()</code> function in base R; <code>embed_fonts()</code>. This takes the path to the input EPS file, the path/filename for the outputted file with embedded fonts (this can be missing, in which case the input file is <strong>overwritten</strong>!), plus a <code>format</code> argument that you can usually ignore (see <code>?embedFonts</code> for details), and and optional argument <code>options</code>. This <code>options</code> argument is very useful to pass along arguments to the <code>ghostscript</code> programme. On my system, the default <code>ghostscript</code> output device was set to either US Letter or A4 paper, so the EPS figure had a large amount of white space above and to the right of the figure. This needed addressing, obviously and for that I used the <code>EPSCrop</code> argument, which has to be given as you would include it if working with <code>ghostscript</code> directly, hence in the code below I pass <code>-dEPSCrop</code> to the <code>option</code> argument.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb12" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## EPS file</span></span>
-<span id="cb12-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">embed_fonts</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"./myfig.eps"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">outfile =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"./myfig-embed.eps"</span>,</span>
-<span id="cb12-3">            <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">options =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"-dEPSCrop"</span>)</span>
-<span id="cb12-4"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## PDF file</span></span>
-<span id="cb12-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">embed_fonts</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"./myfig.pdf"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">outfile =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"./myfig-embed.pdf"</span>)</span></code></pre></div></div>
-<p>Note the PDF file doesn’t need any additional <code>ghostscript</code> arguments so I omit the <code>option</code> argument in that case.</p>
-<p>And that is it. Once you’ve set up <strong>extrafont</strong> and allowed it to search and convert any TrueType fonts on your system, using those fonts is as simple as registering your fonts with a particular device via <code>loadfonts(device = "foo")</code> (where <code>"foo"</code> is one of the supported devices; see <code>?loadfonts</code>), and then specifying the family name of the font when creating the plotting device.</p>
-<p>If you have any suggestions for improving these instructions let me know in the Comments; I should pass them along to PLOS ONE at some point so that can add them to their <a href="http://www.plosone.org/static/figureGuidelines">Guidelines for Figure and Table Preparation</a>.</p>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2013/08/27/open-data-and-ecology/">← Older: Open data and Ecology</a></span> <span class="text-end"><a href="../../../../2013/10/23/time-series-plots-with-lattice-and-ggplot/">Newer: Time series plots in R →</a></span></p>
-</div>
-
-
-</section>
-
- ]]></description>
-  <category>R</category>
-  <guid>https://fromthebottomoftheheap.net/2013/09/09/preparing-figures-for-plos-one-with-r/</guid>
-  <pubDate>Mon, 09 Sep 2013 10:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

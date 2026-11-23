@@ -9,8 +9,368 @@
 <link>https://fromthebottomoftheheap.net/</link>
 <atom:link href="https://fromthebottomoftheheap.net/index.xml" rel="self" type="application/rss+xml"/>
 <description>My website and blog: research on lakes, past and present</description>
-<generator>quarto-1.10.18</generator>
-<lastBuildDate>Mon, 12 Oct 2026 22:00:00 GMT</lastBuildDate>
+<generator>quarto-1.11.9</generator>
+<lastBuildDate>Sun, 22 Nov 2026 23:00:00 GMT</lastBuildDate>
+<item>
+  <title>gratia 0.12.1</title>
+  <dc:creator>Gavin Simpson</dc:creator>
+  <link>https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/</link>
+  <description><![CDATA[
+
+
+
+
+
+<!-- Confirm the announcement date and series dates once 0.12.1 is on CRAN. -->
+<div class="no-row-height column-margin column-container"></div><p>A new version of gratia, 0.12.1, is now available on CRAN. This is a major new release, with a tonne of new features, improvements and bug fixes. There are so many changes in this version that ~1/2 of the <a href="https://gavinsimpson.github.io/gratia/news/index.html">Change log</a> is dedicated to this version.</p>
+<p>This release adds ways to compare predictions, describe the spread of a response, and check whether a fitted model can generate data like those we observed. There are new plots, too, and a few changes to check before you rerun scripts written for earlier versions.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">install.packages</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gratia"</span>)</span></code></pre></div></div>
+</div>
+<p>You’ll need R 4.4.0 or later now to use gratia. This release also requires mgcv 1.9-4 or later, ggplot2 4.0.3 or later, and patchwork 1.3.2 or later. The full list of changes is in the <a href="https://gavinsimpson.github.io/gratia/news/">release notes</a>.</p>
+<p>In this post I’ll cover a couple of new features, and over the next few days I plan to drop feed posts on all the new features as time allows.</p>
+<section id="putting-a-seasonal-smooth-on-a-circle" class="level2">
+<h2 data-anchor-id="putting-a-seasonal-smooth-on-a-circle">Putting a seasonal smooth on a circle</h2>
+<p>Here’s one new feature to try straight away. If you’ve fitted a cyclic smooth, <code>draw()</code> can show it in polar coordinates. I’ll simulate a year of temperature measurements, fit a cyclic smooth, and draw the same effect on linear and polar axes.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"mgcv"</span>)</span>
+<span id="cb2-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gratia"</span>)</span>
+<span id="cb2-3"></span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">12</span>)</span>
+<span id="cb2-5">day <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">seq</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">365</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">3</span>)</span>
+<span id="cb2-6">temperature <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">10</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">-</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">8</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cos</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span> <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> pi <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> day <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">/</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">365</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb2-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rnorm</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">length</span>(day), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">sd =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1.5</span>)</span>
+<span id="cb2-8">seasonal <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gam</span>(</span>
+<span id="cb2-9">  temperature <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">s</span>(day, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">bs =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"cc"</span>),</span>
+<span id="cb2-10">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">knots =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">day =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">365</span>)), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"REML"</span></span>
+<span id="cb2-11">)</span></code></pre></div></div>
+</div>
+<p>The usual partial effect plot for a cyclic smooth was the same as other univariate smooths. This remains the default, but from 0.12.1, you can choose to plot these using polar coordinates, which maps the smooth to a circle, with distance from centre encoding the partial effect. This is chosen using the <code>cyclic = "polar"</code> argument to <code>draw()</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">linear <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(seasonal, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rug =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Day of year"</span>,</span>
+<span id="cb3-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Temperature effect (°C)"</span>)</span>
+<span id="cb3-3">polar <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(seasonal, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">cyclic =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"polar"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">rug =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>,</span>
+<span id="cb3-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">xlab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Day of year"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ylab =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Temperature effect (°C)"</span>)</span>
+<span id="cb3-5"></span>
+<span id="cb3-6">patchwork<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">wrap_plots</span>(linear, polar)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/index_files/figure-html/seasonal-plots-1.png" class="img-fluid figure-img" alt="The linear plot shows a summer peak and low values at both ends of the year. The polar plot joins those two ends." width="864"></p>
+<figcaption>The fitted seasonal temperature effect on linear (left) and polar (right) axes.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>The fitted cycle boundaries put the end of December next to the start of January. The polar view changes the presentation of the same estimated temperature effect and its interval.</p>
+</section>
+<section id="drawing-a-tensor-product-smooth-in-3d" class="level2">
+<h2 data-anchor-id="drawing-a-tensor-product-smooth-in-3d">Drawing a tensor product smooth in 3D</h2>
+<p>Another new feature is one that I have gone back and forth on over several years: 3D surface plots of bivariate smooths. In previous versions of gratia, you could only visualise these as 2D surface plots with <code>geom_raster()</code> or <code>geom_tile()</code>. 3D plots are a bit <em>blingy</em>, and largely antithetical to the layered grammar of graphics implement in ggplot2. But still, man users find it difficult to visualise the fitted surface when it is shown as a flat surface. Then along came ggcube, and my mind was made up.</p>
+<p>In this example, I’ll use <code>data_sim("bivariate_surface")</code>, the new descriptive name for <code>"eg2"</code>. It simulates a response that depends jointly on two covariates, <code>x</code> and <code>z</code>. I’ll fit a tensor product smooth with <code>te(x, z)</code>, which allows the response to change with <code>x</code> in different ways at different values of <code>z</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">surface_data <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">data_sim</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"bivariate_surface"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">n =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">400</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">scale =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.2</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">seed =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb4-2">surface_fit <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gam</span>(</span>
+<span id="cb4-3">  y <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">te</span>(x, z, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>, <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>)),</span>
+<span id="cb4-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> surface_data, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"REML"</span></span>
+<span id="cb4-5">)</span></code></pre></div></div>
+</div>
+<p>To draw the surface in three dimensions, you’ll need ggcube (version 0.3.0 or later).</p>
+<p>The default <code>draw()</code> plot uses colour and contours to show the estimated effect on a flat grid. With <code>surface = "3d"</code>, you can also see the effect as height above the <code>x</code>–<code>z</code> plane. Here I’ve turned the view with <code>yaw</code> and used a parallel projection with <code>persp = FALSE</code>.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(</span>
+<span id="cb5-2">  surface_fit, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">surface =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"3d"</span>,</span>
+<span id="cb5-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">surface_3d =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">yaw =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">45</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">persp =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb5-4">)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/index_files/figure-html/tensor-surface-3d-1.png" class="img-fluid figure-img" alt="A tilted surface over x and z with orange peaks and a blue low region. Contours trace the surface, and grey dots on the floor show where observations were taken." width="768"></p>
+<figcaption>The fitted tensor product smooth viewed in three dimensions. Height and colour show the smooth contribution to the linear predictor.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>To see how uncertainty in the smooth changes across the grid, I’ll draw it again from the same angle with <code>ci_3d = TRUE</code>. This adds two translucent surfaces at the lower and upper pointwise interval limits.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(</span>
+<span id="cb6-2">  surface_fit, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">surface =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"3d"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ci_3d =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb6-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">surface_3d =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">yaw =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">45</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">persp =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>)</span>
+<span id="cb6-4">)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/index_files/figure-html/tensor-surface-3d-intervals-1.png" class="img-fluid figure-img" alt="The coloured fitted surface sits between two translucent grey surfaces that follow its shape." width="768"></p>
+<figcaption>The same fitted smooth with translucent surfaces marking the lower and upper pointwise interval limits.</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="what-else-is-new" class="level2">
+<h2 data-anchor-id="what-else-is-new">What else is new?</h2>
+<ul>
+<li><strong>More control over effect plots.</strong> Style smooths, intervals, and diagnostic plots through ggplot2 component themes. Overlay or separate factor-related curves, draw parametric interactions, or display a surface in 3D with the optional ggcube package.</li>
+<li><strong>Ways to ask more of a fitted GAM.</strong> Use <code>conditional_differences()</code> to compare complete predictions between treatments and <code>compare_smooths()</code> to compare smooth contributions from separate models. Plot conditional prediction surfaces, look at how response variability changes with a covariate using <code>conditional_moments()</code>, or use <code>ale()</code> to estimate accumulated local effects.</li>
+<li><strong>More model checks and sampling tools.</strong> Try posterior predictive plots, scalable diagnostic displays, residual plots against covariates, or new simulation-based and categorical residuals. Posterior sampling can retain several chains and report coefficient sampling diagnostics. Supported GAMs can also use the new likelihood, LOO, and WAIC methods.</li>
+<li><strong>Wider model support.</strong> The release expands support for models fitted with scam, gamm4, glmmTMB, sdmTMB, and GJRM. It also adds interval tools for supported shape-constrained <code>mgcv::scasm()</code> smooths. The available operations and uncertainty calculations depend on the model class.</li>
+</ul>
+</section>
+<section id="what-to-check-when-upgrading" class="level2">
+<h2 data-anchor-id="what-to-check-when-upgrading">What to check when upgrading</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>If your code does this</th>
+<th>Check this in 0.12.1</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Generates posterior draws</td>
+<td>Name the sampling controls and supply <code>n_draws</code> explicitly when generating coefficient or sample draws. Use <code>n_grid</code> to set the resolution of an automatic smooth or derivative grid.</td>
+</tr>
+<tr class="even">
+<td>Uses <code>fitted_samples()</code> as draws of the expected response</td>
+<td>It now returns distribution parameters by default. Request <code>quantity = "expectation"</code> for expected responses where available. Check any code that uses parameter names.</td>
+</tr>
+<tr class="odd">
+<td>Assembles a figure from <code>draw()</code> or <code>assemble()</code></td>
+<td>An unselected GAM plot can now include parametric terms. Set <code>parametric = FALSE</code> for the old layout. Parametric plots use model-scale coordinates by default. Use <code>back_transform = TRUE</code> for the original covariate scale where supported.</td>
+</tr>
+<tr class="even">
+<td>Sets plot colours and widths in <code>draw()</code>, or uses <code>grouped_by</code></td>
+<td>Move appearance settings into <code>theme()</code> and use <code>grouped</code> for curve overlays. The old arguments are deprecated.</td>
+</tr>
+<tr class="odd">
+<td>Calls <code>gratia::fixef()</code></td>
+<td>Use <code>gratia::fixed_effects()</code> for supported models. For fits from nlme or lme4, use the fitting package’s <code>fixef()</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>If you rely on a fixed seed to regenerate simulated responses, <code>posterior_samples()</code> still gives reproducible results, but its response draws for that seed can differ from those in earlier releases.</p>
+<p>Over the next few posts I’ll work through plot themes, updating sampling scripts, treatment contrasts, and the difference between fitted distribution parameters and response moments. They’ll appear with the other <a href="../../../../tag/gratia/">gratia posts</a>.</p>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <guid>https://fromthebottomoftheheap.net/2026/11/23/gratia-0-12-1/</guid>
+  <pubDate>Sun, 22 Nov 2026 23:00:00 GMT</pubDate>
+</item>
 <item>
   <title>Creating a permutation test, two ways</title>
   <dc:creator>Gavin Simpson</dc:creator>
@@ -6523,7 +6883,7 @@ font-style: inherit;">|</span></span>
   <category>Science</category>
   <guid>https://fromthebottomoftheheap.net/2020/02/26/what-three-years-evaluating-discovery-grants-taught-me/</guid>
   <pubDate>Tue, 25 Feb 2020 23:00:00 GMT</pubDate>
-  <media:content url="https://fromthebottomoftheheap.net/assets/img/posts/my-trusty-copy-of-the-grid.jpg" medium="image" type="image/jpeg"/>
+  <media:content url="https://fromthebottomoftheheap.net/assets/img/posts/my-trusty-copy-of-the-grid.jpg" medium="image" type="image/jpeg" height="96" width="144"/>
 </item>
 <item>
   <title>Pivoting tidily</title>
@@ -23360,620 +23720,6 @@ individually disabled so that Quarto can never execute or display them.
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2015/01/14/harvesting-canadian-climate-data/</guid>
   <pubDate>Wed, 14 Jan 2015 11:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Analysing a randomised complete block design with vegan</title>
-  <dc:creator>Gavin Simpson</dc:creator>
-  <link>https://fromthebottomoftheheap.net/2014/11/03/randomized-complete-block-designs-and-vegan/</link>
-  <description><![CDATA[
-
-
-
-
-
-<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
-<section id="posted-in" class="level4">
-<h4 data-anchor-id="posted-in">Posted in</h4>
-<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
-</section>
-<section id="tagged" class="level4">
-<h4 data-anchor-id="tagged">Tagged</h4>
-<p><a href="../../../../tag/vegan/" class="badge text-bg-dark">vegan</a> <a href="../../../../tag/permute/" class="badge text-bg-dark">permute</a> <a href="../../../../tag/permutations/" class="badge text-bg-dark">permutations</a></p>
-</section>
-</div></div><p>It has been a long time coming. <a href="http://cran.r-project.org/package=vegan"><strong>Vegan</strong></a> now has in-built, native ability to use restricted permutation designs when testing effects in constrained ordinations and in range of other methods. This new-found functionality comes courtesy of Jari (mainly) and my efforts to have vegan permutation routines use the <a href="http://cran.r-project.org/package=permute"><strong>permute</strong></a> package. Jari also cooked up a standard interface that we can use to drop this and some extra features neatly into any function we want; this allows us to have permutation tests run on many CPU cores in parallel, splitting the computational burden and reducing the run time of tests, and also a mechanism that allows users to pass a matrix of user-defined permutations to be used in tests. These new features are now fully working in the development version of <strong>vegan</strong>, which you can find on <a href="https://github.com/vegandevs/vegan">github</a>, and which should be released to CRAN shortly. Ahead of the release, I’m preparing some examples to show off the new capabilities; first off I look at data from a randomized, complete block design experiment analysed using RDA &amp; restricted permutations.</p>
-<p>To follow this example locally you’ll need to have version 2.1-43 or later of <strong>vegan</strong> installed. You can grab the <a href="https://github.com/vegandevs/vegan">sources from github</a> and build it yourself, or grab a Windows binary from the <a href="https://ci.appveyor.com/project/gavinsimpson/vegan/branch/master/artifacts">Appveyor Continuous integration service</a> that we’re using to test on that platform — you want the <code>.zip</code> file from the Artefacts. Once you’ve sorted out the installation, we can begin.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"vegan"</span>)</span></code></pre></div></div>
-<pre class="text"><code>Loading required package: permute
-Loading required package: lattice
-This is vegan 2.1-43
-</code></pre>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"gdata"</span>)</span></code></pre></div></div>
-<pre class="text"><code>gdata: read.xls support for 'XLS' (Excel 97-2004) files ENABLED.
-
-gdata: read.xls support for 'XLSX' (Excel 2007+) files ENABLED.
-
-Attaching package: 'gdata'
-
-The following object is masked from 'package:stats':
-
-    nobs
-
-The following object is masked from 'package:utils':
-
-    object.size
-</code></pre>
-<p>We’ll need <strong>gdata</strong>, and its <code>read.xls()</code> function, to read from the XLS format files that the data for the example come as.</p>
-<p>The data set itself is quite simple and small, consisting of counts on 23 species from 16 plots, and arise from a randomised complete block designed experiment described by Špačková and colleagues <span class="citation" data-cites="Spackova1998-ad">(1998)</span> and analysed by <span class="citation" data-cites="Smilauer2014-ac">(Šmilauer and Lepš, 2014)</span> in their recent book using Canoco v5.</p>
-<p>The experiment tested the effects on seedling recruitment to a range of treatments</p>
-<ul>
-<li>control</li>
-<li>removal of litter</li>
-<li>removal of the dominant species <em>Nardus stricta</em></li>
-<li>removal of litter and moss (mos couldn’t be removed without also removing litter)</li>
-</ul>
-<p>The treatments were replicated replicated in four, randomised complete blocks.</p>
-<p>The data are available from the accompanying website to the book <em>Multivariate Analysis of Ecological Data using CANOCO 5</em> <span class="citation" data-cites="Smilauer2014-ac">(Šmilauer and Lepš, 2014)</span>. They are supplied as XLS format files in a ZIP archive. We can read these into R directly from the website with a little bit of effort</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## Download the data zip</span></span>
-<span id="cb5-2">furl <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"http://regent.prf.jcu.cz/maed2/chap15.zip"</span></span>
-<span id="cb5-3">td <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tempdir</span>()</span>
-<span id="cb5-4">tf <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">tempfile</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">tmpdir =</span> td, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">fileext =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">".zip"</span>)</span>
-<span id="cb5-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">download.file</span>(furl, tf)</span>
-<span id="cb5-6"></span>
-<span id="cb5-7"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## list the files in the zip, we want the xls version (file 3)</span></span>
-<span id="cb5-8">fname <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">unzip</span>(tf, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">list =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>)<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Name[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>]</span>
-<span id="cb5-9"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">unzip</span>(tf, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">files =</span> fname, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">exdir =</span> td, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">overwrite =</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">TRUE</span>) <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># unzip</span></span>
-<span id="cb5-10">datpath <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">file.path</span>(td, fname)                        <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># path to xls</span></span>
-<span id="cb5-11"></span>
-<span id="cb5-12"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## read the xls file, sheet 2 contains species data, sheet 3 the env</span></span>
-<span id="cb5-13">spp <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">read.xls</span>(datpath, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sheet =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">skip =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">row.names =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb5-14">env <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">read.xls</span>(datpath, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">sheet =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">row.names =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span></code></pre></div></div>
-<p>The <code>block</code> variable is currently coded as an integer and needs converting to a factor if we are to use it correctly in the analysis</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1">env <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">transform</span>(env, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">block =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">factor</span>(block))</span></code></pre></div></div>
-<p>The gradient lengths are short,</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">decorana</span>(spp)</span></code></pre></div></div>
-<pre class="text"><code>Call:
-decorana(veg = spp) 
-
-Detrended correspondence analysis with 26 segments.
-Rescaling of axes with 4 iterations.
-
-                  DCA1   DCA2    DCA3    DCA4
-Eigenvalues     0.1759 0.1898 0.11004 0.05761
-Decorana values 0.2710 0.1822 0.07219 0.02822
-Axis lengths    1.9821 1.4140 1.15480 0.87680
-</code></pre>
-<p>motivating the use of redundancy analysis (RDA). Additionally, we may be interested in how the raw abundance of seedlings change following experimental manipulation, o we may wish to focus on the proportional differences between treatments. The first case is handled naturaly by RDA. The second case will require some form of standardisation by samples, say by sample totals.</p>
-<p>First, let’s test the first null hypothesis; that there is no effect of the treatment on seedling recruitment. This is a simple RDA. We should take into account the <code>block</code> factor when we assess this model for significance. How we do this illustrates two potential approaches to performing permutation tests</p>
-<ol type="1">
-<li><p><strong>design</strong>-based permutations, where how the samples are permuted follows the experimental design, or</p></li>
-<li><p><strong>model</strong>-based permutations, where the experimental design is included in the analysis directly and residuals are permuted by simple randomisation.</p></li>
-</ol>
-<p>There is an important difference between the two approach, one which I’ll touch on shortly.</p>
-<p>We’ll proceed by fitting the model, conditioning on <code>block</code> to remove between block differences</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1">mod1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rda</span>(spp <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> treatment <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">Condition</span>(block), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> env)</span>
-<span id="cb9-2">mod1</span></code></pre></div></div>
-<pre class="text"><code>Call: rda(formula = spp ~ treatment + Condition(block), data =
-env)
-
-               Inertia Proportion Rank
-Total         990.8000     1.0000     
-Conditional   166.1000     0.1676    3
-Constrained   329.8000     0.3329    3
-Unconstrained 494.9000     0.4995    9
-Inertia is variance 
-
-Eigenvalues for constrained axes:
-  RDA1   RDA2   RDA3 
-284.81  30.83  14.20 
-
-Eigenvalues for unconstrained axes:
-   PC1    PC2    PC3    PC4    PC5    PC6    PC7    PC8    PC9 
-226.83 139.51  72.77  30.11   9.81   9.14   2.80   2.19   1.73 
-</code></pre>
-<p>There is a strong single, linear gradient in the data as evidenced by the relative magnitudes of the eigenvalues (here expressed as proportions of the total variance)</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb11" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">eigenvals</span>(mod1) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> mod1<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>tot.chi</span></code></pre></div></div>
-<pre class="text"><code>      RDA1       RDA2       RDA3        PC1        PC2        PC3 
-0.28746238 0.03111202 0.01432998 0.22893569 0.14080915 0.07344450 
-       PC4        PC5        PC6        PC7        PC8        PC9 
-0.03038815 0.00989932 0.00922185 0.00282396 0.00221132 0.00174669 
-</code></pre>
-<section id="design-based-permutations" class="level2">
-<h2 data-anchor-id="design-based-permutations">Design-based permutations</h2>
-<p>A <em>design</em>-based permutation test of these data would be on conditioned on the <code>block</code> variable, by restricting permutation of sample only <em>within</em> the levels of <code>block</code>. In this situation, samples are never permuted between blocks, only within. We can set up this type of permutation design as follows</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1">h <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">how</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">blocks =</span> env<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>block, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">nperm =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">999</span>)</span></code></pre></div></div>
-<p>Note that we could use the <code>plots</code> argument instead of <code>blocks</code> to restrict the permutations in the same way, but using <code>blocks</code> is simpler. I also set the required number of permutations for the test here.</p>
-<p>Constrained ordinations in <strong>vegan</strong> are tested using the <code>anova()</code> function. New in the development version of the package is the <code>permutations</code> argument, which is the key to supplying instructions on how you want to permute to <code>anova()</code>. <code>permutations</code> can take a number of different types of instruction</p>
-<ol type="1">
-<li><p>an object of class <code>"how"</code>, whch contains details of a restricted permutation design that <code>shuffleSet()</code> from the <strong>permute</strong> package will use to generate permutations from, or</p></li>
-<li><p>a number indicating the number of permutations required, in which case these are simple randomisations with no restriction, unless the <code>strata</code> argument is used, or</p></li>
-<li><p>a matrix of user-specified permutations, 1 row per permutation.</p></li>
-</ol>
-<p>To perform the design-based permutation we’ll pass <code>h</code>, created earlier, to <code>anova()</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb14" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">42</span>)</span>
-<span id="cb14-2">p1 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">anova</span>(mod1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">permutations =</span> h, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">parallel =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span>
-<span id="cb14-3">p1</span></code></pre></div></div>
-<pre class="text"><code>Permutation test for rda under reduced model
-Blocks:  env$block 
-Permutation: free
-Number of permutations: 999
-
-Model: rda(formula = spp ~ treatment + Condition(block), data = env)
-         Df Variance      F Pr(&gt;F)  
-Model     3   329.84 1.9995  0.086 .
-Residual  9   494.88                
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-</code></pre>
-<p>Note that I’ve run this on three cores in parallel; this is another new feature of the development version of <strong>vegan</strong> and can considerably reduce the time needed to run permutation tests. I have four cores on my laptop but left one free for the other software I have running.</p>
-<p>The overall permutation test indicates no significant effect of treatment on the abundance of seedlings. We can test individual axes by adding <code>by = "axis"</code> to the <code>anova()</code> call</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb16" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">24</span>)</span>
-<span id="cb16-2">p1axis <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">anova</span>(mod1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">permutations =</span> h, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">parallel =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">by =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"axis"</span>)</span></code></pre></div></div>
-<pre class="text"><code>Loading required package: parallel
-</code></pre>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb18" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1">p1axis</span></code></pre></div></div>
-<pre class="text"><code>Permutation test for rda under reduced model
-Marginal tests for axes
-Blocks:  env$block 
-Permutation: free
-Number of permutations: 999
-
-Model: rda(formula = spp ~ treatment + Condition(block), data = env)
-         Df Variance      F Pr(&gt;F)  
-RDA1      1   284.81 5.1797  0.018 *
-RDA2      1    30.83 0.5606  0.691  
-RDA3      1    14.20 0.2582  0.923  
-Residual  9   494.88                
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-</code></pre>
-<p>This confirms the earlier impression that there is a single, linear gradient in the data set. A biplot shows that this axis of variation is associated with the Moss (&amp; Litter) removal treatment. The variation between the other treatments lies primarily along axis two and is substantially less than that associated with the Moss &amp; Litter removal.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb20" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">plot</span>(mod1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">display =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"species"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"cn"</span>), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"n"</span>,</span>
-<span id="cb20-2">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">xlim =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span><span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10.5</span>, <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.5</span>))</span>
-<span id="cb20-3"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">text</span>(mod1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">display =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"species"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">0.8</span>)</span>
-<span id="cb20-4"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">text</span>(mod1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">display =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"cn"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">scaling =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"blue"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">cex =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.2</span>,</span>
-<span id="cb20-5">     <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">labels =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Control"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Litter+Moss"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Litter"</span>, <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Removal"</span>))</span></code></pre></div></div>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://fromthebottomoftheheap.net/assets/img/posts/randomized-complete-block-design-and-vegan-biplot-1.png" class="img-fluid figure-img"></p>
-<figcaption>Figure 1: RDA biplot showing species scores and treatment centroids.</figcaption>
-</figure>
-</div>
-<p>In the above figure, I used <code>scaling = 1</code>, so-called <em>inter-sample distance scaling</em>, as this best represents the centroid scores, which are computed as the treatment-wise average of the sample scores.</p>
-</section>
-<section id="model-based-permutation" class="level2">
-<h2 data-anchor-id="model-based-permutation">Model-based permutation</h2>
-<p>The alternative permutation approach, known as model-based permutations, and would employ free permutation of residuals after the effects of the covariables have been accounted for. This is justified because under the null hypothesis, the residuals are freely exchangeable once the effects of the covariables are removed. There is a clear advantage of model-based permutations over design-based permutations; where the sample size is small, as it is here, there tends to be few blocks and the resulting design-based permutation test relatively weak compared to the model-based version.</p>
-<p>It is simple to switch to model-based permutations, be setting the blocks indicator in the permutation design to <code>NULL</code>, removing the blocking structure from the design</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb21" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">setBlocks</span>(h) <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NULL</span>                    <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># remove blocking</span></span>
-<span id="cb21-2"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">getBlocks</span>(h)                            <span class="co" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;"># confirm</span></span></code></pre></div></div>
-<pre class="text"><code>NULL
-</code></pre>
-<p>Next we repeat the permutation test using the modified <code>h</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb23" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">51</span>)</span>
-<span id="cb23-2">p2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">anova</span>(mod1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">permutations =</span> h, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">parallel =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span>
-<span id="cb23-3">p2</span></code></pre></div></div>
-<pre class="text"><code>Permutation test for rda under reduced model
-Permutation: free
-Number of permutations: 999
-
-Model: rda(formula = spp ~ treatment + Condition(block), data = env)
-         Df Variance      F Pr(&gt;F)  
-Model     3   329.84 1.9995  0.068 .
-Residual  9   494.88                
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-</code></pre>
-<p>The estimated <em>p</em> value is slightly smaller now. The difference between treatments is predominantly in the Moss &amp; Litter removal with differences between the control and the other treatments lying along the insignificant axes</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb25" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">83</span>)</span>
-<span id="cb25-2">p2axis <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">anova</span>(mod1, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">permutations =</span> h, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">parallel =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">by =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"axis"</span>)</span>
-<span id="cb25-3">p2axis</span></code></pre></div></div>
-<pre class="text"><code>Permutation test for rda under reduced model
-Marginal tests for axes
-Permutation: free
-Number of permutations: 999
-
-Model: rda(formula = spp ~ treatment + Condition(block), data = env)
-         Df Variance      F Pr(&gt;F)   
-RDA1      1   284.81 5.1797  0.010 **
-RDA2      1    30.83 0.5606  0.735   
-RDA3      1    14.20 0.2582  0.960   
-Residual  9   494.88                 
----
-Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-</code></pre>
-</section>
-<section id="chages-in-relative-seedling-composition" class="level2">
-<h2 data-anchor-id="chages-in-relative-seedling-composition">Chages in relative seedling composition</h2>
-<p>As mentioned earlier, interest is also, perhaps predominantly, in whether any of the treatments have different species composition. To test this hypothesis we standardise by the sample (row) norm using <code>decostand()</code>. Alternatively we could have used <code>method = "total"</code> to work with proportional abundances. We then repeat the earlier steps, this time using only model-based permutations owing to their greater power.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1">spp.norm <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">decostand</span>(spp, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"normalize"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">MARGIN =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb27-2"></span>
-<span id="cb27-3">mod2 <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rda</span>(spp.norm <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> treatment <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">Condition</span>(block), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> env)</span>
-<span id="cb27-4">mod2</span>
-<span id="cb27-5"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">eigenvals</span>(mod2) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">/</span> mod2<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>tot.chi</span>
-<span id="cb27-6"></span>
-<span id="cb27-7"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">76</span>)</span>
-<span id="cb27-8"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">anova</span>(mod2, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">permutations =</span> h, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">parallel =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>)</span></code></pre></div></div>
-<pre class="text"><code>Call: rda(formula = spp.norm ~ treatment + Condition(block), data
-= env)
-
-              Inertia Proportion Rank
-Total          0.3726     1.0000     
-Conditional    0.0814     0.2184    3
-Constrained    0.0725     0.1945    3
-Unconstrained  0.2188     0.5871    9
-Inertia is variance 
-
-Eigenvalues for constrained axes:
-   RDA1    RDA2    RDA3 
-0.04517 0.01718 0.01012 
-
-Eigenvalues for unconstrained axes:
-    PC1     PC2     PC3     PC4     PC5     PC6     PC7     PC8     PC9 
-0.08026 0.07074 0.02860 0.01916 0.00989 0.00585 0.00223 0.00167 0.00038 
-
-      RDA1       RDA2       RDA3        PC1        PC2        PC3 
-0.12123276 0.04610541 0.02716385 0.21539133 0.18983329 0.07675497 
-       PC4        PC5        PC6        PC7        PC8        PC9 
-0.05140906 0.02655227 0.01570519 0.00597888 0.00447093 0.00101031 
-Permutation test for rda under reduced model
-Permutation: free
-Number of permutations: 999
-
-Model: rda(formula = spp.norm ~ treatment + Condition(block), data = env)
-         Df Variance      F Pr(&gt;F)
-Model     3 0.072475 0.9939  0.449
-Residual  9 0.218768              
-</code></pre>
-<p>The results suggest no difference in species composition under the experimental manipulation.</p>
-<p>That’s it for this post. In the next example I’ll take a look at a more complex example, one where model-based permutations can’t be used to test all the hypotheses we might want to in an experimental design.</p>
-</section>
-<section id="references" class="level2">
-<h2 data-anchor-id="references">References</h2>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2014/10/14/analogue-0.14-0-now-available-on-CRAN/">← Older: analogue 0.14-0 released</a></span> <span class="text-end"><a href="../../../../2015/01/14/harvesting-canadian-climate-data/">Newer: Harvesting Canadian climate data →</a></span></p>
-</div>
-<!--
-Historical R chunks follow. They are retained for archival reference and are
-individually disabled so that Quarto can never execute or display them.
--->
-
-
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Smilauer2014-ac" class="csl-entry">
-Šmilauer, P., and Lepš, J. (2014). <em>Multivariate analysis of ecological data using <span>CANOCO</span> 5</em>. 2 edition. Cambridge University Press.
-</div>
-<div id="ref-Spackova1998-ad" class="csl-entry">
-Špačková, I., Kotorová, I., and Lepš, J. (1998). Sensitivity of seedling recruitment to moss, litter and dominant removal in an oligotrophic wet meadow. <em>Folia geobotanica</em> 33, 17–30. doi:<a href="https://doi.org/10.1007/BF02914928">10.1007/BF02914928</a>.
-</div>
-</div></section></div> ]]></description>
-  <category>R</category>
-  <guid>https://fromthebottomoftheheap.net/2014/11/03/randomized-complete-block-designs-and-vegan/</guid>
-  <pubDate>Mon, 03 Nov 2014 11:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>
