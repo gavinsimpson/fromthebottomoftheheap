@@ -81,6 +81,8 @@ univariate smooths. This remains the default, but from 0.12.1, you can
 choose to plot these using polar coordinates, which maps the smooth to
 a circle, with distance from centre encoding the partial effect. This
 is chosen using the `cyclic = "polar"` argument to `draw()`.
+I select `s(day)` in both calls and use `wrap = FALSE` so I can label each
+plot before combining them.
 
 ```{r}
 #| label: seasonal-plots
@@ -88,12 +90,15 @@ is chosen using the `cyclic = "polar"` argument to `draw()`.
 #| fig-height: 4.4
 #| fig-cap: "The fitted seasonal temperature effect on linear (left) and polar (right) axes."
 #| fig-alt: "The linear plot shows a summer peak and low values at both ends of the year. The polar plot joins those two ends."
-linear <- draw(seasonal, rug = FALSE, xlab = "Day of year",
-  ylab = "Temperature effect (°C)")
-polar <- draw(seasonal, cyclic = "polar", rug = FALSE,
-  xlab = "Day of year", ylab = "Temperature effect (°C)")
+linear <- draw(
+  seasonal, select = "s(day)", rug = FALSE, wrap = FALSE
+)[[1L]]
+polar <- draw(
+  seasonal, select = "s(day)", cyclic = "polar", rug = FALSE, wrap = FALSE
+)[[1L]]
 
-patchwork::wrap_plots(linear, polar)
+axis_labels <- ggplot2::labs(x = "Day of year", y = "Temperature effect (°C)")
+patchwork::wrap_plots(linear + axis_labels, polar + axis_labels)
 ```
 
 The fitted cycle boundaries put the end of December next to the start of
