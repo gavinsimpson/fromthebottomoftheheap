@@ -2,13 +2,11 @@
 
 Source and rendered output for <https://fromthebottomoftheheap.net>.
 
-The site is a Quarto website pinned to **Quarto 1.10.18**, which supplies
-**Bootstrap 5.3.1**. Bootstrap is not vendored separately: upgrading Bootstrap
-means deliberately upgrading Quarto and rerunning the validation suite.
+The site uses the Bootstrap bundle that ships with Quarto.
 
 ## Render locally
 
-Install Quarto 1.10.18 and R, then install `renv` once if necessary. On a new
+Install Quarto and R, then install `renv` once if necessary. On a new
 checkout, or after updating `renv.lock`, restore the R environment once:
 
 ```sh

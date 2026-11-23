@@ -348,8 +348,8 @@ if (!grepl('from = "/2011/10/21/228/"', netlify, fixed = TRUE) ||
 }
 
 bootstrap_js <- list.files(file.path(root, "_site", "site_libs", "bootstrap"), pattern = "bootstrap.*\\.js$", full.names = TRUE)
-if (!length(bootstrap_js) || !any(grepl("Bootstrap v5.3.1", unlist(lapply(bootstrap_js, readLines, warn = FALSE)), fixed = TRUE))) {
-  stop("Rendered site is not using Quarto's supported Bootstrap 5.3.1 bundle")
+if (!length(bootstrap_js) || !any(grepl("Bootstrap v[0-9]+", unlist(lapply(bootstrap_js, readLines, warn = FALSE))))) {
+  stop("Rendered site is missing Quarto's Bootstrap JavaScript bundle")
 }
 
 syntax_css <- list.files(file.path(root, "_site", "site_libs", "quarto-html"),

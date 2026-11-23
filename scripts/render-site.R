@@ -15,10 +15,8 @@ if (length(arguments)) {
   }
 }
 
-quarto_version <- tryCatch(system2("quarto", "--version", stdout = TRUE), error = function(error) character())
-if (!length(quarto_version) || !identical(quarto_version[[1L]], "1.10.18")) {
-  stop("This migration is pinned to Quarto 1.10.18; found ", paste(quarto_version, collapse = " "))
-}
+quarto <- unname(Sys.which("quarto"))
+if (!nzchar(quarto)) stop("Quarto was not found on PATH.")
 
 before <- if (length(arguments)) archive_fingerprints() else NULL
 source("scripts/generate-archives.R", local = new.env())
@@ -29,9 +27,9 @@ if (length(arguments)) {
   if (!is.null(reason)) {
     stop(reason, " Run Rscript scripts/render-site.R for a full build.", call. = FALSE)
   }
-  # Quarto 1.10.18 supplements the post with the root listing, but misses
-  # listing dependencies whose contents use ../ paths. Render those explicitly
-  # after the post so full-content feeds pick up its freshly executed output.
+  # Render dependent listings after the post so full-content feeds pick up
+  # its freshly executed output, including on Quarto versions that miss
+  # listing dependencies whose contents use ../ paths.
   listings <- post_listing_inputs(post, names(after))
   targets <- c(post, setdiff(listings, "index.qmd"))
   sitemap <- file.path("_site", "sitemap.xml")
@@ -41,7 +39,7 @@ if (length(arguments)) {
 } else {
   render_arguments <- "render"
 }
-status <- system2("quarto", render_arguments)
+status <- system2(quarto, render_arguments)
 if (!identical(status, 0L)) stop("Quarto render failed")
 if (length(arguments)) {
   source("scripts/feeds.R")
