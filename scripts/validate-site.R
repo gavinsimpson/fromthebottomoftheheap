@@ -126,6 +126,20 @@ for (url in union(manifest$url, posts$url)) {
 }
 if (length(missing)) stop("Missing rendered post routes: ", paste(missing, collapse = ", "))
 
+references_after_navigation <- vapply(posts$url, function(url) {
+  path <- file.path(root, "_site", sub("^/", "", url), "index.html")
+  html <- paste(readLines(path, warn = FALSE), collapse = "\n")
+  references <- regexpr('[[:space:]]id="refs"', html)[[1L]]
+  navigation <- regexpr(
+    '[[:space:]]class="(?:[^"]*[[:space:]])?post-navigation(?:[[:space:]]|")', html, perl = TRUE
+  )[[1L]]
+  navigation > 0L && references > navigation
+}, logical(1L), USE.NAMES = FALSE)
+if (any(references_after_navigation)) {
+  stop("References appear after post navigation: ",
+       paste(posts$url[references_after_navigation], collapse = ", "))
+}
+
 baseline <- readLines(file.path(root, "migration", "route-manifest.txt"), warn = FALSE)
 baseline_target <- function(route) {
   if (route == "/") file.path(root, "_site", "index.html") else file.path(root, "_site", sub("^/", "", route), "index.html")

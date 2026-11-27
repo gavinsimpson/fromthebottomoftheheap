@@ -10,7 +10,359 @@
 <atom:link href="https://fromthebottomoftheheap.net/feed-R/index.xml" rel="self" type="application/rss+xml"/>
 <description>My website and blog: research on lakes, past and present</description>
 <generator>quarto-1.11.9</generator>
-<lastBuildDate>Sun, 22 Nov 2026 23:00:00 GMT</lastBuildDate>
+<lastBuildDate>Thu, 26 Nov 2026 23:00:00 GMT</lastBuildDate>
+<item>
+  <title>Customising gratia plots with ggplot2 themes</title>
+  <dc:creator>Gavin Simpson</dc:creator>
+  <link>https://fromthebottomoftheheap.net/2026/11/27/gratia-plot-themes/</link>
+  <description><![CDATA[
+
+
+
+
+
+<div class="no-row-height column-margin column-container"></div><p>With gratia 0.12.1, you can change the colour of a smooth or the opacity of its interval <em>after</em> calling <code>draw()</code> using the new theme system. These settings now live in ggplot2 themes, alongside familiar options for backgrounds and text. That makes it easier to use the same style across several figures or give an existing figure a different look.</p>
+<p>I’ll use two curves from a plant experiment to show how to style a set of panels, reuse the style, and choose colours for grouped curves.</p>
+<section id="start-with-a-fitted-model" class="level2">
+<h2 data-anchor-id="start-with-a-fitted-model">Start with a fitted model</h2>
+<p>The <code>CO2</code> data that come with R record carbon dioxide uptake by grass plants from Quebec and Mississippi. Half the plants from each origin were chilled, and uptake was measured at the same set of concentrations for each plant <span class="citation" data-cites="potvin-lechowicz-tardif-1990">(Potvin et al., 1990)</span>.</p>
+<p>For this post I’ll reuse the model from gratia’s <a href="https://gavinsimpson.github.io/gratia/articles/prediction-comparisons.html">prediction comparisons article</a>. It fits a separate concentration smooth for each treatment and includes a plant random intercept for the repeated measurements.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"mgcv"</span>)</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"gratia"</span>)</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"ggplot2"</span>)</span>
+<span id="cb1-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"dplyr"</span>)</span>
+<span id="cb1-5"></span>
+<span id="cb1-6">plant <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">as_tibble</span>(datasets<span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">::</span>CO2) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">|&gt;</span></span>
+<span id="cb1-7">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mutate</span>(</span>
+<span id="cb1-8">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Plant =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(Plant, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ordered =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">FALSE</span>),</span>
+<span id="cb1-9">    <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">Treatment =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">factor</span>(</span>
+<span id="cb1-10">      Treatment,</span>
+<span id="cb1-11">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">levels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"nonchilled"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"chilled"</span>),</span>
+<span id="cb1-12">      <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">labels =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Non-chilled plants"</span>, <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Chilled plants"</span>)</span>
+<span id="cb1-13">    )</span>
+<span id="cb1-14">  )</span>
+<span id="cb1-15"></span>
+<span id="cb1-16">m <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gam</span>(</span>
+<span id="cb1-17">  uptake <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">~</span> Type <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">*</span> Treatment <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">s</span>(conc, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">by =</span> Treatment, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">k =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">5</span>) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span></span>
+<span id="cb1-18">    <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">s</span>(Plant, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">bs =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"re"</span>),</span>
+<span id="cb1-19">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">data =</span> plant, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">family =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">Gamma</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">link =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"log"</span>), <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">method =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"REML"</span></span>
+<span id="cb1-20">)</span></code></pre></div></div>
+</div>
+<p>To keep the plots simple, I’ll focus only on the two estimated smooth functions, using <code>draw()</code>’s <code>select</code> argument with <code>partial_match = TRUE</code> to pick out the two concentration smooths by their shared label, <code>s(conc)</code>. The curves show each smooth’s contribution on the log scale. The <em>ggplot</em> object is saved so that it can be reused.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1">p <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(m, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">select =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"s(conc)"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">partial_match =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">ncol =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">2</span>)</span>
+<span id="cb2-2">p</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/27/gratia-plot-themes/index_files/figure-html/default-uptake-smooths-1.png" class="img-fluid figure-img" alt="Two panels show the concentration smooths for non-chilled and chilled plants as black curves with grey uncertainty ribbons." width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="style-the-curve-and-its-interval" class="level2">
+<h2 data-anchor-id="style-the-curve-and-its-interval">Style the curve and its interval</h2>
+<p>The theme element <code>geom.gratia.smooth</code> controls the fitted line. <code>geom.gratia.interval</code> supplies the ribbon fill, while <code>gratia.alpha.interval</code> controls how transparent the fill is. I’ll use the same blue for the line and ribbon, with a lower opacity for the ribbon.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1">uptake_style <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(</span>
+<span id="cb3-2">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">geom.gratia.smooth =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_geom</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">colour =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#275D8C"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">linewidth =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.9</span>),</span>
+<span id="cb3-3">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">geom.gratia.interval =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">element_geom</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">fill =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"#275D8C"</span>),</span>
+<span id="cb3-4">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">gratia.alpha.interval =</span> <span class="fl" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">0.18</span></span>
+<span id="cb3-5">)</span>
+<span id="cb3-6"></span>
+<span id="cb3-7">p <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_bw</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span> uptake_style</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/27/gratia-plot-themes/index_files/figure-html/themed-uptake-smooths-1.png" class="img-fluid figure-img" alt="The same two smooth panels on white backgrounds, with dark blue curves and pale blue ribbons." width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><code>draw()</code> returns a patchwork, so <em>patchwork</em>’s <code>&amp;</code> is used to send both themes to every panel. With a single ggplot, use <code>+</code>. When used with a combined figure, <code>+</code> would apply the theme to the last panel only.</p>
+<p>If you’re updating an existing script, move <code>smooth_col</code> from the <code>draw()</code> call into <code>geom.gratia.smooth</code>, <code>ci_col</code> into <code>geom.gratia.interval</code>, and <code>ci_alpha</code> into <code>gratia.alpha.interval</code>. The old arguments are deprecated. While they still work, an explicitly supplied colour or opacity takes precedence over the corresponding theme setting, so remove it from the call when you migrate.</p>
+</section>
+<section id="reuse-the-theme-for-new-plots" class="level2">
+<h2 data-anchor-id="reuse-the-theme-for-new-plots">Reuse the theme for new plots</h2>
+<p>Use <code>gratia_theme_set()</code> to style a series of new plots. Each call invisibly returns the gratia theme that was active immediately before the call, or <code>NULL</code> if no gratia theme was set. I save that value in <code>previous_style</code> so I can restore it after assembling the panels.</p>
+<p>I put <code>theme_bw()</code> first because it sets a complete theme. Adding <code>uptake_style</code> after it gives me the white background with the blue line and ribbon.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1">previous_style <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gratia_theme_set</span>(<span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_bw</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">+</span> uptake_style)</span>
+<span id="cb4-2">panels <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">assemble</span>(m, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">select =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"s(conc)"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">partial_match =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>)</span>
+<span id="cb4-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gratia_theme_set</span>(previous_style)</span>
+<span id="cb4-4"></span>
+<span id="cb4-5">panels[[<span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">1</span>]]</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/27/gratia-plot-themes/index_files/figure-html/reusable-uptake-style-1.png" class="img-fluid figure-img" alt="The first treatment smooth alone, with a white background and the same blue curve and ribbon." width="547"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><code>assemble()</code> attaches the combined theme to each panel as it creates it. Restoring <code>previous_style</code> sets the theme for future gratia plots. The saved panel still has its white background and blue styling. Use <code>gratia_theme_get()</code> to see which gratia theme is active.</p>
+</section>
+<section id="using-a-shared-palette-for-colour-and-fill-scales" class="level2">
+<h2 data-anchor-id="using-a-shared-palette-for-colour-and-fill-scales">Using a shared palette for colour and fill scales</h2>
+<p>Often, we want to put the set of factor-by smooths in one panel using <code>grouped = "factor-by"</code>. Then, colour identifies the grouping variable, which here is the treatment. For mapped colours like these, we can use one of the many discrete palettes available for ggplot2, and which can also be set through the theme. <code>gratia_palette()</code> supplies a palette function. Give the same function to the colour and fill settings so each curve matches its own ribbon. In the code below, I switch to Paul Tol’s <em>bright</em> colour palette instead of the default Okabe Ito palette.</p>
+<p>I also wrap the treatment labels in the legend with <code>draw_label_control()</code>. That comes in handy when the figure has to fit in a narrow column.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1">tol <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">gratia_palette</span>(<span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"tol_bright"</span>)</span>
+<span id="cb5-2">legend_layout <span class="ot" style="color: #003B4F;
+background-color: null;
+font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw_label_control</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">legend =</span> <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">list</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">wrap =</span> <span class="dv" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">15</span>))</span>
+<span id="cb5-3"></span>
+<span id="cb5-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">draw</span>(</span>
+<span id="cb5-5">  m, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">select =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"s(conc)"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">partial_match =</span> <span class="cn" style="color: #8f5902;
+background-color: null;
+font-style: inherit;">TRUE</span>,</span>
+<span id="cb5-6">  <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">grouped =</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"factor-by"</span>, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">label_control =</span> legend_layout</span>
+<span id="cb5-7">) <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span></span>
+<span id="cb5-8">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme_bw</span>() <span class="sc" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&amp;</span></span>
+<span id="cb5-9">  <span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">theme</span>(<span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">palette.colour.discrete =</span> tol, <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">palette.fill.discrete =</span> tol)</span></code></pre></div></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="https://fromthebottomoftheheap.net/2026/11/27/gratia-plot-themes/index_files/figure-html/grouped-uptake-palette-1.png" class="img-fluid figure-img" alt="The two treatment curves overlaid, with each line and its ribbon sharing a colour and the longer treatment label wrapped in the legend." width="604"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Paul Tol’s palettes have different capacities, so pick one with enough colours for your groups. That said, trying to distinguish groups by colour is going to be difficulty as the number of groups gets large.</p>
+<p>For the full list of component settings and mappings from older arguments, see the package’s <a href="https://gavinsimpson.github.io/gratia/articles/custom-plotting.html">Customising gratia plots article</a>.</p>
+</section>
+<section id="future-directions" class="level2">
+<h2 data-anchor-id="future-directions">Future directions</h2>
+<p>This is the first outing for the theming system, and there are some features of ggplot2’s themes that aren’t part of the new gratia system, so clashes may occur. If you have comments on the new theme system or suggestions for additions to it, let me know in the comments below.</p>
+</section>
+<section id="references" class="level2">
+<h2 data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-potvin-lechowicz-tardif-1990" class="csl-entry">
+Potvin, C., Lechowicz, M. J., and Tardif, S. (1990). The statistical analysis of ecophysiological response curves obtained from experiments involving repeated measures. <em>Ecology</em> 71, 1389–1400. doi:<a href="https://doi.org/10.2307/1938276">10.2307/1938276</a>.
+</div>
+</div>
+
+
+</section>
+
+ ]]></description>
+  <category>R</category>
+  <guid>https://fromthebottomoftheheap.net/2026/11/27/gratia-plot-themes/</guid>
+  <pubDate>Thu, 26 Nov 2026 23:00:00 GMT</pubDate>
+</item>
 <item>
   <title>gratia 0.12.1</title>
   <dc:creator>Gavin Simpson</dc:creator>
@@ -2458,21 +2810,7 @@ font-style: inherit;">FALSE</span>)</span></code></pre></div></div>
 <p>In this post I showed how random effects can be represented as smooths and how to use them practically in in <code>gam()</code> models. I hope you found it useful. If you have any comments or questions, let me know them in the comments below.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/">← Older: Getting data from the Canada Covid-19 Tracker using R</a></span> <span class="text-end"><a href="../../../../2024/03/28/gratia-0-9-0/">Newer: gratia 0.9.0 →</a></span></p>
-</div>
-<!--
-Historical R chunks follow. They are retained for archival reference and are
-individually disabled so that Quarto can never execute or display them.
--->
-
-
-
-</section>
-</section>
-
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Fahrmeir2013-xu" class="csl-entry">
 Fahrmeir, L., Kneib, T., Lang, S., and Marx, B. (2013). <em>Regression: Models, methods and applications</em>. Springer Berlin Heidelberg doi:<a href="https://doi.org/10.1007/978-3-642-34333-9">10.1007/978-3-642-34333-9</a>.
 </div>
@@ -2485,7 +2823,21 @@ Wood, S. N. (2013). A simple test for random effects in regression models. <em>B
 <div id="ref-Wood2017-qi" class="csl-entry">
 Wood, S. N. (2017). <em><span>Generalized Additive Models</span>: An introduction with <span>R</span>, second edition</em>. CRC Press.
 </div>
-</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+</div>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2021/01/31/getting-data-from-canada-covid-19-tracker-using-r/">← Older: Getting data from the Canada Covid-19 Tracker using R</a></span> <span class="text-end"><a href="../../../../2024/03/28/gratia-0-9-0/">Newer: gratia 0.9.0 →</a></span></p>
+</div>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
+</section>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
 <li id="fn1"><p>or matrices; smooths can have multiple penalty matrices that are stacked block-diagonally in <img src="https://latex.codecogs.com/png.latex?%5Cmathbf%7BS%7D">. For simplicity’s sake I’m just going to assume a single penalty matrix.↩︎</p></li>
@@ -5591,6 +5943,14 @@ font-style: inherit;">"How behaviour changes when combining multiple penalties"<
 <p>However, in none of the fits do we get behaviour that get close to fitting the test observations beyond the training of <em>x</em> in the training data, even when using a Gaussian process that supposedly matches at least the general form of the true function.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Riutort-Mayol2020-ih" class="csl-entry">
+Riutort-Mayol, G., Bürkner, P.-C., Andersen, M. R., Solin, A., and Vehtari, A. (2020). Practical hilbert space approximate bayesian gaussian processes for probabilistic programming. Available at: <a href="https://arxiv.org/abs/2004.11408">https://arxiv.org/abs/2004.11408</a>.
+</div>
+<div id="ref-Simpson2018-frontiers" class="csl-entry">
+Simpson, G. L. (2018). Modelling palaeoecological time series using generalised additive models. <em>Frontiers in Ecology and Evolution</em> 6, 149. doi:<a href="https://doi.org/10.3389/fevo.2018.00149">10.3389/fevo.2018.00149</a>.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2020/05/31/new-gratia-release/">← Older: gratia 0.4.1 released</a></span> <span class="text-end"><a href="../../../../2021/01/30/two-new-versions-of-gratia-on-cran/">Newer: Two new versions of gratia released →</a></span></p>
 </div>
@@ -5600,18 +5960,10 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Riutort-Mayol2020-ih" class="csl-entry">
-Riutort-Mayol, G., Bürkner, P.-C., Andersen, M. R., Solin, A., and Vehtari, A. (2020). Practical hilbert space approximate bayesian gaussian processes for probabilistic programming. Available at: <a href="https://arxiv.org/abs/2004.11408">https://arxiv.org/abs/2004.11408</a>.
-</div>
-<div id="ref-Simpson2018-frontiers" class="csl-entry">
-Simpson, G. L. (2018). Modelling palaeoecological time series using generalised additive models. <em>Frontiers in Ecology and Evolution</em> 6, 149. doi:<a href="https://doi.org/10.3389/fevo.2018.00149">10.3389/fevo.2018.00149</a>.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2020/06/03/extrapolating-with-gams/</guid>
   <pubDate>Wed, 03 Jun 2020 17:00:00 GMT</pubDate>
@@ -8450,6 +8802,11 @@ font-style: inherit;">draw</span>(mod)</span></code></pre></div></div>
 </section>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Augustin2012-sc" class="csl-entry">
+Augustin, N. H., Sauleau, E.-A., and Wood, S. N. (2012). On quantile quantile plots for generalized linear models. <em>Computational statistics &amp; data analysis</em> 56, 2404–2409. doi:<a href="https://doi.org/10.1016/j.csda.2012.01.026">10.1016/j.csda.2012.01.026</a>.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2018/10/15/wiik-jgr-co2-paper/">← Older: Controls on subannual variation in pCO<sub>2</sub> in productive hardwater lakes</a></span> <span class="text-end"><a href="../../../../2018/12/10/confidence-intervals-for-glms/">Newer: Confidence intervals for GLMs →</a></span></p>
 </div>
@@ -8459,14 +8816,9 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Augustin2012-sc" class="csl-entry">
-Augustin, N. H., Sauleau, E.-A., and Wood, S. N. (2012). On quantile quantile plots for generalized linear models. <em>Computational statistics &amp; data analysis</em> 56, 2404–2409. doi:<a href="https://doi.org/10.1016/j.csda.2012.01.026">10.1016/j.csda.2012.01.026</a>.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2018/10/23/introducing-gratia/</guid>
   <pubDate>Tue, 23 Oct 2018 10:00:00 GMT</pubDate>
@@ -8790,6 +9142,14 @@ font-style: inherit;">"ecdf_overlay"</span>)</span></code></pre></div></div>
 <p>Both plots show significant deviations between the the posterior simulations and the observed data. The poor posterior predictive check results are in large part due to the non-constant variance of the acceleration data conditional upon the covariate. Both models assumed that the observation are distributed Gaussian with means equal to the fitted values (estimated expectation of the response) with the same variance <img src="https://latex.codecogs.com/png.latex?%5Csigma%5E2">. The observations appear to have different variances, which we can model with a distributional model, which allow all parameters of the distribution of the response to be modelled with linear predictors. We’ll take a look at these models in a future post.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-brms-2017" class="csl-entry">
+Bürkner, P.-C. (2017). <span class="nocase">brms</span>: An <span>R</span> package for bayesian multilevel models using <span>Stan</span>. <em>Journal of Statistical Software</em> 80, 1–28. doi:<a href="https://doi.org/10.18637/jss.v080.i01">10.18637/jss.v080.i01</a>.
+</div>
+<div id="ref-bayesplot-2018" class="csl-entry">
+Gabry, J., and Mahr, T. (2018). <em>Bayesplot: Plotting for bayesian models</em>. Available at: <a href="https://CRAN.R-project.org/package=bayesplot">https://CRAN.R-project.org/package=bayesplot</a>.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2017/12/14/difference-splines-ii/">← Older: Comparing smooths in factor-smooth interactions II</a></span> <span class="text-end"><a href="../../../../2018/10/15/summer-hiatus/">Newer: Summer hiatus →</a></span></p>
 </div>
@@ -8799,17 +9159,9 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-brms-2017" class="csl-entry">
-Bürkner, P.-C. (2017). <span class="nocase">brms</span>: An <span>R</span> package for bayesian multilevel models using <span>Stan</span>. <em>Journal of Statistical Software</em> 80, 1–28. doi:<a href="https://doi.org/10.18637/jss.v080.i01">10.18637/jss.v080.i01</a>.
-</div>
-<div id="ref-bayesplot-2018" class="csl-entry">
-Gabry, J., and Mahr, T. (2018). <em>Bayesplot: Plotting for bayesian models</em>. Available at: <a href="https://CRAN.R-project.org/package=bayesplot">https://CRAN.R-project.org/package=bayesplot</a>.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2018/04/21/fitting-gams-with-brms/</guid>
   <pubDate>Sat, 21 Apr 2018 08:00:00 GMT</pubDate>
@@ -9108,6 +9460,11 @@ R-sq.(adj) =   0.76   Deviance explained = 82.1%
 <p>Now the output in the parametric terms section is easier to interpret yet we retain the behavior of the reference smooth plus difference smooths part of the fitted GAM.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Rose2012-pl" class="csl-entry">
+Rose, N. L., Yang, H., Turner, S. D., and Simpson, G. L. (2012). An assessment of the mechanisms for the transfer of lead and mercury from atmospherically contaminated organic soils to lake sediments with particular reference to scotland, <span>UK</span>. <em>Geochimica et cosmochimica acta</em> 82, 113–135. doi:<a href="https://doi.org/10.1016/j.gca.2010.12.026">10.1016/j.gca.2010.12.026</a>.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2017/10/19/first-steps-with-mrf-smooths/">← Older: First steps with MRF smooths</a></span> <span class="text-end"><a href="../../../../2018/04/21/fitting-gams-with-brms/">Newer: Fitting GAMs with brms: part 1 →</a></span></p>
 </div>
@@ -9117,15 +9474,10 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Rose2012-pl" class="csl-entry">
-Rose, N. L., Yang, H., Turner, S. D., and Simpson, G. L. (2012). An assessment of the mechanisms for the transfer of lead and mercury from atmospherically contaminated organic soils to lake sediments with particular reference to scotland, <span>UK</span>. <em>Geochimica et cosmochimica acta</em> 82, 113–135. doi:<a href="https://doi.org/10.1016/j.gca.2010.12.026">10.1016/j.gca.2010.12.026</a>.
-</div>
-</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
 <li id="fn1"><p>Except now you need to be sure to include the right set of basis functions that correspond to the pair of levels you want to compare. <em>You can’t do that with the function I included in that post; it requires something a bit more sophisticated, but the principles are the same</em>.↩︎</p></li>
@@ -10622,6 +10974,11 @@ font-style: inherit;">'Difference in Hg trend'</span>)</span></code></pre></div>
 <p>The <code>by</code>-variable type of factor-smooth interaction is just one of the ways of estimating different smooth effects for each level of a factor. One of the potential disadvantages of this type of smoother is it is quite wasteful to estimate three different smooths, each with its own smoothness parameter. More parsimonious ways of fitting factor-smooth interactions are possible with <strong>mgcv</strong>, and I’ll look at an alternative option in the next post.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Rose2012-pl" class="csl-entry">
+Rose, N. L., Yang, H., Turner, S. D., and Simpson, G. L. (2012). An assessment of the mechanisms for the transfer of lead and mercury from atmospherically contaminated organic soils to lake sediments with particular reference to scotland, <span>UK</span>. <em>Geochimica et cosmochimica acta</em> 82, 113–135. doi:<a href="https://doi.org/10.1016/j.gca.2010.12.026">10.1016/j.gca.2010.12.026</a>.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2017/05/04/compare-mgcv-with-glmmTMB/">← Older: Fitting count and zero-inflated count GLMMs with mgcv</a></span> <span class="text-end"><a href="../../../../2017/10/19/first-steps-with-mrf-smooths/">Newer: First steps with MRF smooths →</a></span></p>
 </div>
@@ -10631,15 +10988,10 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Rose2012-pl" class="csl-entry">
-Rose, N. L., Yang, H., Turner, S. D., and Simpson, G. L. (2012). An assessment of the mechanisms for the transfer of lead and mercury from atmospherically contaminated organic soils to lake sediments with particular reference to scotland, <span>UK</span>. <em>Geochimica et cosmochimica acta</em> 82, 113–135. doi:<a href="https://doi.org/10.1016/j.gca.2010.12.026">10.1016/j.gca.2010.12.026</a>.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2017/10/11/difference-splines-i/</guid>
   <pubDate>Tue, 10 Oct 2017 20:00:00 GMT</pubDate>
@@ -11736,19 +12088,7 @@ font-style: inherit;">"Bars are ±1 SE"</span>)</span></code></pre></div></div>
 </section>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2017/05/01/glm-prediction-intervals-ii/">← Older: Prediction intervals for GLMs part II</a></span> <span class="text-end"><a href="../../../../2017/10/11/difference-splines-i/">Newer: Comparing smooths in factor-smooth interactions I →</a></span></p>
-</div>
-<!--
-Historical R chunks follow. They are retained for archival reference and are
-individually disabled so that Quarto can never execute or display them.
--->
-
-
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Bolker2013-vl" class="csl-entry">
 Bolker, B. M., Gardner, B., Maunder, M., Berg, C. W., Brooks, M., Comita, L., et al. (2013). Strategies for fitting nonlinear ecological models in r, <span>AD</span> model builder, and <span>BUGS</span>. <em>Methods in ecology and evolution / British Ecological Society</em> 4, 501–512. doi:<a href="https://doi.org/10.1111/2041-210X.12044">10.1111/2041-210X.12044</a>.
 </div>
@@ -11770,7 +12110,19 @@ Wood, S. N., Pya, N., and Säfken, B. (2016). Smoothing parameter and model sele
 <div id="ref-Zuur2009-vg" class="csl-entry">
 Zuur, A. F., Ieno, E. N., Walker, N., Saveliev, A. A., and Smith, G. M. (2009). <em>Mixed effects models and extensions in ecology with r:</em> Springer New York doi:<a href="https://doi.org/10.1007/978-0-387-87458-6">10.1007/978-0-387-87458-6</a>.
 </div>
-</div></section></div> ]]></description>
+</div>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2017/05/01/glm-prediction-intervals-ii/">← Older: Prediction intervals for GLMs part II</a></span> <span class="text-end"><a href="../../../../2017/10/11/difference-splines-i/">Newer: Comparing smooths in factor-smooth interactions I →</a></span></p>
+</div>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
+</section>
+
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2017/05/04/compare-mgcv-with-glmmTMB/</guid>
   <pubDate>Thu, 04 May 2017 11:45:00 GMT</pubDate>
@@ -12427,6 +12779,11 @@ Table: Estimated probability of the visited and no-visited outcomes based on the
 <p>Ok, I think that’s enough modelling pedantry for one [Ed: er-um, <em>two</em>] post.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Korner-Nievergelt2015-tk" class="csl-entry">
+Korner-Nievergelt, F., Felten, S. von, Roth, T., Gulat, J., Almasi, B., and Korner-Nievergelt, P. (2015). <em>Bayesian data analysis in ecology using linear models with <span>R</span>, <span>BUGS</span>, and stan</em>. Elsevier Science &amp; Technology Books.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2017/05/01/glm-prediction-intervals-i/">← Older: Prediction intervals for GLMs part I</a></span> <span class="text-end"><a href="../../../../2017/05/04/compare-mgcv-with-glmmTMB/">Newer: Fitting count and zero-inflated count GLMMs with mgcv →</a></span></p>
 </div>
@@ -12436,14 +12793,9 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Korner-Nievergelt2015-tk" class="csl-entry">
-Korner-Nievergelt, F., Felten, S. von, Roth, T., Gulat, J., Almasi, B., and Korner-Nievergelt, P. (2015). <em>Bayesian data analysis in ecology using linear models with <span>R</span>, <span>BUGS</span>, and stan</em>. Elsevier Science &amp; Technology Books.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-ii/</guid>
   <pubDate>Mon, 01 May 2017 13:00:00 GMT</pubDate>
@@ -13068,6 +13420,14 @@ font-style: inherit;">/</span> nrand</span></code></pre></div></div>
 <p>In the second part of this post I’ll look at a model for a count response, which will start to look a little more interval-like than the one here.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Dixon2005-bb" class="csl-entry">
+Dixon, P. M., Ellison, A. M., and Gotelli, N. J. (2005). Improving the precision of estimates of the frequency of rare events. <em>Ecology</em> 86, 1114–1123. doi:<a href="https://doi.org/10.1890/04-0601">10.1890/04-0601</a>.
+</div>
+<div id="ref-Gotelli2013-wm" class="csl-entry">
+Gotelli, N. J., and Ellison, A. M. (2013). <em>A primer of ecological statistics</em>. second. Sinauer Associates Inc.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/">← Older: Simultaneous intervals for derivatives of smooths revisited</a></span> <span class="text-end"><a href="../../../../2017/05/01/glm-prediction-intervals-ii/">Newer: Prediction intervals for GLMs part II →</a></span></p>
 </div>
@@ -13077,17 +13437,9 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Dixon2005-bb" class="csl-entry">
-Dixon, P. M., Ellison, A. M., and Gotelli, N. J. (2005). Improving the precision of estimates of the frequency of rare events. <em>Ecology</em> 86, 1114–1123. doi:<a href="https://doi.org/10.1890/04-0601">10.1890/04-0601</a>.
-</div>
-<div id="ref-Gotelli2013-wm" class="csl-entry">
-Gotelli, N. J., and Ellison, A. M. (2013). <em>A primer of ecological statistics</em>. second. Sinauer Associates Inc.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2017/05/01/glm-prediction-intervals-i/</guid>
   <pubDate>Mon, 01 May 2017 12:45:00 GMT</pubDate>
@@ -13559,6 +13911,11 @@ font-style: inherit;">length</span>(fitsInCI)</span></code></pre></div></div>
 <p>That’s it for this post; whilst the signs are encouraging that these simultaneous intervals have the required coverage properties, I’ve only looked at them for a simple single-term GAM, and only for a response that is conditionally distributed Gaussian. I also haven’t looked at anything other than the coverage at an expected 95%. If you do use this in your work, please do check that the interval is working as anticipated. If you do discover problems, please let me know either in the comments below or via email. The next task is to start thinking about extending these ideas to work with a wider range of GAMs that <strong>mgcv</strong> can fit, include location-scale models and models with factor-smooth interactions.</p>
 <section id="references" class="level2">
 <h2 data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Ruppert2003-pt" class="csl-entry">
+Ruppert, D., Wand, M. P., and Carroll, R. J. (2003). <em>Semiparametric regression</em>. Cambridge University Press.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2017/01/25/modelling-extremes-with-gams/">← Older: Modelling extremes using generalized additive models</a></span> <span class="text-end"><a href="../../../../2017/05/01/glm-prediction-intervals-i/">Newer: Prediction intervals for GLMs part I →</a></span></p>
 </div>
@@ -13568,15 +13925,10 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Ruppert2003-pt" class="csl-entry">
-Ruppert, D., Wand, M. P., and Carroll, R. J. (2003). <em>Semiparametric regression</em>. Cambridge University Press.
-</div>
-</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
 <li id="fn1"><p><code>fderiv()</code> currently works for smooths of a single variable fitted using <code>gam()</code> or <code>gamm()</code>. It hasn’t been tested with the location-scale extended families in newer versions of <strong>mgcv</strong> and I doubt it will work with them currently. ↩︎</p></li>
@@ -14201,6 +14553,14 @@ font-style: inherit;">TRUE</span>)</span></code></pre></div></div>
 <p>This is hopefully the first of several posts on modeling block maxima using <strong>mgcv</strong> and GAMs, so if you have any comments, suggests, corrections, let me know in the comments below.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Coles2001-zz" class="csl-entry">
+Coles, S. (2001). <em>An introduction to statistical modeling of extreme values:</em> Springer London doi:<a href="https://doi.org/10.1007/978-1-4471-3675-0">10.1007/978-1-4471-3675-0</a>.
+</div>
+<div id="ref-Yee2007-rz" class="csl-entry">
+Yee, T. W., and Stephenson, A. G. (2007). Vector generalized linear and additive extreme value models. <em>Extremes</em> 10, 1–19. doi:<a href="https://doi.org/10.1007/s10687-007-0032-4">10.1007/s10687-007-0032-4</a>.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2016/12/16/pangaea-r-open-palaeo-data/">← Older: Pangaea and R and open palaeo data</a></span> <span class="text-end"><a href="../../../../2017/03/21/simultaneous-intervals-for-derivatives-of-smooths/">Newer: Simultaneous intervals for derivatives of smooths revisited →</a></span></p>
 </div>
@@ -14210,17 +14570,9 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Coles2001-zz" class="csl-entry">
-Coles, S. (2001). <em>An introduction to statistical modeling of extreme values:</em> Springer London doi:<a href="https://doi.org/10.1007/978-1-4471-3675-0">10.1007/978-1-4471-3675-0</a>.
-</div>
-<div id="ref-Yee2007-rz" class="csl-entry">
-Yee, T. W., and Stephenson, A. G. (2007). Vector generalized linear and additive extreme value models. <em>Extremes</em> 10, 1–19. doi:<a href="https://doi.org/10.1007/s10687-007-0032-4">10.1007/s10687-007-0032-4</a>.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2017/01/25/modelling-extremes-with-gams/</guid>
   <pubDate>Wed, 25 Jan 2017 11:00:00 GMT</pubDate>
@@ -14765,19 +15117,7 @@ font-style: inherit;">x =</span> xlabel)</span></code></pre></div></div>
 <p>And that brings me on to my final point for this post; having access to an excellent data repository like Pangaea from within a data analysis platform like R makes it so much easier to engaged with the literature and ask new and interesting questions. I’ve highlighted Pangaea here, but other initiatives are doing a great job of making palaeo data available and also deserve our recognition and support, like the <a href="http://www.neotomadb.org/">Neotoma</a> database; we might take access to these reources for granted, but implementing and maintaining web servers and APIs requires a lot of time, effort, and resources. Also, this post wouldn’t have been possible without the work of the wonderful <a href="https://ropensci.org/">rOpenSci</a> community that make available R packages to query the APIs of online repositories like Pangaea and Neotoma. Thank you!</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2016/12/15/simultaneous-interval-revisited/">← Older: Simultaneous intervals for smooths revisited</a></span> <span class="text-end"><a href="../../../../2017/01/25/modelling-extremes-with-gams/">Newer: Modelling extremes using generalized additive models →</a></span></p>
-</div>
-<!--
-Historical R chunks follow. They are retained for archival reference and are
-individually disabled so that Quarto can never execute or display them.
--->
-
-
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Allen1996-gc" class="csl-entry">
 Allen, M. R., and Smith, L. A. (1996). Monte carlo <span>SSA</span>: Detecting irregular oscillations in the presence of colored noise. <em>Journal of climate</em> 9, 3373–3404. doi:<a href="https://doi.org/10.1175/1520-0442(1996)009<3373:MCSDIO>2.0.CO;2">10.1175/1520-0442(1996)009&lt;3373:MCSDIO&gt;2.0.CO;2</a>.
 </div>
@@ -14793,7 +15133,19 @@ Taricco, C., Alessio, S., Rubinetti, S., Vivaldo, G., and Mancuso, S. (2016). A 
 <div id="ref-Taricco2009-eh" class="csl-entry">
 Taricco, C., Ghil, M., Alessio, S., and Vivaldo, G. (2009). Two millennia of climate variability in the central mediterranean. <em>Climate of the Past</em> 5, 171–181. doi:<a href="https://doi.org/10.5194/cp-5-171-2009">10.5194/cp-5-171-2009</a>.
 </div>
-</div></section></div> ]]></description>
+</div>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2016/12/15/simultaneous-interval-revisited/">← Older: Simultaneous intervals for smooths revisited</a></span> <span class="text-end"><a href="../../../../2017/01/25/modelling-extremes-with-gams/">Newer: Modelling extremes using generalized additive models →</a></span></p>
+</div>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
+</section>
+
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2016/12/16/pangaea-r-open-palaeo-data/</guid>
   <pubDate>Fri, 16 Dec 2016 11:00:00 GMT</pubDate>
@@ -15509,19 +15861,7 @@ font-style: inherit;">length</span>(fitsInOldCI)</span></code></pre></div></div>
 <p>So, there we have it — a proper 95% simultaneous confidence interval for a penalised spline. Now I just need to go back to that old post and strike out all reference to <em>simultaneous</em>…</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2016/07/02/isec-2016-talk/">← Older: ISEC 2016 Talk</a></span> <span class="text-end"><a href="../../../../2016/12/16/pangaea-r-open-palaeo-data/">Newer: Pangaea and R and open palaeo data →</a></span></p>
-</div>
-<!--
-Historical R chunks follow. They are retained for archival reference and are
-individually disabled so that Quarto can never execute or display them.
--->
-
-
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Marra2012-bq" class="csl-entry">
 Marra, G., and Wood, S. N. (2012). Coverage properties of confidence intervals for generalized additive model components. <em>Scandinavian journal of statistics, theory and applications</em> 39, 53–74. doi:<a href="https://doi.org/10.1111/j.1467-9469.2011.00760.x">10.1111/j.1467-9469.2011.00760.x</a>.
 </div>
@@ -15531,7 +15871,19 @@ Nychka, D. (1988). Bayesian confidence intervals for smoothing splines. <em>Jour
 <div id="ref-Ruppert2003-pt" class="csl-entry">
 Ruppert, D., Wand, M. P., and Carroll, R. J. (2003). <em>Semiparametric regression</em>. Cambridge University Press.
 </div>
-</div></section></div> ]]></description>
+</div>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2016/07/02/isec-2016-talk/">← Older: ISEC 2016 Talk</a></span> <span class="text-end"><a href="../../../../2016/12/16/pangaea-r-open-palaeo-data/">Newer: Pangaea and R and open palaeo data →</a></span></p>
+</div>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
+</section>
+
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2016/12/15/simultaneous-interval-revisited/</guid>
   <pubDate>Thu, 15 Dec 2016 11:00:00 GMT</pubDate>
@@ -16091,6 +16443,11 @@ font-style: inherit;">c</span>(root.nb, root2.nb))</span></code></pre></div></di
 <p>So, there we go; these are rootograms and they seem like a pretty useful tool for assessing fits of count models. I really recommend having a look at <span class="citation" data-cites="Kleiber2016-pt">Kleiber and Zeileis (2016)</span> as it contains much more discussion and illustration of the proposed rootograms than I could possibly include here. They also have a nice ecological example of data from an investigation into horseshoe crab mating plus two other examples. Their paper will shortly appear in the journal <em>The American Statistician</em>, although at the time of writing I don’t have citation details for that version of the paper.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Kleiber2016-pt" class="csl-entry">
+Kleiber, C., and Zeileis, A. (2016). Visualizing count data regressions using rootograms. Available at: <a href="https://arxiv.org/abs/1605.01311">https://arxiv.org/abs/1605.01311</a>.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2016/05/24/harvesting-more-canadian-climate-data/">← Older: Harvesting more Canadian climate data</a></span> <span class="text-end"><a href="../../../../2016/07/02/isec-2016-talk/">Newer: ISEC 2016 Talk →</a></span></p>
 </div>
@@ -16100,15 +16457,10 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Kleiber2016-pt" class="csl-entry">
-Kleiber, C., and Zeileis, A. (2016). Visualizing count data regressions using rootograms. Available at: <a href="https://arxiv.org/abs/1605.01311">https://arxiv.org/abs/1605.01311</a>.
-</div>
-</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
 <li id="fn1"><p>I’m kind of glossing over the fact that a quadratic function of <em>x</em> is not really the true model here, which is a generalised beta response function. This kind of sets up a follow-up post using a GAM fit…↩︎</p></li>
@@ -18510,20 +18862,7 @@ font-style: inherit;">"cm"</span>))</span></code></pre></div></div>
 </section>
 <section id="references" class="level2">
 <h2 data-anchor-id="references">References</h2>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2016/03/25/additive-modeling-global-temperature-series-revisited/">← Older: Additive modelling global temperature time series: revisited</a></span> <span class="text-end"><a href="../../../../2016/04/10/loess-revisited/">Newer: LOESS revisited →</a></span></p>
-</div>
-<!--
-Historical R chunks follow. They are retained for archival reference and are
-individually disabled so that Quarto can never execute or display them.
--->
-
-
-
-</section>
-
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-Miller2014-kb" class="csl-entry">
 Miller, D. L., and Wood, S. N. (2014). Finite area smoothing with generalized distance splines. <em>Environmental and ecological statistics</em> 21, 715–731. doi:<a href="https://doi.org/10.1007/s10651-014-0277-4">10.1007/s10651-014-0277-4</a>.
 </div>
@@ -18533,7 +18872,20 @@ Ramsay, T. (2002). Spline smoothing over difficult regions. <em>Journal of the R
 <div id="ref-Wood2008-gy" class="csl-entry">
 Wood, S. N., Bravington, M. V., and Hedley, S. L. (2008). Soap film smoothing. <em>Journal of the Royal Statistical Society. Series B, Statistical methodology</em> 70, 931–955. doi:<a href="https://doi.org/10.1111/j.1467-9868.2008.00665.x">10.1111/j.1467-9868.2008.00665.x</a>.
 </div>
-</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+</div>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2016/03/25/additive-modeling-global-temperature-series-revisited/">← Older: Additive modelling global temperature time series: revisited</a></span> <span class="text-end"><a href="../../../../2016/04/10/loess-revisited/">Newer: LOESS revisited →</a></span></p>
+</div>
+<!--
+Historical R chunks follow. They are retained for archival reference and are
+individually disabled so that Quarto can never execute or display them.
+-->
+
+
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
 <li id="fn1"><p>smoothing over a domain with known boundaries, like a lake↩︎</p></li>
@@ -19519,6 +19871,14 @@ font-style: inherit;">"cm"</span>))</span></code></pre></div></div>
 <p>Returning to <span class="citation" data-cites="Cahill2015-tt">Cahill et al. (2015)</span> for a moment; the fitted trend from their Bayesian change point model is very similar to the fitted spline. There are some differences in the early part of the series; where their model has a single piecewise linear function through 1850–1900, the additive model suggests a small decrease in global temperatures leading up to 1900. Thereafter the models are very similar, with the exception that the smooth transitions between periods of increase are somewhat longer with the additive model than the one of <span class="citation" data-cites="Cahill2015-tt">Cahill et al. (2015)</span>.</p>
 <section id="references" class="level2">
 <h2 data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Cahill2015-tt" class="csl-entry">
+Cahill, N., Rahmstorf, S., and Parnell, A. C. (2015). Change points of global temperature. <em>Environmental research letters: ERL [Web site]</em> 10, 084002. doi:<a href="https://doi.org/10.1088/1748-9326/10/8/084002">10.1088/1748-9326/10/8/084002</a>.
+</div>
+<div id="ref-Morice2012-wk" class="csl-entry">
+Morice, C. P., Kennedy, J. J., Rayner, N. A., and Jones, P. D. (2012). Quantifying uncertainties in global and regional temperature change using an ensemble of observational estimates: The <span>HadCRUT4</span> data set. <em>J. Geophys. Res.</em> 117, D08101.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2015/12/16/agu-transfer-functions/">← Older: Better use of transfer functions?</a></span> <span class="text-end"><a href="../../../../2016/03/27/soap-film-smoothers/">Newer: Soap-film smoothers &amp; lake bathymetries →</a></span></p>
 </div>
@@ -19528,17 +19888,9 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Cahill2015-tt" class="csl-entry">
-Cahill, N., Rahmstorf, S., and Parnell, A. C. (2015). Change points of global temperature. <em>Environmental research letters: ERL [Web site]</em> 10, 084002. doi:<a href="https://doi.org/10.1088/1748-9326/10/8/084002">10.1088/1748-9326/10/8/084002</a>.
-</div>
-<div id="ref-Morice2012-wk" class="csl-entry">
-Morice, C. P., Kennedy, J. J., Rayner, N. A., and Jones, P. D. (2012). Quantifying uncertainties in global and regional temperature change using an ensemble of observational estimates: The <span>HadCRUT4</span> data set. <em>J. Geophys. Res.</em> 117, D08101.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2016/03/25/additive-modeling-global-temperature-series-revisited/</guid>
   <pubDate>Fri, 25 Mar 2016 11:00:00 GMT</pubDate>
@@ -23566,6 +23918,14 @@ Residual  9 0.218768
 </section>
 <section id="references" class="level2">
 <h2 data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Smilauer2014-ac" class="csl-entry">
+Šmilauer, P., and Lepš, J. (2014). <em>Multivariate analysis of ecological data using <span>CANOCO</span> 5</em>. 2 edition. Cambridge University Press.
+</div>
+<div id="ref-Spackova1998-ad" class="csl-entry">
+Špačková, I., Kotorová, I., and Lepš, J. (1998). Sensitivity of seedling recruitment to moss, litter and dominant removal in an oligotrophic wet meadow. <em>Folia geobotanica</em> 33, 17–30. doi:<a href="https://doi.org/10.1007/BF02914928">10.1007/BF02914928</a>.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2014/10/14/analogue-0.14-0-now-available-on-CRAN/">← Older: analogue 0.14-0 released</a></span> <span class="text-end"><a href="../../../../2015/01/14/harvesting-canadian-climate-data/">Newer: Harvesting Canadian climate data →</a></span></p>
 </div>
@@ -23575,17 +23935,9 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
 </section>
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Smilauer2014-ac" class="csl-entry">
-Šmilauer, P., and Lepš, J. (2014). <em>Multivariate analysis of ecological data using <span>CANOCO</span> 5</em>. 2 edition. Cambridge University Press.
-</div>
-<div id="ref-Spackova1998-ad" class="csl-entry">
-Špačková, I., Kotorová, I., and Lepš, J. (1998). Sensitivity of seedling recruitment to moss, litter and dominant removal in an oligotrophic wet meadow. <em>Folia geobotanica</em> 33, 17–30. doi:<a href="https://doi.org/10.1007/BF02914928">10.1007/BF02914928</a>.
-</div>
-</div></section></div> ]]></description>
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2014/11/03/randomized-complete-block-designs-and-vegan/</guid>
   <pubDate>Mon, 03 Nov 2014 11:00:00 GMT</pubDate>
@@ -24799,6 +25151,18 @@ font-style: inherit;">1</span>)</span></code></pre></div></div>
 <figcaption>Figure 6: Simulated counts using negative binomial errors from bivariate Gaussian species responses for four selected species.</figcaption>
 </figure>
 </div>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent">
+<div id="ref-Allaby1998" class="csl-entry">
+Allaby, M. (1998). <em>A dictionary of ecology</em>. second. Oxford University Press.
+</div>
+<div id="ref-Minchin1987" class="csl-entry">
+Minchin, P. R. (1987). Simulation of multidimensional community patterns: Towards a comprehensive model. <em>Vegetatio</em> 71, 145–156.
+</div>
+</div>
 <div class="post-navigation d-flex justify-content-between gap-3">
 <p><span><a href="../../../../2014/06/16/simultaneous-confidence-intervals-for-derivatives/">← Older: Confidence intervals for derivatives of splines in GAMs</a></span> <span class="text-end"><a href="../../../../2014/10/14/analogue-0.14-0-now-available-on-CRAN/">Newer: analogue 0.14-0 released →</a></span></p>
 </div>
@@ -24808,19 +25172,10 @@ individually disabled so that Quarto can never execute or display them.
 -->
 
 
-
-</section>
 </section>
 
 
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-Allaby1998" class="csl-entry">
-Allaby, M. (1998). <em>A dictionary of ecology</em>. second. Oxford University Press.
-</div>
-<div id="ref-Minchin1987" class="csl-entry">
-Minchin, P. R. (1987). Simulation of multidimensional community patterns: Towards a comprehensive model. <em>Vegetatio</em> 71, 145–156.
-</div>
-</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
 <li id="fn1"><p>This is not strictly true as you can work out how the species parameters are replicated relative to gradient values and hence pass a vector of the correct length with the species-specific values included. Study the outputs from <code>expand()</code> when supplied gradient locations and parameters to work out how to specify <code>extraParams</code> appropriately↩︎</p></li>
@@ -28389,16 +28744,7 @@ font-style: inherit;">0.9703</span></span></code></pre></div></div>
 <p>That’s it for part 2. Next time I’ll take a closer look at the <code>prcurve()</code> function, what the options for fitting principal curves are, among other things.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot/">← Older: Decluttering ordination plots part 4: orditkplot()</a></span> <span class="text-end"><a href="../../../../2014/03/25/file-synchronisation-with-unison/">Newer: File synchronisation with Unison →</a></span></p>
-</div>
-
-
-
-</section>
-
-
-</video><div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-death_principal_1999" class="csl-entry">
 De’ath, G. (1999). Principal curves: A new technique for indirect and direct gradient analysis. <em>Ecology</em> 80, 2237–2253. Available at: <a href="http://www.esajournals.org/doi/abs/10.1890/0012-9658(1999)080%5B2237:PCANTF%5D2.0.CO%3B2">http://www.esajournals.org/doi/abs/10.1890/0012-9658(1999)080%5B2237:PCANTF%5D2.0.CO%3B2</a> [Accessed May 31, 2013].
 </div>
@@ -28420,7 +28766,16 @@ Podani, J., and Miklós, I. (2002). Resemblance coefficients and the horseshoe e
 <div id="ref-swan_examination_1970" class="csl-entry">
 Swan, J. M. A. (1970). An examination of some ordination problems by use of simulated vegetational data. <em>Ecology</em> 51, 89–102. doi:<a href="https://doi.org/10.2307/1933602">10.2307/1933602</a>.
 </div>
-</div></section><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+</div>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot/">← Older: Decluttering ordination plots part 4: orditkplot()</a></span> <span class="text-end"><a href="../../../../2014/03/25/file-synchronisation-with-unison/">Newer: File synchronisation with Unison →</a></span></p>
+</div>
+
+
+</section>
+
+
+</video><div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
 <li id="fn1"><p>Well, not that much candy; I’m still getting to grips with <strong>rgl</strong> and creating videos from individual PNG frames…↩︎</p></li>
@@ -29096,15 +29451,7 @@ font-style: inherit;">2</span>)</span></code></pre></div></div>
 <p>In the next post in this series I’ll look at a relatively old technique that palaeoecologists might employ to address the issues described above when summarising stratigraphic data; principal curves <span class="citation" data-cites="hastie_principal_1989 death_principal_1999">(De’ath, 1999; Hastie and Stuetzle, 1989)</span>.</p>
 <section id="references" class="level3">
 <h3 data-anchor-id="references">References</h3>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2013/12/17/permute-0.8-0-released/">← Older: New version of permute on CRAN</a></span> <span class="text-end"><a href="../../../../2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot/">Newer: Decluttering ordination plots part 4: orditkplot() →</a></span></p>
-</div>
-
-
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
+<div id="refs" class="references csl-bib-body hanging-indent">
 <div id="ref-birks_studies_1978" class="csl-entry">
 Birks, H. H., and Mathewes, R. W. (1978). Studies in the vegetational history of scotland. V. Late devensian and early flandrian pollen and macrofossil stratigraphy at abernethy forest, inverness-shire. <em>New Phytologist</em> 80, 455–484. doi:<a href="https://doi.org/10.1111/j.1469-8137.1978.tb01579.x">10.1111/j.1469-8137.1978.tb01579.x</a>.
 </div>
@@ -29126,7 +29473,15 @@ Noy-Meir, I., and Austin, M. P. (1970). Principal component ordination and simul
 <div id="ref-swan_examination_1970" class="csl-entry">
 Swan, J. M. A. (1970). An examination of some ordination problems by use of simulated vegetational data. <em>Ecology</em> 51, 89–102. doi:<a href="https://doi.org/10.2307/1933602">10.2307/1933602</a>.
 </div>
-</div></section></div> ]]></description>
+</div>
+<div class="post-navigation d-flex justify-content-between gap-3">
+<p><span><a href="../../../../2013/12/17/permute-0.8-0-released/">← Older: New version of permute on CRAN</a></span> <span class="text-end"><a href="../../../../2013/12/31/decluttering-ordination-in-vegan-part-4-orditkplot/">Newer: Decluttering ordination plots part 4: orditkplot() →</a></span></p>
+</div>
+
+
+</section>
+
+ ]]></description>
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2013/12/28/pcurve-1/</guid>
   <pubDate>Sat, 28 Dec 2013 11:00:00 GMT</pubDate>
@@ -29238,424 +29593,6 @@ Swan, J. M. A. (1970). An examination of some ordination problems by use of simu
   <category>R</category>
   <guid>https://fromthebottomoftheheap.net/2013/12/14/analogue-0.12-0-released/</guid>
   <pubDate>Sat, 14 Dec 2013 11:00:00 GMT</pubDate>
-</item>
-<item>
-  <title>Time series plots in R</title>
-  <dc:creator>Gavin Simpson</dc:creator>
-  <link>https://fromthebottomoftheheap.net/2013/10/23/time-series-plots-with-lattice-and-ggplot/</link>
-  <description><![CDATA[
-
-
-
-
-
-<div class="no-row-height column-margin column-container"><div class="post-taxonomy">
-<section id="posted-in" class="level4">
-<h4 data-anchor-id="posted-in">Posted in</h4>
-<p><a href="../../../../category/r/" class="badge text-bg-warning">R</a></p>
-</section>
-<section id="tagged" class="level4">
-<h4 data-anchor-id="tagged">Tagged</h4>
-<p><a href="../../../../tag/plotting/" class="badge text-bg-dark">Plotting</a> <a href="../../../../tag/r/" class="badge text-bg-dark">R</a> <a href="../../../../tag/graphics/" class="badge text-bg-dark">Graphics</a> <a href="../../../../tag/time-series/" class="badge text-bg-dark">Time series</a> <a href="../../../../tag/lattice/" class="badge text-bg-dark">lattice</a> <a href="../../../../tag/ggplot2/" class="badge text-bg-dark">ggplot2</a></p>
-</section>
-</div></div><p>I recently coauthored a couple of papers on trends in environmental data <span class="citation" data-cites="monteith-ecol-ind-trends curtis-ecol-ind-trends">(Curtis and Simpson, in press; Monteith et al., in press)</span>, which we estimated using <acronym title="Generalised Additive Models">GAMs</acronym>. Both papers included plots like the one shown below wherein we show the estimated trend and associated point-wise 95% confidence interval, plus some other markings. The coloured sections show where the estimated trend is changing in a statistically significantly manner, i.e.&nbsp;where a 95% confidence interval on the first derivative (rate of change) of the trend does not include 0. That particular figure and the others in the papers were drawn using the <strong>lattice</strong> package <span class="citation" data-cites="lattice-book">(Sarkar, 2008)</span>, but I could just have easily used <strong>ggplot2</strong> <span class="citation" data-cites="ggplot2-book">(Wickham, 2009)</span> instead. I was recently asked via email how I produced the figures in the paper. Rather than just reply to that email, I thought I’d knock up a quick post for my blog to show how it was done.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://fromthebottomoftheheap.net/assets/img/posts/curtis-simpson-nitrate-figure.png" title="Nitrate concentrations in rainfall at upland UK deposition monitoring sites showing estimated trend and point-wise 95% confidence interval. Periods of significant increase (blue) or decrease (red) are indicated by the coloured sections of the trend." class="img-fluid figure-img"></p>
-<figcaption>Figure 1: Nitrate concentrations in rainfall at upland UK deposition monitoring sites showing estimated trend and point-wise 95% confidence interval. Periods of significant increase (blue) or decrease (red) are indicated by the coloured sections of the trend</figcaption>
-</figure>
-</div>
-<p>For the purposes of this post, I’m not going to show how we fitted the time series models. Instead I’m just going to show some dummy data (two random walks) that illustrate how the data need to be arranged for the plotting code I’m going to use. To start then, create the dummy data we’ll use to draw some plots</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">set.seed</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>)</span>
-<span id="cb1-2">tdat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">data.frame</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Site =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rep</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">paste0</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"Site"</span>, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"A"</span>,<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"B"</span>)),</span>
-<span id="cb1-3">                              <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">each =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>),</span>
-<span id="cb1-4">                   <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Date =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rep</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">seq</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">Sys.Date</span>(), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">by =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"1 day"</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">length =</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>), <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>),</span>
-<span id="cb1-5">                   <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Fitted =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cumsum</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>)), <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">cumsum</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rnorm</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span>))),</span>
-<span id="cb1-6">                   <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Signif =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rep</span>(<span class="cn" style="color: #8f5902;
-background-color: null;
-font-style: inherit;">NA</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">200</span>))</span>
-<span id="cb1-7">tdat <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">transform</span>(tdat, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Upper =</span> Fitted <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.5</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">Lower =</span> Fitted <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">-</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.5</span>)</span>
-<span id="cb1-8"><span class="do" style="color: #5E5E5E;
-background-color: null;
-font-style: italic;">## select 1 region per Site as signif</span></span>
-<span id="cb1-9">take <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">sample</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">10</span><span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">70</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>)</span>
-<span id="cb1-10">take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>] <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>] <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">100</span></span>
-<span id="cb1-11">tdat<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Signif[take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span>(take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>)] <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> tdat<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Fitted[take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span>(take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>)]</span>
-<span id="cb1-12">tdat<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Signif[take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span>(take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>)] <span class="ot" style="color: #003B4F;
-background-color: null;
-font-style: inherit;">&lt;-</span> tdat<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">$</span>Fitted[take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">:</span>(take[<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>]<span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span><span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">25</span>)]</span></code></pre></div></div>
-<p>This results in the following data frame</p>
-<pre class="rout"><code>R&gt; head(tdat)
-   Site       Date  Fitted Signif  Upper   Lower
-1 SiteA 2013-10-23 -0.6265     NA 0.8735 -2.1265
-2 SiteA 2013-10-24 -0.4428     NA 1.0572 -1.9428
-3 SiteA 2013-10-25 -1.2784     NA 0.2216 -2.7784
-4 SiteA 2013-10-26  0.3168     NA 1.8168 -1.1832
-5 SiteA 2013-10-27  0.6463     NA 2.1463 -0.8537
-6 SiteA 2013-10-28 -0.1741     NA 1.3259 -1.6741
-</code></pre>
-<p>The first <code>data.frame()</code> call created the first four columns of <code>tdat</code>, where we have</p>
-<ul>
-<li><p><code>Site</code>, a factor variable indicating the two time series in the data,</p></li>
-<li><p><code>Date</code>, a <code>"Date"</code> class vector which starts from today’s date and increase daily for the next 100 days, which we replicate twice, once per <code>Site</code>,</p></li>
-<li><p><code>Fitted</code>, a numeric vector holding the trend estimates from the model.</p>
-<p>Here I just use two separate random walks, but for the papers we used the output from <code>predict()</code> applied to the <code>"gamm"</code> classed model objects</p></li>
-<li><p><code>Signif</code>, another numeric vector that will contain the same values as <code>Fitted</code>, but only for regions that are important or significant in some way. At first this is initialised with <code>NA</code>s.</p>
-<p>In the papers we had two variables, <code>Increasing</code> and <code>Decreasing</code>, which contained the values of the estimated trend (i.e.&nbsp;duplicated <code>Fitted</code>) where the trend was either increasing or decreasing significantly. The general principle is the same, however; the non-<code>NA</code> locations will be indicated by a thicker line width and hence we duplicate the <code>Fitted</code> values only for the sections that are <em>interesting</em>.</p></li>
-</ul>
-<p>The <code>transform()</code> line just adds some dummy confidence intervals to data frame, creating variables <code>Upper</code> and <code>Lower</code>. In the papers these were approximate, point-wise 95% confidence intervals computing using the standard errors of the realizations from the estimated trend, as returned by <code>predict()</code> with argument <code>se.fit = TRUE</code>.</p>
-<p>The last section in the code block just selects two random points within the interior of the each time series, which we then use to mark the start of the “interesting” period. This and the next 25 values in each time series are used as indices to copy into <code>Signif</code> the corresponding values from <code>Fitted</code>.</p>
-<p>With that done, we can start plotting. I’ll show the <strong>lattice</strong> version first and then the <strong>ggplot</strong> one.</p>
-<section id="lattice-version" class="level3">
-<h3 data-anchor-id="lattice-version">lattice version</h3>
-<p>Start by loading <strong>lattice</strong></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"lattice"</span>)</span></code></pre></div></div>
-<p>The key to creating the sort of plot shown in Figure 1 is to recognise that each of the lines we want to draw can be viewed as a separate y-axis variable. <strong>lattice</strong> allows for this by specifying multiple values on the left-hand-side of the formula used to describe the plot. We also need to facet the plot on <code>Site</code>. To draw the figure we use <code>xyplot()</code></p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">xyplot</span>(Fitted <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> Upper <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> Lower <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span> Signif <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> Date <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">|</span> Site,</span>
-<span id="cb4-2">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">data =</span> tdat,</span>
-<span id="cb4-3">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">type =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"l"</span>,</span>
-<span id="cb4-4">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">2</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>),</span>
-<span id="cb4-5">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1</span>, <span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>),</span>
-<span id="cb4-6">       <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">col.line =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">c</span>(<span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">rep</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"black"</span>,<span class="dv" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">3</span>), <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>))</span></code></pre></div></div>
-<p>The formula used describes the plot: <code>Fitted + Upper + Lower + Signif ~ Date | Site</code>. The variables” we want to plot are all passed to the left-hand-side of the formula, with <code>Date</code> used to the right of <code>~</code>, indicating the x-axis variable to be used. The last part of the formula indicates <em>conditioning</em> on <code>Site</code> and is what instructs <code>xyplot()</code> to facet the resulting plot into separate panels for each <code>Site</code>. The parameters <code>lty</code>, <code>lwd</code>, and <code>col.line</code> all control the aesthetics of the plot, and are specified in the order that the variables appear in the formula. Hence we use solid lines for <code>Fitted</code> and <code>Signif</code> and dashed (type <code>2</code>) for the confidence intervals (<code>Upper</code> and <code>Lower</code>). In a departure from base graphics, it is the <code>col.line</code> argument that is used to specify the colours used for lines drawn in the panels.</p>
-<p>The resulting figure is shown below</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://fromthebottomoftheheap.net/assets/img/posts/lattice-dummy-time-series.png" title="Figure 2: lattice version of our time series plot" class="img-fluid figure-img"></p>
-<figcaption>Figure 2: <strong>lattice</strong> version of our time series plot</figcaption>
-</figure>
-</div>
-</section>
-<section id="ggplot2" class="level3">
-<h3 data-anchor-id="ggplot2">ggplot2</h3>
-<p>Now we move on to drawing the plot using <strong>ggplot2</strong> Start by loading loading the package</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">library</span>(<span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"ggplot2"</span>)</span></code></pre></div></div>
-<p>With <strong>ggplot2</strong> the key is to notice that each of the lines we want to draw on each panel can be drawn using different <code>geom_line()</code> <em>layers</em>, added sequentially to the plot. With each additional layer, we can override the default <code>mapping</code> by changing the <code>y</code> data in each layer using <code>aes()</code> within the <code>geom_line()</code> call. The code to create the plot is shown below.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">ggplot</span>(tdat, <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">x =</span> Date, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> Fitted, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">group =</span> Site)) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb6-2">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_line</span>() <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb6-3">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mapping =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> Upper), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"dashed"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb6-4">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mapping =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> Lower), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lty =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"dashed"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb6-5">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">geom_line</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">mapping =</span> <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">aes</span>(<span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">y =</span> Signif), <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">lwd =</span> <span class="fl" style="color: #AD0000;
-background-color: null;
-font-style: inherit;">1.3</span>, <span class="at" style="color: #657422;
-background-color: null;
-font-style: inherit;">colour =</span> <span class="st" style="color: #20794D;
-background-color: null;
-font-style: inherit;">"red"</span>) <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">+</span></span>
-<span id="cb6-6">    <span class="fu" style="color: #4758AB;
-background-color: null;
-font-style: inherit;">facet_wrap</span>( <span class="sc" style="color: #5E5E5E;
-background-color: null;
-font-style: inherit;">~</span> Site)</span></code></pre></div></div>
-<p>The first line sets up the basic <strong>ggplot</strong> object with a mapping and a data object, to which we add a <code>geom_line()</code> layer (line 2). Note that here we don’t specify any arguments to <code>geom_line()</code>, so it picks up defaults from the base object created in line 1. In lines 3 to 5 we add additional <code>geom_line()</code> layers, but now we need to override the mapping of variables to axes on the plot, which we do by updating the <code>mapping</code>. We only need to change the <code>y</code> data used for each layer; the <code>x</code> data are taken from the base object created in line 1. Notice how we specify attributes for these lines <em>outside</em> the <code>aes()</code> calls? This controls how each line is drawn. The final line in the code chunk uses <code>facet_wrap()</code> to split the data up by <code>Site</code> and draw a separate panel for each of <code>Site</code>.</p>
-<p>The resulting figure is shown below</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="https://fromthebottomoftheheap.net/assets/img/posts/ggplot-dummy-time-series.png" title="Figure 2: ggplot2 version of our time series plot" class="img-fluid figure-img"></p>
-<figcaption>Figure 3: <strong>ggplot2</strong> version of our time series plot</figcaption>
-</figure>
-</div>
-<p>I don’t think any of this is particularly revelatory, but, as someone did ask me how it was done, hopefully some readers will find this useful. Happy plotting!</p>
-</section>
-<section id="references" class="level3">
-<h3 data-anchor-id="references">References</h3>
-<div class="post-navigation d-flex justify-content-between gap-3">
-<p><span><a href="../../../../2013/09/09/preparing-figures-for-plos-one-with-r/">← Older: Using Arial in R figures destined for PLOS ONE</a></span> <span class="text-end"><a href="../../../../2013/12/10/tri-council-oa-policy-consultation-response/">Newer: Draft Tri-Agency Open Access policy →</a></span></p>
-</div>
-
-
-
-</section>
-
-<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" id="quarto-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent">
-<div id="ref-curtis-ecol-ind-trends" class="csl-entry">
-Curtis, C. J., and Simpson, G. L. (in press). Trends in bulk deposition of acidity in the UK, 1988–2007, assessed using additive models. <em>Ecological Indicators</em>.
-</div>
-<div id="ref-monteith-ecol-ind-trends" class="csl-entry">
-Monteith, D., Evans, C., Henrys, P., Simpson, G., and Malcolm, I. (in press). Trends in the hydrochemistry of acid-sensitive surface waters in the UK 1988–2008. <em>Ecological Indicators</em>.
-</div>
-<div id="ref-lattice-book" class="csl-entry">
-Sarkar, D. (2008). <em>Lattice: Multivariate data visualization with r</em>. New York: Springer Available at: <a href="http://lmdvr.r-forge.r-project.org">http://lmdvr.r-forge.r-project.org</a>.
-</div>
-<div id="ref-ggplot2-book" class="csl-entry">
-Wickham, H. (2009). <em>ggplot2: Elegant graphics for data analysis</em>. Springer New York Available at: <a href="http://had.co.nz/ggplot2/book">http://had.co.nz/ggplot2/book</a>.
-</div>
-</div></section></div> ]]></description>
-  <category>R</category>
-  <guid>https://fromthebottomoftheheap.net/2013/10/23/time-series-plots-with-lattice-and-ggplot/</guid>
-  <pubDate>Wed, 23 Oct 2013 10:00:00 GMT</pubDate>
 </item>
 </channel>
 </rss>

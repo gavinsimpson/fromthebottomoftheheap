@@ -1,0 +1,152 @@
+---
+title: "Customising gratia plots with ggplot2 themes"
+subtitle: "Style smooths, intervals, and grouped curves with gratia 0.12.1"
+author: Gavin Simpson
+date: 2026-11-27
+category: R
+categories: [R]
+tags: [gratia, GAM, R packages]
+description: >-
+  Use ggplot2 themes to style smooths and their intervals, apply the same look
+  across panels, and migrate older gratia plotting code.
+comments:
+  giscus:
+    repo: gavinsimpson/fromthebottomoftheheap-comments
+    repo-id: R_kgDOUUVJuA
+    category: Blog comments
+    category-id: DIC_kwDOUUVJuM4DFRne
+    mapping: pathname
+    reactions-enabled: true
+    input-position: top
+    theme: preferred_color_scheme
+    language: en
+execute:
+  freeze: auto
+---
+
+::: {.column-margin .post-links}
+{{< include ../../../../includes/social-blogroll.qmd >}}
+:::
+
+With gratia 0.12.1, you can change the colour of a smooth or the opacity of its interval *after* calling `draw()` using the new theme system. These settings now live in ggplot2 themes, alongside familiar options for backgrounds and text. That makes it easier to use the same style across several figures or give an existing figure a different look.
+
+I'll use two curves from a plant experiment to show how to style a set of panels, reuse the style, and choose colours for grouped curves.
+
+## Start with a fitted model
+
+The `CO2` data that come with R record carbon dioxide uptake by grass plants from Quebec and Mississippi. Half the plants from each origin were chilled, and uptake was measured at the same set of concentrations for each plant [@potvin-lechowicz-tardif-1990].
+
+For this post I'll reuse the model from gratia's [prediction comparisons article](https://gavinsimpson.github.io/gratia/articles/prediction-comparisons.html). It fits a separate concentration smooth for each treatment and includes a plant random intercept for the repeated measurements.
+
+```{r}
+#| label: fit-uptake-smooths
+#| message: false
+library("mgcv")
+library("gratia")
+library("ggplot2")
+library("dplyr")
+
+plant <- as_tibble(datasets::CO2) |>
+  mutate(
+    Plant = factor(Plant, ordered = FALSE),
+    Treatment = factor(
+      Treatment,
+      levels = c("nonchilled", "chilled"),
+      labels = c("Non-chilled plants", "Chilled plants")
+    )
+  )
+
+m <- gam(
+  uptake ~ Type * Treatment + s(conc, by = Treatment, k = 5) +
+    s(Plant, bs = "re"),
+  data = plant, family = Gamma(link = "log"), method = "REML"
+)
+```
+
+To keep the plots simple, I'll focus only on the two estimated smooth functions, using `draw()`'s `select` argument with `partial_match = TRUE` to pick out the two concentration smooths by their shared label, `s(conc)`. The curves show each smooth's contribution on the log scale. The *ggplot* object is saved so that it can be reused.
+
+```{r}
+#| label: default-uptake-smooths
+#| fig-width: 8
+#| fig-height: 3.6
+#| fig-alt: "Two panels show the concentration smooths for non-chilled and chilled plants as black curves with grey uncertainty ribbons."
+p <- draw(m, select = "s(conc)", partial_match = TRUE, ncol = 2)
+p
+```
+
+## Style the curve and its interval
+
+The theme element `geom.gratia.smooth` controls the fitted line. `geom.gratia.interval` supplies the ribbon fill, while `gratia.alpha.interval` controls how transparent the fill is. I'll use the same blue for the line and ribbon, with a lower opacity for the ribbon.
+
+```{r}
+#| label: themed-uptake-smooths
+#| fig-width: 8
+#| fig-height: 3.6
+#| fig-alt: "The same two smooth panels on white backgrounds, with dark blue curves and pale blue ribbons."
+uptake_style <- theme(
+  geom.gratia.smooth = element_geom(colour = "#275D8C", linewidth = 0.9),
+  geom.gratia.interval = element_geom(fill = "#275D8C"),
+  gratia.alpha.interval = 0.18
+)
+
+p & theme_bw() & uptake_style
+```
+
+`draw()` returns a patchwork, so *patchwork*'s `&` is used to send both themes to every panel. With a single ggplot, use `+`. When used with a combined figure, `+` would apply the theme to the last panel only.
+
+If you're updating an existing script, move `smooth_col` from the `draw()` call into `geom.gratia.smooth`, `ci_col` into `geom.gratia.interval`, and `ci_alpha` into `gratia.alpha.interval`. The old arguments are deprecated. While they still work, an explicitly supplied colour or opacity takes precedence over the corresponding theme setting, so remove it from the call when you migrate.
+
+## Reuse the theme for new plots
+
+Use `gratia_theme_set()` to style a series of new plots. Each call invisibly returns the gratia theme that was active immediately before the call, or `NULL` if no gratia theme was set. I save that value in `previous_style` so I can restore it after assembling the panels.
+
+I put `theme_bw()` first because it sets a complete theme. Adding `uptake_style` after it gives me the white background with the blue line and ribbon.
+
+```{r}
+#| label: reusable-uptake-style
+#| fig-width: 5.7
+#| fig-height: 3.7
+#| fig-alt: "The first treatment smooth alone, with a white background and the same blue curve and ribbon."
+previous_style <- gratia_theme_set(theme_bw() + uptake_style)
+panels <- assemble(m, select = "s(conc)", partial_match = TRUE)
+gratia_theme_set(previous_style)
+
+panels[[1]]
+```
+
+`assemble()` attaches the combined theme to each panel as it creates it. Restoring `previous_style` sets the theme for future gratia plots. The saved panel still has its white background and blue styling. Use `gratia_theme_get()` to see which gratia theme is active.
+
+## Using a shared palette for colour and fill scales
+
+Often, we want to put the set of factor-by smooths in one panel using `grouped = "factor-by"`. Then, colour identifies the grouping variable, which here is the treatment. For mapped colours like these, we can use one of the many discrete palettes available for ggplot2, and which can also be set through the theme. `gratia_palette()` supplies a palette function. Give the same function to the colour and fill settings so each curve matches its own ribbon. In the code below, I switch to Paul Tol's *bright* colour palette instead of the default Okabe Ito palette.
+
+I also wrap the treatment labels in the legend with `draw_label_control()`. That comes in handy when the figure has to fit in a narrow column.
+
+```{r}
+#| label: grouped-uptake-palette
+#| fig-width: 6.3
+#| fig-height: 3.7
+#| fig-alt: "The two treatment curves overlaid, with each line and its ribbon sharing a colour and the longer treatment label wrapped in the legend."
+tol <- gratia_palette("tol_bright")
+legend_layout <- draw_label_control(legend = list(wrap = 15))
+
+draw(
+  m, select = "s(conc)", partial_match = TRUE,
+  grouped = "factor-by", label_control = legend_layout
+) &
+  theme_bw() &
+  theme(palette.colour.discrete = tol, palette.fill.discrete = tol)
+```
+
+Paul Tol's palettes have different capacities, so pick one with enough colours for your groups. That said, trying to distinguish groups by colour is going to be difficulty as the number of groups gets large.
+
+For the full list of component settings and mappings from older arguments, see the package's [Customising gratia plots article](https://gavinsimpson.github.io/gratia/articles/custom-plotting.html).
+
+## Future directions
+
+This is the first outing for the theming system, and there are some features of ggplot2's themes that aren't part of the new gratia system, so clashes may occur. If you have comments on the new theme system or suggestions for additions to it, let me know in the comments below.
+
+## References
+
+::: {#refs}
+:::

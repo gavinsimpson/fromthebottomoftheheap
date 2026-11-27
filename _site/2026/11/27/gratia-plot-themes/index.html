@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.11.9">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gavin Simpson">
+<meta name="dcterms.date" content="2026-11-27">
+<meta name="description" content="Use ggplot2 themes to style smooths and their intervals, apply the same look across panels, and migrate older gratia plotting code.">
+
+<title>Customising gratia plots with ggplot2 themes – From the bottom of the heap</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
+
+
+<script src="../../../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../../../">
+<link href="../../../../assets/ico/favicon.svg" rel="icon" type="image/svg+xml">
+<script src="../../../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/scrollable-regions/scrollable-regions.js" type="module"></script>
+<script src="../../../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<link href="../../../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-html/quarto-syntax-highlighting-b824c7ead1a7e6e82b938bb925faa6cb.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../../../site_libs/bootstrap/bootstrap-e669b9a16ba5d3e5f2f33374a7e4033d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link href="../../../../site_libs/quarto-contrib/fontawesome6-6.7.2/all.min.css" rel="stylesheet">
+<link href="../../../../site_libs/quarto-contrib/fontawesome6-6.7.2/latex-fontsize.css" rel="stylesheet">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<!-- Google tag (gtag.js) -->
+<script async="" src="https://www.googletagmanager.com/gtag/js?id=G-6FQL01W176"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6FQL01W176');
+</script>
+<script data-ad-client="ca-pub-2908943772231164" async="" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<script defer="" src="../../../../assets/js/post-metadata.js?v=20260912"></script>
+<script defer="" src="../../../../assets/js/bootstrap-modals.js?v=20260917"></script>
+
+
+<meta property="og:title" content="Customising gratia plots with ggplot2 themes – From the bottom of the heap">
+<meta property="og:description" content="Use ggplot2 themes to style smooths and their intervals, apply the same look across panels, and migrate older gratia plotting code.">
+<meta property="og:image" content="https://fromthebottomoftheheap.net/2026/11/27/gratia-plot-themes/index_files/figure-html/default-uptake-smooths-1.png">
+<meta property="og:site_name" content="From the bottom of the heap">
+<meta property="og:image:alt" content="Two panels show the concentration smooths for non-chilled and chilled plants as black curves with grey uncertainty ribbons.">
+<meta property="og:image:height" content="691">
+<meta property="og:image:width" content="1536">
+<meta name="twitter:title" content="Customising gratia plots with ggplot2 themes – From the bottom of the heap">
+<meta name="twitter:description" content="Use ggplot2 themes to style smooths and their intervals, apply the same look across panels, and migrate older gratia plotting code.">
+<meta name="twitter:image" content="https://fromthebottomoftheheap.net/2026/11/27/gratia-plot-themes/index_files/figure-html/default-uptake-smooths-1.png">
+<meta name="twitter:creator" content="@ucfagls">
+<meta name="twitter:site" content="@ucfagls">
+<meta name="twitter:image:alt" content="Two panels show the concentration smooths for non-chilled and chilled plants as black curves with grey uncertainty ribbons.">
+<meta name="twitter:card" content="summary_large_image">
+</head>
+
+<body class="nav-fixed quarto-light"><a id="quarto-skip-link" class="visually-hidden-focusable" href="#quarto-document-content">Skip to main content</a>
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark" aria-label="Site">
+      <div class="navbar-container container-fluid">
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../index.html"> <i class="bi bi-house-door" role="img">
+</i> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../about/index.html"> <i class="bi bi-info-circle" role="img">
+</i> 
+<span class="menu-text">About</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../blog/index.html"> <i class="bi bi-chat-left-text" role="img">
+</i> 
+<span class="menu-text">Blog</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../publications/index.html"> <i class="bi bi-file-earmark-text" role="img">
+</i> 
+<span class="menu-text">Publications</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../../../../research/index.html"> <i class="bi bi-flask" role="img">
+</i> 
+<span class="menu-text">Research</span></a>
+  </li>  
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-the-lab" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-funnel" role="img">
+</i> 
+ <span class="menu-text">The Lab</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-the-lab">    
+        <li>
+    <a class="dropdown-item" href="../../../../lab/index.html">
+ <span class="dropdown-text">About</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/research/index.html">
+ <span class="dropdown-text">Research</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/members/index.html">
+ <span class="dropdown-text">Members</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/publications/index.html">
+ <span class="dropdown-text">Publications</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../lab/join/index.html">
+ <span class="dropdown-text">Join the lab</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-resources" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-collection" role="img">
+</i> 
+ <span class="menu-text">Resources</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-resources">    
+        <li>
+    <a class="dropdown-item" href="../../../../teaching/index.html">
+ <span class="dropdown-text">Teaching</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../workshops/index.html">
+ <span class="dropdown-text">Workshops</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../slides/index.html">
+ <span class="dropdown-text">Slides</span></a>
+  </li>  
+    </ul>
+  </li>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-code" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+      <i class="bi bi-code-slash" role="img">
+</i> 
+ <span class="menu-text">Code</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-code">    
+        <li>
+    <a class="dropdown-item" href="../../../../code/dper-scripts/index.html">
+ <span class="dropdown-text">DPER Scripts</span></a>
+  </li>  
+        <li>
+    <a class="dropdown-item" href="../../../../code/r-packages/index.html">
+ <span class="dropdown-text">R Packages</span></a>
+  </li>  
+    </ul>
+  </li>
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson"> <i class="bi bi-github" role="img" aria-label="GitHub">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="../../../../feed.xml"> <i class="bi bi-rss" role="img" aria-label="RSS feed">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+            <div id="quarto-search" class="" title="Search"></div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+    </div>
+<!-- main -->
+<main class="content page-columns page-full" id="quarto-document-content" tabindex="-1">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Customising gratia plots with ggplot2 themes</h1>
+<p class="subtitle lead">Style smooths, intervals, and grouped curves with gratia 0.12.1</p>
+  <div class="quarto-categories">
+    <div class="quarto-category">R</div>
+  </div>
+  </div>
+
+<div>
+  <div class="description">
+    Use ggplot2 themes to style smooths and their intervals, apply the same look across panels, and migrate older gratia plotting code.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gavin Simpson </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">November 27, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+
+<div class="no-row-height column-margin column-container"><div class="post-links">
+<section id="social" class="level4 side-snippet">
+<h4 data-anchor-id="social">Social</h4>
+<p>
+<a href="https://www.buymeacoffee.com/gavinsimpson" target="_blank" rel="noopener"><img class="buy-me-coffee" src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee"></a>
+</p>
+<ul class="list-unstyled sidebar-links">
+<li>
+<i class="bi bi-envelope" aria-hidden="true"></i><a href="mailto:ucfagls@gmail.com">ucfagls@gmail.com</a>
+</li>
+<li>
+<i class="bi bi-bluesky" aria-hidden="true"></i><a href="https://bsky.app/profile/gsimpson.bsky.social">@gsimpson.bsky.social</a>
+</li>
+<li>
+<i class="bi bi-github" aria-hidden="true"></i><a href="https://github.com/gavinsimpson">gavinsimpson</a>
+</li>
+<li>
+<i class="fa-brands fa-orcid" aria-label="ORCID"></i><a href="https://orcid.org/0000-0002-9084-8413">ORCID iD</a>
+</li>
+<li>
+<i class="bi bi-rss" aria-hidden="true"></i><a href="../../../../feed.xml" type="application/atom+xml">Subscribe</a>
+</li>
+</ul>
+</section>
+</div></div><p>With gratia 0.12.1, you can change the colour of a smooth or the opacity of its interval <em>after</em> calling <code>draw()</code> using the new theme system. These settings now live in ggplot2 themes, alongside familiar options for backgrounds and text. That makes it easier to use the same style across several figures or give an existing figure a different look.</p>
+<p>I’ll use two curves from a plant experiment to show how to style a set of panels, reuse the style, and choose colours for grouped curves.</p>
+<section id="start-with-a-fitted-model" class="level2">
+<h2 data-anchor-id="start-with-a-fitted-model">Start with a fitted model</h2>
+<p>The <code>CO2</code> data that come with R record carbon dioxide uptake by grass plants from Quebec and Mississippi. Half the plants from each origin were chilled, and uptake was measured at the same set of concentrations for each plant <span class="citation" data-cites="potvin-lechowicz-tardif-1990">(<a href="#ref-potvin-lechowicz-tardif-1990" role="doc-biblioref">Potvin et al., 1990</a>)</span>.</p>
+<p>For this post I’ll reuse the model from gratia’s <a href="https://gavinsimpson.github.io/gratia/articles/prediction-comparisons.html">prediction comparisons article</a>. It fits a separate concentration smooth for each treatment and includes a plant random intercept for the repeated measurements.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"mgcv"</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"gratia"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"ggplot2"</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(<span class="st">"dplyr"</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>plant <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(datasets<span class="sc">::</span>CO2) <span class="sc">|&gt;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">Plant =</span> <span class="fu">factor</span>(Plant, <span class="at">ordered =</span> <span class="cn">FALSE</span>),</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Treatment =</span> <span class="fu">factor</span>(</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>      Treatment,</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"nonchilled"</span>, <span class="st">"chilled"</span>),</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Non-chilled plants"</span>, <span class="st">"Chilled plants"</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">gam</span>(</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>  uptake <span class="sc">~</span> Type <span class="sc">*</span> Treatment <span class="sc">+</span> <span class="fu">s</span>(conc, <span class="at">by =</span> Treatment, <span class="at">k =</span> <span class="dv">5</span>) <span class="sc">+</span></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="fu">s</span>(Plant, <span class="at">bs =</span> <span class="st">"re"</span>),</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> plant, <span class="at">family =</span> <span class="fu">Gamma</span>(<span class="at">link =</span> <span class="st">"log"</span>), <span class="at">method =</span> <span class="st">"REML"</span></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>To keep the plots simple, I’ll focus only on the two estimated smooth functions, using <code>draw()</code>’s <code>select</code> argument with <code>partial_match = TRUE</code> to pick out the two concentration smooths by their shared label, <code>s(conc)</code>. The curves show each smooth’s contribution on the log scale. The <em>ggplot</em> object is saved so that it can be reused.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">draw</span>(m, <span class="at">select =</span> <span class="st">"s(conc)"</span>, <span class="at">partial_match =</span> <span class="cn">TRUE</span>, <span class="at">ncol =</span> <span class="dv">2</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>p</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/default-uptake-smooths-1.png" class="img-fluid figure-img" alt="Two panels show the concentration smooths for non-chilled and chilled plants as black curves with grey uncertainty ribbons." width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="style-the-curve-and-its-interval" class="level2">
+<h2 data-anchor-id="style-the-curve-and-its-interval">Style the curve and its interval</h2>
+<p>The theme element <code>geom.gratia.smooth</code> controls the fitted line. <code>geom.gratia.interval</code> supplies the ribbon fill, while <code>gratia.alpha.interval</code> controls how transparent the fill is. I’ll use the same blue for the line and ribbon, with a lower opacity for the ribbon.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>uptake_style <span class="ot">&lt;-</span> <span class="fu">theme</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">geom.gratia.smooth =</span> <span class="fu">element_geom</span>(<span class="at">colour =</span> <span class="st">"#275D8C"</span>, <span class="at">linewidth =</span> <span class="fl">0.9</span>),</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">geom.gratia.interval =</span> <span class="fu">element_geom</span>(<span class="at">fill =</span> <span class="st">"#275D8C"</span>),</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">gratia.alpha.interval =</span> <span class="fl">0.18</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>p <span class="sc">&amp;</span> <span class="fu">theme_bw</span>() <span class="sc">&amp;</span> uptake_style</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/themed-uptake-smooths-1.png" class="img-fluid figure-img" alt="The same two smooth panels on white backgrounds, with dark blue curves and pale blue ribbons." width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><code>draw()</code> returns a patchwork, so <em>patchwork</em>’s <code>&amp;</code> is used to send both themes to every panel. With a single ggplot, use <code>+</code>. When used with a combined figure, <code>+</code> would apply the theme to the last panel only.</p>
+<p>If you’re updating an existing script, move <code>smooth_col</code> from the <code>draw()</code> call into <code>geom.gratia.smooth</code>, <code>ci_col</code> into <code>geom.gratia.interval</code>, and <code>ci_alpha</code> into <code>gratia.alpha.interval</code>. The old arguments are deprecated. While they still work, an explicitly supplied colour or opacity takes precedence over the corresponding theme setting, so remove it from the call when you migrate.</p>
+</section>
+<section id="reuse-the-theme-for-new-plots" class="level2">
+<h2 data-anchor-id="reuse-the-theme-for-new-plots">Reuse the theme for new plots</h2>
+<p>Use <code>gratia_theme_set()</code> to style a series of new plots. Each call invisibly returns the gratia theme that was active immediately before the call, or <code>NULL</code> if no gratia theme was set. I save that value in <code>previous_style</code> so I can restore it after assembling the panels.</p>
+<p>I put <code>theme_bw()</code> first because it sets a complete theme. Adding <code>uptake_style</code> after it gives me the white background with the blue line and ribbon.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>previous_style <span class="ot">&lt;-</span> <span class="fu">gratia_theme_set</span>(<span class="fu">theme_bw</span>() <span class="sc">+</span> uptake_style)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>panels <span class="ot">&lt;-</span> <span class="fu">assemble</span>(m, <span class="at">select =</span> <span class="st">"s(conc)"</span>, <span class="at">partial_match =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">gratia_theme_set</span>(previous_style)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>panels[[<span class="dv">1</span>]]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/reusable-uptake-style-1.png" class="img-fluid figure-img" alt="The first treatment smooth alone, with a white background and the same blue curve and ribbon." width="547"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><code>assemble()</code> attaches the combined theme to each panel as it creates it. Restoring <code>previous_style</code> sets the theme for future gratia plots. The saved panel still has its white background and blue styling. Use <code>gratia_theme_get()</code> to see which gratia theme is active.</p>
+</section>
+<section id="using-a-shared-palette-for-colour-and-fill-scales" class="level2">
+<h2 data-anchor-id="using-a-shared-palette-for-colour-and-fill-scales">Using a shared palette for colour and fill scales</h2>
+<p>Often, we want to put the set of factor-by smooths in one panel using <code>grouped = "factor-by"</code>. Then, colour identifies the grouping variable, which here is the treatment. For mapped colours like these, we can use one of the many discrete palettes available for ggplot2, and which can also be set through the theme. <code>gratia_palette()</code> supplies a palette function. Give the same function to the colour and fill settings so each curve matches its own ribbon. In the code below, I switch to Paul Tol’s <em>bright</em> colour palette instead of the default Okabe Ito palette.</p>
+<p>I also wrap the treatment labels in the legend with <code>draw_label_control()</code>. That comes in handy when the figure has to fit in a narrow column.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>tol <span class="ot">&lt;-</span> <span class="fu">gratia_palette</span>(<span class="st">"tol_bright"</span>)</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>legend_layout <span class="ot">&lt;-</span> <span class="fu">draw_label_control</span>(<span class="at">legend =</span> <span class="fu">list</span>(<span class="at">wrap =</span> <span class="dv">15</span>))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">draw</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  m, <span class="at">select =</span> <span class="st">"s(conc)"</span>, <span class="at">partial_match =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">grouped =</span> <span class="st">"factor-by"</span>, <span class="at">label_control =</span> legend_layout</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>) <span class="sc">&amp;</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">&amp;</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">palette.colour.discrete =</span> tol, <span class="at">palette.fill.discrete =</span> tol)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/grouped-uptake-palette-1.png" class="img-fluid figure-img" alt="The two treatment curves overlaid, with each line and its ribbon sharing a colour and the longer treatment label wrapped in the legend." width="604"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Paul Tol’s palettes have different capacities, so pick one with enough colours for your groups. That said, trying to distinguish groups by colour is going to be difficulty as the number of groups gets large.</p>
+<p>For the full list of component settings and mappings from older arguments, see the package’s <a href="https://gavinsimpson.github.io/gratia/articles/custom-plotting.html">Customising gratia plots article</a>.</p>
+</section>
+<section id="future-directions" class="level2">
+<h2 data-anchor-id="future-directions">Future directions</h2>
+<p>This is the first outing for the theming system, and there are some features of ggplot2’s themes that aren’t part of the new gratia system, so clashes may occur. If you have comments on the new theme system or suggestions for additions to it, let me know in the comments below.</p>
+</section>
+<section id="references" class="level2">
+<h2 data-anchor-id="references">References</h2>
+<div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-potvin-lechowicz-tardif-1990" class="csl-entry" role="listitem">
+Potvin, C., Lechowicz, M. J., and Tardif, S. (1990). The statistical analysis of ecophysiological response curves obtained from experiments involving repeated measures. <em>Ecology</em> 71, 1389–1400. doi:<a href="https://doi.org/10.2307/1938276">10.2307/1938276</a>.
+</div>
+</div>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp("https:\/\/fromthebottomoftheheap\.net");
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+      window.quartoDecorateExternalLinks = function (root) {
+     var links = (root || window.document).querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+          if (!link.classList.contains('no-external-icon')) {
+          }
+        }
+      }
+      };
+      window.quartoDecorateExternalLinks(window.document);
+    // Esc closes the popup (WCAG 1.4.13) and focus leaving both trigger and
+    // popup closes it (WCAG 2.4.11); tippy handles neither for interactive popups.
+    const hideOnEscAndFocusOut = {
+      name: 'hideOnEscAndFocusOut',
+      defaultValue: true,
+      fn(instance) {
+        const dismiss = () => {
+          // A show scheduled by the trigger delay would otherwise reopen it
+          instance.clearDelayTimeouts();
+          instance.hide();
+        };
+        const onKeyDown = (event) => {
+          if (event.key !== 'Escape') {
+            return;
+          }
+          // Keep Esc from also reaching page handlers (e.g. reveal.js overview),
+          // except an open reveal.js slide menu, which Esc should close too.
+          // The menu handles keys only when its keyboard option is on.
+          const menuHandlesEsc = window.Reveal?.getPlugin?.('menu')?.isOpen() &&
+            window.Reveal.getConfig().menu?.keyboard !== false;
+          if (!menuHandlesEsc) {
+            event.stopPropagation();
+          }
+          if (instance.popper.contains(window.document.activeElement)) {
+            // Disabled while refocusing so the focus trigger does not reopen it
+            instance.disable();
+            instance.reference.focus();
+            instance.enable();
+          }
+          dismiss();
+        };
+        const onFocusOut = (event) => {
+          const target = event.relatedTarget;
+          if (target && !instance.reference.contains(target) &&
+              !instance.popper.contains(target)) {
+            dismiss();
+          }
+        };
+        // On the trigger too: a click trigger (code-annotations: select) has no
+        // blur handling. Attached for the instance's lifetime so leaving the
+        // trigger also cancels a show still pending on the trigger delay.
+        instance.reference.addEventListener('focusout', onFocusOut);
+        return {
+          onShow() {
+            window.document.addEventListener('keydown', onKeyDown, true);
+            instance.popper.addEventListener('focusout', onFocusOut);
+          },
+          onHide() {
+            window.document.removeEventListener('keydown', onKeyDown, true);
+            instance.popper.removeEventListener('focusout', onFocusOut);
+          },
+          onDestroy() {
+            instance.reference.removeEventListener('focusout', onFocusOut);
+          },
+        };
+      },
+    };
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+        plugins: [hideOnEscAndFocusOut],
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          // Each band is positioned against its own containing block, which is
+          // not the offsetParent of the lines, so place it from client rects.
+          const placeBand = (band, firstEl, lastEl, codeBlock) => {
+            const container = band.offsetParent;
+            if (container === null) {
+              return;
+            }
+            const containerRect = container.getBoundingClientRect();
+            // Reveal.js scales slides with a transform, so convert client
+            // pixels back to the CSS pixels of the container.
+            const scale = containerRect.height / container.offsetHeight || 1;
+            const firstRect = firstEl.getBoundingClientRect();
+            const lastRect = lastEl.getBoundingClientRect();
+            const top = (firstRect.top - containerRect.top) / scale - container.clientTop + container.scrollTop;
+            const height = (lastRect.bottom - firstRect.top) / scale;
+            band.style.top = top - 2 + "px";
+            band.style.height = height + 4 + "px";
+            if (codeBlock) {
+              // Without the copy button wrapper, the containing block is wider
+              // than the code block, so span the code block explicitly.
+              const blockRect = codeBlock.getBoundingClientRect();
+              band.style.left = (blockRect.left - containerRect.left) / scale - container.clientLeft + container.scrollLeft + "px";
+              band.style.width = blockRect.width / scale + "px";
+            }
+          };
+          if (lineIds.length > 0) {
+            const el = window.document.getElementById(lineIds[0]);
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const parent = el.parentElement.parentElement;
+            // cook up a div (if necessary) and position it
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            placeBand(div, el, lastEl, parent.closest("div.sourceCode") || parent);
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            placeBand(gutterDiv, el, lastEl);
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+  <script type="application/javascript">
+  window.quartoScrollableRegionsLabels = {"code":"Scrollable code","output":"Scrollable output"};
+  </script>
+<input type="hidden" id="giscus-base-theme" value="preferred_color_scheme">
+<input type="hidden" id="giscus-alt-theme" value="preferred_color_scheme">
+<script>
+  function loadGiscus() {
+    // Function to get the theme based on body class
+    const getTheme = () => {
+      let baseTheme = document.getElementById('giscus-base-theme').value;
+      let altTheme = document.getElementById('giscus-alt-theme').value;
+      return document.body.classList.contains('quarto-dark') ? altTheme : baseTheme;
+    };
+    const script = document.createElement("script");
+    script.src = "https://giscus.app/client.js";
+    script.async = true;
+    script.dataset.repo = "gavinsimpson/fromthebottomoftheheap-comments";
+    script.dataset.repoId = "R_kgDOUUVJuA";
+    script.dataset.category = "Blog comments";
+    script.dataset.categoryId = "DIC_kwDOUUVJuM4DFRne";
+    script.dataset.mapping = "pathname";
+    script.dataset.reactionsEnabled = "1";
+    script.dataset.emitMetadata = "0";
+    script.dataset.inputPosition = "top";
+    script.dataset.theme = getTheme();
+    script.dataset.lang = "en";
+    script.crossOrigin = "anonymous";
+    // Append the script to the desired div instead of at the end of the body
+    document.getElementById("quarto-content").appendChild(script);
+  }
+  loadGiscus();
+</script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>Copyright © 2010–2026 Gavin Simpson</p>
+</div>   
+    <div class="nav-footer-center">
+<p>Content available under a <a href="../../../../permissions/">Creative Commons Attribution 4.0 licence</a>.</p>
+</div>
+    <div class="nav-footer-right">
+      <ul class="footer-items list-unstyled">
+    <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/gavinsimpson">
+      <i class="bi bi-github" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item compact">
+    <a class="nav-link" href="mailto:ucfagls@gmail.com">
+      <i class="bi bi-envelope" role="img">
+</i> 
+    </a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://www.r-bloggers.com/">
+<p>R-bloggers</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://rweekly.org/">
+<p>R Weekly</p>
+</a>
+  </li>  
+    <li class="nav-item">
+    <a class="nav-link" href="https://orcid.org/0000-0002-9084-8413">
+<p>ORCID</p>
+</a>
+  </li>  
+</ul>
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>
